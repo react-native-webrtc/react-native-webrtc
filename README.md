@@ -6,7 +6,7 @@ A WebRTC module for React Native.
 
 1. Run `react-native init RCTWebRTCDemo` to create your react native project. (RCTWebRTCDemo can be any name you like)
 2. Add `react-native-webrtc` to your `package.json`'s `dependencies`.
-```
+```json
 "dependencies": {
   "react-native": "^0.11.2",
   "react-native-webrtc": "https://github.com/oney/react-native-webrtc"
@@ -39,7 +39,7 @@ libstdc++.tbd
 ## Usage
 Now, you can use WebRTC like in brower.
 In your index.ios.js, you can require WebRTC to import RTCPeerConnection, RTCSessionDescription, etc.
-```
+```javascript
 var WebRTC = require('react-native-webrtc');
 var {
   RTCPeerConnection,
@@ -52,7 +52,7 @@ var {
 Anything about using RTCPeerConnection, RTCSessionDescription and RTCIceCandidate is like brower. However, render video stream should be used by react way.
 
 Rendering RTCView.
-```
+```javascript
 var container;
 var RCTWebRTCDemo = React.createClass({
   getInitialState: function() {
@@ -71,7 +71,7 @@ var RCTWebRTCDemo = React.createClass({
 });
 ```
 And set stream to RTCView
-```
+```javascript
 container.setState({videoSrc: stream.objectId});
 ```
 ## Demo
