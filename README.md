@@ -35,3 +35,43 @@ libstdc++.tbd
 7. select `Build Settings`, find `Library Search Paths`, add `$(SRCROOT)/../node_modules/react-native-webrtc` with `recursive`
 ![Picture 5](http://i.imgur.com/L3QkvzG.jpg)
 8. Maybe you have to set `Dead Code Stripping` to `No` and `Enable Bitcode` to `No`.
+
+## Usage
+Now, you can use WebRTC like in brower.
+In your index.ios.js, you can require WebRTC to import RTCPeerConnection, RTCSessionDescription, etc.
+```
+var WebRTC = require('react-native-webrtc');
+var {
+  RTCPeerConnection,
+  RTCMediaStream,
+  RTCIceCandidate,
+  RTCSessionDescription,
+  RTCView
+} = WebRTC;
+```
+Anything about using RTCPeerConnection, RTCSessionDescription and RTCIceCandidate is like brower. However, render video stream should be used by react way.
+
+Rendering RTCView.
+```
+var container;
+var RCTWebRTCDemo = React.createClass({
+  getInitialState: function() {
+    return {videoSrc: null};
+  },
+  componentDidMount: function() {
+    container = this;
+  },
+  render: function() {
+    return (
+      <View>
+        <RTCView src={this.state.videoSrc}/>
+      </View>
+    );
+  }
+});
+```
+And set stream to RTCView
+```
+container.setState({videoSrc: stream.objectId});
+```
+
