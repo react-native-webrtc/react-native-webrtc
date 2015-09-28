@@ -2,6 +2,12 @@
 
 A WebRTC module for React Native.
 
+## Support
+Currently support for iOS only.  
+Support video and audio communication. Not support DataChannel now.  
+You can use it to build an app that can communicate with web brower.  
+The iOS Library is based on libWebRTC.a(It's build by [webrtc-build-scripts](https://github.com/pristineio/webrtc-build-scripts) and you can download it [here](https://cocoapods.org/pods/libjingle_peerconnection))
+
 ## Installation
 
 1.) Run `react-native init RCTWebRTCDemo` to create your react native project. (RCTWebRTCDemo can be any name you like)   
