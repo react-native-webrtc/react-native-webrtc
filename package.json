@@ -6,20 +6,16 @@
     "url": "git+https://github.com/oney/react-native-webrtc.git"
   },
   "nativePackage": true,
-  "scripts": {
-    "start": "node_modules/react-native/packager/packager.sh"
-  },
-  "dependencies": {
+  "description": "WebRTC for React Native",
+  "author": "Oney <appdevoney@gmail.com>",
+  "homepage": "https://github.com/oney/react-native-webrtc",
+  "keywords": [
+    "react-component",
+    "react-native",
+    "ios",
+    "webrtc"
+  ],
+  "peerDependencies": {
     "react-native": "^0.11.2"
-  },
-  "gitHead": "70f1fae608780ac5306cef70d21d2354ca6fcbfa",
-  "bugs": {
-    "url": "https://github.com/oney/react-native-webrtc/issues"
-  },
-  "readme": "ERROR: No README data found!",
-  "homepage": "https://github.com/oney/react-native-webrtc#readme",
-  "_id": "react-native-webrtc@0.0.1",
-  "_shasum": "537a7e68e025d166cd08f3e479adf3829629378a",
-  "_from": "../ONEWebRTC",
-  "_resolved": "file:../ONEWebRTC"
+  }
 }
