@@ -5,7 +5,7 @@ A WebRTC module for React Native.
 ## Support
 Currently support for iOS only.  
 Support video and audio communication. Not support DataChannel now.  
-You can use it to build an app that can communicate with web brower.  
+You can use it to build an app that can communicate with web browser.  
 The iOS Library is based on libWebRTC.a(It's build by [webrtc-build-scripts](https://github.com/pristineio/webrtc-build-scripts) and you can download it [here](https://cocoapods.org/pods/libjingle_peerconnection))
 
 ## Installation
@@ -17,7 +17,7 @@ The iOS Library is based on libWebRTC.a(It's build by [webrtc-build-scripts](htt
 ![Picture 1](http://i.imgur.com/NRHANSq.jpg)
 ![Picture 2](http://i.imgur.com/8fX2fDM.jpg)
 ![Picture 3](http://i.imgur.com/vVDTIXD.jpg)  
-5.) Select your target, select `Build Phases`, open `Link Binary With Libraries`, add those libraries  
+5.) Select your target, select `Build Phases`, open `Link Binary With Libraries`, add these libraries  
 ```
 AVFoundation.framework
 AudioToolbox.framework
@@ -36,7 +36,7 @@ libstdc++.tbd
 7.) Maybe you have to set `Dead Code Stripping` to `No` and `Enable Bitcode` to `No`.
 
 ## Usage
-Now, you can use WebRTC like in brower.
+Now, you can use WebRTC like in browser.
 In your index.ios.js, you can require WebRTC to import RTCPeerConnection, RTCSessionDescription, etc.
 ```javascript
 var WebRTC = require('react-native-webrtc');
@@ -48,7 +48,7 @@ var {
   RTCView
 } = WebRTC;
 ```
-Anything about using RTCPeerConnection, RTCSessionDescription and RTCIceCandidate is like brower. However, render video stream should be used by react way.
+Anything about using RTCPeerConnection, RTCSessionDescription and RTCIceCandidate is like browser. However, render video stream should be used by React way.
 
 Rendering RTCView.
 ```javascript
@@ -76,4 +76,4 @@ container.setState({videoSrc: stream.objectId});
 ## Demo
 The demo project is https://github.com/oney/RCTWebRTCDemo   
 And you will need a signaling server. I have written a signaling server http://react-native-webrtc.herokuapp.com/ (the repository is https://github.com/oney/react-native-webrtc-server).   
-You can enter this website in brower, and then set it as signaling server in the app, and run the app. After you enter the same room ID, the video stream will be connected.
+You can open this website in browser, and then set it as signaling server in the app, and run the app. After you enter the same room ID, the video stream will be connected.
