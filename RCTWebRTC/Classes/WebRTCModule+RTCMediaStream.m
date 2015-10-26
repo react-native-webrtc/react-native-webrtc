@@ -1,12 +1,11 @@
 //
-//  WebRTCManager+RTCMediaStream.m
-//  TestReact
+//  WebRTCModule+RTCMediaStream.m
 //
 //  Created by one on 2015/9/24.
-//  Copyright © 2015年 Facebook. All rights reserved.
+//  Copyright © 2015 One. All rights reserved.
 //
 
-#import "WebRTCManager+RTCMediaStream.h"
+#import "WebRTCModule+RTCMediaStream.h"
 
 #import "RTCVideoCapturer.h"
 #import "RTCVideoSource.h"
@@ -14,7 +13,7 @@
 #import <objc/runtime.h>
 #import "RTCPair.h"
 #import "RTCMediaConstraints.h"
-#import "WebRTCManager+RTCPeerConnection.h"
+#import "WebRTCModule+RTCPeerConnection.h"
 
 @implementation RTCMediaStream (React)
 
@@ -30,31 +29,31 @@
 
 @end
 
-@implementation WebRTCManager (RTCMediaStream)
+@implementation WebRTCModule (RTCMediaStream)
 
 RCT_EXPORT_METHOD(getUserMedia:(NSDictionary *)constraints callback:(RCTResponseSenderBlock)callback)
 {
-  NSNumber *objectID = @([WebRTCStore sharedInstance].mediaStreamId++);
-  
+  NSNumber *objectID = @(self.mediaStreamId++);
+
   RTCMediaStream *mediaStream = [self.peerConnectionFactory mediaStreamWithLabel:@"ARDAMS"];
-  
+
   if (constraints[@"audio"] && [constraints[@"audio"] boolValue]) {
     RTCAudioTrack *audioTrack = [self.peerConnectionFactory audioTrackWithID:@"ARDAMSa0"];
     [mediaStream addAudioTrack:audioTrack];
   }
-  
+
   if (constraints[@"video"] && [constraints[@"video"] boolValue]) {
     NSArray *devices = [AVCaptureDevice devicesWithMediaType:AVMediaTypeVideo];
     AVCaptureDevice *videoDevice = [devices lastObject];
-    
+
     RTCVideoCapturer *capturer = [RTCVideoCapturer capturerWithDeviceName:[videoDevice localizedName]];
     RTCVideoSource *videoSource = [self.peerConnectionFactory videoSourceWithCapturer:capturer constraints:[self defaultMediaStreamConstraints]];
     RTCVideoTrack *videoTrack = [self.peerConnectionFactory videoTrackWithID:@"ARDAMSv0" source:videoSource];
     [mediaStream addVideoTrack:videoTrack];
   }
-  
+
   mediaStream.reactTag = objectID;
-  [WebRTCStore sharedInstance].mediaStreams[objectID] = mediaStream;
+  self.mediaStreams[objectID] = mediaStream;
   callback(@[objectID]);
 }
 - (RTCMediaConstraints *)defaultMediaStreamConstraints {

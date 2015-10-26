@@ -1,12 +1,11 @@
 //
-//  WebRTCManager+RTCPeerConnection.m
-//  TestReact
+//  WebRTCModule+RTCPeerConnection.m
 //
 //  Created by one on 2015/9/24.
-//  Copyright © 2015年 Facebook. All rights reserved.
+//  Copyright © 2015 One. All rights reserved.
 //
 
-#import "WebRTCManager+RTCPeerConnection.h"
+#import "WebRTCModule+RTCPeerConnection.h"
 
 #import "RCTLog.h"
 #import "RCTUtils.h"
@@ -18,10 +17,10 @@
 #import "RTCMediaConstraints.h"
 #import "RTCPeerConnection+Block.h"
 #import "RTCICECandidate.h"
-#import "WebRTCManager+RTCICEConnectionState.h"
-#import "WebRTCManager+RTCICEGatheringState.h"
-#import "WebRTCManager+RTCSignalingState.h"
-#import "WebRTCManager+RTCMediaStream.h"
+#import "WebRTCModule+RTCICEConnectionState.h"
+#import "WebRTCModule+RTCICEGatheringState.h"
+#import "WebRTCModule+RTCSignalingState.h"
+#import "WebRTCModule+RTCMediaStream.h"
 
 @implementation RTCPeerConnection (React)
 
@@ -37,40 +36,37 @@
 
 @end
 
-@implementation WebRTCManager (RTCPeerConnection)
+@implementation WebRTCModule (RTCPeerConnection)
 
-RCT_EXPORT_METHOD(RTCPeerConnectionInitWithConfiguration:(NSDictionary *)configuration objectID:(nonnull NSNumber *)objectID)
+RCT_EXPORT_METHOD(peerConnectionInit:(NSDictionary *)configuration objectID:(nonnull NSNumber *)objectID)
 {
   NSArray *iceServers = [self createIceServers:configuration[@"iceServers"]];
-  
+
   RTCPeerConnection *peerConnection = [self.peerConnectionFactory peerConnectionWithICEServers:iceServers constraints:[self defaultPeerConnectionConstraints] delegate:self];
   peerConnection.reactTag = objectID;
-  if ([WebRTCStore sharedInstance].peerConnections[objectID]) {
-    
-  }
-  [WebRTCStore sharedInstance].peerConnections[objectID] = peerConnection;
+  self.peerConnections[objectID] = peerConnection;
 }
 
-RCT_EXPORT_METHOD(RTCPeerConnectionAddStream:(nonnull NSNumber *)streamID objectID:(nonnull NSNumber *)objectID)
+RCT_EXPORT_METHOD(peerConnectionAddStream:(nonnull NSNumber *)streamID objectID:(nonnull NSNumber *)objectID)
 {
-  RTCMediaStream *stream = [WebRTCStore sharedInstance].mediaStreams[streamID];
-  RTCPeerConnection *peerConnection = [WebRTCStore sharedInstance].peerConnections[objectID];
+  RTCMediaStream *stream = self.mediaStreams[streamID];
+  RTCPeerConnection *peerConnection = self.peerConnections[objectID];
   BOOL result = [peerConnection addStream:stream];
   NSLog(@"result:%i", result);
 }
 
-RCT_EXPORT_METHOD(RTCPeerConnectionCreateOfferWithObjectID:(nonnull NSNumber *)objectID callback:(RCTResponseSenderBlock)callback)
+RCT_EXPORT_METHOD(peerConnectionCreateOffer:(nonnull NSNumber *)objectID callback:(RCTResponseSenderBlock)callback)
 {
-  RTCPeerConnection *peerConnection = [WebRTCStore sharedInstance].peerConnections[objectID];
+  RTCPeerConnection *peerConnection = self.peerConnections[objectID];
   [peerConnection createOfferWithCallback:^(RTCSessionDescription *sdp, NSError *error) {
     if (error) {
-      callback(@[@{@"type": @"CreateOfferFailed",
-                   @"message": error.userInfo[@"error"]},
-                 [NSNull null]]);
+      callback(@[@(NO),
+                 @{@"type": @"CreateOfferFailed", @"message": error.userInfo[@"error"]}
+                 ]);
     } else {
-      callback(@[[NSNull null], @{@"sdp": sdp.description, @"type": sdp.type}]);
+      callback(@[@(YES), @{@"sdp": sdp.description, @"type": sdp.type}]);
     }
-    
+
   } constraints:nil];
 }
 
@@ -101,73 +97,64 @@ RCT_EXPORT_METHOD(RTCPeerConnectionCreateOfferWithObjectID:(nonnull NSNumber *)o
   return constraints;
 }
 
-RCT_EXPORT_METHOD(RTCPeerConnectionCreateAnswerWithObjectID:(nonnull NSNumber *)objectID callback:(RCTResponseSenderBlock)callback)
+RCT_EXPORT_METHOD(peerConnectionCreateAnswer:(nonnull NSNumber *)objectID callback:(RCTResponseSenderBlock)callback)
 {
-  RTCPeerConnection *peerConnection = [WebRTCStore sharedInstance].peerConnections[objectID];
+  RTCPeerConnection *peerConnection = self.peerConnections[objectID];
   [peerConnection createAnswerWithCallback:^(RTCSessionDescription *sdp, NSError *error) {
     if (error) {
-      callback(@[@{@"type": @"CreateAnsweFailed",
-                   @"message": error.userInfo[@"error"]},
-                 [NSNull null]]);
+      callback(@[@(NO),
+                 @{@"type": @"CreateAnsweFailed", @"message": error.userInfo[@"error"]}
+                 ]);
     } else {
-      callback(@[[NSNull null], @{@"sdp": sdp.description, @"type": sdp.type}]);
+      callback(@[@(YES), @{@"sdp": sdp.description, @"type": sdp.type}]);
     }
-    
+
   } constraints:[self defaultAnswerConstraints]];
 }
 
-RCT_EXPORT_METHOD(RTCPeerConnectionSetLocalDescriptionWithSessionDescription:(NSDictionary *)sdpJSON objectID:(nonnull NSNumber *)objectID callback:(RCTResponseSenderBlock)callback)
+RCT_EXPORT_METHOD(peerConnectionSetLocalDescription:(NSDictionary *)sdpJSON objectID:(nonnull NSNumber *)objectID callback:(RCTResponseSenderBlock)callback)
 {
   RTCSessionDescription *sdp = [[RTCSessionDescription alloc] initWithType:sdpJSON[@"type"] sdp:sdpJSON[@"sdp"]];
-  RTCPeerConnection *peerConnection = [WebRTCStore sharedInstance].peerConnections[objectID];
+  RTCPeerConnection *peerConnection = self.peerConnections[objectID];
   [peerConnection setLocalDescriptionWithCallback:^(NSError *error) {
-    id errorResponse = [NSNull null];
     if (error) {
-      errorResponse = @{@"name": @"SetLocalDescriptionFailed",
-                        @"message": error.localizedDescription};
+      id errorResponse = @{@"name": @"SetLocalDescriptionFailed",
+                           @"message": error.localizedDescription};
+      callback(@[@(NO), errorResponse]);
+    } else {
+      callback(@[@(YES)]);
     }
-    callback(@[errorResponse]);
-    
   } sessionDescription:sdp];
 }
-RCT_EXPORT_METHOD(RTCPeerConnectionSetRemoteDescriptionWithSessionDescription:(NSDictionary *)sdpJSON objectID:(nonnull NSNumber *)objectID callback:(RCTResponseSenderBlock)callback)
+RCT_EXPORT_METHOD(peerConnectionSetRemoteDescription:(NSDictionary *)sdpJSON objectID:(nonnull NSNumber *)objectID callback:(RCTResponseSenderBlock)callback)
 {
   RTCSessionDescription *sdp = [[RTCSessionDescription alloc] initWithType:sdpJSON[@"type"] sdp:sdpJSON[@"sdp"]];
-  RTCPeerConnection *peerConnection = [WebRTCStore sharedInstance].peerConnections[objectID];
+  RTCPeerConnection *peerConnection = self.peerConnections[objectID];
   [peerConnection setRemoteDescriptionWithCallback:^(NSError *error) {
-    id errorResponse = [NSNull null];
     if (error) {
-      errorResponse = @{@"name": @"SetRemoteDescriptionFailed",
-                        @"message": error.localizedDescription};
+      id errorResponse = @{@"name": @"SetRemoteDescriptionFailed",
+                           @"message": error.localizedDescription};
+      callback(@[@(NO), errorResponse]);
+    } else {
+      callback(@[@(YES)]);
     }
-    callback(@[errorResponse]);
-    
   } sessionDescription:sdp];
 }
 
-RCT_EXPORT_METHOD(RTCPeerConnectionAddICECandidateWithICECandidate:(NSDictionary*)candidateJSON objectID:(nonnull NSNumber *)objectID callback:(RCTResponseSenderBlock)callback)
+RCT_EXPORT_METHOD(peerConnectionAddICECandidate:(NSDictionary*)candidateJSON objectID:(nonnull NSNumber *)objectID callback:(RCTResponseSenderBlock)callback)
 {
   RTCICECandidate *candidate = [[RTCICECandidate alloc] initWithMid:candidateJSON[@"sdpMid"] index:[candidateJSON[@"sdpMLineIndex"] integerValue] sdp:candidateJSON[@"candidate"]];
-  RTCPeerConnection *peerConnection = [WebRTCStore sharedInstance].peerConnections[objectID];
+  RTCPeerConnection *peerConnection = self.peerConnections[objectID];
   BOOL result = [peerConnection addICECandidate:candidate];
   NSLog(@"addICECandidateresult:%i, %@", result, candidate);
   callback(@[@(result)]);
 }
 
-RCT_EXPORT_METHOD(RTCPeerConnectionAddICECandidateDirectWithICECandidate:(NSDictionary*)candidateJSON objectID:(nonnull NSNumber *)objectID callback:(RCTResponseSenderBlock)callback)
+RCT_EXPORT_METHOD(peerConnectionClose:(nonnull NSNumber *)objectID)
 {
-  RTCICECandidate *candidate = [[RTCICECandidate alloc] initWithMid:candidateJSON[@"sdpMid"] index:[candidateJSON[@"sdpMLineIndex"] integerValue] sdp:candidateJSON[@"candidate"]];
-  RTCPeerConnection *peerConnection = [WebRTCStore sharedInstance].peerConnections[objectID];
-  BOOL result = [peerConnection addICECandidate:candidate];
-  NSLog(@"addICECandidateresult:%i, %@", result, candidate);
-  callback(@[@(result)]);
-}
-
-RCT_EXPORT_METHOD(RTCPeerConnectionCloseWithObjectID:(nonnull NSNumber *)objectID)
-{
-  RTCPeerConnection *peerConnection = [WebRTCStore sharedInstance].peerConnections[objectID];
+  RTCPeerConnection *peerConnection = self.peerConnections[objectID];
   [peerConnection close];
-  [WebRTCStore sharedInstance].peerConnections[objectID] = nil;
+  self.peerConnections[objectID] = nil;
 }
 
 - (NSArray*)createIceServers:(NSArray*)iceServersConfiguration {
@@ -183,7 +170,7 @@ RCT_EXPORT_METHOD(RTCPeerConnectionCloseWithObjectID:(nonnull NSNumber *)objectI
       if (!credential) {
         credential = @"";
       }
-      
+
       RTCICEServer *iceServer = [[RTCICEServer alloc] initWithURI:[NSURL URLWithString:url] username:username password:credential];
       [iceServers addObject:iceServer];
     }
@@ -197,20 +184,18 @@ RCT_EXPORT_METHOD(RTCPeerConnectionCloseWithObjectID:(nonnull NSNumber *)objectI
 }
 
 - (void)peerConnection:(RTCPeerConnection *)peerConnection addedStream:(RTCMediaStream *)stream {
-  NSNumber *objectID = @([WebRTCStore sharedInstance].mediaStreamId++);
-  
+  NSNumber *objectID = @(self.mediaStreamId++);
+
   stream.reactTag = objectID;
-  if ([WebRTCStore sharedInstance].mediaStreams[objectID]) {
-    
-  }
-  [WebRTCStore sharedInstance].mediaStreams[objectID] = stream;
+
+  self.mediaStreams[objectID] = stream;
   [self.bridge.eventDispatcher sendDeviceEventWithName:@"peerConnectionAddedStream" body:
    @{@"id": peerConnection.reactTag, @"streamId": stream.reactTag}];
 
 }
 
 - (void)peerConnection:(RTCPeerConnection *)peerConnection removedStream:(RTCMediaStream *)stream {
-  
+
 }
 
 - (void)peerConnectionOnRenegotiationNeeded:(RTCPeerConnection *)peerConnection {
@@ -230,11 +215,11 @@ RCT_EXPORT_METHOD(RTCPeerConnectionCloseWithObjectID:(nonnull NSNumber *)objectI
 
 - (void)peerConnection:(RTCPeerConnection *)peerConnection gotICECandidate:(RTCICECandidate *)candidate {
   [self.bridge.eventDispatcher sendDeviceEventWithName:@"peerConnectionGotICECandidate" body:
-   @{@"id": peerConnection.reactTag, @"candidateJSON": @{@"candidate": candidate.sdp, @"sdpMLineIndex": @(candidate.sdpMLineIndex), @"sdpMid": candidate.sdpMid}}];
+   @{@"id": peerConnection.reactTag, @"candidate": @{@"candidate": candidate.sdp, @"sdpMLineIndex": @(candidate.sdpMLineIndex), @"sdpMid": candidate.sdpMid}}];
 }
 
 - (void)peerConnection:(RTCPeerConnection*)peerConnection didOpenDataChannel:(RTCDataChannel*)dataChannel {
-  
+
 }
 
 @end

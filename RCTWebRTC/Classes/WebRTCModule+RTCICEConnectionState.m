@@ -1,14 +1,13 @@
 //
-//  WebRTCManager+RTCICEConnectionState.m
-//  TestReact
+//  WebRTCModule+RTCICEConnectionState.m
 //
 //  Created by one on 2015/9/24.
-//  Copyright © 2015年 Facebook. All rights reserved.
+//  Copyright © 2015 One. All rights reserved.
 //
 
-#import "WebRTCManager+RTCICEConnectionState.h"
+#import "WebRTCModule+RTCICEConnectionState.h"
 
-@implementation WebRTCManager (RTCICEConnectionState)
+@implementation WebRTCModule (RTCICEConnectionState)
 
 - (NSString *)stringForICEConnectionState:(RTCICEConnectionState)state {
   NSString *connectionStateString = nil;

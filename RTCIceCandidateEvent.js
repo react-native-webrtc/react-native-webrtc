@@ -2,12 +2,11 @@
 
 class RTCIceCandidateEvent {
   type: string;
-  target: any;
-  candidate: candidate;
-  constructor(type, eventInit) {
-    this.type = type;
-    this.target = eventInit.target;
-    this.candidate = eventInit.candidate;
+  target;
+  candidate;
+  constructor(type, eventInitDict) {
+    this.type = type.toString();
+    Object.assign(this, eventInitDict);
   }
 }
 

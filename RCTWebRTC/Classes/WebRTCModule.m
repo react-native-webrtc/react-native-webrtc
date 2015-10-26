@@ -1,23 +1,22 @@
 //
-//  WebRTCManager.m
-//  TestReact
+//  WebRTCModule.m
 //
 //  Created by one on 2015/9/24.
-//  Copyright © 2015年 Facebook. All rights reserved.
+//  Copyright © 2015 One. All rights reserved.
 //
 
-#import "WebRTCManager.h"
+#import "WebRTCModule.h"
 
 #import "RCTBridge.h"
 #import "RCTEventDispatcher.h"
 #import "RCTUtils.h"
 #import <UIKit/UIKit.h>
 
-@interface WebRTCManager ()
+@interface WebRTCModule ()
 
 @end
 
-@implementation WebRTCManager
+@implementation WebRTCModule
 
 @synthesize bridge = _bridge;
 
@@ -27,6 +26,10 @@
   if (self) {
     _peerConnectionFactory = [[RTCPeerConnectionFactory alloc] init];
 //    [RTCPeerConnectionFactory initializeSSL];
+    
+    _peerConnections = [RCTSparseArray new];
+    _mediaStreams = [RCTSparseArray new];
+    _mediaStreamId = 0;
   }
   return self;
 }

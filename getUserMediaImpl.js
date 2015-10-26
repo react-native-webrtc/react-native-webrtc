@@ -1,10 +1,10 @@
 'use strict';
 
-var WebRTCManager = require('react-native').NativeModules.WebRTCManager;
+var WebRTCModule = require('react-native').NativeModules.WebRTCModule;
 var RTCMediaStream = require('./RTCMediaStream');
 
 var getUserMediaImpl = function(constraints, success, failure) { // TODO: success, failure
-  WebRTCManager.getUserMedia(constraints, (id) => {
+  WebRTCModule.getUserMedia(constraints, (id) => {
     var stream = new RTCMediaStream(id);
     success(stream);
   });

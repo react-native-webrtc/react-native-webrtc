@@ -2,12 +2,11 @@
 
 class MediaStreamEvent {
   type: string;
-  target: any;
-  stream: stream;
-  constructor(type, eventInit) {
-    this.type = type;
-    this.target = eventInit.target;
-    this.stream = eventInit.stream;
+  target;
+  stream;
+  constructor(type, eventInitDict) {
+    this.type = type.toString();
+    Object.assign(this, eventInitDict);
   }
 }
 

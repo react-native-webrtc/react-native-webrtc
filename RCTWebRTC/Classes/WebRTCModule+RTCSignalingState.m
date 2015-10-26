@@ -1,14 +1,24 @@
 //
-//  WebRTCManager+RTCSignalingState.m
-//  TestReact
+//  WebRTCModule+RTCSignalingState.m
 //
 //  Created by one on 2015/9/24.
-//  Copyright © 2015年 Facebook. All rights reserved.
+//  Copyright © 2015 One. All rights reserved.
 //
 
-#import "WebRTCManager+RTCSignalingState.h"
+#import "WebRTCModule+RTCSignalingState.h"
+#import <AVFoundation/AVFoundation.h>
 
-@implementation WebRTCManager (RTCSignalingState)
+@implementation WebRTCModule (RTCSignalingState)
+
+RCT_EXPORT_METHOD(setAudioSource:(NSString *)source)
+{
+  AVAudioSession* session = [AVAudioSession sharedInstance];
+  if ([source isEqualToString:@"speaker"]) {
+    [session overrideOutputAudioPort:AVAudioSessionPortOverrideSpeaker error:nil];
+  } else if ([source isEqualToString:@"ear"]) {
+    [session overrideOutputAudioPort:AVAudioSessionPortOverrideNone error:nil];
+  }
+}
 
 - (NSString *)stringForSignalingState:(RTCSignalingState)state {
   NSString *signalingState = nil;
