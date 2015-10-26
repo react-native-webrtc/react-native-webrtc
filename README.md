@@ -3,10 +3,10 @@
 A WebRTC module for React Native.
 
 ## Support
-Currently support for iOS only.  
+Currently support for iOS and Android. 
 Support video and audio communication. Not support DataChannel now.  
-You can use it to build an app that can communicate with web browser.  
-The iOS Library is based on libWebRTC.a(It's build by [webrtc-build-scripts](https://github.com/pristineio/webrtc-build-scripts) and you can download it [here](https://cocoapods.org/pods/libjingle_peerconnection))
+You can use it to build an iOS/Android app that can communicate with web browser.  
+The WebRTC Library is based on[webrtc-build-scripts](https://github.com/pristineio/webrtc-build-scripts)
 
 ## Installation
 
@@ -33,7 +33,7 @@ Rendering RTCView.
 var container;
 var RCTWebRTCDemo = React.createClass({
   getInitialState: function() {
-    return {videoSrc: null};
+    return {videoURL: null};
   },
   componentDidMount: function() {
     container = this;
@@ -41,7 +41,7 @@ var RCTWebRTCDemo = React.createClass({
   render: function() {
     return (
       <View>
-        <RTCView src={this.state.videoSrc}/>
+        <RTCView streamURL={this.state.videoURL}/>
       </View>
     );
   }
@@ -49,7 +49,7 @@ var RCTWebRTCDemo = React.createClass({
 ```
 And set stream to RTCView
 ```javascript
-container.setState({videoSrc: stream.objectId});
+container.setState({videoURL: stream.toURL()});
 ```
 ## Demo
 The demo project is https://github.com/oney/RCTWebRTCDemo   
