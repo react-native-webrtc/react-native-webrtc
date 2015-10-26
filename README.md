@@ -11,6 +11,7 @@ The iOS Library is based on libWebRTC.a(It's build by [webrtc-build-scripts](htt
 ## Installation
 
 ### [iOS](https://github.com/oney/react-native-webrtc/blob/master/Documentation/iOSInstallation.md)
+### [Android](https://github.com/oney/react-native-webrtc/blob/master/Documentation/AndroidInstallation.md)
 
 ## Usage
 Now, you can use WebRTC like in browser.
