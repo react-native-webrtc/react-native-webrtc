@@ -1,5 +1,4 @@
 'use strict';
-var WebRTCManager = require('react-native').NativeModules.WebRTCManager;
 
 require('./getUserMedia');
 var RTCPeerConnection = require('./RTCPeerConnection');
@@ -9,11 +8,11 @@ var RTCSessionDescription = require('./RTCSessionDescription');
 var RTCView = require('./RTCView');
 
 var WebRTC = {
-  "RTCPeerConnection": RTCPeerConnection,
-  "RTCMediaStream" : RTCMediaStream,
-  "RTCIceCandidate": RTCIceCandidate,
-  "RTCSessionDescription": RTCSessionDescription,
-  "RTCView": RTCView
-}
+  RTCPeerConnection,
+  RTCMediaStream,
+  RTCIceCandidate,
+  RTCSessionDescription,
+  RTCView,
+};
 
 module.exports = WebRTC;

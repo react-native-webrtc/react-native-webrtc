@@ -10,7 +10,7 @@
 #import "RTCEAGLVideoView.h"
 #import "RTCVideoTrack.h"
 #import "RTCMediaStream.h"
-#import "WebRTCStore.h"
+#import "WebRTCModule.h"
 
 @implementation RTCVideoViewManager
 
@@ -30,11 +30,14 @@ RCT_CUSTOM_VIEW_PROPERTY(src, NSNumber, RTCEAGLVideoView)
 {
   if (json) {
     NSInteger objectID = [json integerValue];
-    RTCMediaStream *stream = [WebRTCStore sharedInstance].mediaStreams[objectID];
 
-    RTCVideoTrack *localVideoTrack = stream.videoTracks[0];
+    WebRTCModule *module = self.bridge.modules[@"WebRTCModule"];
+    RTCMediaStream *stream = module.mediaStreams[objectID];
     
-    [localVideoTrack addRenderer:view];
+    if (stream.videoTracks.count) {
+      RTCVideoTrack *localVideoTrack = stream.videoTracks[0];
+      [localVideoTrack addRenderer:view];
+    }
   }
 }
 

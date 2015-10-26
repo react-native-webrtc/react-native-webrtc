@@ -2,10 +2,10 @@
 
 class RTCEvent {
   type: string;
-  target: any;
-  constructor(type, eventInit) {
-    this.type = type;
-    this.target = eventInit.target;
+  target;
+  constructor(type, eventInitDict) {
+    this.type = type.toString();
+    Object.assign(this, eventInitDict);
   }
 }
 
