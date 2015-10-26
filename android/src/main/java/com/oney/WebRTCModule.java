@@ -363,50 +363,53 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
     }
 
     public String iceConnectionStateString(PeerConnection.IceConnectionState iceConnectionState) {
-        if (iceConnectionState == PeerConnection.IceConnectionState.NEW) {
-            return "new";
-        } else if (iceConnectionState == PeerConnection.IceConnectionState.CHECKING) {
-            return "checking";
-        } else if (iceConnectionState == PeerConnection.IceConnectionState.CONNECTED) {
-            return "connected";
-        } else if (iceConnectionState == PeerConnection.IceConnectionState.COMPLETED) {
-            return "completed";
-        } else if (iceConnectionState == PeerConnection.IceConnectionState.FAILED) {
-            return "failed";
-        } else if (iceConnectionState == PeerConnection.IceConnectionState.DISCONNECTED) {
-            return "disconnected";
-        } else if (iceConnectionState == PeerConnection.IceConnectionState.CLOSED) {
-            return "closed";
-        } else {
-            return "";
+        switch (iceConnectionState) {
+            case NEW:
+                return "new";
+            case CHECKING:
+                return "checking";
+            case CONNECTED:
+                return "connected";
+            case COMPLETED:
+                return "completed";
+            case FAILED:
+                return "failed";
+            case DISCONNECTED:
+                return "disconnected";
+            case CLOSED:
+                return "closed";
+            default:
+                return "";
         }
     }
     public String signalingStateString(PeerConnection.SignalingState signalingState) {
-        if (signalingState == PeerConnection.SignalingState.STABLE) {
-            return "stable";
-        } else if (signalingState == PeerConnection.SignalingState.HAVE_LOCAL_OFFER) {
-            return "have-local-offer";
-        } else if (signalingState == PeerConnection.SignalingState.HAVE_LOCAL_PRANSWER) {
-            return "have-local-pranswer";
-        } else if (signalingState == PeerConnection.SignalingState.HAVE_REMOTE_OFFER) {
-            return "have-remote-offer";
-        } else if (signalingState == PeerConnection.SignalingState.HAVE_REMOTE_PRANSWER) {
-            return "have-remote-pranswer";
-        } else if (signalingState == PeerConnection.SignalingState.CLOSED) {
-            return "closed";
-        } else {
-            return "";
+        switch (signalingState) {
+            case STABLE:
+                return "stable";
+            case HAVE_LOCAL_OFFER:
+                return "have-local-offer";
+            case HAVE_LOCAL_PRANSWER:
+                return "have-local-pranswer";
+            case HAVE_REMOTE_OFFER:
+                return "have-remote-offer";
+            case HAVE_REMOTE_PRANSWER:
+                return "have-remote-pranswer";
+            case CLOSED:
+                return "closed";
+            default:
+                return "";
         }
     }
     public String iceGatheringStateString(PeerConnection.IceGatheringState iceGatheringState) {
-        if (iceGatheringState == PeerConnection.IceGatheringState.NEW) {
-            return "new";
-        } else if (iceGatheringState == PeerConnection.IceGatheringState.GATHERING) {
-            return "gathering";
-        } else if (iceGatheringState == PeerConnection.IceGatheringState.COMPLETE) {
-            return "complete";
-        } else {
-            return "";
+        switch (iceGatheringState) {
+            case NEW:
+                return "new";
+            case GATHERING:
+                return "gathering";
+            case COMPLETE:
+                return "complete";
+            default:
+                return "";
         }
     }
 }
