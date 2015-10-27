@@ -10,8 +10,8 @@ The WebRTC Library is based on [webrtc-build-scripts](https://github.com/pristin
 
 ## Installation
 
-### [iOS](https://github.com/oney/react-native-webrtc/blob/master/Documentation/iOSInstallation.md)
-### [Android](https://github.com/oney/react-native-webrtc/blob/master/Documentation/AndroidInstallation.md)
+[iOS](https://github.com/oney/react-native-webrtc/blob/master/Documentation/iOSInstallation.md)
+[Android](https://github.com/oney/react-native-webrtc/blob/master/Documentation/AndroidInstallation.md)
 
 ## Usage
 Now, you can use WebRTC like in browser.
