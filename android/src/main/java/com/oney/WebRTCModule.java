@@ -178,18 +178,23 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
     @ReactMethod
     public void getUserMedia(ReadableMap constraints, Callback callback){
         MediaStream mediaStream = mFactory.createLocalMediaStream("ARDAMS");
-        if (true) {
-            MediaConstraints videoConstraints = new MediaConstraints();
-            videoConstraints.mandatory.add(new MediaConstraints.KeyValuePair("maxHeight", Integer.toString(100)));
-            videoConstraints.mandatory.add(new MediaConstraints.KeyValuePair("maxWidth", Integer.toString(100)));
-            videoConstraints.mandatory.add(new MediaConstraints.KeyValuePair("maxFrameRate", Integer.toString(30)));
-            videoConstraints.mandatory.add(new MediaConstraints.KeyValuePair("minFrameRate", Integer.toString(30)));
 
-            VideoSource videoSource = mFactory.createVideoSource(getVideoCapturer(), videoConstraints);
+        boolean useVideo = constraints.getBoolean("video");
+        if (useVideo) {
+            MediaConstraints videoConstraints = new MediaConstraints();
+            // videoConstraints.mandatory.add(new MediaConstraints.KeyValuePair("maxHeight", Integer.toString(100)));
+            // videoConstraints.mandatory.add(new MediaConstraints.KeyValuePair("maxWidth", Integer.toString(100)));
+            // videoConstraints.mandatory.add(new MediaConstraints.KeyValuePair("maxFrameRate", Integer.toString(10)));
+            // videoConstraints.mandatory.add(new MediaConstraints.KeyValuePair("minFrameRate", Integer.toString(10)));
+
+            videoSource = mFactory.createVideoSource(getVideoCapturer(), videoConstraints);
             mediaStream.addTrack(mFactory.createVideoTrack("ARDAMSv0", videoSource));
         }
-        AudioSource audioSource = mFactory.createAudioSource(new MediaConstraints());
-        mediaStream.addTrack(mFactory.createAudioTrack("ARDAMSa0", audioSource));
+        boolean useAudio = constraints.getBoolean("audio");
+        if (useAudio) {
+            AudioSource audioSource = mFactory.createAudioSource(new MediaConstraints());
+            mediaStream.addTrack(mFactory.createAudioTrack("ARDAMSa0", audioSource));
+        }
 
         Log.d(TAG, "mMediaStreamId: " + mMediaStreamId);
         mMediaStreamId++;
