@@ -26,14 +26,14 @@ RCT_EXPORT_MODULE()
   return dispatch_get_main_queue();
 }
 
-RCT_CUSTOM_VIEW_PROPERTY(src, NSNumber, RTCEAGLVideoView)
+RCT_CUSTOM_VIEW_PROPERTY(streamURL, NSNumber, RTCEAGLVideoView)
 {
   if (json) {
     NSInteger objectID = [json integerValue];
 
     WebRTCModule *module = self.bridge.modules[@"WebRTCModule"];
     RTCMediaStream *stream = module.mediaStreams[objectID];
-    
+
     if (stream.videoTracks.count) {
       RTCVideoTrack *localVideoTrack = stream.videoTracks[0];
       [localVideoTrack addRenderer:view];
