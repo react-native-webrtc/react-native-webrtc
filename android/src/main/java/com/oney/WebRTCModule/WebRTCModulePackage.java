@@ -1,5 +1,7 @@
 package com.oney.WebRTCModule;
 
+import android.app.Activity;
+
 import com.facebook.react.ReactPackage;
 import com.facebook.react.bridge.JavaScriptModule;
 import com.facebook.react.bridge.NativeModule;
@@ -10,16 +12,18 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
-/**
- * Created by stefano on 21/09/15.
- */
 public class WebRTCModulePackage implements ReactPackage {
+    Activity mActivity;
+    public WebRTCModulePackage(Activity activity) {
+        mActivity = activity;
+    }
+
     @Override
     public List<NativeModule> createNativeModules(
             ReactApplicationContext reactContext) {
         List<NativeModule> modules = new ArrayList<>();
 
-        modules.add(new WebRTCModule(reactContext));
+        modules.add(new WebRTCModule(reactContext, mActivity));
         return modules;
     }
 

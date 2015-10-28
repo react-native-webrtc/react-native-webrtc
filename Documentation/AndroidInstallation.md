@@ -21,9 +21,9 @@ import com.oney.WebRTCModule.WebRTCModulePackage;  // <--- Add this line
 
  public class MainActivity extends Activity implements DefaultHardwareBackBtnHandler {
  ...
- 
+
      .addPackage(new MainReactPackage())
-     .addPackage(new WebRTCModulePackage())  // <--- Add this line
+     .addPackage(new WebRTCModulePackage(this))  // <--- Add this line
      .setUseDeveloperSupport(BuildConfig.DEBUG)
 ```
 

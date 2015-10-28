@@ -2,6 +2,7 @@ package com.oney.WebRTCModule;
 
 import android.app.Application;
 
+import android.os.Handler;
 import android.support.annotation.Nullable;
 
 import java.io.IOException;
@@ -12,6 +13,7 @@ import com.facebook.react.bridge.Callback;
 import com.facebook.react.bridge.ReactContext;
 import com.facebook.react.bridge.ReactContextBaseJavaModule;
 import com.facebook.react.bridge.ReactMethod;
+import com.facebook.react.bridge.UiThreadUtil;
 import com.facebook.react.bridge.WritableMap;
 import com.facebook.react.bridge.ReadableMap;
 import com.facebook.react.bridge.ReadableArray;
@@ -24,17 +26,22 @@ import java.net.URISyntaxException;
 import java.util.LinkedList;
 import android.util.SparseArray;
 import android.hardware.Camera;
+import android.media.AudioManager;
+import android.content.Context;
+import android.view.Window;
+import android.view.WindowManager;
+import android.app.Activity;
+import android.os.PowerManager;
 
 import android.opengl.EGLContext;
 import android.util.Log;
 
 import org.webrtc.*;
 
-/**
- * Created by stefano on 20/09/15.
- */
 public class WebRTCModule extends ReactContextBaseJavaModule {
     private final static String TAG = WebRTCModule.class.getCanonicalName();
+
+    Activity mActivity;
 
     private static final String LANGUAGE =  "language";
     private PeerConnectionFactory mFactory;
@@ -43,11 +50,13 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
     private final SparseArray<PeerConnection> mPeerConnections;
     public final SparseArray<MediaStream> mMediaStreams;
     private MediaConstraints pcConstraints = new MediaConstraints();
+    VideoSource videoSource;
 
-    public WebRTCModule(ReactApplicationContext reactContext) {
+    public WebRTCModule(ReactApplicationContext reactContext, Activity activity) {
         super(reactContext);
-        Log.d(TAG, "create ReactApplicationContext");
+
         mReactContext = reactContext;
+        mActivity = activity;
 
         mPeerConnections = new SparseArray<PeerConnection>();
         mMediaStreams = new SparseArray<MediaStream>();
@@ -284,8 +293,10 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
                 params.putString("sdp", sdp.description);
                 callback.invoke(true, params);
             }
+
             @Override
-            public void onSetSuccess() {}
+            public void onSetSuccess() {
+            }
 
             @Override
             public void onCreateFailure(String s) {
@@ -293,7 +304,8 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
             }
 
             @Override
-            public void onSetFailure(String s) {}
+            public void onSetFailure(String s) {
+            }
         }, pcConstraints);
     }
 
@@ -308,13 +320,18 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
 
         peerConnection.setLocalDescription(new SdpObserver() {
             @Override
-            public void onCreateSuccess(final SessionDescription sdp) {}
+            public void onCreateSuccess(final SessionDescription sdp) {
+            }
+
             @Override
             public void onSetSuccess() {
                 callback.invoke(true);
             }
+
             @Override
-            public void onCreateFailure(String s) {}
+            public void onCreateFailure(String s) {
+            }
+
             @Override
             public void onSetFailure(String s) {
                 callback.invoke(false, s);
@@ -336,13 +353,16 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
             @Override
             public void onCreateSuccess(final SessionDescription sdp) {
             }
+
             @Override
             public void onSetSuccess() {
                 callback.invoke(true);
             }
+
             @Override
             public void onCreateFailure(String s) {
             }
+
             @Override
             public void onSetFailure(String s) {
                 callback.invoke(false, s);
@@ -365,6 +385,37 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
         PeerConnection peerConnection = mPeerConnections.get(id);
         peerConnection.close();
         mPeerConnections.remove(id);
+    }
+    @ReactMethod
+    public void setAudioOutput(String output) {
+        AudioManager audioManager = (AudioManager)mReactContext.getSystemService(Context.AUDIO_SERVICE);
+        audioManager.setMode(AudioManager.MODE_IN_CALL);
+        audioManager.setSpeakerphoneOn(output == "speaker");
+    }
+    @ReactMethod
+    public void setKeepScreenOn(final boolean isOn) {
+        UiThreadUtil.runOnUiThread(new Runnable() {
+            public void run() {
+                Window window = mActivity.getWindow();
+                if (isOn) {
+                    window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+                } else {
+                    window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+                }
+            }
+        });
+    }
+
+    @ReactMethod
+    public void setProximityScreenOff(boolean enabled) {
+        // TODO
+        /*
+        PowerManager powerManager = (PowerManager)mReactContext.getSystemService(Context.POWER_SERVICE);
+        if (powerManager.isWakeLockLevelSupported(PowerManager.PROXIMITY_SCREEN_OFF_WAKE_LOCK)) {
+            PowerManager.WakeLock wakeLock = powerManager.newWakeLock(PowerManager.PROXIMITY_SCREEN_OFF_WAKE_LOCK, TAG);
+            wakeLock.setReferenceCounted(false);
+        } else {
+        }*/
     }
 
     public String iceConnectionStateString(PeerConnection.IceConnectionState iceConnectionState) {

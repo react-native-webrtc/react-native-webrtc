@@ -6,6 +6,7 @@ var RTCMediaStream = require('./RTCMediaStream');
 var RTCIceCandidate = require('./RTCIceCandidate');
 var RTCSessionDescription = require('./RTCSessionDescription');
 var RTCView = require('./RTCView');
+var RTCSetting = require('./RTCSetting');
 
 var WebRTC = {
   RTCPeerConnection,
@@ -13,6 +14,7 @@ var WebRTC = {
   RTCIceCandidate,
   RTCSessionDescription,
   RTCView,
+  RTCSetting,
 };
 
 module.exports = WebRTC;

@@ -10,16 +10,6 @@
 
 @implementation WebRTCModule (RTCSignalingState)
 
-RCT_EXPORT_METHOD(setAudioSource:(NSString *)source)
-{
-  AVAudioSession* session = [AVAudioSession sharedInstance];
-  if ([source isEqualToString:@"speaker"]) {
-    [session overrideOutputAudioPort:AVAudioSessionPortOverrideSpeaker error:nil];
-  } else if ([source isEqualToString:@"ear"]) {
-    [session overrideOutputAudioPort:AVAudioSessionPortOverrideNone error:nil];
-  }
-}
-
 - (NSString *)stringForSignalingState:(RTCSignalingState)state {
   NSString *signalingState = nil;
   switch (state) {
