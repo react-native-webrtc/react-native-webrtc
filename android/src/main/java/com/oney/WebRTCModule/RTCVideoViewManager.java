@@ -41,36 +41,32 @@ public class RTCVideoViewManager extends SimpleViewManager<GLSurfaceView> {
     VideoRendererGui.setView(view, new Runnable() {
         @Override
         public void run() {
-            Log.d(TAG, "runwqrqewrrunnn");
         }
     });
 
     RendererCommon.ScalingType scalingType = RendererCommon.ScalingType.SCALE_ASPECT_FILL;
     localRender = VideoRendererGui.create(
                     0, 0,
-                    50, 50, scalingType, false);
+                    100, 100, scalingType, false);
     return view;
   }
   @Override
   public void updateView(final GLSurfaceView view,
                          final CatalystStylesDiffMap props) {
-    // super.updateView(view, props);
 
     if (props.hasKey(PROP_STREAM_URL)) {
       int streamId = props.getInt(PROP_STREAM_URL, -1);
-      Log.d(TAG, "werjiljiljlijiljlij: " + props.toString());
       if (streamId >= 0) {
         WebRTCModule module = mContext.getNativeModule(WebRTCModule.class);
         MediaStream mediaStream = module.mMediaStreams.get(streamId);
-        Log.d(TAG, "jilijqwerdsfsd: " + (mediaStream == null ? "null" : "nonull"));
+        Log.d(TAG, "set mediaStream: " + (mediaStream == null ? "null" : "nonull"));
 
         RendererCommon.ScalingType scalingType = RendererCommon.ScalingType.SCALE_ASPECT_FILL;
 
-        Log.d(TAG, "jwelrjidsdksfk: " + mediaStream.videoTracks.size());
         mediaStream.videoTracks.get(0).addRenderer(new VideoRenderer(localRender));
         VideoRendererGui.update(localRender,
                 0, 0,
-                50, 50, scalingType, false);
+                100, 100, scalingType, false);
       }
     }
   }

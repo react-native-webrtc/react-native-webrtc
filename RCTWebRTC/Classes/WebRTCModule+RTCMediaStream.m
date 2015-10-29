@@ -46,10 +46,12 @@ RCT_EXPORT_METHOD(getUserMedia:(NSDictionary *)constraints callback:(RCTResponse
     NSArray *devices = [AVCaptureDevice devicesWithMediaType:AVMediaTypeVideo];
     AVCaptureDevice *videoDevice = [devices lastObject];
 
-    RTCVideoCapturer *capturer = [RTCVideoCapturer capturerWithDeviceName:[videoDevice localizedName]];
-    RTCVideoSource *videoSource = [self.peerConnectionFactory videoSourceWithCapturer:capturer constraints:[self defaultMediaStreamConstraints]];
-    RTCVideoTrack *videoTrack = [self.peerConnectionFactory videoTrackWithID:@"ARDAMSv0" source:videoSource];
-    [mediaStream addVideoTrack:videoTrack];
+    if (videoDevice) {
+      RTCVideoCapturer *capturer = [RTCVideoCapturer capturerWithDeviceName:[videoDevice localizedName]];
+      RTCVideoSource *videoSource = [self.peerConnectionFactory videoSourceWithCapturer:capturer constraints:[self defaultMediaStreamConstraints]];
+      RTCVideoTrack *videoTrack = [self.peerConnectionFactory videoTrackWithID:@"ARDAMSv0" source:videoSource];
+      [mediaStream addVideoTrack:videoTrack];
+    }
   }
 
   mediaStream.reactTag = objectID;
