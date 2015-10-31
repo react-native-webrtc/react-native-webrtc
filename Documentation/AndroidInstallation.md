@@ -13,7 +13,22 @@
 <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
 ```
 
-2.) In `android/app/src/main/java/com/xxx/MainActivity.java`
+2.) In `android/settings.gradle`, includes WebRTCModule
+```gradle
+include ':WebRTCModule', ':app'
+project(':WebRTCModule').projectDir = new File(rootProject.projectDir, '../node_modules/react-native-webrtc/android')
+```
+
+3.) In `android/app/build.gradle`, add WebRTCModule to dependencies
+```gradle
+dependencies {
+  ...
+  compile project(':WebRTCModule')
+}
+
+```
+
+4.) In `android/app/src/main/java/com/xxx/MainActivity.java`
 
 ```java
 import com.oney.WebRTCModule.WebRTCModulePackage;  // <--- Add this line
@@ -25,10 +40,4 @@ import com.oney.WebRTCModule.WebRTCModulePackage;  // <--- Add this line
      .addPackage(new MainReactPackage())
      .addPackage(new WebRTCModulePackage(this))  // <--- Add this line
      .setUseDeveloperSupport(BuildConfig.DEBUG)
-```
-
-3.) In `android/settings.gradle`, includes WebRTCModule
-```gradle
-include ':WebRTCModule', ':app'
-project(':WebRTCModule').projectDir = new File(rootProject.projectDir, '../node_modules/react-native-webrtc/android')
 ```
