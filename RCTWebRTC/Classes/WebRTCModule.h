@@ -7,7 +7,6 @@
 
 #import <Foundation/Foundation.h>
 #import "RCTBridgeModule.h"
-#import "RCTSparseArray.h"
 #import "RTCMediaStream.h"
 #import "RTCPeerConnectionFactory.h"
 #import "RCTConvert.h"
@@ -20,8 +19,8 @@
 @property (nonatomic, strong) RTCPeerConnectionFactory *peerConnectionFactory;
 @property (nonatomic, strong) AVCaptureDevice *videoDevice;
 
-@property (nonatomic, strong) RCTSparseArray *peerConnections;
-@property (nonatomic, strong) RCTSparseArray *mediaStreams;
+@property (nonatomic, strong) NSMutableDictionary<NSNumber *, RTCPeerConnection *> *peerConnections;
+@property (nonatomic, strong) NSMutableDictionary<NSNumber *, RTCMediaStream *> *mediaStreams;
 @property (nonatomic) NSInteger mediaStreamId;
 
 @end

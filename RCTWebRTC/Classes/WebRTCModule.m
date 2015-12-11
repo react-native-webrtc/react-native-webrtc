@@ -27,8 +27,8 @@
     _peerConnectionFactory = [[RTCPeerConnectionFactory alloc] init];
 //    [RTCPeerConnectionFactory initializeSSL];
     
-    _peerConnections = [RCTSparseArray new];
-    _mediaStreams = [RCTSparseArray new];
+    _peerConnections = [NSMutableDictionary new];
+    _mediaStreams = [NSMutableDictionary new];
     _mediaStreamId = 0;
   }
   return self;

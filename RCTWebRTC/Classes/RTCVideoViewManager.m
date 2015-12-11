@@ -32,7 +32,7 @@ RCT_CUSTOM_VIEW_PROPERTY(streamURL, NSNumber, RTCEAGLVideoView)
     NSInteger objectID = [json integerValue];
 
     WebRTCModule *module = self.bridge.modules[@"WebRTCModule"];
-    RTCMediaStream *stream = module.mediaStreams[objectID];
+    RTCMediaStream *stream = module.mediaStreams[@(objectID)];
 
     if (stream.videoTracks.count) {
       RTCVideoTrack *localVideoTrack = stream.videoTracks[0];

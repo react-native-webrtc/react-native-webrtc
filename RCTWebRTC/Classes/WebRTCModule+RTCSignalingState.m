@@ -20,10 +20,10 @@
       signalingState = @"have-local-offer";
       break;
     case RTCSignalingHaveLocalPrAnswer:
-      signalingState = @"have-remote-offer";
+      signalingState = @"have-local-pranswer";
       break;
     case RTCSignalingHaveRemoteOffer:
-      signalingState = @"have-local-pranswer";
+      signalingState = @"have-remote-offer";
       break;
     case RTCSignalingHaveRemotePrAnswer:
       signalingState = @"have-remote-pranswer";
