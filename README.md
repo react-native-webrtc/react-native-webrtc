@@ -3,15 +3,15 @@
 A WebRTC module for React Native.
 
 ## Support
-Currently support for iOS and Android.  
-Support video and audio communication. Not support DataChannel now.  
-You can use it to build an iOS/Android app that can communicate with web browser.  
-The WebRTC Library is based on [webrtc-build-scripts](https://github.com/pristineio/webrtc-build-scripts)
+- Currently support for iOS and Android.  
+- Support video and audio communication. Not support DataChannel now.  
+- You can use it to build an iOS/Android app that can communicate with web browser.  
+- The WebRTC Library is based on [webrtc-build-scripts](https://github.com/pristineio/webrtc-build-scripts)
 
 ## Installation
 
-[iOS](https://github.com/oney/react-native-webrtc/blob/master/Documentation/iOSInstallation.md)
-[Android](https://github.com/oney/react-native-webrtc/blob/master/Documentation/AndroidInstallation.md)
+- [iOS](https://github.com/oney/react-native-webrtc/blob/master/Documentation/iOSInstallation.md)
+- [Android](https://github.com/oney/react-native-webrtc/blob/master/Documentation/AndroidInstallation.md)
 
 ## Usage
 Now, you can use WebRTC like in browser.
