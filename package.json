@@ -1,6 +1,6 @@
 {
   "name": "react-native-webrtc",
-  "version": "0.1.5",
+  "version": "0.2.0",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/oney/react-native-webrtc.git"
@@ -13,6 +13,7 @@
     "react-component",
     "react-native",
     "ios",
+    "android",
     "webrtc"
   ],
   "peerDependencies": {
