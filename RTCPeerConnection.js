@@ -122,6 +122,14 @@ class RTCPeerConnection extends RTCPeerConnectionBase {
         var candidate = new RTCIceCandidate(ev.candidate);
         var event = new RTCIceCandidateEvent('icecandidate', {target: this, candidate: candidate});
         this.onicecandidate && this.onicecandidate(event);
+      }),
+      DeviceEventEmitter.addListener('peerConnectionIceGatheringChanged', ev => {
+        if (ev.id !== id) {
+          return;
+        }
+        this.iceGatheringState = ev.iceGatheringState;
+        var event = new RTCEvent('icegatheringstatechange', {target: this});
+        this.onicegatheringstatechange && this.onicegatheringstatechange(event);
       })
     ];
   }

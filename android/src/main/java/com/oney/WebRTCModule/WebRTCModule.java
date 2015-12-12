@@ -134,7 +134,7 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
                 WritableMap params = Arguments.createMap();
                 params.putInt("id", id);
                 params.putString("iceGatheringState", iceGatheringStateString(iceGatheringState));
-                sendEvent("peerConnectionIceGatheringChange", params);
+                sendEvent("peerConnectionIceGatheringChanged", params);
             }
 
             @Override
@@ -201,7 +201,14 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
         }
         boolean useAudio = constraints.getBoolean("audio");
         if (useAudio) {
-            AudioSource audioSource = mFactory.createAudioSource(new MediaConstraints());
+            MediaConstraints audioConstarints = new MediaConstraints();
+            audioConstarints.mandatory.add(new MediaConstraints.KeyValuePair("googNoiseSuppression", "true"));
+            audioConstarints.mandatory.add(new MediaConstraints.KeyValuePair("googEchoCancellation", "true"));
+            audioConstarints.mandatory.add(new MediaConstraints.KeyValuePair("echoCancellation", "true"));
+            audioConstarints.mandatory.add(new MediaConstraints.KeyValuePair("googEchoCancellation2", "true"));
+            audioConstarints.mandatory.add(new MediaConstraints.KeyValuePair("googDAEchoCancellation", "true"));
+
+            AudioSource audioSource = mFactory.createAudioSource(audioConstarints);
             mediaStream.addTrack(mFactory.createAudioTrack("ARDAMSa0", audioSource));
         }
 
@@ -385,12 +392,18 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
         PeerConnection peerConnection = mPeerConnections.get(id);
         peerConnection.close();
         mPeerConnections.remove(id);
+        resetAudio();
+    }
+    private void resetAudio() {
+        AudioManager audioManager = (AudioManager)mReactContext.getSystemService(Context.AUDIO_SERVICE);
+        audioManager.setSpeakerphoneOn(true);
+        audioManager.setMode(AudioManager.MODE_NORMAL);
     }
     @ReactMethod
     public void setAudioOutput(String output) {
         AudioManager audioManager = (AudioManager)mReactContext.getSystemService(Context.AUDIO_SERVICE);
         audioManager.setMode(AudioManager.MODE_IN_CALL);
-        audioManager.setSpeakerphoneOn(output == "speaker");
+        audioManager.setSpeakerphoneOn(output.equals("speaker"));
     }
     @ReactMethod
     public void setKeepScreenOn(final boolean isOn) {

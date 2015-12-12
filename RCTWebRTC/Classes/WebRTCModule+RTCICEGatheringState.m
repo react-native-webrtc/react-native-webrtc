@@ -13,16 +13,16 @@
   NSString *gatheringState = nil;
   switch (state) {
     case RTCICEGatheringNew:
-      gatheringState = @"New";
+      gatheringState = @"new";
       break;
     case RTCICEGatheringGathering:
-      gatheringState = @"Gathering";
+      gatheringState = @"gathering";
       break;
     case RTCICEGatheringComplete:
-      gatheringState = @"Complete";
+      gatheringState = @"complete";
       break;
     default:
-      gatheringState = @"Other state";
+      gatheringState = @"other-state";
       break;
   }
   return gatheringState;
