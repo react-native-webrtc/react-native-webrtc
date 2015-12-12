@@ -1,6 +1,11 @@
 'use strict';
-var RCTDeviceEventEmitter = require('RCTDeviceEventEmitter');
-var WebRTCModule = require('react-native').NativeModules.WebRTCModule;
+
+var React = require('react-native');
+var {
+  DeviceEventEmitter,
+  NativeModules,
+} = React;
+var WebRTCModule = NativeModules.WebRTCModule;
 
 var RTCSessionDescription = require('./RTCSessionDescription');
 var RTCIceCandidate = require('./RTCIceCandidate');
@@ -80,13 +85,13 @@ class RTCPeerConnection extends RTCPeerConnectionBase {
   }
   _registerEvents(id: number): void {
     this._subs = [
-      RCTDeviceEventEmitter.addListener('peerConnectionOnRenegotiationNeeded', ev => {
+      DeviceEventEmitter.addListener('peerConnectionOnRenegotiationNeeded', ev => {
         if (ev.id !== id) {
           return;
         }
         this.onnegotiationneeded && this.onnegotiationneeded();
       }),
-      RCTDeviceEventEmitter.addListener('peerConnectionIceConnectionChanged', ev => {
+      DeviceEventEmitter.addListener('peerConnectionIceConnectionChanged', ev => {
         if (ev.id !== id) {
           return;
         }
@@ -94,7 +99,7 @@ class RTCPeerConnection extends RTCPeerConnectionBase {
         var event = new RTCEvent('iceconnectionstatechange', {target: this});
         this.oniceconnectionstatechange && this.oniceconnectionstatechange(event);
       }),
-      RCTDeviceEventEmitter.addListener('peerConnectionSignalingStateChanged', ev => {
+      DeviceEventEmitter.addListener('peerConnectionSignalingStateChanged', ev => {
         if (ev.id !== id) {
           return;
         }
@@ -102,7 +107,7 @@ class RTCPeerConnection extends RTCPeerConnectionBase {
         var event = new RTCEvent('signalingstatechange', {target: this});
         this.onsignalingstatechange && this.onsignalingstatechange(event);
       }),
-      RCTDeviceEventEmitter.addListener('peerConnectionAddedStream', ev => {
+      DeviceEventEmitter.addListener('peerConnectionAddedStream', ev => {
         if (ev.id !== id) {
           return;
         }
@@ -110,7 +115,7 @@ class RTCPeerConnection extends RTCPeerConnectionBase {
         var event = new MediaStreamEvent('addstream', {target: this, stream: stream});
         this.onaddstream && this.onaddstream(event);
       }),
-      RCTDeviceEventEmitter.addListener('peerConnectionGotICECandidate', ev => {
+      DeviceEventEmitter.addListener('peerConnectionGotICECandidate', ev => {
         if (ev.id !== id) {
           return;
         }
