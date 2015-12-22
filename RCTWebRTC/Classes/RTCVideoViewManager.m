@@ -12,6 +12,26 @@
 #import "RTCMediaStream.h"
 #import "WebRTCModule.h"
 
+@interface UIView (WebRTCModule)
+
+@property (nonatomic, strong) RTCVideoTrack *currentRenderer;
+
+@end
+
+@implementation UIView (WebRTCModule)
+
+- (RTCVideoTrack *)currentRenderer
+{
+  return objc_getAssociatedObject(self, _cmd);
+}
+
+- (void)setCurrentRenderer:(RTCVideoTrack *)currentRenderer
+{
+  objc_setAssociatedObject(self, @selector(currentRenderer), currentRenderer, OBJC_ASSOCIATION_COPY_NONATOMIC);
+}
+
+@end
+
 @implementation RTCVideoViewManager
 
 RCT_EXPORT_MODULE()
@@ -31,11 +51,15 @@ RCT_CUSTOM_VIEW_PROPERTY(streamURL, NSNumber, RTCEAGLVideoView)
   if (json) {
     NSInteger objectID = [json integerValue];
 
-    WebRTCModule *module = self.bridge.modules[@"WebRTCModule"];
+    WebRTCModule *module = [self.bridge moduleForName:@"WebRTCModule"];
     RTCMediaStream *stream = module.mediaStreams[@(objectID)];
 
     if (stream.videoTracks.count) {
       RTCVideoTrack *localVideoTrack = stream.videoTracks[0];
+      if (view.currentRenderer) {
+        [view.currentRenderer removeRenderer:view];
+      }
+      view.currentRenderer = localVideoTrack;
       [localVideoTrack addRenderer:view];
     }
   }
