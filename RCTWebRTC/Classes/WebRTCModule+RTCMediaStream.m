@@ -78,6 +78,11 @@ RCT_EXPORT_METHOD(getUserMedia:(NSDictionary *)constraints callback:(RCTResponse
   self.mediaStreams[objectID] = mediaStream;
   callback(@[objectID]);
 }
+
+RCT_EXPORT_METHOD(mediaStreamRelease:(nonnull NSNumber *)streamID)
+{
+  [self.mediaStreams removeObjectForKey:streamID];
+}
 - (RTCMediaConstraints *)defaultMediaStreamConstraints {
   RTCMediaConstraints* constraints =
   [[RTCMediaConstraints alloc]

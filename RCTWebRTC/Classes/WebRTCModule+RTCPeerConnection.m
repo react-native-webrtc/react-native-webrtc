@@ -55,6 +55,14 @@ RCT_EXPORT_METHOD(peerConnectionAddStream:(nonnull NSNumber *)streamID objectID:
   NSLog(@"result:%i", result);
 }
 
+RCT_EXPORT_METHOD(peerConnectionRemoveStream:(nonnull NSNumber *)streamID objectID:(nonnull NSNumber *)objectID)
+{
+  RTCMediaStream *stream = self.mediaStreams[streamID];
+  RTCPeerConnection *peerConnection = self.peerConnections[objectID];
+  [peerConnection removeStream:stream];
+}
+
+
 RCT_EXPORT_METHOD(peerConnectionCreateOffer:(nonnull NSNumber *)objectID callback:(RCTResponseSenderBlock)callback)
 {
   RTCPeerConnection *peerConnection = self.peerConnections[objectID];

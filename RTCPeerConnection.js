@@ -28,8 +28,10 @@ class RTCPeerConnection extends RTCPeerConnectionBase {
     this._registerEvents(this._peerConnectionId);
   }
   addStreamImpl(stream) {
-    console.log('streameew', stream);
     WebRTCModule.peerConnectionAddStream(stream._streamId, this._peerConnectionId);
+  }
+  removeStreamImpl(stream) {
+    WebRTCModule.peerConnectionRemoveStream(stream._streamId, this._peerConnectionId);
   }
   createOfferImpl(success: ?Function, failure: ?Function, constraints) {
     WebRTCModule.peerConnectionCreateOffer(this._peerConnectionId, (successful, data) => {

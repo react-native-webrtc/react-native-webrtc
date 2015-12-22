@@ -18,6 +18,9 @@ class RTCPeerConnectionBase {
   addStream(stream) {
     this.addStreamImpl(stream);
   }
+  removeStream(stream) {
+    this.removeStreamImpl(stream);
+  }
   createOffer(success: ?Function, failure: ?Function, constraints) {
     this.createOfferImpl(success, failure, constraints);
   }
