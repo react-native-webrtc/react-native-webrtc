@@ -44,14 +44,34 @@ RCT_EXPORT_METHOD(getUserMedia:(NSDictionary *)constraints callback:(RCTResponse
 
   if (constraints[@"video"] && [constraints[@"video"] boolValue]) {
     NSArray *devices = [AVCaptureDevice devicesWithMediaType:AVMediaTypeVideo];
-    AVCaptureDevice *videoDevice = [devices lastObject];
-
-    if (videoDevice) {
-      RTCVideoCapturer *capturer = [RTCVideoCapturer capturerWithDeviceName:[videoDevice localizedName]];
-      RTCVideoSource *videoSource = [self.peerConnectionFactory videoSourceWithCapturer:capturer constraints:[self defaultMediaStreamConstraints]];
-      RTCVideoTrack *videoTrack = [self.peerConnectionFactory videoTrackWithID:@"ARDAMSv0" source:videoSource];
-      [mediaStream addVideoTrack:videoTrack];
+    AVCaptureDevice *videoDevice;
+    
+    if (constraints[@"videoType"]) {
+      NSNumber *positionObject = [self captureDevicePositionFrom:constraints[@"videoType"]];
+      if (positionObject == nil) {
+        videoDevice = [AVCaptureDevice defaultDeviceWithMediaType:AVMediaTypeVideo];
+      } else {
+        AVCaptureDevicePosition position = [positionObject integerValue];
+        
+        for (AVCaptureDevice *device in devices) {
+          if (device.position == position) {
+            videoDevice = device;
+            break;
+          }
+        }
+        
+        if (!videoDevice) {
+          videoDevice = [AVCaptureDevice defaultDeviceWithMediaType:AVMediaTypeVideo];
+        }
+      }
+    } else {
+      videoDevice = [AVCaptureDevice defaultDeviceWithMediaType:AVMediaTypeVideo];
     }
+
+    RTCVideoCapturer *capturer = [RTCVideoCapturer capturerWithDeviceName:[videoDevice localizedName]];
+    RTCVideoSource *videoSource = [self.peerConnectionFactory videoSourceWithCapturer:capturer constraints:[self defaultMediaStreamConstraints]];
+    RTCVideoTrack *videoTrack = [self.peerConnectionFactory videoTrackWithID:@"ARDAMSv0" source:videoSource];
+    [mediaStream addVideoTrack:videoTrack];
   }
 
   mediaStream.reactTag = objectID;
@@ -64,6 +84,16 @@ RCT_EXPORT_METHOD(getUserMedia:(NSDictionary *)constraints callback:(RCTResponse
    initWithMandatoryConstraints:nil
    optionalConstraints:nil];
   return constraints;
+}
+
+- (NSNumber*)captureDevicePositionFrom:(NSString*)string {
+  if ([string isEqualToString:@"front"]) {
+    return @(AVCaptureDevicePositionFront);
+  } else if ([string isEqualToString:@"back"]) {
+    return @(AVCaptureDevicePositionBack);
+  } else {
+    return nil;
+  }
 }
 
 @end
