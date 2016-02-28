@@ -13,6 +13,10 @@ A WebRTC module for React Native.
 - [iOS](https://github.com/oney/react-native-webrtc/blob/master/Documentation/iOSInstallation.md)
 - [Android](https://github.com/oney/react-native-webrtc/blob/master/Documentation/AndroidInstallation.md)
 
+## Notice
+
+Current version is tested on RN 0.19.0 to 0.20.0. Not sure whether current version supports before RN 0.18.0, if you encounter problems, please try [v0.2.7](https://github.com/oney/react-native-webrtc/tree/v0.2.7)
+
 ## Usage
 Now, you can use WebRTC like in browser.
 In your `index.ios.js`/`index.android.js`, you can require WebRTC to import RTCPeerConnection, RTCSessionDescription, etc.
