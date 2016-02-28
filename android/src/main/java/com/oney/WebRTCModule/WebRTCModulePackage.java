@@ -13,17 +13,14 @@ import java.util.Collections;
 import java.util.List;
 
 public class WebRTCModulePackage implements ReactPackage {
-    Activity mActivity;
-    public WebRTCModulePackage(Activity activity) {
-        mActivity = activity;
-    }
+    public WebRTCModulePackage() {}
 
     @Override
     public List<NativeModule> createNativeModules(
             ReactApplicationContext reactContext) {
         List<NativeModule> modules = new ArrayList<>();
 
-        modules.add(new WebRTCModule(reactContext, mActivity));
+        modules.add(new WebRTCModule(reactContext));
         return modules;
     }
 

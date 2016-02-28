@@ -41,22 +41,16 @@ import org.webrtc.*;
 public class WebRTCModule extends ReactContextBaseJavaModule {
     private final static String TAG = WebRTCModule.class.getCanonicalName();
 
-    Activity mActivity;
-
     private static final String LANGUAGE =  "language";
     private PeerConnectionFactory mFactory;
-    private ReactContext mReactContext;
     private int mMediaStreamId = 0;
     private final SparseArray<PeerConnection> mPeerConnections;
     public final SparseArray<MediaStream> mMediaStreams;
     private MediaConstraints pcConstraints = new MediaConstraints();
     VideoSource videoSource;
 
-    public WebRTCModule(ReactApplicationContext reactContext, Activity activity) {
+    public WebRTCModule(ReactApplicationContext reactContext) {
         super(reactContext);
-
-        mReactContext = reactContext;
-        mActivity = activity;
 
         mPeerConnections = new SparseArray<PeerConnection>();
         mMediaStreams = new SparseArray<MediaStream>();
@@ -93,7 +87,7 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
         callback.invoke(null, language);
     }
     private void sendEvent(String eventName, @Nullable WritableMap params) {
-        mReactContext
+        getReactApplicationContext()
             .getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter.class)
             .emit(eventName, params);
     }
@@ -196,7 +190,11 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
             // videoConstraints.mandatory.add(new MediaConstraints.KeyValuePair("maxFrameRate", Integer.toString(10)));
             // videoConstraints.mandatory.add(new MediaConstraints.KeyValuePair("minFrameRate", Integer.toString(10)));
 
-            videoSource = mFactory.createVideoSource(getVideoCapturer(), videoConstraints);
+            String videoType = constraints.getString("videoType");
+            if (videoType == null) {
+                videoType = "front";
+            }
+            videoSource = mFactory.createVideoSource(getVideoCapturer(videoType), videoConstraints);
             mediaStream.addTrack(mFactory.createVideoTrack("ARDAMSv0", videoSource));
         }
         boolean useAudio = constraints.getBoolean("audio");
@@ -218,15 +216,25 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
 
         callback.invoke(mMediaStreamId);
     }
-    private VideoCapturer getVideoCapturer() {
-        return VideoCapturerAndroid.create(CameraEnumerationAndroid.getNameOfFrontFacingDevice(), new VideoCapturerAndroid.CameraErrorHandler() {
+    private VideoCapturer getVideoCapturer(String videoType) {
+        String name;
+        switch (videoType) {
+            case "front":
+                name = CameraEnumerationAndroid.getNameOfFrontFacingDevice();
+                break;
+            case "back":
+                name = CameraEnumerationAndroid.getNameOfBackFacingDevice();
+                break;
+            default:
+                name = CameraEnumerationAndroid.getNameOfFrontFacingDevice();
+        }
+
+        return VideoCapturerAndroid.create(name, new VideoCapturerAndroid.CameraErrorHandler() {
             @Override
             public void onCameraError(String s) {
 
             }
         });
-        // String frontCameraDeviceName = VideoCapturerAndroid.getDeviceNames()[0];
-        // return VideoCapturerAndroid.create(frontCameraDeviceName);
     }
     private String getDeviceNames() {
         for (int i = 0; i < Camera.getNumberOfCameras(); ++i) {
@@ -394,14 +402,18 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
         mPeerConnections.remove(id);
         resetAudio();
     }
+    @ReactMethod
+    public void mediaStreamRelease(final int id) {
+        mMediaStreams.remove(id);
+    }
     private void resetAudio() {
-        AudioManager audioManager = (AudioManager)mReactContext.getSystemService(Context.AUDIO_SERVICE);
+        AudioManager audioManager = (AudioManager)getReactApplicationContext().getSystemService(Context.AUDIO_SERVICE);
         audioManager.setSpeakerphoneOn(true);
         audioManager.setMode(AudioManager.MODE_NORMAL);
     }
     @ReactMethod
     public void setAudioOutput(String output) {
-        AudioManager audioManager = (AudioManager)mReactContext.getSystemService(Context.AUDIO_SERVICE);
+        AudioManager audioManager = (AudioManager)getReactApplicationContext().getSystemService(Context.AUDIO_SERVICE);
         audioManager.setMode(AudioManager.MODE_IN_CALL);
         audioManager.setSpeakerphoneOn(output.equals("speaker"));
     }
@@ -409,7 +421,7 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
     public void setKeepScreenOn(final boolean isOn) {
         UiThreadUtil.runOnUiThread(new Runnable() {
             public void run() {
-                Window window = mActivity.getWindow();
+                Window window = getCurrentActivity().getWindow();
                 if (isOn) {
                     window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
                 } else {
@@ -423,7 +435,7 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
     public void setProximityScreenOff(boolean enabled) {
         // TODO
         /*
-        PowerManager powerManager = (PowerManager)mReactContext.getSystemService(Context.POWER_SERVICE);
+        PowerManager powerManager = (PowerManager)getReactApplicationContext().getSystemService(Context.POWER_SERVICE);
         if (powerManager.isWakeLockLevelSupported(PowerManager.PROXIMITY_SCREEN_OFF_WAKE_LOCK)) {
             PowerManager.WakeLock wakeLock = powerManager.newWakeLock(PowerManager.PROXIMITY_SCREEN_OFF_WAKE_LOCK, TAG);
             wakeLock.setReferenceCounted(false);
