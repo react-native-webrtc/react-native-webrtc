@@ -72,5 +72,5 @@ container.setState({videoURL: stream.toURL()});
 ```
 ## Demo
 The demo project is https://github.com/oney/RCTWebRTCDemo   
-And you will need a signaling server. I have written a signaling server http://react-native-webrtc.herokuapp.com/ (the repository is https://github.com/oney/react-native-webrtc-server).   
+And you will need a signaling server. I have written a signaling server https://react-native-webrtc.herokuapp.com/ (the repository is https://github.com/oney/react-native-webrtc-server).   
 You can open this website in browser, and then set it as signaling server in the app, and run the app. After you enter the same room ID, the video stream will be connected.
