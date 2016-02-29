@@ -30,6 +30,19 @@ dependencies {
 
 4.) In `android/app/src/main/java/com/xxx/MainActivity.java`
 
+After 0.19.0
+```java
+import com.oney.WebRTCModule.WebRTCModulePackage;  // <--- Add this line
+...
+    @Override
+    protected List<ReactPackage> getPackages() {
+      return Arrays.<ReactPackage>asList(
+        new MainReactPackage(),
+        new WebRTCModulePackage()                  // <--- Add this line
+      );
+    }
+```
+Before 0.18.0
 ```java
 import com.oney.WebRTCModule.WebRTCModulePackage;  // <--- Add this line
 ...
@@ -38,6 +51,6 @@ import com.oney.WebRTCModule.WebRTCModulePackage;  // <--- Add this line
  ...
 
      .addPackage(new MainReactPackage())
-     .addPackage(new WebRTCModulePackage(this))  // <--- Add this line
+     .addPackage(new WebRTCModulePackage())        // <--- Add this line
      .setUseDeveloperSupport(BuildConfig.DEBUG)
 ```
