@@ -24,6 +24,7 @@ var v = requireNativeComponent('RTCVideoView', RTCView, {nativeOnly: {
   'importantForAccessibility': true,
   'rotation': true,
   'opacity': true,
+  'onLayout': true,
 }});
 
 module.exports = v;
