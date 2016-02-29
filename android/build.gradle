@@ -16,6 +16,6 @@ android {
 }
 
 dependencies {
-    compile 'com.facebook.react:react-native:0.13.+'
+    compile 'com.facebook.react:react-native:0.19.+'
     compile 'io.pristine:libjingle:10111@aar'
 }
