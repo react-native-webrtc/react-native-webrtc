@@ -190,8 +190,10 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
             // videoConstraints.mandatory.add(new MediaConstraints.KeyValuePair("maxFrameRate", Integer.toString(10)));
             // videoConstraints.mandatory.add(new MediaConstraints.KeyValuePair("minFrameRate", Integer.toString(10)));
 
-            String videoType = constraints.getString("videoType");
-            if (videoType == null) {
+            String videoType;
+            if (constraints.hasKey("videoType")) {
+                videoType = constraints.getString("videoType");
+            } else {
                 videoType = "front";
             }
             videoSource = mFactory.createVideoSource(getVideoCapturer(videoType), videoConstraints);
