@@ -23,7 +23,9 @@ var {
   RTCMediaStream,
   RTCIceCandidate,
   RTCSessionDescription,
-  RTCView
+  RTCView,
+  MediaStreamTrack,
+  getUserMedia,
 } = WebRTC;
 ```
 Anything about using RTCPeerConnection, RTCSessionDescription and RTCIceCandidate is like browser.  
@@ -31,9 +33,24 @@ Support most WebRTC APIs, please see the [Document](https://developer.mozilla.or
 ```javascript
 var configuration = {"iceServers": [{"url": "stun:stun.l.google.com:19302"}]};
 var pc = new RTCPeerConnection(configuration);
-navigator.getUserMedia({ "audio": true, "video": true }, function (stream) {
-  pc.addStream(stream);
+MediaStreamTrack.getSources(sourceInfos => {
+  var videoSourceId;
+  for (var i = 0; i < sourceInfos.length; i++) {
+    var sourceInfo = sourceInfos[i];
+    if(sourceInfo.kind == "video" && sourceInfo.facing == "front") {
+      videoSourceId = sourceInfo.id;
+    }
+  }
+  getUserMedia({
+    "audio": true,
+    "video": {
+      optional: [{sourceId: videoSourceId}]
+    }
+  }, function (stream) {
+    pc.addStream(stream);
+  }, logError);
 });
+
 pc.createOffer(function(desc) {
   pc.setLocalDescription(desc, function () {
     // Send pc.localDescription to peer
