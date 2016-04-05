@@ -2,4 +2,4 @@
 
 var getUserMediaImpl = require('./getUserMediaImpl');
 
-navigator.getUserMedia = getUserMediaImpl;
+module.exports = getUserMediaImpl;

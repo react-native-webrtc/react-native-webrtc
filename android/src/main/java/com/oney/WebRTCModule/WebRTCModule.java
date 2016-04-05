@@ -5,8 +5,6 @@ import android.app.Application;
 import android.os.Handler;
 import android.support.annotation.Nullable;
 
-import java.io.IOException;
-
 import com.facebook.react.bridge.Arguments;
 import com.facebook.react.bridge.ReactApplicationContext;
 import com.facebook.react.bridge.Callback;
@@ -14,9 +12,11 @@ import com.facebook.react.bridge.ReactContext;
 import com.facebook.react.bridge.ReactContextBaseJavaModule;
 import com.facebook.react.bridge.ReactMethod;
 import com.facebook.react.bridge.UiThreadUtil;
+import com.facebook.react.bridge.WritableArray;
 import com.facebook.react.bridge.WritableMap;
 import com.facebook.react.bridge.ReadableMap;
 import com.facebook.react.bridge.ReadableArray;
+import com.facebook.react.bridge.ReadableType;
 import com.facebook.react.modules.core.DeviceEventManagerModule;
 
 import java.util.HashMap;
@@ -35,6 +35,9 @@ import android.os.PowerManager;
 
 import android.opengl.EGLContext;
 import android.util.Log;
+import android.hardware.Camera.CameraInfo;
+import android.hardware.Camera.Parameters;
+import android.hardware.Camera.Size;
 
 import org.webrtc.*;
 
@@ -44,8 +47,10 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
     private static final String LANGUAGE =  "language";
     private PeerConnectionFactory mFactory;
     private int mMediaStreamId = 0;
+    private int mMediaStreamTrackId = 0;
     private final SparseArray<PeerConnection> mPeerConnections;
     public final SparseArray<MediaStream> mMediaStreams;
+    public final SparseArray<MediaStreamTrack> mMediaStreamTracks;
     private MediaConstraints pcConstraints = new MediaConstraints();
     VideoSource videoSource;
 
@@ -54,6 +59,7 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
 
         mPeerConnections = new SparseArray<PeerConnection>();
         mMediaStreams = new SparseArray<MediaStream>();
+        mMediaStreamTracks = new SparseArray<MediaStreamTrack>();
 
         pcConstraints.mandatory.add(new MediaConstraints.KeyValuePair("OfferToReceiveAudio", "true"));
         pcConstraints.mandatory.add(new MediaConstraints.KeyValuePair("OfferToReceiveVideo", "true"));
@@ -147,18 +153,51 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
 
             @Override
             public void onAddStream(MediaStream mediaStream) {
-              mMediaStreamId++;
-              mMediaStreams.put(mMediaStreamId, mediaStream);
-              WritableMap params = Arguments.createMap();
-              params.putInt("id", id);
-              params.putInt("streamId", mMediaStreamId);
+                mMediaStreamId++;
+                mMediaStreams.put(mMediaStreamId, mediaStream);
+                WritableMap params = Arguments.createMap();
+                params.putInt("id", id);
+                params.putInt("streamId", mMediaStreamId);
 
-              sendEvent("peerConnectionAddedStream", params);
+                WritableArray tracks = Arguments.createArray();
+
+                for (int i = 0; i < mediaStream.videoTracks.size(); i++) {
+                    VideoTrack track = mediaStream.videoTracks.get(i);
+
+                    int mediaStreamTrackId = mMediaStreamTrackId++;
+                    WritableMap trackInfo = Arguments.createMap();
+                    trackInfo.putString("id", mediaStreamTrackId + "");
+                    trackInfo.putString("label", "Video");
+                    trackInfo.putString("kind", track.kind());
+                    tracks.pushMap(trackInfo);
+                }
+                for (int i = 0; i < mediaStream.audioTracks.size(); i++) {
+                    AudioTrack track = mediaStream.audioTracks.get(i);
+
+                    int mediaStreamTrackId = mMediaStreamTrackId++;
+                    WritableMap trackInfo = Arguments.createMap();
+                    trackInfo.putString("id", mediaStreamTrackId + "");
+                    trackInfo.putString("label", "Audio");
+                    trackInfo.putString("kind", track.kind());
+                    tracks.pushMap(trackInfo);
+                }
+                params.putArray("tracks", tracks);
+
+                sendEvent("peerConnectionAddedStream", params);
             }
 
             @Override
             public void onRemoveStream(MediaStream mediaStream) {
+                for (int i = 0; i < mediaStream.videoTracks.size(); i++) {
+                    VideoTrack track = mediaStream.videoTracks.get(i);
+                    mMediaStreamTracks.removeAt(mMediaStreamTracks.indexOfValue(track));
+                }
+                for (int i = 0; i < mediaStream.audioTracks.size(); i++) {
+                    AudioTrack track = mediaStream.audioTracks.get(i);
+                    mMediaStreamTracks.removeAt(mMediaStreamTracks.indexOfValue(track));
+                }
 
+                mMediaStreams.removeAt(mMediaStreams.indexOfValue(mediaStream));
             }
 
             @Override
@@ -182,22 +221,61 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
     public void getUserMedia(ReadableMap constraints, Callback callback){
         MediaStream mediaStream = mFactory.createLocalMediaStream("ARDAMS");
 
-        boolean useVideo = constraints.getBoolean("video");
-        if (useVideo) {
+        WritableArray tracks = Arguments.createArray();
+        if (constraints.hasKey("video")) {
+            ReadableType type = constraints.getType("video");
+            VideoSource videoSource = null;
             MediaConstraints videoConstraints = new MediaConstraints();
+            switch (type) {
+                case Boolean:
+                    boolean useVideo = constraints.getBoolean("video");
+                    if (useVideo) {
+                        String name = CameraEnumerationAndroid.getNameOfFrontFacingDevice();
+
+                        VideoCapturerAndroid v = VideoCapturerAndroid.create(name, new VideoCapturerAndroid.CameraErrorHandler() {
+                            @Override
+                            public void onCameraError(String s) {
+
+                            }
+                        });
+                        videoSource = mFactory.createVideoSource(v, videoConstraints);
+                    }
+                    break;
+                case Map:
+                    ReadableMap useVideoMap = constraints.getMap("video");
+                    if (useVideoMap.hasKey("optional")) {
+                        if (useVideoMap.getType("optional") == ReadableType.Array) {
+                            ReadableArray options = useVideoMap.getArray("optional");
+                            for (int i = 0; i < options.size(); i++) {
+                                if (options.getType(i) == ReadableType.Map) {
+                                    ReadableMap option = options.getMap(i);
+                                    if (option.hasKey("sourceId") && option.getType("sourceId") == ReadableType.String) {
+                                        videoSource = mFactory.createVideoSource(getVideoCapturerById(Integer.parseInt(option.getString("sourceId"))), videoConstraints);
+                                    }
+                                }
+                            }
+                        }
+                    }
+            }
             // videoConstraints.mandatory.add(new MediaConstraints.KeyValuePair("maxHeight", Integer.toString(100)));
             // videoConstraints.mandatory.add(new MediaConstraints.KeyValuePair("maxWidth", Integer.toString(100)));
             // videoConstraints.mandatory.add(new MediaConstraints.KeyValuePair("maxFrameRate", Integer.toString(10)));
             // videoConstraints.mandatory.add(new MediaConstraints.KeyValuePair("minFrameRate", Integer.toString(10)));
 
-            String videoType;
-            if (constraints.hasKey("videoType")) {
-                videoType = constraints.getString("videoType");
-            } else {
-                videoType = "front";
+            if (videoSource != null) {
+                VideoTrack videoTrack = mFactory.createVideoTrack("ARDAMSv0", videoSource);
+
+                int mediaStreamTrackId = mMediaStreamTrackId++;
+                mMediaStreamTracks.put(mediaStreamTrackId, videoTrack);
+
+                WritableMap trackInfo = Arguments.createMap();
+                trackInfo.putString("id", mediaStreamTrackId + "");
+                trackInfo.putString("label", "Video");
+                trackInfo.putString("kind", videoTrack.kind());
+                tracks.pushMap(trackInfo);
+
+                mediaStream.addTrack(videoTrack);
             }
-            videoSource = mFactory.createVideoSource(getVideoCapturer(videoType), videoConstraints);
-            mediaStream.addTrack(mFactory.createVideoTrack("ARDAMSv0", videoSource));
         }
         boolean useAudio = constraints.getBoolean("audio");
         if (useAudio) {
@@ -209,26 +287,72 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
             audioConstarints.mandatory.add(new MediaConstraints.KeyValuePair("googDAEchoCancellation", "true"));
 
             AudioSource audioSource = mFactory.createAudioSource(audioConstarints);
-            mediaStream.addTrack(mFactory.createAudioTrack("ARDAMSa0", audioSource));
+
+            AudioTrack audioTrack = mFactory.createAudioTrack("ARDAMSa0", audioSource);
+
+            int mediaStreamTrackId = mMediaStreamTrackId++;
+            mMediaStreamTracks.put(mediaStreamTrackId, audioTrack);
+
+            WritableMap trackInfo = Arguments.createMap();
+            trackInfo.putString("id", mediaStreamTrackId + "");
+            trackInfo.putString("label", "Audio");
+            trackInfo.putString("kind", audioTrack.kind());
+            tracks.pushMap(trackInfo);
+
+            mediaStream.addTrack(audioTrack);
         }
 
         Log.d(TAG, "mMediaStreamId: " + mMediaStreamId);
         mMediaStreamId++;
         mMediaStreams.put(mMediaStreamId, mediaStream);
 
-        callback.invoke(mMediaStreamId);
+        callback.invoke(mMediaStreamId, tracks);
     }
-    private VideoCapturer getVideoCapturer(String videoType) {
-        String name;
-        switch (videoType) {
-            case "front":
-                name = CameraEnumerationAndroid.getNameOfFrontFacingDevice();
-                break;
-            case "back":
-                name = CameraEnumerationAndroid.getNameOfBackFacingDevice();
-                break;
-            default:
-                name = CameraEnumerationAndroid.getNameOfFrontFacingDevice();
+    @ReactMethod
+    public void mediaStreamTrackGetSources(Callback callback){
+        WritableArray array = Arguments.createArray();
+        String[] names = new String[Camera.getNumberOfCameras()];
+
+        for(int i = 0; i < Camera.getNumberOfCameras(); ++i) {
+            WritableMap info = getCameraInfo(i);
+            if (info != null) {
+                array.pushMap(info);
+            }
+        }
+
+        WritableMap audio = Arguments.createMap();
+        audio.putString("label", "Audio");
+        audio.putString("id", "audio-1");
+        audio.putString("facing", "");
+        audio.putString("kind", "audio");
+
+        array.pushMap(audio);
+        callback.invoke(array);
+    }
+
+    public WritableMap getCameraInfo(int index) {
+        CameraInfo info = new CameraInfo();
+
+        try {
+            Camera.getCameraInfo(index, info);
+        } catch (Exception var3) {
+            Logging.e("CameraEnumerationAndroid", "getCameraInfo failed on index " + index, var3);
+            return null;
+        }
+        WritableMap params = Arguments.createMap();
+        String facing = info.facing == 1 ? "front" : "back";
+        params.putString("label", "Camera " + index + ", Facing " + facing + ", Orientation " + info.orientation);
+        params.putString("id", "" + index);
+        params.putString("facing", facing);
+        params.putString("kind", "video");
+
+        return params;
+    }
+
+    private VideoCapturer getVideoCapturerById(int id) {
+        String name = CameraEnumerationAndroid.getDeviceName(id);
+        if (name == null) {
+            name = CameraEnumerationAndroid.getNameOfFrontFacingDevice();
         }
 
         return VideoCapturerAndroid.create(name, new VideoCapturerAndroid.CameraErrorHandler() {
@@ -237,15 +361,6 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
 
             }
         });
-    }
-    private String getDeviceNames() {
-        for (int i = 0; i < Camera.getNumberOfCameras(); ++i) {
-            String existingDevice = CameraEnumerationAndroid.getDeviceName(i);
-            if (existingDevice != null) {
-                return existingDevice;
-            }
-        }
-        return "";
     }
     private MediaConstraints defaultConstraints() {
         MediaConstraints constraints = new MediaConstraints();
@@ -261,6 +376,12 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
         PeerConnection peerConnection = mPeerConnections.get(id);
         boolean result = peerConnection.addStream(mediaStream);
         Log.d(TAG, "addStream" + result);
+    }
+    @ReactMethod
+    public void peerConnectionRemoveStream(final int streamId, final int id){
+        MediaStream mediaStream = mMediaStreams.get(streamId);
+        PeerConnection peerConnection = mPeerConnections.get(id);
+        peerConnection.removeStream(mediaStream);
     }
 
     @ReactMethod
@@ -406,6 +527,16 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
     }
     @ReactMethod
     public void mediaStreamRelease(final int id) {
+        MediaStream mediaStream = mMediaStreams.get(id);
+        for (int i = 0; i < mediaStream.videoTracks.size(); i++) {
+            VideoTrack track = mediaStream.videoTracks.get(i);
+            mMediaStreamTracks.removeAt(mMediaStreamTracks.indexOfValue(track));
+        }
+        for (int i = 0; i < mediaStream.audioTracks.size(); i++) {
+            AudioTrack track = mediaStream.audioTracks.get(i);
+            mMediaStreamTracks.removeAt(mMediaStreamTracks.indexOfValue(track));
+        }
+
         mMediaStreams.remove(id);
     }
     private void resetAudio() {

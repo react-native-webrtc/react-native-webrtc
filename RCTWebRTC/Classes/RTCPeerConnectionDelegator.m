@@ -18,4 +18,8 @@
   self.setSessionDescriptionCallback(error);
 }
 
+- (void)peerConnection:(RTCPeerConnection*)peerConnection didGetStats:(NSArray*)stats {
+  self.getStatsCallback(stats);
+}
+
 @end

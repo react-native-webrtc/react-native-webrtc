@@ -35,4 +35,10 @@
   delegator.setSessionDescriptionCallback = callback;
   [self setRemoteDescriptionWithDelegate:delegator sessionDescription:sdp];
 }
+
+- (BOOL)getStatsWithCallback:(void (^)(NSArray *stats))callback mediaStreamTrack:(RTCMediaStreamTrack*)mediaStreamTrack statsOutputLevel:(RTCStatsOutputLevel)statsOutputLevel {
+  RTCPeerConnectionDelegator *delegator = [RTCPeerConnectionDelegator new];
+  delegator.getStatsCallback = callback;
+  return [self getStatsWithDelegate:delegator mediaStreamTrack:mediaStreamTrack statsOutputLevel:statsOutputLevel];
+}
 @end

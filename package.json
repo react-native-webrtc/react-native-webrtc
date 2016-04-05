@@ -1,13 +1,16 @@
 {
   "name": "react-native-webrtc",
-  "version": "0.3.3",
+  "version": "0.4.0",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/oney/react-native-webrtc.git"
   },
   "nativePackage": true,
   "description": "WebRTC for React Native",
-  "author": "Oney <appdevoney@gmail.com>",
+  "author": {
+    "name": "Oney",
+    "email": "appdevoney@gmail.com"
+  },
   "homepage": "https://github.com/oney/react-native-webrtc",
   "keywords": [
     "react-component",
@@ -17,6 +20,9 @@
     "webrtc"
   ],
   "peerDependencies": {
-    "react-native": ">=0.10.0"
+    "react-native": ">=0.19.0"
+  },
+  "bugs": {
+    "url": "https://github.com/oney/react-native-webrtc/issues"
   }
 }

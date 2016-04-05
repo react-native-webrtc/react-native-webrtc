@@ -13,6 +13,18 @@
 
 @end
 
+@interface RTCVideoTrack (React)
+
+@property (nonatomic, strong) NSNumber *reactTag;
+
+@end
+
+@interface RTCAudioTrack (React)
+
+@property (nonatomic, strong) NSNumber *reactTag;
+
+@end
+
 @interface WebRTCModule (RTCMediaStream)
 
 @end

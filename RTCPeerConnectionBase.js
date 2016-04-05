@@ -39,6 +39,15 @@ class RTCPeerConnectionBase {
   addIceCandidateDirect(candidate, success, failure) {
     this.addIceCandidateDirectImpl(candidate, success, failure);
   }
+  getLocalStreams() {
+    return this.getLocalStreamsImpl();
+  }
+  getRemoteStreams() {
+    return this.getRemoteStreamsImpl();
+  }
+  getStats(track, success, failure) {
+    this.getStatsImpl(track, success, failure);
+  }
   close() {
     this.closeImpl();
   }

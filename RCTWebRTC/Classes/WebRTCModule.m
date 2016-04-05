@@ -29,9 +29,18 @@
     
     _peerConnections = [NSMutableDictionary new];
     _mediaStreams = [NSMutableDictionary new];
+    _tracks = [NSMutableDictionary new];
     _mediaStreamId = 0;
+    _trackId = 0;
   }
   return self;
+}
+
+- (void)dealloc {
+  for (RTCPeerConnection *peerConnection in _peerConnections.allValues) {
+    peerConnection.delegate = nil;
+    [peerConnection close];
+  }
 }
 
 RCT_EXPORT_MODULE();

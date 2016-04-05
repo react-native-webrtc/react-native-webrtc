@@ -15,5 +15,6 @@
 - (void)createAnswerWithCallback:(void (^)(RTCSessionDescription *sdp, NSError *error))callback constraints:(RTCMediaConstraints *)constraints;
 - (void)setLocalDescriptionWithCallback:(void (^)(NSError *error))callback sessionDescription:(RTCSessionDescription *)sdp;
 - (void)setRemoteDescriptionWithCallback:(void (^)(NSError *error))callback sessionDescription:(RTCSessionDescription *)sdp;
+- (BOOL)getStatsWithCallback:(void (^)(NSArray *stats))callback mediaStreamTrack:(RTCMediaStreamTrack*)mediaStreamTrack statsOutputLevel:(RTCStatsOutputLevel)statsOutputLevel;
 
 @end

@@ -13,6 +13,7 @@ var RTCMediaStream = require('./RTCMediaStream');
 var RTCIceCandidateEvent = require('./RTCIceCandidateEvent');
 var MediaStreamEvent = require('./MediaStreamEvent');
 var RTCEvent = require('./RTCEvent');
+var MediaStreamTrack = require('./MediaStreamTrack');
 
 var RTCPeerConnectionBase = require('./RTCPeerConnectionBase');
 
@@ -21,16 +22,25 @@ var PeerConnectionId = 0;
 class RTCPeerConnection extends RTCPeerConnectionBase {
   _peerConnectionId: number;
   _subs: any;
+  _localStreams: array;
+  _remoteStreams: array;
 
   constructorImpl(configuration) {
     this._peerConnectionId = PeerConnectionId++;
+    this._localStreams = [];
+    this._remoteStreams = [];
     WebRTCModule.peerConnectionInit(configuration, this._peerConnectionId);
     this._registerEvents(this._peerConnectionId);
   }
   addStreamImpl(stream) {
     WebRTCModule.peerConnectionAddStream(stream._streamId, this._peerConnectionId);
+    this._localStreams.push(stream);
   }
   removeStreamImpl(stream) {
+    var index = this._localStreams.indexOf(stream);
+    if (index > -1) {
+      this._localStreams.splice(index, 1);
+    }
     WebRTCModule.peerConnectionRemoveStream(stream._streamId, this._peerConnectionId);
   }
   createOfferImpl(success: ?Function, failure: ?Function, constraints) {
@@ -82,6 +92,21 @@ class RTCPeerConnection extends RTCPeerConnectionBase {
       }
     });
   }
+  getLocalStreamsImpl() {
+    return this._localStreams;
+  }
+  getRemoteStreamsImpl() {
+    return this._remoteStreams;
+  }
+  getStatsImpl(track, success, failure) {
+    if (WebRTCModule.peerConnectionGetStats) {
+      WebRTCModule.peerConnectionGetStats(track ? track.id : -1, this._peerConnectionId, stats => {
+        success && success(stats);
+      });
+    } else {
+      console.warn('RTCPeerConnection getStats doesn\'t support');
+    }
+  }
   closeImpl() {
     WebRTCModule.peerConnectionClose(this._peerConnectionId);
   }
@@ -114,8 +139,27 @@ class RTCPeerConnection extends RTCPeerConnectionBase {
           return;
         }
         var stream = new RTCMediaStream(ev.streamId);
+        var tracks = ev.tracks;
+        for (var i = 0; i < tracks.length; i++) {
+          stream.addTrack(new MediaStreamTrack(tracks[i]));
+        }
+        this._remoteStreams.push(stream);
         var event = new MediaStreamEvent('addstream', {target: this, stream: stream});
         this.onaddstream && this.onaddstream(event);
+      }),
+      DeviceEventEmitter.addListener('peerConnectionRemovedStream', ev => {
+        if (ev.id !== id) {
+          return;
+        }
+        var stream = this._remoteStreams.find(s => s._streamId === ev.streamId);
+        if (stream) {
+          var index = this._remoteStreams.indexOf(stream);
+          if (index > -1) {
+            this._remoteStreams.splice(index, 1);
+          }
+        }
+        var event = new MediaStreamEvent('removestream', {target: this, stream: stream});
+        this.onremovestream && this.onremovestream(event);
       }),
       DeviceEventEmitter.addListener('peerConnectionGotICECandidate', ev => {
         if (ev.id !== id) {
