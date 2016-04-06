@@ -99,7 +99,7 @@
 		35A222161CB493700015FD5C = {
 			isa = PBXGroup;
 			children = (
-				35A222311CB493C00015FD5C /* Classes */,
+				35A222311CB493C00015FD5C /* RCTWebRTC */,
 				35A222461CB493C00015FD5C /* libjingle_peerconnection */,
 				35A222201CB493700015FD5C /* Products */,
 			);
@@ -113,7 +113,7 @@
 			name = Products;
 			sourceTree = "<group>";
 		};
-		35A222311CB493C00015FD5C /* Classes */ = {
+		35A222311CB493C00015FD5C /* RCTWebRTC */ = {
 			isa = PBXGroup;
 			children = (
 				35A222321CB493C00015FD5C /* RTCPeerConnection+Block.h */,
@@ -137,7 +137,7 @@
 				35A222441CB493C00015FD5C /* WebRTCModule.h */,
 				35A222451CB493C00015FD5C /* WebRTCModule.m */,
 			);
-			path = Classes;
+			path = RCTWebRTC;
 			sourceTree = "<group>";
 		};
 		35A222461CB493C00015FD5C /* libjingle_peerconnection */ = {
