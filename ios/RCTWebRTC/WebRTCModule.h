@@ -6,13 +6,14 @@
 //
 
 #import <Foundation/Foundation.h>
+#import <AVFoundation/AVFoundation.h>
+
 #import "RCTBridgeModule.h"
+#import "RCTConvert.h"
+
 #import "RTCMediaStream.h"
 #import "RTCPeerConnectionFactory.h"
-#import "RCTConvert.h"
 #import "RTCPeerConnection.h"
-#import <AVFoundation/AVFoundation.h>
-#import "RCTConvert.h"
 #import "RTCAudioTrack.h"
 #import "RTCVideoTrack.h"
 

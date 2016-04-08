@@ -5,23 +5,25 @@
 //  Copyright © 2015 One. All rights reserved.
 //
 
-#import "WebRTCModule+RTCPeerConnection.h"
+#import <objc/runtime.h>
 
 #import "RCTLog.h"
 #import "RCTUtils.h"
-#import <objc/runtime.h>
 #import "RCTBridge.h"
 #import "RCTEventDispatcher.h"
+
 #import "RTCICEServer.h"
 #import "RTCPair.h"
 #import "RTCMediaConstraints.h"
 #import "RTCPeerConnection+Block.h"
 #import "RTCICECandidate.h"
 #import "RTCStatsReport.h"
+
 #import "WebRTCModule+RTCICEConnectionState.h"
 #import "WebRTCModule+RTCICEGatheringState.h"
-#import "WebRTCModule+RTCSignalingState.h"
 #import "WebRTCModule+RTCMediaStream.h"
+#import "WebRTCModule+RTCPeerConnection.h"
+#import "WebRTCModule+RTCSignalingState.h"
 
 @implementation RTCPeerConnection (React)
 
