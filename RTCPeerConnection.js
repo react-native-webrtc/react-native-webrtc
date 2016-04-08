@@ -21,9 +21,9 @@ var PeerConnectionId = 0;
 
 class RTCPeerConnection extends RTCPeerConnectionBase {
   _peerConnectionId: number;
+  _localStreams: Array<RTCMediaStream>;
+  _remoteStreams: Array<RTCMediaStream>;
   _subs: any;
-  _localStreams: array;
-  _remoteStreams: array;
 
   constructorImpl(configuration) {
     this._peerConnectionId = PeerConnectionId++;
