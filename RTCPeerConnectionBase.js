@@ -1,18 +1,38 @@
 'use strict';
 
+var EventTarget = require('event-target-shim');
 var RTCSessionDescription = require('./RTCSessionDescription');
 
-class RTCPeerConnectionBase {
+const PEER_CONNECTION_EVENTS = [
+  'connectionstatechange',
+  'icecandidate',
+  'icecandidateerror',
+  'iceconnectionstatechange',
+  'icegatheringstatechange',
+  'negotiationneeded',
+  'signalingstatechange',
+  // old:
+  'addstream',
+  'removestream',
+];
+
+class RTCPeerConnectionBase extends EventTarget(PEER_CONNECTION_EVENTS) {
   localDescription: RTCSessionDescription;
   remoteDescription: RTCSessionDescription;
 
+  onconnectionstatechange: ?Function;
   onicecandidate: ?Function;
-  onnegotiationneeded: ?Function;
+  onicecandidateerror: ?Function;
   oniceconnectionstatechange: ?Function;
+  onicegatheringstatechange: ?Function;
+  onnegotiationneeded: ?Function;
   onsignalingstatechange: ?Function;
+
   onaddstream: ?Function;
+  onremovestream: ?Function;
 
   constructor(configuration) {
+    super();
     this.constructorImpl(configuration);
   }
   addStream(stream) {
