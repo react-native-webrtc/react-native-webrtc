@@ -5,12 +5,13 @@
 //  Copyright © 2015 One. All rights reserved.
 //
 
-#import "WebRTCModule.h"
+#import <UIKit/UIKit.h>
 
 #import "RCTBridge.h"
 #import "RCTEventDispatcher.h"
 #import "RCTUtils.h"
-#import <UIKit/UIKit.h>
+
+#import "WebRTCModule.h"
 
 @interface WebRTCModule ()
 

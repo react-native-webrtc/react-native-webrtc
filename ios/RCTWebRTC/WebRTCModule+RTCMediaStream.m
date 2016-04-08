@@ -5,14 +5,15 @@
 //  Copyright © 2015 One. All rights reserved.
 //
 
-#import "WebRTCModule+RTCMediaStream.h"
+#import <objc/runtime.h>
 
 #import "RTCVideoCapturer.h"
 #import "RTCVideoSource.h"
 #import "RTCVideoTrack.h"
-#import <objc/runtime.h>
 #import "RTCPair.h"
 #import "RTCMediaConstraints.h"
+
+#import "WebRTCModule+RTCMediaStream.h"
 #import "WebRTCModule+RTCPeerConnection.h"
 
 @implementation RTCMediaStream (React)

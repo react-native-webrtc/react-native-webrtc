@@ -1,5 +1,6 @@
 # Dependency directory
 # https://www.npmjs.org/doc/misc/npm-faq.html#should-i-check-my-node_modules-folder-into-git
 node_modules
-RCTWebRTC.xcodeproj/xcuserdata
-RCTWebRTC.xcodeproj/project.xcworkspace
+ios/RCTWebRTC.xcodeproj/xcuserdata
+ios/RCTWebRTC.xcodeproj/project.xcworkspace
+.DS_Store
