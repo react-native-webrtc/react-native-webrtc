@@ -527,17 +527,19 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
     }
     @ReactMethod
     public void mediaStreamRelease(final int id) {
-        MediaStream mediaStream = mMediaStreams.get(id);
-        for (int i = 0; i < mediaStream.videoTracks.size(); i++) {
-            VideoTrack track = mediaStream.videoTracks.get(i);
-            mMediaStreamTracks.removeAt(mMediaStreamTracks.indexOfValue(track));
-        }
-        for (int i = 0; i < mediaStream.audioTracks.size(); i++) {
-            AudioTrack track = mediaStream.audioTracks.get(i);
-            mMediaStreamTracks.removeAt(mMediaStreamTracks.indexOfValue(track));
-        }
+        MediaStream mediaStream = mMediaStreams.get(id, null);
+        if (mediaStream != null) {
+            for (int i = 0; i < mediaStream.videoTracks.size(); i++) {
+                VideoTrack track = mediaStream.videoTracks.get(i);
+                mMediaStreamTracks.removeAt(mMediaStreamTracks.indexOfValue(track));
+            }
+            for (int i = 0; i < mediaStream.audioTracks.size(); i++) {
+                AudioTrack track = mediaStream.audioTracks.get(i);
+                mMediaStreamTracks.removeAt(mMediaStreamTracks.indexOfValue(track));
+            }
 
-        mMediaStreams.remove(id);
+            mMediaStreams.remove(id);
+        }
     }
     private void resetAudio() {
         AudioManager audioManager = (AudioManager)getReactApplicationContext().getSystemService(Context.AUDIO_SERVICE);
