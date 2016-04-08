@@ -1,13 +1,11 @@
 ## iOS Installation
 
-1.) Run `react-native init RCTWebRTCDemo` to create your react native project. (RCTWebRTCDemo can be any name you like)   
-2.) `npm install react-native-webrtc --save`  
-3.) Open `RCTWebRTCDemo/node_modules/react-native-webrtc`  
-4.) Drag `RCTWebRTC` directory to you project. Uncheck `Copy items if needed` and select `Added folders: Create groups`  
-![Picture 1](http://i.imgur.com/NRHANSq.jpg)
-![Picture 2](http://i.imgur.com/8fX2fDM.jpg)
-![Picture 3](http://i.imgur.com/vVDTIXD.jpg)  
-5.) Select your target, select `Build Phases`, open `Link Binary With Libraries`, add these libraries  
+1.) `npm install react-native-webrtc --save`  
+2.) Xcode: Right click `Libraries` ➜ `Add Files to [project]`  
+3.) Choose `node_modules/react-native-webrtc/ios/RCTWebRTC.xcodeproj` and `libjingle_peerconnection` directory  
+![Picture 4](http://i.imgur.com/5K6JfWt.jpg)  
+![Picture 4](http://i.imgur.com/KMAyYU9.jpg)  
+4.) Select your target, select `Build Phases`, open `Link Binary With Libraries`, add `libRCTWebRTC.a` and these libraries  
 ```
 AVFoundation.framework
 AudioToolbox.framework
@@ -20,7 +18,11 @@ libc.tbd
 libsqlite3.tbd
 libstdc++.tbd
 ```
-![Picture 4](http://i.imgur.com/hHNfKkZ.jpg)  
-6.) select `Build Settings`, find `Library Search Paths`, add `$(SRCROOT)/../node_modules/react-native-webrtc` with `recursive`
+![Picture 4](http://i.imgur.com/YyA9eQy.jpg)  
+5.) select `Build Settings`, find `Library Search Paths`, add `$(SRCROOT)/../node_modules/react-native-webrtc` with `recursive`
 ![Picture 5](http://i.imgur.com/L3QkvzG.jpg)  
-7.) Maybe you have to set `Dead Code Stripping` to `No` and `Enable Bitcode` to `No`.
+6.) Maybe you have to set `Dead Code Stripping` to `No` and `Enable Bitcode` to `No`.
+
+
+## Note
+If you used this module before, please remove `RCTWebRTC` directory and follow above guide.
