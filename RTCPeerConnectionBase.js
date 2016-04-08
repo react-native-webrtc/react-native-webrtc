@@ -1,7 +1,8 @@
 'use strict';
 
 var EventTarget = require('event-target-shim');
-var RTCSessionDescription = require('./RTCSessionDescription');
+
+import type RTCSessionDescription from './RTCSessionDescription';
 
 const PEER_CONNECTION_EVENTS = [
   'connectionstatechange',
