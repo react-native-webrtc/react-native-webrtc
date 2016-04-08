@@ -1,8 +1,10 @@
 'use strict';
 
+import type MediaStream from './MediaStream';
+
 class MediaStreamEvent {
   type: string;
-  stream;
+  stream: MediaStream;
   constructor(type, eventInitDict) {
     this.type = type.toString();
     Object.assign(this, eventInitDict);

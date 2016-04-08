@@ -7,13 +7,13 @@ var {
 } = React;
 var WebRTCModule = NativeModules.WebRTCModule;
 
+var MediaStream = require('./MediaStream');
+var MediaStreamEvent = require('./MediaStreamEvent');
+var MediaStreamTrack = require('./MediaStreamTrack');
 var RTCSessionDescription = require('./RTCSessionDescription');
 var RTCIceCandidate = require('./RTCIceCandidate');
-var RTCMediaStream = require('./RTCMediaStream');
 var RTCIceCandidateEvent = require('./RTCIceCandidateEvent');
-var MediaStreamEvent = require('./MediaStreamEvent');
 var RTCEvent = require('./RTCEvent');
-var MediaStreamTrack = require('./MediaStreamTrack');
 
 var RTCPeerConnectionBase = require('./RTCPeerConnectionBase');
 
@@ -21,8 +21,8 @@ var PeerConnectionId = 0;
 
 class RTCPeerConnection extends RTCPeerConnectionBase {
   _peerConnectionId: number;
-  _localStreams: Array<RTCMediaStream>;
-  _remoteStreams: Array<RTCMediaStream>;
+  _localStreams: Array<MediaStream>;
+  _remoteStreams: Array<MediaStream>;
   _subs: any;
 
   constructorImpl(configuration) {
@@ -136,7 +136,7 @@ class RTCPeerConnection extends RTCPeerConnectionBase {
         if (ev.id !== id) {
           return;
         }
-        var stream = new RTCMediaStream(ev.streamId);
+        var stream = new MediaStream(ev.streamId);
         var tracks = ev.tracks;
         for (var i = 0; i < tracks.length; i++) {
           stream.addTrack(new MediaStreamTrack(tracks[i]));
