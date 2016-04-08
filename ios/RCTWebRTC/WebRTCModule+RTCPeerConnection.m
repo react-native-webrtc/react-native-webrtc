@@ -16,7 +16,7 @@
 #import "RTCPair.h"
 #import "RTCMediaConstraints.h"
 #import "RTCPeerConnection+Block.h"
-#import "RTCICECandidate.h""
+#import "RTCICECandidate.h"
 #import "RTCStatsReport.h"
 #import "WebRTCModule+RTCICEConnectionState.h"
 #import "WebRTCModule+RTCICEGatheringState.h"
