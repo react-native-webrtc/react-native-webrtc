@@ -1,5 +1,6 @@
 'use strict';
 
+var EventTarget = require('event-target-shim');
 var React = require('react-native');
 var {
   DeviceEventEmitter,
@@ -15,35 +16,62 @@ var RTCIceCandidate = require('./RTCIceCandidate');
 var RTCIceCandidateEvent = require('./RTCIceCandidateEvent');
 var RTCEvent = require('./RTCEvent');
 
-var RTCPeerConnectionBase = require('./RTCPeerConnectionBase');
+const PEER_CONNECTION_EVENTS = [
+  'connectionstatechange',
+  'icecandidate',
+  'icecandidateerror',
+  'iceconnectionstatechange',
+  'icegatheringstatechange',
+  'negotiationneeded',
+  'signalingstatechange',
+  // old:
+  'addstream',
+  'removestream',
+];
 
-var PeerConnectionId = 0;
+let nextPeerConnectionId = 0;
 
-class RTCPeerConnection extends RTCPeerConnectionBase {
+class RTCPeerConnection extends EventTarget(PEER_CONNECTION_EVENTS) {
+  localDescription: RTCSessionDescription;
+  remoteDescription: RTCSessionDescription;
+
+  onconnectionstatechange: ?Function;
+  onicecandidate: ?Function;
+  onicecandidateerror: ?Function;
+  oniceconnectionstatechange: ?Function;
+  onicegatheringstatechange: ?Function;
+  onnegotiationneeded: ?Function;
+  onsignalingstatechange: ?Function;
+
+  onaddstream: ?Function;
+  onremovestream: ?Function;
+
   _peerConnectionId: number;
-  _localStreams: Array<MediaStream>;
-  _remoteStreams: Array<MediaStream>;
-  _subs: any;
+  _localStreams: Array<MediaStream> = [];
+  _remoteStreams: Array<MediaStream> = [];
+  _subscriptions: Array<any>;
 
-  constructorImpl(configuration) {
-    this._peerConnectionId = PeerConnectionId++;
-    this._localStreams = [];
-    this._remoteStreams = [];
+  constructor(configuration) {
+    super();
+    this._peerConnectionId = nextPeerConnectionId++;
     WebRTCModule.peerConnectionInit(configuration, this._peerConnectionId);
     this._registerEvents(this._peerConnectionId);
   }
-  addStreamImpl(stream) {
+
+  addStream(stream) {
     WebRTCModule.peerConnectionAddStream(stream._streamId, this._peerConnectionId);
     this._localStreams.push(stream);
   }
-  removeStreamImpl(stream) {
+
+  removeStream(stream) {
     var index = this._localStreams.indexOf(stream);
     if (index > -1) {
       this._localStreams.splice(index, 1);
     }
     WebRTCModule.peerConnectionRemoveStream(stream._streamId, this._peerConnectionId);
   }
-  createOfferImpl(success: ?Function, failure: ?Function, constraints) {
+
+  createOffer(success: ?Function, failure: ?Function, constraints) {
     WebRTCModule.peerConnectionCreateOffer(this._peerConnectionId, (successful, data) => {
       if (successful) {
         var sessionDescription = new RTCSessionDescription(data);
@@ -53,7 +81,8 @@ class RTCPeerConnection extends RTCPeerConnectionBase {
       }
     });
   }
-  createAnswerImpl(success: ?Function, failure: ?Function, constraints) {
+
+  createAnswer(success: ?Function, failure: ?Function, constraints) {
     WebRTCModule.peerConnectionCreateAnswer(this._peerConnectionId, (successful, data) => {
       if (successful) {
         var sessionDescription = new RTCSessionDescription(data);
@@ -63,7 +92,8 @@ class RTCPeerConnection extends RTCPeerConnectionBase {
       }
     });
   }
-  setLocalDescriptionImpl(sessionDescription: RTCSessionDescription, success: ?Function, failure: ?Function, constraints) {
+
+  setLocalDescription(sessionDescription: RTCSessionDescription, success: ?Function, failure: ?Function, constraints) {
     WebRTCModule.peerConnectionSetLocalDescription(sessionDescription.toJSON(), this._peerConnectionId, (successful, data) => {
       if (successful) {
         this.localDescription = sessionDescription;
@@ -73,7 +103,8 @@ class RTCPeerConnection extends RTCPeerConnectionBase {
       }
     });
   }
-  setRemoteDescriptionImpl(sessionDescription: RTCSessionDescription, success: ?Function, failure: ?Function) {
+
+  setRemoteDescription(sessionDescription: RTCSessionDescription, success: ?Function, failure: ?Function) {
     WebRTCModule.peerConnectionSetRemoteDescription(sessionDescription.toJSON(), this._peerConnectionId, (successful, data) => {
       if (successful) {
         this.remoteDescription = sessionDescription;
@@ -83,7 +114,8 @@ class RTCPeerConnection extends RTCPeerConnectionBase {
       }
     });
   }
-  addIceCandidateImpl(candidate, success, failure) { // TODO: success, failure
+
+  addIceCandidate(candidate, success, failure) { // TODO: success, failure
     WebRTCModule.peerConnectionAddICECandidate(candidate.toJSON(), this._peerConnectionId, (successful) => {
       if (successful) {
         success && success();
@@ -92,13 +124,8 @@ class RTCPeerConnection extends RTCPeerConnectionBase {
       }
     });
   }
-  getLocalStreamsImpl() {
-    return this._localStreams;
-  }
-  getRemoteStreamsImpl() {
-    return this._remoteStreams;
-  }
-  getStatsImpl(track, success, failure) {
+
+  getStats(track, success, failure) {
     if (WebRTCModule.peerConnectionGetStats) {
       WebRTCModule.peerConnectionGetStats(track ? track.id : -1, this._peerConnectionId, stats => {
         success && success(stats);
@@ -107,11 +134,13 @@ class RTCPeerConnection extends RTCPeerConnectionBase {
       console.warn('RTCPeerConnection getStats doesn\'t support');
     }
   }
-  closeImpl() {
+
+  close() {
     WebRTCModule.peerConnectionClose(this._peerConnectionId);
   }
+
   _registerEvents(id: number): void {
-    this._subs = [
+    this._subscriptions = [
       DeviceEventEmitter.addListener('peerConnectionOnRenegotiationNeeded', ev => {
         if (ev.id !== id) {
           return;
