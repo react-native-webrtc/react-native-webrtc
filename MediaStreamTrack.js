@@ -7,34 +7,17 @@ var {
 
 var WebRTCModule = NativeModules.WebRTCModule;
 
-class SourceInfo {
+type SourceInfo = {
   id: string;
   label: string;
   facing: string;
   kind: string;
-  constructor(info) {
-    this.id = info.id;
-    this.label = info.label;
-    this.facing = info.facing;
-    this.kind = info.kind;
-  }
-  toJSON() {
-    return {
-      id: this.id,
-      label: this.label,
-      facing: this.facing,
-      kind: this.kind,
-    };
-  }
-}
+};
 
 class MediaStreamTrack {
-  static getSources = function(success) {
-    WebRTCModule.mediaStreamTrackGetSources(sources => {
-      var sourceInfos = sources.map(s => new SourceInfo(s));
-      success(sourceInfos);
-    });
-  };
+  static getSources(success: (sources: Array<SourceInfo>) => void) {
+    WebRTCModule.mediaStreamTrackGetSources(success);
+  }
 
   enabled: boolean;
   id: number; // NOTE: spec wants string here
