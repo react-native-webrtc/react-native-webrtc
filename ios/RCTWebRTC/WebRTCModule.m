@@ -31,6 +31,7 @@
     _peerConnections = [NSMutableDictionary new];
     _mediaStreams = [NSMutableDictionary new];
     _tracks = [NSMutableDictionary new];
+    _dataChannels = [NSMutableDictionary new];
     _mediaStreamId = 0;
     _trackId = 0;
   }

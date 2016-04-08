@@ -162,7 +162,7 @@ RCT_EXPORT_METHOD(peerConnectionClose:(nonnull NSNumber *)objectID)
 {
   RTCPeerConnection *peerConnection = self.peerConnections[objectID];
   [peerConnection close];
-  self.peerConnections[objectID] = nil;
+  [self.peerConnections removeObjectForKey:objectID];
 }
 
 RCT_EXPORT_METHOD(peerConnectionGetStats:(nonnull NSNumber *)trackID objectID:(nonnull NSNumber *)objectID callback:(RCTResponseSenderBlock)callback)

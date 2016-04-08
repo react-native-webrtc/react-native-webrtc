@@ -14,6 +14,8 @@
 		35A2226D1CB493C00015FD5C /* WebRTCModule+RTCPeerConnection.m in Sources */ = {isa = PBXBuildFile; fileRef = 35A2223F1CB493C00015FD5C /* WebRTCModule+RTCPeerConnection.m */; };
 		35A2226E1CB493C00015FD5C /* WebRTCModule+RTCSetting.m in Sources */ = {isa = PBXBuildFile; fileRef = 35A222411CB493C00015FD5C /* WebRTCModule+RTCSetting.m */; };
 		35A222701CB493C00015FD5C /* WebRTCModule.m in Sources */ = {isa = PBXBuildFile; fileRef = 35A222451CB493C00015FD5C /* WebRTCModule.m */; };
+		35EC07E61CB73DFE00F3D79C /* RCTConvert+WebRTC.m in Sources */ = {isa = PBXBuildFile; fileRef = 35EC07E51CB73DFE00F3D79C /* RCTConvert+WebRTC.m */; };
+		35EC083A1CB9AEE900F3D79C /* WebRTCModule+RTCDataChannel.m in Sources */ = {isa = PBXBuildFile; fileRef = 35EC08391CB9AEE900F3D79C /* WebRTCModule+RTCDataChannel.m */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -74,6 +76,10 @@
 		35A222631CB493C00015FD5C /* RTCVideoRenderer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = RTCVideoRenderer.h; sourceTree = "<group>"; };
 		35A222641CB493C00015FD5C /* RTCVideoSource.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = RTCVideoSource.h; sourceTree = "<group>"; };
 		35A222651CB493C00015FD5C /* RTCVideoTrack.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = RTCVideoTrack.h; sourceTree = "<group>"; };
+		35EC07E41CB73DBA00F3D79C /* RCTConvert+WebRTC.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "RCTConvert+WebRTC.h"; sourceTree = "<group>"; };
+		35EC07E51CB73DFE00F3D79C /* RCTConvert+WebRTC.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = "RCTConvert+WebRTC.m"; sourceTree = "<group>"; };
+		35EC08381CB9AEC400F3D79C /* WebRTCModule+RTCDataChannel.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "WebRTCModule+RTCDataChannel.h"; sourceTree = "<group>"; };
+		35EC08391CB9AEE900F3D79C /* WebRTCModule+RTCDataChannel.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = "WebRTCModule+RTCDataChannel.m"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -107,12 +113,16 @@
 		35A222311CB493C00015FD5C /* RCTWebRTC */ = {
 			isa = PBXGroup;
 			children = (
+				35EC07E41CB73DBA00F3D79C /* RCTConvert+WebRTC.h */,
+				35EC07E51CB73DFE00F3D79C /* RCTConvert+WebRTC.m */,
 				35A222321CB493C00015FD5C /* RTCPeerConnection+Block.h */,
 				35A222331CB493C00015FD5C /* RTCPeerConnection+Block.m */,
 				35A222341CB493C00015FD5C /* RTCPeerConnectionDelegator.h */,
 				35A222351CB493C00015FD5C /* RTCPeerConnectionDelegator.m */,
 				35A222361CB493C00015FD5C /* RTCVideoViewManager.h */,
 				35A222371CB493C00015FD5C /* RTCVideoViewManager.m */,
+				35EC08381CB9AEC400F3D79C /* WebRTCModule+RTCDataChannel.h */,
+				35EC08391CB9AEE900F3D79C /* WebRTCModule+RTCDataChannel.m */,
 				35A2223C1CB493C00015FD5C /* WebRTCModule+RTCMediaStream.h */,
 				35A2223D1CB493C00015FD5C /* WebRTCModule+RTCMediaStream.m */,
 				35A2223E1CB493C00015FD5C /* WebRTCModule+RTCPeerConnection.h */,
@@ -229,6 +239,8 @@
 				35A2226C1CB493C00015FD5C /* WebRTCModule+RTCMediaStream.m in Sources */,
 				35A2226E1CB493C00015FD5C /* WebRTCModule+RTCSetting.m in Sources */,
 				35A222701CB493C00015FD5C /* WebRTCModule.m in Sources */,
+				35EC07E61CB73DFE00F3D79C /* RCTConvert+WebRTC.m in Sources */,
+				35EC083A1CB9AEE900F3D79C /* WebRTCModule+RTCDataChannel.m in Sources */,
 				35A222681CB493C00015FD5C /* RTCPeerConnectionDelegator.m in Sources */,
 				35A222691CB493C00015FD5C /* RTCVideoViewManager.m in Sources */,
 				35A222671CB493C00015FD5C /* RTCPeerConnection+Block.m in Sources */,

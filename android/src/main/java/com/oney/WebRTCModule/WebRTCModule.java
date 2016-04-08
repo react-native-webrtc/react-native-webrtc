@@ -3,6 +3,7 @@ package com.oney.WebRTCModule;
 import android.app.Application;
 
 import android.os.Handler;
+import android.provider.ContactsContract;
 import android.support.annotation.Nullable;
 
 import com.facebook.react.bridge.Arguments;
@@ -19,11 +20,19 @@ import com.facebook.react.bridge.ReadableArray;
 import com.facebook.react.bridge.ReadableType;
 import com.facebook.react.modules.core.DeviceEventManagerModule;
 
+import java.io.UnsupportedEncodingException;
+import java.nio.ByteBuffer;
+import java.nio.CharBuffer;
+import java.nio.charset.CharacterCodingException;
+import java.nio.charset.Charset;
+import java.nio.charset.CharsetEncoder;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 import java.net.URISyntaxException;
 import java.util.LinkedList;
+
+import android.util.Base64;
 import android.util.SparseArray;
 import android.hardware.Camera;
 import android.media.AudioManager;
@@ -51,6 +60,7 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
     private final SparseArray<PeerConnection> mPeerConnections;
     public final SparseArray<MediaStream> mMediaStreams;
     public final SparseArray<MediaStreamTrack> mMediaStreamTracks;
+    private final SparseArray<DataChannel> mDataChannels;
     private MediaConstraints pcConstraints = new MediaConstraints();
     VideoSource videoSource;
 
@@ -60,6 +70,7 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
         mPeerConnections = new SparseArray<PeerConnection>();
         mMediaStreams = new SparseArray<MediaStream>();
         mMediaStreamTracks = new SparseArray<MediaStreamTrack>();
+        mDataChannels = new SparseArray<DataChannel>();
 
         pcConstraints.mandatory.add(new MediaConstraints.KeyValuePair("OfferToReceiveAudio", "true"));
         pcConstraints.mandatory.add(new MediaConstraints.KeyValuePair("OfferToReceiveVideo", "true"));
@@ -578,6 +589,62 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
         }*/
     }
 
+    @ReactMethod
+    public void dataChannelInit(final int peerConnectionId, final int dataChannelId, String label, ReadableMap config) {
+        DataChannel.Init init = new DataChannel.Init();
+        init.id = dataChannelId;
+        if (config != null) {
+            if (config.hasKey("ordered")) {
+                init.ordered = config.getBoolean("ordered");
+            }
+            if (config.hasKey("maxRetransmitTime")) {
+                init.maxRetransmitTimeMs = config.getInt("maxRetransmitTime");
+            }
+            if (config.hasKey("maxRetransmits")) {
+                init.maxRetransmits = config.getInt("maxRetransmits");
+            }
+            if (config.hasKey("protocol")) {
+                init.protocol = config.getString("protocol");
+            }
+            if (config.hasKey("negotiated")) {
+                init.ordered = config.getBoolean("negotiated");
+            }
+        }
+        PeerConnection peerConnection = mPeerConnections.get(peerConnectionId);
+        DataChannel dataChannel = peerConnection.createDataChannel(label, init);
+        mDataChannels.put(dataChannelId, dataChannel);
+    }
+
+    @ReactMethod
+    public void dataChannelSend(final int dataChannelId, String data, String type) {
+        byte[] byteArray;
+        if (type.equals("text")) {
+            try {
+                byteArray = data.getBytes("UTF-8");
+            } catch (UnsupportedEncodingException e) {
+                Log.d(TAG, "Could not encode text string as UTF-8.");
+                return;
+            }
+        } else if (type.equals("binary")) {
+            byteArray = Base64.decode(data, Base64.NO_WRAP);
+        } else {
+            Log.e(TAG, "Unsupported data type: " + type);
+            return;
+        }
+        ByteBuffer byteBuffer = ByteBuffer.wrap(byteArray);
+        DataChannel.Buffer buffer = new DataChannel.Buffer(byteBuffer, type.equals("binary"));
+        DataChannel dataChannel = mDataChannels.get(dataChannelId);
+        dataChannel.send(buffer);
+    }
+
+    @ReactMethod
+    public void dataChannelClose(final int dataChannelId) {
+        DataChannel dataChannel = mDataChannels.get(dataChannelId);
+        dataChannel.close();
+        mDataChannels.remove(dataChannelId);
+    }
+
+    @Nullable
     public String iceConnectionStateString(PeerConnection.IceConnectionState iceConnectionState) {
         switch (iceConnectionState) {
             case NEW:
@@ -594,10 +661,11 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
                 return "disconnected";
             case CLOSED:
                 return "closed";
-            default:
-                return "";
         }
+        return null;
     }
+
+    @Nullable
     public String signalingStateString(PeerConnection.SignalingState signalingState) {
         switch (signalingState) {
             case STABLE:
@@ -612,10 +680,11 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
                 return "have-remote-pranswer";
             case CLOSED:
                 return "closed";
-            default:
-                return "";
         }
+        return null;
     }
+
+    @Nullable
     public String iceGatheringStateString(PeerConnection.IceGatheringState iceGatheringState) {
         switch (iceGatheringState) {
             case NEW:
@@ -624,8 +693,21 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
                 return "gathering";
             case COMPLETE:
                 return "complete";
-            default:
-                return "";
         }
+        return null;
+    }
+    @Nullable
+    public String dataChannelStateString(DataChannel.State dataChannelState) {
+        switch (dataChannelState) {
+            case CONNECTING:
+                return "connecting";
+            case OPEN:
+                return "open";
+            case CLOSING:
+                return "closing";
+            case CLOSED:
+                return "closed";
+        }
+        return null;
     }
 }
