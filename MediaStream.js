@@ -1,12 +1,7 @@
 'use strict';
 
-var EventTarget = require('event-target-shim');
-var React = require('react-native');
-var {
-  DeviceEventEmitter,
-  NativeModules,
-} = React;
-var WebRTCModule = NativeModules.WebRTCModule;
+const EventTarget = require('event-target-shim');
+const WebRTCModule = require('react-native').NativeModules.WebRTCModule;
 
 const MediaStreamTrackEvent = require('./MediaStreamTrackEvent');
 

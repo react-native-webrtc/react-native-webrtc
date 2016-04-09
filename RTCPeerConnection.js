@@ -81,7 +81,7 @@ class RTCPeerConnection extends EventTarget(PEER_CONNECTION_EVENTS) {
     super();
     this._peerConnectionId = nextPeerConnectionId++;
     WebRTCModule.peerConnectionInit(configuration, this._peerConnectionId);
-    this._registerEvents(this._peerConnectionId);
+    this._registerEvents();
   }
 
   addStream(stream: MediaStream) {
@@ -165,30 +165,39 @@ class RTCPeerConnection extends EventTarget(PEER_CONNECTION_EVENTS) {
     WebRTCModule.peerConnectionClose(this._peerConnectionId);
   }
 
-  _registerEvents(id: number): void {
+  _unregisterEvents(): void {
+    this._subscriptions.forEach(e => e.remove());
+    this._subscriptions = [];
+  }
+
+  _registerEvents(): void {
     this._subscriptions = [
       DeviceEventEmitter.addListener('peerConnectionOnRenegotiationNeeded', ev => {
-        if (ev.id !== id) {
+        if (ev.id !== this._peerConnectionId) {
           return;
         }
         this.dispatchEvent(new RTCEvent('negotiationneeded'));
       }),
       DeviceEventEmitter.addListener('peerConnectionIceConnectionChanged', ev => {
-        if (ev.id !== id) {
+        if (ev.id !== this._peerConnectionId) {
           return;
         }
         this.iceConnectionState = ev.iceConnectionState;
         this.dispatchEvent(new RTCEvent('iceconnectionstatechange'));
+        if (ev.iceConnectionState === 'closed') {
+          // This PeerConnection is done, clean up event handlers.
+          this._unregisterEvents();
+        }
       }),
       DeviceEventEmitter.addListener('peerConnectionSignalingStateChanged', ev => {
-        if (ev.id !== id) {
+        if (ev.id !== this._peerConnectionId) {
           return;
         }
         this.signalingState = ev.signalingState;
         this.dispatchEvent(new RTCEvent('signalingstatechange'));
       }),
       DeviceEventEmitter.addListener('peerConnectionAddedStream', ev => {
-        if (ev.id !== id) {
+        if (ev.id !== this._peerConnectionId) {
           return;
         }
         var stream = new MediaStream(ev.streamId);
@@ -200,7 +209,7 @@ class RTCPeerConnection extends EventTarget(PEER_CONNECTION_EVENTS) {
         this.dispatchEvent(new MediaStreamEvent('addstream', {stream}));
       }),
       DeviceEventEmitter.addListener('peerConnectionRemovedStream', ev => {
-        if (ev.id !== id) {
+        if (ev.id !== this._peerConnectionId) {
           return;
         }
         var stream = this._remoteStreams.find(s => s._streamId === ev.streamId);
@@ -213,7 +222,7 @@ class RTCPeerConnection extends EventTarget(PEER_CONNECTION_EVENTS) {
         this.dispatchEvent(new MediaStreamEvent('removestream', {stream}));
       }),
       DeviceEventEmitter.addListener('peerConnectionGotICECandidate', ev => {
-        if (ev.id !== id) {
+        if (ev.id !== this._peerConnectionId) {
           return;
         }
         var candidate = new RTCIceCandidate(ev.candidate);
@@ -221,7 +230,7 @@ class RTCPeerConnection extends EventTarget(PEER_CONNECTION_EVENTS) {
         this.dispatchEvent(event);
       }),
       DeviceEventEmitter.addListener('peerConnectionIceGatheringChanged', ev => {
-        if (ev.id !== id) {
+        if (ev.id !== this._peerConnectionId) {
           return;
         }
         this.iceGatheringState = ev.iceGatheringState;
