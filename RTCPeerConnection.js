@@ -16,6 +16,28 @@ var RTCIceCandidate = require('./RTCIceCandidate');
 var RTCIceCandidateEvent = require('./RTCIceCandidateEvent');
 var RTCEvent = require('./RTCEvent');
 
+type RTCSignalingState =
+  'stable' |
+  'have-local-offer' |
+  'have-remote-offer' |
+  'have-local-pranswer' |
+  'have-remote-pranswer' |
+  'closed';
+
+type RTCIceGatheringState =
+  'new' |
+  'gathering' |
+  'complete';
+
+type RTCIceConnectionState =
+  'new' |
+  'checking' |
+  'connected' |
+  'completed' |
+  'failed' |
+  'disconnected' |
+  'closed';
+
 const PEER_CONNECTION_EVENTS = [
   'connectionstatechange',
   'icecandidate',
@@ -34,6 +56,10 @@ let nextPeerConnectionId = 0;
 class RTCPeerConnection extends EventTarget(PEER_CONNECTION_EVENTS) {
   localDescription: RTCSessionDescription;
   remoteDescription: RTCSessionDescription;
+
+  signalingState: RTCSignalingState = 'stable';
+  iceGatheringState: RTCIceGatheringState = 'new';
+  iceConnectionState: RTCIceConnectionState = 'new';
 
   onconnectionstatechange: ?Function;
   onicecandidate: ?Function;
@@ -58,12 +84,12 @@ class RTCPeerConnection extends EventTarget(PEER_CONNECTION_EVENTS) {
     this._registerEvents(this._peerConnectionId);
   }
 
-  addStream(stream) {
+  addStream(stream: MediaStream) {
     WebRTCModule.peerConnectionAddStream(stream._streamId, this._peerConnectionId);
     this._localStreams.push(stream);
   }
 
-  removeStream(stream) {
+  removeStream(stream: MediaStream) {
     var index = this._localStreams.indexOf(stream);
     if (index > -1) {
       this._localStreams.splice(index, 1);
