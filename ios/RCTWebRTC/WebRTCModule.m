@@ -52,16 +52,3 @@ RCT_EXPORT_MODULE();
 }
 
 @end
-
-@implementation RCTConvert (RTCStates)
-
-RCT_ENUM_CONVERTER(RTCICEConnectionState, (@{ @"new" : @(RTCICEConnectionNew),
-                                              @"checking" : @(RTCICEConnectionChecking),
-                                              @"connected" : @(RTCICEConnectionConnected),
-                                              @"completed" : @(RTCICEConnectionCompleted),
-                                              @"failed" : @(RTCICEConnectionFailed),
-                                              @"disconnected" : @(RTCICEConnectionDisconnected),
-                                              @"closed" : @(RTCICEConnectionClosed),
-                                              @"max" : @(RTCICEConnectionMax)}),
-                                             RTCICEConnectionNew, integerValue)
-@end

@@ -28,7 +28,3 @@
 @property (nonatomic) NSInteger trackId;
 
 @end
-
-@interface RCTConvert (RTCStates)
-
-@end
