@@ -38,7 +38,9 @@ RCT_EXPORT_MODULE()
 
 - (UIView *)view
 {
-  return [[RTCEAGLVideoView alloc] init];
+  UIView *v = [[RTCEAGLVideoView alloc] init];
+  v.clipsToBounds = YES;
+  return v;
 }
 
 - (dispatch_queue_t)methodQueue
