@@ -100,6 +100,11 @@ class MediaStreamTrack {
   clone() {
     throw new Error('Not implemented.');
   }
+
+  setEnabled(enabled) {
+    WebRTCModule.trackSetEnabled(this.id, enabled);
+    this.enabled = enabled;
+  }
 }
 
 module.exports = MediaStreamTrack;

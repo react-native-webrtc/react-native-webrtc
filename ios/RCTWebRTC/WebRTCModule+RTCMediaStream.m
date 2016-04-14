@@ -140,6 +140,29 @@ RCT_EXPORT_METHOD(mediaStreamTrackGetSources:(RCTResponseSenderBlock)callback) {
   callback(@[sources]);
 }
 
+RCT_EXPORT_METHOD(trackSetEnabled:(nonnull NSNumber *)trackID : (BOOL *)enabled)
+{
+    RTCMediaStreamTrack *track = self.tracks[trackID];
+    [track setEnabled:enabled];
+    BOOL newValue = [track isEnabled];
+}
+
+RCT_EXPORT_METHOD(mediaStreamTrackRelease:(nonnull NSNumber *)streamID : (nonnull NSNumber *)trackID)
+{
+    if (self.mediaStreams[streamID]) {
+        RTCMediaStream *mediaStream = self.mediaStreams[streamID];
+        if (self.tracks[trackID]) {
+            RTCMediaStreamTrack *track = self.tracks[trackID];
+            if ([track.kind isEqualToString:@"audio"]) {
+                RTCAudioTrack *audioTrack = self.tracks[trackID];
+                [mediaStream removeAudioTrack:audioTrack];
+            } else if([track.kind isEqualToString:@"video"]) {
+                RTCVideoTrack *videoTrack = self.tracks[trackID];
+                [mediaStream removeVideoTrack:videoTrack];
+            }
+        }
+    }
+}
 
 RCT_EXPORT_METHOD(mediaStreamRelease:(nonnull NSNumber *)streamID)
 {
