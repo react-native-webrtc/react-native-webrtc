@@ -144,7 +144,6 @@ RCT_EXPORT_METHOD(trackSetEnabled:(nonnull NSNumber *)trackID : (BOOL *)enabled)
 {
     RTCMediaStreamTrack *track = self.tracks[trackID];
     [track setEnabled:enabled];
-    BOOL newValue = [track isEnabled];
 }
 
 RCT_EXPORT_METHOD(mediaStreamTrackRelease:(nonnull NSNumber *)streamID : (nonnull NSNumber *)trackID)
