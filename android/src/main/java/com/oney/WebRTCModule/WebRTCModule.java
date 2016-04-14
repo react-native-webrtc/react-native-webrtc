@@ -211,6 +211,9 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
                     trackInfo.putString("id", mediaStreamTrackId + "");
                     trackInfo.putString("label", "Video");
                     trackInfo.putString("kind", track.kind());
+                    trackInfo.putBoolean("enabled", track.enabled());
+                    trackInfo.putString("readyState", track.state().toString());
+                    trackInfo.putBoolean("remote", true);
                     tracks.pushMap(trackInfo);
                 }
                 for (int i = 0; i < mediaStream.audioTracks.size(); i++) {
@@ -221,6 +224,9 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
                     trackInfo.putString("id", mediaStreamTrackId + "");
                     trackInfo.putString("label", "Audio");
                     trackInfo.putString("kind", track.kind());
+                    trackInfo.putBoolean("enabled", track.enabled());
+                    trackInfo.putString("readyState", track.state().toString());
+                    trackInfo.putBoolean("remote", true);
                     tracks.pushMap(trackInfo);
                 }
                 params.putArray("tracks", tracks);
@@ -330,6 +336,9 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
                 trackInfo.putString("id", mediaStreamTrackId + "");
                 trackInfo.putString("label", "Video");
                 trackInfo.putString("kind", videoTrack.kind());
+                trackInfo.putBoolean("enabled", videoTrack.enabled());
+                trackInfo.putString("readyState", videoTrack.state().toString());
+                trackInfo.putBoolean("remote", false);
                 tracks.pushMap(trackInfo);
 
                 mediaStream.addTrack(videoTrack);
@@ -355,6 +364,9 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
             trackInfo.putString("id", mediaStreamTrackId + "");
             trackInfo.putString("label", "Audio");
             trackInfo.putString("kind", audioTrack.kind());
+            trackInfo.putBoolean("enabled", audioTrack.enabled());
+            trackInfo.putString("readyState", audioTrack.state().toString());
+            trackInfo.putBoolean("remote", false);
             tracks.pushMap(trackInfo);
 
             mediaStream.addTrack(audioTrack);
@@ -386,6 +398,32 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
 
         array.pushMap(audio);
         callback.invoke(array);
+    }
+
+    @ReactMethod
+    public void mediaStreamTrackStop(final String id) {
+        final int trackId = Integer.parseInt(id);
+        MediaStreamTrack track = mMediaStreamTracks.get(trackId);
+        if (track == null) {
+            return;
+        }
+        track.setEnabled(false);
+        track.setState(MediaStreamTrack.State.ENDED);
+        mMediaStreamTracks.remove(trackId);
+		// what exaclty `detached` means in doc?
+		// see: https://www.w3.org/TR/mediacapture-streams/#track-detached
+    }
+
+    @ReactMethod
+    public void mediaStreamTrackSetEnabled(final String id, final boolean enabled) {
+        final int trackId = Integer.parseInt(id);
+        MediaStreamTrack track = mMediaStreamTracks.get(trackId);
+        if (track == null) {
+            return;
+        } else if (track.enabled() == enabled) {
+            return;
+        }
+        track.setEnabled(enabled);
     }
 
     public WritableMap getCameraInfo(int index) {
