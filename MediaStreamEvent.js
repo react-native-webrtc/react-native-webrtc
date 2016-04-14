@@ -2,7 +2,6 @@
 
 class MediaStreamEvent {
   type: string;
-  target;
   stream;
   constructor(type, eventInitDict) {
     this.type = type.toString();

@@ -2,7 +2,6 @@
 
 class RTCIceCandidateEvent {
   type: string;
-  target;
   candidate;
   constructor(type, eventInitDict) {
     this.type = type.toString();

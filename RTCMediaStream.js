@@ -1,5 +1,6 @@
 'use strict';
 
+var EventTarget = require('event-target-shim');
 var React = require('react-native');
 var {
   DeviceEventEmitter,
@@ -7,9 +8,17 @@ var {
 } = React;
 var WebRTCModule = NativeModules.WebRTCModule;
 
-class RTCMediaStream {
+const MEDIA_STREAM_EVENTS = [
+  'active',
+  'inactive',
+  'addtrack',
+  'removetrack',
+];
+
+class RTCMediaStream extends EventTarget(MEDIA_STREAM_EVENTS) {
   _streamId: number;
   constructor(_streamId) {
+    super();
     this._streamId = _streamId;
     this.tracks = [];
   }
