@@ -43,6 +43,7 @@ class MediaStreamTrack {
   overconstrained: ?Function;
 
   constructor(info) {
+    let _readyState = info.readyState.toLowerCase();
     this._enabled = info.enabled;
     this.id = info.id;
     this.kind = info.kind;
@@ -50,8 +51,8 @@ class MediaStreamTrack {
     this.muted = false;
     this.readonly = true; // how to decide?
     this.remote = info.remote;
-    this.readyState = (info.readyState === "INITIALIZING"
-                    || info.readyState === "LIVE" ) ? "live" : "ended";
+    this.readyState = (_readyState === "initializing"
+                    || _readyState === "live") ? "live" : "ended";
   }
 
   get enabled(): boolean {
@@ -99,11 +100,6 @@ class MediaStreamTrack {
 
   clone() {
     throw new Error('Not implemented.');
-  }
-
-  setEnabled(enabled) {
-    WebRTCModule.trackSetEnabled(this.id, enabled);
-    this.enabled = enabled;
   }
 }
 
