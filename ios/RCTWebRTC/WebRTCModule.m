@@ -31,6 +31,7 @@
     _peerConnections = [NSMutableDictionary new];
     _mediaStreams = [NSMutableDictionary new];
     _tracks = [NSMutableDictionary new];
+    _dataChannels = [NSMutableDictionary new];
     _mediaStreamId = 0;
     _trackId = 0;
   }
@@ -51,17 +52,4 @@ RCT_EXPORT_MODULE();
   return dispatch_get_main_queue();
 }
 
-@end
-
-@implementation RCTConvert (RTCStates)
-
-RCT_ENUM_CONVERTER(RTCICEConnectionState, (@{ @"new" : @(RTCICEConnectionNew),
-                                              @"checking" : @(RTCICEConnectionChecking),
-                                              @"connected" : @(RTCICEConnectionConnected),
-                                              @"completed" : @(RTCICEConnectionCompleted),
-                                              @"failed" : @(RTCICEConnectionFailed),
-                                              @"disconnected" : @(RTCICEConnectionDisconnected),
-                                              @"closed" : @(RTCICEConnectionClosed),
-                                              @"max" : @(RTCICEConnectionMax)}),
-                                             RTCICEConnectionNew, integerValue)
 @end

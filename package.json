@@ -20,6 +20,7 @@
     "webrtc"
   ],
   "dependencies": {
+    "base64-js": "^1.1.2",
     "event-target-shim": "^1.0.5"
   },
   "peerDependencies": {

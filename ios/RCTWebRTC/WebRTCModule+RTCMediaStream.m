@@ -47,16 +47,11 @@
 
 - (NSString*)positionString {
   switch (self.position) {
-    case AVCaptureDevicePositionUnspecified:
-      return @"unspecified";
-      break;
-    case AVCaptureDevicePositionBack:
-      return @"back";
-      break;
-    case AVCaptureDevicePositionFront:
-      return @"front";
-      break;
+    case AVCaptureDevicePositionUnspecified: return @"unspecified";
+    case AVCaptureDevicePositionBack: return @"back";
+    case AVCaptureDevicePositionFront: return @"front";
   }
+  return nil;
 }
 
 @end

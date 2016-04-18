@@ -19,11 +19,8 @@
 #import "RTCICECandidate.h"
 #import "RTCStatsReport.h"
 
-#import "WebRTCModule+RTCICEConnectionState.h"
-#import "WebRTCModule+RTCICEGatheringState.h"
 #import "WebRTCModule+RTCMediaStream.h"
 #import "WebRTCModule+RTCPeerConnection.h"
-#import "WebRTCModule+RTCSignalingState.h"
 
 @implementation RTCPeerConnection (React)
 
@@ -165,7 +162,7 @@ RCT_EXPORT_METHOD(peerConnectionClose:(nonnull NSNumber *)objectID)
 {
   RTCPeerConnection *peerConnection = self.peerConnections[objectID];
   [peerConnection close];
-  self.peerConnections[objectID] = nil;
+  [self.peerConnections removeObjectForKey:objectID];
 }
 
 RCT_EXPORT_METHOD(peerConnectionGetStats:(nonnull NSNumber *)trackID objectID:(nonnull NSNumber *)objectID callback:(RCTResponseSenderBlock)callback)
@@ -216,6 +213,42 @@ RCT_EXPORT_METHOD(peerConnectionGetStats:(nonnull NSNumber *)trackID objectID:(n
   }
   return iceServers;
 }
+
+- (NSString *)stringForICEConnectionState:(RTCICEConnectionState)state {
+  switch (state) {
+    case RTCICEConnectionNew: return @"new";
+    case RTCICEConnectionChecking: return @"checking";
+    case RTCICEConnectionConnected: return @"connected";
+    case RTCICEConnectionCompleted: return @"completed";
+    case RTCICEConnectionFailed: return @"failed";
+    case RTCICEConnectionDisconnected: return @"disconnected";
+    case RTCICEConnectionClosed: return @"closed";
+  }
+  return nil;
+}
+
+- (NSString *)stringForICEGatheringState:(RTCICEGatheringState)state {
+  switch (state) {
+    case RTCICEGatheringNew: return @"new";
+    case RTCICEGatheringGathering: return @"gathering";
+    case RTCICEGatheringComplete: return @"complete";
+  }
+  return nil;
+}
+
+- (NSString *)stringForSignalingState:(RTCSignalingState)state {
+  switch (state) {
+    case RTCSignalingStable: return @"stable";
+    case RTCSignalingHaveLocalOffer: return @"have-local-offer";
+    case RTCSignalingHaveLocalPrAnswer: return @"have-local-pranswer";
+    case RTCSignalingHaveRemoteOffer: return @"have-remote-offer";
+    case RTCSignalingHaveRemotePrAnswer: return @"have-remote-pranswer";
+    case RTCSignalingClosed: return @"closed";
+  }
+  return nil;
+}
+
+#pragma mark - RTCPeerConnectionDelegate methods
 
 - (void)peerConnection:(RTCPeerConnection *)peerConnection signalingStateChanged:(RTCSignalingState)newState {
   [self.bridge.eventDispatcher sendDeviceEventWithName:@"peerConnectionSignalingStateChanged" body:

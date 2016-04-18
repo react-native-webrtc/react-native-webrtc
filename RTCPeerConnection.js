@@ -11,6 +11,7 @@ var WebRTCModule = NativeModules.WebRTCModule;
 var MediaStream = require('./MediaStream');
 var MediaStreamEvent = require('./MediaStreamEvent');
 var MediaStreamTrack = require('./MediaStreamTrack');
+var RTCDataChannel = require('./RTCDataChannel');
 var RTCSessionDescription = require('./RTCSessionDescription');
 var RTCIceCandidate = require('./RTCIceCandidate');
 var RTCIceCandidateEvent = require('./RTCIceCandidateEvent');
@@ -237,6 +238,9 @@ class RTCPeerConnection extends EventTarget(PEER_CONNECTION_EVENTS) {
         this.dispatchEvent(new RTCEvent('icegatheringstatechange'));
       })
     ];
+  }
+  createDataChannel(label, options) {
+    return new RTCDataChannel(this._peerConnectionId, label, options);
   }
 }
 
