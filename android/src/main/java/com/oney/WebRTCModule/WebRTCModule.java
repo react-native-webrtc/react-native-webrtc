@@ -117,10 +117,12 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
         ReadableArray iceServersArray = configuration.getArray("iceServers");
         for (int i = 0; i < iceServersArray.size(); i++) {
             ReadableMap iceServerMap = iceServersArray.getMap(i);
-            //if TURN, pass in all the keys
+            //if TURN, pass in all the TURN keys
             if(iceServerMap.hasKey("urls")){
-                iceServers.add(new PeerConnection.IceServer(iceServerMap.getString("urls")[0],iceServerMap.getString("username"),iceServerMap.getString("credentials")));                
-            }else if (iceServerMap.hasKey("video")) {
+                //PeerConnection still only accepts 1 uri, so we pull the first one if client send multiple (ala new spec)
+                iceServers.add(new PeerConnection.IceServer(iceServerMap.getString("urls").get(0),iceServerMap.getString("username"),iceServerMap.getString("credentials")));
+            }else if (iceServerMap.hasKey("credentials")) {
+                //If they just send one,
                 iceServers.add(new PeerConnection.IceServer(iceServerMap.getString("url"),iceServerMap.getString("username"),iceServerMap.getString("credentials")));
             }else{
                 iceServers.add(new PeerConnection.IceServer(iceServerMap.getString("url")));
