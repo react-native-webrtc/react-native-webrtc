@@ -117,7 +117,14 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
         ReadableArray iceServersArray = configuration.getArray("iceServers");
         for (int i = 0; i < iceServersArray.size(); i++) {
             ReadableMap iceServerMap = iceServersArray.getMap(i);
-            iceServers.add(new PeerConnection.IceServer(iceServerMap.getString("url")));
+            //if TURN, pass in all the keys
+            if(iceServerMap.hasKey("urls")){
+                iceServers.add(new PeerConnection.IceServer(iceServerMap.getString("urls")[0],iceServerMap.getString("username"),iceServerMap.getString("credentials")));                
+            }else if (iceServerMap.hasKey("video")) {
+                iceServers.add(new PeerConnection.IceServer(iceServerMap.getString("url"),iceServerMap.getString("username"),iceServerMap.getString("credentials")));
+            }else{
+                iceServers.add(new PeerConnection.IceServer(iceServerMap.getString("url")));
+            }
         }
 
         PeerConnection peerConnection = mFactory.createPeerConnection(iceServers, pcConstraints, new PeerConnection.Observer() {
