@@ -129,6 +129,7 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
                         } else {
                             iceServers.add(new PeerConnection.IceServer(iceServerMap.getString("urls")));
                         }
+                        break;
                     case Array:
                         ReadableArray urls = iceServerMap.getArray("urls");
                         for (int j = 0; j < urls.size(); j++) {
@@ -139,7 +140,7 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
                                 iceServers.add(new PeerConnection.IceServer(url));
                             }
                         }
-
+                        break;
                 }
             }
         }
@@ -298,6 +299,7 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
                             }
                         }
                     }
+                    break;
             }
             // videoConstraints.mandatory.add(new MediaConstraints.KeyValuePair("maxHeight", Integer.toString(100)));
             // videoConstraints.mandatory.add(new MediaConstraints.KeyValuePair("maxWidth", Integer.toString(100)));
