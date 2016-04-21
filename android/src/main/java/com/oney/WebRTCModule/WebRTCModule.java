@@ -230,16 +230,30 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
 
             @Override
             public void onRemoveStream(MediaStream mediaStream) {
-                for (int i = 0; i < mediaStream.videoTracks.size(); i++) {
-                    VideoTrack track = mediaStream.videoTracks.get(i);
-                    mMediaStreamTracks.removeAt(mMediaStreamTracks.indexOfValue(track));
+                if (mediaStream != null) {
+                    int trackIndex;
+                    int streamIndex;
+                    for (int i = 0; i < mediaStream.videoTracks.size(); i++) {
+                        VideoTrack track = mediaStream.videoTracks.get(i);
+                        trackIndex = mMediaStreamTracks.indexOfValue(track);
+                        while (trackIndex >= 0) {
+                            mMediaStreamTracks.removeAt(trackIndex);
+                            trackIndex = mMediaStreamTracks.indexOfValue(track);
+                        }
+                    }
+                    for (int i = 0; i < mediaStream.audioTracks.size(); i++) {
+                        AudioTrack track = mediaStream.audioTracks.get(i);
+                        trackIndex = mMediaStreamTracks.indexOfValue(track);
+                        while (trackIndex >= 0) {
+                            mMediaStreamTracks.removeAt(trackIndex);
+                            trackIndex = mMediaStreamTracks.indexOfValue(track);
+                        }
+                    }
+                    streamIndex = mMediaStreams.indexOfValue(mediaStream);
+                    if (streamIndex >= 0) {
+                        mMediaStreams.removeAt(streamIndex);
+                    }
                 }
-                for (int i = 0; i < mediaStream.audioTracks.size(); i++) {
-                    AudioTrack track = mediaStream.audioTracks.get(i);
-                    mMediaStreamTracks.removeAt(mMediaStreamTracks.indexOfValue(track));
-                }
-
-                mMediaStreams.removeAt(mMediaStreams.indexOfValue(mediaStream));
             }
 
             @Override
@@ -573,13 +587,22 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
     public void mediaStreamRelease(final int id) {
         MediaStream mediaStream = mMediaStreams.get(id, null);
         if (mediaStream != null) {
+            int trackIndex;
             for (int i = 0; i < mediaStream.videoTracks.size(); i++) {
                 VideoTrack track = mediaStream.videoTracks.get(i);
-                mMediaStreamTracks.removeAt(mMediaStreamTracks.indexOfValue(track));
+                trackIndex = mMediaStreamTracks.indexOfValue(track);
+                while (trackIndex >= 0) {
+                    mMediaStreamTracks.removeAt(trackIndex);
+                    trackIndex = mMediaStreamTracks.indexOfValue(track);
+                }
             }
             for (int i = 0; i < mediaStream.audioTracks.size(); i++) {
                 AudioTrack track = mediaStream.audioTracks.get(i);
-                mMediaStreamTracks.removeAt(mMediaStreamTracks.indexOfValue(track));
+                trackIndex = mMediaStreamTracks.indexOfValue(track);
+                while (trackIndex >= 0) {
+                    mMediaStreamTracks.removeAt(trackIndex);
+                    trackIndex = mMediaStreamTracks.indexOfValue(track);
+                }
             }
 
             mMediaStreams.remove(id);
