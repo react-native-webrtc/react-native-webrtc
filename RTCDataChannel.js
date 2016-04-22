@@ -55,7 +55,7 @@ class RTCDataChannel extends EventTarget(DATA_CHANNEL_EVENTS) {
   readyState: RTCDataChannelState = 'connecting';
 
   onopen: ?Function;
-  onmessage: ?Function
+  onmessage: ?Function;
   onbufferedamountlow: ?Function;
   onerror: ?Function;
   onclose: ?Function;
