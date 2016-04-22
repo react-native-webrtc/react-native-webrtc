@@ -171,7 +171,7 @@ RCT_EXPORT_METHOD(peerConnectionGetStats:(nonnull NSNumber *)trackID objectID:(n
   if ([trackID integerValue] >= 0) {
     track = self.tracks[trackID];
   }
-  
+
   RTCPeerConnection *peerConnection = self.peerConnections[objectID];
   BOOL result = [peerConnection getStatsWithCallback:^(NSArray *stats) {
     NSMutableArray *statsCollection = [NSMutableArray new];
@@ -197,7 +197,7 @@ RCT_EXPORT_METHOD(peerConnectionGetStats:(nonnull NSNumber *)trackID objectID:(n
   NSMutableArray *iceServers = [NSMutableArray new];
   if (iceServersConfiguration) {
     for (NSDictionary *iceServerConfiguration in iceServersConfiguration) {
-      NSString *url = iceServerConfiguration[@"url"];
+
       NSString *username = iceServerConfiguration[@"username"];
       if (!username) {
         username = @"";
@@ -207,8 +207,25 @@ RCT_EXPORT_METHOD(peerConnectionGetStats:(nonnull NSNumber *)trackID objectID:(n
         credential = @"";
       }
 
-      RTCICEServer *iceServer = [[RTCICEServer alloc] initWithURI:[NSURL URLWithString:url] username:username password:credential];
-      [iceServers addObject:iceServer];
+      if (iceServerConfiguration[@"url"]) {
+        NSString *url = iceServerConfiguration[@"url"];
+
+        RTCICEServer *iceServer = [[RTCICEServer alloc] initWithURI:[NSURL URLWithString:url] username:username password:credential];
+        [iceServers addObject:iceServer];
+      } else if (iceServerConfiguration[@"urls"]) {
+        if ([iceServerConfiguration[@"urls"] isKindOfClass:[NSString class]]) {
+          NSString *url = iceServerConfiguration[@"urls"];
+
+          RTCICEServer *iceServer = [[RTCICEServer alloc] initWithURI:[NSURL URLWithString:url] username:username password:credential];
+          [iceServers addObject:iceServer];
+        } else if ([iceServerConfiguration[@"urls"] isKindOfClass:[NSArray class]]) {
+          NSArray *urls = iceServerConfiguration[@"urls"];
+          for (NSString *url in urls) {
+            RTCICEServer *iceServer = [[RTCICEServer alloc] initWithURI:[NSURL URLWithString:url] username:username password:credential];
+            [iceServers addObject:iceServer];
+          }
+        }
+      }
     }
   }
   return iceServers;
@@ -272,7 +289,7 @@ RCT_EXPORT_METHOD(peerConnectionGetStats:(nonnull NSNumber *)trackID objectID:(n
     self.tracks[trackId] = track;
     [tracks addObject:@{@"id": trackId, @"kind": track.kind, @"label": track.label}];
   }
-  
+
   self.mediaStreams[objectID] = stream;
   [self.bridge.eventDispatcher sendDeviceEventWithName:@"peerConnectionAddedStream" body:
    @{@"id": peerConnection.reactTag, @"streamId": stream.reactTag, @"tracks": tracks}];

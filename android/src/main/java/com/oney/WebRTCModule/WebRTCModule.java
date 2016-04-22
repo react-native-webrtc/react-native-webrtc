@@ -27,6 +27,7 @@ import java.nio.charset.CharacterCodingException;
 import java.nio.charset.Charset;
 import java.nio.charset.CharsetEncoder;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.net.URISyntaxException;
@@ -109,25 +110,46 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
             .emit(eventName, params);
     }
 
-    @ReactMethod
-    public void peerConnectionInit(ReadableMap configuration, final int id){
-
-        Log.d(TAG, "PeerConnectionInitfasf");
+    private List<PeerConnection.IceServer> createIceServers(ReadableArray iceServersArray) {
         LinkedList<PeerConnection.IceServer> iceServers = new LinkedList<>();
-        ReadableArray iceServersArray = configuration.getArray("iceServers");
         for (int i = 0; i < iceServersArray.size(); i++) {
             ReadableMap iceServerMap = iceServersArray.getMap(i);
-            //if TURN, pass in all the TURN keys
-            if(iceServerMap.hasKey("urls")){
-                //PeerConnection still only accepts 1 uri, so we pull the first one if client send multiple (ala new spec)
-                iceServers.add(new PeerConnection.IceServer(((List)iceServerMap.get("urls")).get(0),iceServerMap.getString("username"),iceServerMap.getString("credentials")));
-            }else if (iceServerMap.hasKey("credentials")) {
-                //If they just send one,
-                iceServers.add(new PeerConnection.IceServer(iceServerMap.getString("url"),iceServerMap.getString("username"),iceServerMap.getString("credentials")));
-            }else{
-                iceServers.add(new PeerConnection.IceServer(iceServerMap.getString("url")));
+            boolean hasUsernameAndCredential = iceServerMap.hasKey("username") && iceServerMap.hasKey("credential");
+            if (iceServerMap.hasKey("url")) {
+                if (hasUsernameAndCredential) {
+                    iceServers.add(new PeerConnection.IceServer(iceServerMap.getString("url"),iceServerMap.getString("username"), iceServerMap.getString("credential")));
+                } else {
+                    iceServers.add(new PeerConnection.IceServer(iceServerMap.getString("url")));
+                }
+            } else if (iceServerMap.hasKey("urls")) {
+                switch (iceServerMap.getType("urls")) {
+                    case String:
+                        if (hasUsernameAndCredential) {
+                            iceServers.add(new PeerConnection.IceServer(iceServerMap.getString("urls"),iceServerMap.getString("username"), iceServerMap.getString("credential")));
+                        } else {
+                            iceServers.add(new PeerConnection.IceServer(iceServerMap.getString("urls")));
+                        }
+                        break;
+                    case Array:
+                        ReadableArray urls = iceServerMap.getArray("urls");
+                        for (int j = 0; j < urls.size(); j++) {
+                            String url = urls.getString(j);
+                            if (hasUsernameAndCredential) {
+                                iceServers.add(new PeerConnection.IceServer(url,iceServerMap.getString("username"), iceServerMap.getString("credential")));
+                            } else {
+                                iceServers.add(new PeerConnection.IceServer(url));
+                            }
+                        }
+                        break;
+                }
             }
         }
+        return iceServers;
+    }
+
+    @ReactMethod
+    public void peerConnectionInit(ReadableMap configuration, final int id){
+        List<PeerConnection.IceServer> iceServers = createIceServers(configuration.getArray("iceServers"));
 
         PeerConnection peerConnection = mFactory.createPeerConnection(iceServers, pcConstraints, new PeerConnection.Observer() {
             @Override
@@ -208,20 +230,35 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
 
             @Override
             public void onRemoveStream(MediaStream mediaStream) {
-                for (int i = 0; i < mediaStream.videoTracks.size(); i++) {
-                    VideoTrack track = mediaStream.videoTracks.get(i);
-                    mMediaStreamTracks.removeAt(mMediaStreamTracks.indexOfValue(track));
+                if (mediaStream != null) {
+                    int trackIndex;
+                    int streamIndex;
+                    for (int i = 0; i < mediaStream.videoTracks.size(); i++) {
+                        VideoTrack track = mediaStream.videoTracks.get(i);
+                        trackIndex = mMediaStreamTracks.indexOfValue(track);
+                        while (trackIndex >= 0) {
+                            mMediaStreamTracks.removeAt(trackIndex);
+                            trackIndex = mMediaStreamTracks.indexOfValue(track);
+                        }
+                    }
+                    for (int i = 0; i < mediaStream.audioTracks.size(); i++) {
+                        AudioTrack track = mediaStream.audioTracks.get(i);
+                        trackIndex = mMediaStreamTracks.indexOfValue(track);
+                        while (trackIndex >= 0) {
+                            mMediaStreamTracks.removeAt(trackIndex);
+                            trackIndex = mMediaStreamTracks.indexOfValue(track);
+                        }
+                    }
+                    streamIndex = mMediaStreams.indexOfValue(mediaStream);
+                    if (streamIndex >= 0) {
+                        mMediaStreams.removeAt(streamIndex);
+                    }
                 }
-                for (int i = 0; i < mediaStream.audioTracks.size(); i++) {
-                    AudioTrack track = mediaStream.audioTracks.get(i);
-                    mMediaStreamTracks.removeAt(mMediaStreamTracks.indexOfValue(track));
-                }
-
-                mMediaStreams.removeAt(mMediaStreams.indexOfValue(mediaStream));
             }
 
             @Override
-            public void onDataChannel(DataChannel dataChannel) {}
+            public void onDataChannel(DataChannel dataChannel) {
+            }
 
             @Override
             public void onRenegotiationNeeded() {
@@ -276,6 +313,7 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
                             }
                         }
                     }
+                    break;
             }
             // videoConstraints.mandatory.add(new MediaConstraints.KeyValuePair("maxHeight", Integer.toString(100)));
             // videoConstraints.mandatory.add(new MediaConstraints.KeyValuePair("maxWidth", Integer.toString(100)));
@@ -549,13 +587,22 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
     public void mediaStreamRelease(final int id) {
         MediaStream mediaStream = mMediaStreams.get(id, null);
         if (mediaStream != null) {
+            int trackIndex;
             for (int i = 0; i < mediaStream.videoTracks.size(); i++) {
                 VideoTrack track = mediaStream.videoTracks.get(i);
-                mMediaStreamTracks.removeAt(mMediaStreamTracks.indexOfValue(track));
+                trackIndex = mMediaStreamTracks.indexOfValue(track);
+                while (trackIndex >= 0) {
+                    mMediaStreamTracks.removeAt(trackIndex);
+                    trackIndex = mMediaStreamTracks.indexOfValue(track);
+                }
             }
             for (int i = 0; i < mediaStream.audioTracks.size(); i++) {
                 AudioTrack track = mediaStream.audioTracks.get(i);
-                mMediaStreamTracks.removeAt(mMediaStreamTracks.indexOfValue(track));
+                trackIndex = mMediaStreamTracks.indexOfValue(track);
+                while (trackIndex >= 0) {
+                    mMediaStreamTracks.removeAt(trackIndex);
+                    trackIndex = mMediaStreamTracks.indexOfValue(track);
+                }
             }
 
             mMediaStreams.remove(id);

@@ -91,3 +91,6 @@ container.setState({videoURL: stream.toURL()});
 The demo project is https://github.com/oney/RCTWebRTCDemo   
 And you will need a signaling server. I have written a signaling server https://react-native-webrtc.herokuapp.com/ (the repository is https://github.com/oney/react-native-webrtc-server).   
 You can open this website in browser, and then set it as signaling server in the app, and run the app. After you enter the same room ID, the video stream will be connected.
+
+## Native control
+Use [react-native-incall-manager](https://github.com/zxcpoiu/react-native-incall-manager) to keep screen on, mute microphone, etc.
