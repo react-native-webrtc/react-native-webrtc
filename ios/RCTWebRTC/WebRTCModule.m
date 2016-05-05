@@ -25,7 +25,7 @@
 {
   self = [super init];
   if (self) {
-    _peerConnectionFactory = [[RTCPeerConnectionFactory alloc] init];
+    _peerConnectionFactory = [RTCPeerConnectionFactory new];
 //    [RTCPeerConnectionFactory initializeSSL];
     
     _peerConnections = [NSMutableDictionary new];
@@ -38,11 +38,23 @@
   return self;
 }
 
-- (void)dealloc {
-  for (RTCPeerConnection *peerConnection in _peerConnections.allValues) {
+- (void)dealloc
+{
+  for (NSNumber *dataChannelId in _dataChannels) {
+    RTCDataChannel *dataChannel = _dataChannels[dataChannelId];
+    dataChannel.delegate = nil;
+    [dataChannel close];
+    [_dataChannels removeObjectForKey:dataChannelId];
+  }
+
+  for (NSNumber *peerConnectionId in _peerConnections) {
+    RTCPeerConnection *peerConnection = _peerConnections[peerConnectionId];
     peerConnection.delegate = nil;
     [peerConnection close];
+    [_peerConnections removeObjectForKey:peerConnectionId];
   }
+
+  _peerConnectionFactory = nil;
 }
 
 RCT_EXPORT_MODULE();
