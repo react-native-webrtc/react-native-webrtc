@@ -27,7 +27,7 @@
   if (self) {
     _peerConnectionFactory = [RTCPeerConnectionFactory new];
 //    [RTCPeerConnectionFactory initializeSSL];
-    
+
     _peerConnections = [NSMutableDictionary new];
     _mediaStreams = [NSMutableDictionary new];
     _tracks = [NSMutableDictionary new];
@@ -40,19 +40,23 @@
 
 - (void)dealloc
 {
+  [_tracks removeAllObjects];
+  _tracks = nil;
+  [_mediaStreams removeAllObjects];
+  _mediaStreams = nil;
   for (NSNumber *dataChannelId in _dataChannels) {
     RTCDataChannel *dataChannel = _dataChannels[dataChannelId];
     dataChannel.delegate = nil;
     [dataChannel close];
-    [_dataChannels removeObjectForKey:dataChannelId];
   }
+  [_dataChannels removeAllObjects];
 
   for (NSNumber *peerConnectionId in _peerConnections) {
     RTCPeerConnection *peerConnection = _peerConnections[peerConnectionId];
     peerConnection.delegate = nil;
     [peerConnection close];
-    [_peerConnections removeObjectForKey:peerConnectionId];
   }
+  [_peerConnections removeAllObjects];
 
   _peerConnectionFactory = nil;
 }
