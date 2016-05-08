@@ -72,7 +72,7 @@ RCT_EXPORT_METHOD(getUserMedia:(NSDictionary *)constraints callback:(RCTResponse
     NSNumber *trackId = @(self.trackId++);
     audioTrack.reactTag = trackId;
     self.tracks[trackId] = audioTrack;
-    [tracks addObject:@{@"id": trackId, @"kind": audioTrack.kind, @"label": audioTrack.label}];
+    [tracks addObject:@{@"id": trackId, @"kind": audioTrack.kind, @"label": audioTrack.label, @"enabled": @(audioTrack.isEnabled), @"remote": @(NO), @"readyState": @"live"}];
   }
 
   if (constraints[@"video"]) {
@@ -108,7 +108,8 @@ RCT_EXPORT_METHOD(getUserMedia:(NSDictionary *)constraints callback:(RCTResponse
       NSNumber *trackId = @(self.trackId++);
       videoTrack.reactTag = trackId;
       self.tracks[trackId] = videoTrack;
-      [tracks addObject:@{@"id": trackId, @"kind": videoTrack.kind, @"label": videoTrack.label}];
+      [tracks addObject:@{@"id": trackId, @"kind": videoTrack.kind, @"label": videoTrack.label, @"enabled": @(videoTrack.isEnabled), @"remote": @(NO), @"readyState": @"live"}];
+
     }
   }
 
@@ -140,6 +141,47 @@ RCT_EXPORT_METHOD(mediaStreamTrackGetSources:(RCTResponseSenderBlock)callback) {
   callback(@[sources]);
 }
 
+RCT_EXPORT_METHOD(mediaStreamTrackStop:(nonnull NSNumber *)trackID)
+{
+  RTCMediaStreamTrack *track = self.tracks[trackID];
+  if (track) {
+    [track setEnabled:NO];
+    if ([track.kind isEqualToString:@"audio"]) {
+      RTCAudioTrack *audioTrack = self.tracks[trackID];
+      [self.tracks removeObjectForKey:audioTrack.reactTag];
+    } else if([track.kind isEqualToString:@"video"]) {
+      RTCVideoTrack *videoTrack = self.tracks[trackID];
+      [self.tracks removeObjectForKey:videoTrack.reactTag];
+    }
+  }
+}
+
+RCT_EXPORT_METHOD(mediaStreamTrackSetEnabled:(nonnull NSNumber *)trackID : (BOOL *)enabled)
+{
+  RTCMediaStreamTrack *track = self.tracks[trackID];
+  if (track && track.isEnabled != enabled) {
+    [track setEnabled:enabled];
+  }
+}
+
+RCT_EXPORT_METHOD(mediaStreamTrackRelease:(nonnull NSNumber *)streamID : (nonnull NSNumber *)trackID)
+{
+  // what's different to mediaStreamTrackStop? only call mediaStream explicitly?
+  if (self.mediaStreams[streamID] && self.tracks[trackID]) {
+    RTCMediaStream *mediaStream = self.mediaStreams[streamID];
+    RTCMediaStreamTrack *track = self.tracks[trackID];
+    [track setEnabled:NO];
+    if ([track.kind isEqualToString:@"audio"]) {
+      RTCAudioTrack *audioTrack = self.tracks[trackID];
+      [self.tracks removeObjectForKey:audioTrack.reactTag];
+      [mediaStream removeAudioTrack:audioTrack];
+    } else if([track.kind isEqualToString:@"video"]) {
+      RTCVideoTrack *videoTrack = self.tracks[trackID];
+      [self.tracks removeObjectForKey:videoTrack.reactTag];
+      [mediaStream removeVideoTrack:videoTrack];
+    }
+  }
+}
 
 RCT_EXPORT_METHOD(mediaStreamRelease:(nonnull NSNumber *)streamID)
 {

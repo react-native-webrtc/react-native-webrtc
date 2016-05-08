@@ -281,13 +281,13 @@ RCT_EXPORT_METHOD(peerConnectionGetStats:(nonnull NSNumber *)trackID objectID:(n
     NSNumber *trackId = @(self.trackId++);
     track.reactTag = trackId;
     self.tracks[trackId] = track;
-    [tracks addObject:@{@"id": trackId, @"kind": track.kind, @"label": track.label}];
+    [tracks addObject:@{@"id": trackId, @"kind": track.kind, @"label": track.label, @"enabled": @(track.isEnabled), @"remote": @(YES), @"readyState": @"live"}];
   }
   for (RTCAudioTrack *track in stream.audioTracks) {
     NSNumber *trackId = @(self.trackId++);
     track.reactTag = trackId;
     self.tracks[trackId] = track;
-    [tracks addObject:@{@"id": trackId, @"kind": track.kind, @"label": track.label}];
+    [tracks addObject:@{@"id": trackId, @"kind": track.kind, @"label": track.label, @"enabled": @(track.isEnabled), @"remote": @(YES), @"readyState": @"live"}];
   }
 
   self.mediaStreams[objectID] = stream;
