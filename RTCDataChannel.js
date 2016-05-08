@@ -110,7 +110,7 @@ class RTCDataChannel extends EventTarget(DATA_CHANNEL_EVENTS) {
       return;
     }
     this.readyState = 'closing';
-    WebRTCModule.dataChannelClose(this._id);
+    WebRTCModule.dataChannelClose(this.id);
   }
 
   _unregisterEvents() {
