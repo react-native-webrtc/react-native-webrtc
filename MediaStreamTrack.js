@@ -31,6 +31,11 @@ class MediaStreamTrack {
     this.label = info.label;
     this.muted = false;
   }
+
+  setEnabled(enabled) {
+    WebRTCModule.trackSetEnabled(this.id, enabled);
+    this.enabled = enabled;
+  }
 }
 
 module.exports = MediaStreamTrack;
