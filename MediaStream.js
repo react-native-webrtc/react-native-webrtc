@@ -40,6 +40,7 @@ class MediaStream extends EventTarget(MEDIA_STREAM_EVENTS) {
     if (index === -1) {
       return;
     }
+    WebRTCModule.mediaStreamTrackRelease(this.id, track.id);
     this._tracks.splice(index, 1);
     this.dispatchEvent(new MediaStreamTrackEvent('removetrack', {track}));
   }
