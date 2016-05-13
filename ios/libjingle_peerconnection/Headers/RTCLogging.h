@@ -81,7 +81,7 @@ extern NSString* RTCFileName(const char* filePath);
 #define RTCLogError(format, ...)                                  \
   RTCLogFormat(kRTCLoggingSeverityError, format, ##__VA_ARGS__)   \
 
-#ifdef _DEBUG
+#if !defined(NDEBUG)
 #define RTCLogDebug(format, ...) RTCLogInfo(format, ##__VA_ARGS__)
 #else
 #define RTCLogDebug(format, ...) \
