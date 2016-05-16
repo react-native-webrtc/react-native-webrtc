@@ -64,7 +64,13 @@ RCT_EXPORT_METHOD(getUserMedia:(NSDictionary *)constraints callback:(RCTResponse
   
   NSMutableArray *tracks = [NSMutableArray array];
 
-  RTCMediaStream *mediaStream = [self.peerConnectionFactory mediaStreamWithLabel:@"ARDAMS"];
+  // Initialize RTCMediaStream with a unique label in order to allow multiple
+  // RTCMediaStream instances initialized by multiple getUserMedia calls to be
+  // added to 1 RTCPeerConnection instance. As suggested by
+  // https://www.w3.org/TR/mediacapture-streams/#mediastream to be a good
+  // practice, use a UUID (conforming to RFC4122).
+  NSString *mediaStreamUUID = [[NSUUID UUID] UUIDString];
+  RTCMediaStream *mediaStream = [self.peerConnectionFactory mediaStreamWithLabel:mediaStreamUUID];
 
   if (constraints[@"audio"] && [constraints[@"audio"] boolValue]) {
     RTCAudioTrack *audioTrack = [self.peerConnectionFactory audioTrackWithID:@"ARDAMSa0"];
