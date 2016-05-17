@@ -53,10 +53,10 @@ RCT_EXPORT_MODULE()
 RCT_CUSTOM_VIEW_PROPERTY(streamURL, NSNumber, RTCEAGLVideoView)
 {
   if (json) {
-    NSInteger objectID = [json integerValue];
+    NSString *objectID = (NSString *)json;
 
     WebRTCModule *module = [self.bridge moduleForName:@"WebRTCModule"];
-    RTCMediaStream *stream = module.mediaStreams[@(objectID)];
+    RTCMediaStream *stream = module.mediaStreams[objectID];
 
     if (stream.videoTracks.count) {
       RTCVideoTrack *localVideoTrack = stream.videoTracks[0];
