@@ -264,6 +264,40 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
 
             @Override
             public void onDataChannel(DataChannel dataChannel) {
+                // XXX Unfortunately, the Java WebRTC API doesn't expose the id
+                // of the underlying C++/native DataChannel (even though the
+                // WebRTC standard defines the DataChannel.id property). As a
+                // workaround, generated an id which will surely not clash with
+                // the ids of the remotely-opened (and standard-compliant
+                // locally-opened) DataChannels.
+                int dataChannelId = -1;
+                // The RTCDataChannel.id space is limited to unsigned short by
+                // the standard:
+                // https://www.w3.org/TR/webrtc/#dom-datachannel-id.
+                // Additionally, 65535 is reserved due to SCTP INIT and
+                // INIT-ACK chunks only allowing a maximum of 65535 streams to
+                // be negotiated (as defined by the WebRTC Data Channel
+                // Establishment Protocol).
+                for (int i = 65536; i <= Integer.MAX_VALUE; ++i) {
+                    if (null == mDataChannels.get(i, null)) {
+                        dataChannelId = i;
+                        break;
+                    }
+                }
+                if (-1 == dataChannelId) {
+                  return;
+                }
+
+                WritableMap dataChannelParams = Arguments.createMap();
+                dataChannelParams.putInt("id", dataChannelId);
+                dataChannelParams.putString("label", dataChannel.label());
+                WritableMap params = Arguments.createMap();
+                params.putInt("id", id);
+                params.putMap("dataChannel", dataChannelParams);
+
+                mDataChannels.put(dataChannelId, dataChannel);
+
+                sendEvent("peerConnectionDidOpenDataChannel", params);
             }
 
             @Override
@@ -765,12 +799,14 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
     }
 
     @ReactMethod
-    public void dataChannelInit(final int peerConnectionId, final int dataChannelId, String label, ReadableMap config) {
+    public void createDataChannel(final int peerConnectionId, String label, ReadableMap config) {
         PeerConnection peerConnection = mPeerConnections.get(peerConnectionId, null);
         if (peerConnection != null) {
             DataChannel.Init init = new DataChannel.Init();
-            init.id = dataChannelId;
             if (config != null) {
+                if (config.hasKey("id")) {
+                    init.id = config.getInt("id");
+                }
                 if (config.hasKey("ordered")) {
                     init.ordered = config.getBoolean("ordered");
                 }
@@ -784,13 +820,20 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
                     init.protocol = config.getString("protocol");
                 }
                 if (config.hasKey("negotiated")) {
-                    init.ordered = config.getBoolean("negotiated");
+                    init.negotiated = config.getBoolean("negotiated");
                 }
             }
             DataChannel dataChannel = peerConnection.createDataChannel(label, init);
-            mDataChannels.put(dataChannelId, dataChannel);
+            // XXX RTP data channels are not defined by the WebRTC standard,
+            // have been deprecated in Chromium, and Google have decided (in
+            // 2015) to no longer support them (in the face of multiple
+            // reported issues of breakages).
+            int dataChannelId = init.id;
+            if (-1 != dataChannelId) {
+                mDataChannels.put(dataChannelId, dataChannel);
+            }
         } else {
-            Log.d(TAG, "dataChannelInit() peerConnection is null");
+            Log.d(TAG, "createDataChannel() peerConnection is null");
         }
     }
 

@@ -5,32 +5,22 @@
 
 #import "WebRTCModule+RTCDataChannel.h"
 
-@implementation RTCDataChannel (React)
-
-- (NSNumber *)reactTag
-{
-  return objc_getAssociatedObject(self, _cmd);
-}
-
-- (void)setReactTag:(NSNumber *)reactTag
-{
-  objc_setAssociatedObject(self, @selector(reactTag), reactTag, OBJC_ASSOCIATION_COPY_NONATOMIC);
-}
-
-@end
-
 @implementation WebRTCModule (RTCDataChannel)
 
-RCT_EXPORT_METHOD(dataChannelInit:(nonnull NSNumber *)peerConnectionId
-                    dataChannelId:(nonnull NSNumber *)dataChannelId
-                            label:(NSString *)label
-                           config:(RTCDataChannelInit *)config
+RCT_EXPORT_METHOD(createDataChannel:(nonnull NSNumber *)peerConnectionId
+                              label:(NSString *)label
+                             config:(RTCDataChannelInit *)config
 {
   RTCPeerConnection *peerConnection = self.peerConnections[peerConnectionId];
   RTCDataChannel *dataChannel = [peerConnection createDataChannelWithLabel:label config:config];
-  dataChannel.reactTag = dataChannelId;
-  dataChannel.delegate = self;
-  self.dataChannels[dataChannelId] = dataChannel;
+  NSInteger dataChannelId = dataChannel.streamId;
+  // XXX RTP data channels are not defined by the WebRTC standard, have been
+  // deprecated in Chromium, and Google have decided (in 2015) to no longer
+  // support them (in the face of multiple reported issues of breakages).
+  if (-1 != dataChannelId) {
+    self.dataChannels[@(dataChannelId)] = dataChannel;
+    dataChannel.delegate = self;
+  }
 })
 
 RCT_EXPORT_METHOD(dataChannelSend:(nonnull NSNumber *)dataChannelId
@@ -68,7 +58,7 @@ RCT_EXPORT_METHOD(dataChannelClose:(nonnull NSNumber *)dataChannelId
 // Called when the data channel state has changed.
 - (void)channelDidChangeState:(RTCDataChannel*)channel
 {
-  NSDictionary *event = @{@"id": channel.reactTag,
+  NSDictionary *event = @{@"id": @(channel.streamId),
                           @"state": [self stringForDataChannelState:channel.state]};
   [self.bridge.eventDispatcher sendDeviceEventWithName:@"dataChannelStateChanged"
                                                   body:event];
@@ -80,7 +70,7 @@ RCT_EXPORT_METHOD(dataChannelClose:(nonnull NSNumber *)dataChannelId
   NSString *data = buffer.isBinary ?
     [buffer.data base64EncodedStringWithOptions:0] :
     [NSString stringWithUTF8String:buffer.data.bytes];
-  NSDictionary *event = @{@"id": channel.reactTag,
+  NSDictionary *event = @{@"id": @(channel.streamId),
                           @"type": buffer.isBinary ? @"binary" : @"text",
                           @"data": data};
   [self.bridge.eventDispatcher sendDeviceEventWithName:@"dataChannelReceiveMessage"
