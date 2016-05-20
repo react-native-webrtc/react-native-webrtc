@@ -134,26 +134,24 @@ RCT_EXPORT_METHOD(mediaStreamTrackSetEnabled:(nonnull NSString *)trackID : (BOOL
 RCT_EXPORT_METHOD(mediaStreamTrackRelease:(nonnull NSString *)streamID : (nonnull NSString *)trackID)
 {
   // what's different to mediaStreamTrackStop? only call mediaStream explicitly?
-  if (self.mediaStreams[streamID] && self.tracks[trackID]) {
-    RTCMediaStream *mediaStream = self.mediaStreams[streamID];
-    RTCMediaStreamTrack *track = self.tracks[trackID];
+  RTCMediaStream *mediaStream = self.mediaStreams[streamID];
+  RTCMediaStreamTrack *track;
+  if (mediaStream && (track = self.tracks[trackID])) {
     [track setEnabled:NO];
     if ([track.kind isEqualToString:@"audio"]) {
-      RTCAudioTrack *audioTrack = self.tracks[trackID];
       [self.tracks removeObjectForKey:trackID];
-      [mediaStream removeAudioTrack:audioTrack];
+      [mediaStream removeAudioTrack:(RTCAudioTrack *)track];
     } else if([track.kind isEqualToString:@"video"]) {
-      RTCVideoTrack *videoTrack = self.tracks[trackID];
       [self.tracks removeObjectForKey:trackID];
-      [mediaStream removeVideoTrack:videoTrack];
+      [mediaStream removeVideoTrack:(RTCVideoTrack *)track];
     }
   }
 }
 
 RCT_EXPORT_METHOD(mediaStreamRelease:(nonnull NSString *)streamID)
 {
-  if (self.mediaStreams[streamID]) {
-    RTCMediaStream *mediaStream = self.mediaStreams[streamID];
+  RTCMediaStream *mediaStream = self.mediaStreams[streamID];
+  if (mediaStream) {
     for (RTCVideoTrack *track in mediaStream.videoTracks) {
       [self.tracks removeObjectForKey:track.label];
     }

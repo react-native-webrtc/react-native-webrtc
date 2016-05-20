@@ -328,9 +328,8 @@ RCT_EXPORT_METHOD(peerConnectionGetStats:(nonnull NSString *)trackID objectID:(n
 }
 
 - (void)peerConnection:(RTCPeerConnection *)peerConnection removedStream:(RTCMediaStream *)stream {
-  // TODO: remove stream from self.mediaStreams
-  if (self.mediaStreams[stream.label]) {
-    RTCMediaStream *mediaStream = self.mediaStreams[stream.label];
+  RTCMediaStream *mediaStream = self.mediaStreams[stream.label];
+  if (mediaStream) {
     for (RTCVideoTrack *track in mediaStream.videoTracks) {
       [self.tracks removeObjectForKey:track.label];
     }
