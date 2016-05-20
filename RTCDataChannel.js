@@ -127,8 +127,7 @@ class RTCDataChannel extends EventTarget(DATA_CHANNEL_EVENTS) {
         this.readyState = ev.state;
         if (this.readyState === 'open') {
           this.dispatchEvent(new RTCDataChannelEvent('open', {channel: this}));
-        }
-        if (this.readyState === 'close') {
+        } else if (this.readyState === 'close') {
           this.dispatchEvent(new RTCDataChannelEvent('close', {channel: this}));
           this._unregisterEvents();
         }
