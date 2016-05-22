@@ -1,6 +1,8 @@
 'use strict';
-var React = require('react-native');
-var { requireNativeComponent, PropTypes } = React;
+var ReactNative = require('react-native');
+var React = require('react');
+var { requireNativeComponent } = ReactNative;
+var { PropTypes } = React
 
 var RTCView = {
   name: 'RTCVideoView',

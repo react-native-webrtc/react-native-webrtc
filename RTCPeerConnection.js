@@ -1,11 +1,11 @@
 'use strict';
 
 var EventTarget = require('event-target-shim');
-var React = require('react-native');
+var ReactNative = require('react-native');
 var {
   DeviceEventEmitter,
   NativeModules,
-} = React;
+} = ReactNative;
 var WebRTCModule = NativeModules.WebRTCModule;
 
 var MediaStream = require('./MediaStream');
