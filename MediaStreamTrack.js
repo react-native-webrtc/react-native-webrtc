@@ -97,10 +97,6 @@ class MediaStreamTrack {
   getSettings() {
     throw new Error('Not implemented.');
   }
-
-  clone() {
-    throw new Error('Not implemented.');
-  }
 }
 
 module.exports = MediaStreamTrack;
