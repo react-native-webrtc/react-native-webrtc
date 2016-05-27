@@ -32,6 +32,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.net.URISyntaxException;
 import java.util.LinkedList;
+import java.util.UUID;
 
 import android.util.Base64;
 import android.util.SparseArray;
@@ -56,11 +57,9 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
 
     private static final String LANGUAGE =  "language";
     private PeerConnectionFactory mFactory;
-    private int mMediaStreamId = 0;
-    private int mMediaStreamTrackId = 0;
     private final SparseArray<PeerConnection> mPeerConnections;
-    public final SparseArray<MediaStream> mMediaStreams;
-    public final SparseArray<MediaStreamTrack> mMediaStreamTracks;
+    public final Map<String, MediaStream> mMediaStreams;
+    public final Map<String, MediaStreamTrack> mMediaStreamTracks;
     private final SparseArray<DataChannel> mDataChannels;
     private MediaConstraints pcConstraints = new MediaConstraints();
     VideoSource videoSource;
@@ -69,8 +68,8 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
         super(reactContext);
 
         mPeerConnections = new SparseArray<PeerConnection>();
-        mMediaStreams = new SparseArray<MediaStream>();
-        mMediaStreamTracks = new SparseArray<MediaStreamTrack>();
+        mMediaStreams = new HashMap<String, MediaStream>();
+        mMediaStreamTracks = new HashMap<String, MediaStreamTrack>();
         mDataChannels = new SparseArray<DataChannel>();
 
         pcConstraints.mandatory.add(new MediaConstraints.KeyValuePair("OfferToReceiveAudio", "true"));
@@ -200,20 +199,24 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
 
             @Override
             public void onAddStream(MediaStream mediaStream) {
-                mMediaStreamId++;
-                mMediaStreams.put(mMediaStreamId, mediaStream);
+                String streamId = mediaStream.label();
+                if (mMediaStreams.containsKey(streamId)) {
+                    Log.e(TAG,
+                        "onAddStream: Duplicated stream for ID: " + streamId);
+                    return;
+                }
+                mMediaStreams.put(streamId, mediaStream);
                 WritableMap params = Arguments.createMap();
                 params.putInt("id", id);
-                params.putInt("streamId", mMediaStreamId);
+                params.putString("streamId", streamId);
 
                 WritableArray tracks = Arguments.createArray();
 
                 for (int i = 0; i < mediaStream.videoTracks.size(); i++) {
                     VideoTrack track = mediaStream.videoTracks.get(i);
 
-                    int mediaStreamTrackId = mMediaStreamTrackId++;
                     WritableMap trackInfo = Arguments.createMap();
-                    trackInfo.putString("id", mediaStreamTrackId + "");
+                    trackInfo.putString("id", track.id());
                     trackInfo.putString("label", "Video");
                     trackInfo.putString("kind", track.kind());
                     trackInfo.putBoolean("enabled", track.enabled());
@@ -224,9 +227,8 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
                 for (int i = 0; i < mediaStream.audioTracks.size(); i++) {
                     AudioTrack track = mediaStream.audioTracks.get(i);
 
-                    int mediaStreamTrackId = mMediaStreamTrackId++;
                     WritableMap trackInfo = Arguments.createMap();
-                    trackInfo.putString("id", mediaStreamTrackId + "");
+                    trackInfo.putString("id", track.id());
                     trackInfo.putString("label", "Audio");
                     trackInfo.putString("kind", track.kind());
                     trackInfo.putBoolean("enabled", track.enabled());
@@ -242,28 +244,13 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
             @Override
             public void onRemoveStream(MediaStream mediaStream) {
                 if (mediaStream != null) {
-                    int trackIndex;
-                    int streamIndex;
-                    for (int i = 0; i < mediaStream.videoTracks.size(); i++) {
-                        VideoTrack track = mediaStream.videoTracks.get(i);
-                        trackIndex = mMediaStreamTracks.indexOfValue(track);
-                        while (trackIndex >= 0) {
-                            mMediaStreamTracks.removeAt(trackIndex);
-                            trackIndex = mMediaStreamTracks.indexOfValue(track);
-                        }
+                    for (VideoTrack track : mediaStream.videoTracks) {
+                        mMediaStreamTracks.remove(track.id());
                     }
-                    for (int i = 0; i < mediaStream.audioTracks.size(); i++) {
-                        AudioTrack track = mediaStream.audioTracks.get(i);
-                        trackIndex = mMediaStreamTracks.indexOfValue(track);
-                        while (trackIndex >= 0) {
-                            mMediaStreamTracks.removeAt(trackIndex);
-                            trackIndex = mMediaStreamTracks.indexOfValue(track);
-                        }
+                    for (AudioTrack track : mediaStream.audioTracks) {
+                        mMediaStreamTracks.remove(track.id());
                     }
-                    streamIndex = mMediaStreams.indexOfValue(mediaStream);
-                    if (streamIndex >= 0) {
-                        mMediaStreams.removeAt(streamIndex);
-                    }
+                    mMediaStreams.remove(mediaStream.label());
                 }
             }
 
@@ -321,9 +308,31 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
         });
         mPeerConnections.put(id, peerConnection);
     }
+
+    private String getNextStreamUUID() {
+        String uuid;
+
+        do {
+            uuid = UUID.randomUUID().toString();
+        } while (mMediaStreams.containsKey(uuid));
+
+        return uuid;
+    }
+
+    private String getNextTrackUUID() {
+        String uuid;
+
+        do {
+            uuid = UUID.randomUUID().toString();
+        } while (mMediaStreamTracks.containsKey(uuid));
+
+        return uuid;
+    }
+
     @ReactMethod
     public void getUserMedia(ReadableMap constraints, Callback callback){
-        MediaStream mediaStream = mFactory.createLocalMediaStream("ARDAMS");
+        String streamId = getNextStreamUUID();
+        MediaStream mediaStream = mFactory.createLocalMediaStream(streamId);
 
         WritableArray tracks = Arguments.createArray();
         if (constraints.hasKey("video")) {
@@ -363,13 +372,13 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
             // videoConstraints.mandatory.add(new MediaConstraints.KeyValuePair("minFrameRate", Integer.toString(10)));
 
             if (videoSource != null) {
-                VideoTrack videoTrack = mFactory.createVideoTrack("ARDAMSv0", videoSource);
+                String trackId = getNextTrackUUID();
+                VideoTrack videoTrack = mFactory.createVideoTrack(trackId, videoSource);
 
-                int mediaStreamTrackId = mMediaStreamTrackId++;
-                mMediaStreamTracks.put(mediaStreamTrackId, videoTrack);
+                mMediaStreamTracks.put(trackId, videoTrack);
 
                 WritableMap trackInfo = Arguments.createMap();
-                trackInfo.putString("id", mediaStreamTrackId + "");
+                trackInfo.putString("id", trackId);
                 trackInfo.putString("label", "Video");
                 trackInfo.putString("kind", videoTrack.kind());
                 trackInfo.putBoolean("enabled", videoTrack.enabled());
@@ -391,13 +400,13 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
 
             AudioSource audioSource = mFactory.createAudioSource(audioConstarints);
 
-            AudioTrack audioTrack = mFactory.createAudioTrack("ARDAMSa0", audioSource);
+            String trackId = getNextTrackUUID();
+            AudioTrack audioTrack = mFactory.createAudioTrack(trackId, audioSource);
 
-            int mediaStreamTrackId = mMediaStreamTrackId++;
-            mMediaStreamTracks.put(mediaStreamTrackId, audioTrack);
+            mMediaStreamTracks.put(trackId, audioTrack);
 
             WritableMap trackInfo = Arguments.createMap();
-            trackInfo.putString("id", mediaStreamTrackId + "");
+            trackInfo.putString("id", trackId);
             trackInfo.putString("label", "Audio");
             trackInfo.putString("kind", audioTrack.kind());
             trackInfo.putBoolean("enabled", audioTrack.enabled());
@@ -408,11 +417,10 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
             mediaStream.addTrack(audioTrack);
         }
 
-        Log.d(TAG, "mMediaStreamId: " + mMediaStreamId);
-        mMediaStreamId++;
-        mMediaStreams.put(mMediaStreamId, mediaStream);
+        Log.d(TAG, "mMediaStreamId: " + streamId);
+        mMediaStreams.put(streamId, mediaStream);
 
-        callback.invoke(mMediaStreamId, tracks);
+        callback.invoke(streamId, tracks);
     }
     @ReactMethod
     public void mediaStreamTrackGetSources(Callback callback){
@@ -438,22 +446,20 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
 
     @ReactMethod
     public void mediaStreamTrackStop(final String id) {
-        final int trackId = Integer.parseInt(id);
-        MediaStreamTrack track = mMediaStreamTracks.get(trackId, null);
+        MediaStreamTrack track = mMediaStreamTracks.get(id);
         if (track == null) {
             Log.d(TAG, "mediaStreamTrackStop() track is null");
             return;
         }
         track.setEnabled(false);
-        mMediaStreamTracks.remove(trackId);
+        mMediaStreamTracks.remove(id);
         // what exaclty `detached` means in doc?
         // see: https://www.w3.org/TR/mediacapture-streams/#track-detached
     }
 
     @ReactMethod
     public void mediaStreamTrackSetEnabled(final String id, final boolean enabled) {
-        final int trackId = Integer.parseInt(id);
-        MediaStreamTrack track = mMediaStreamTracks.get(trackId, null);
+        MediaStreamTrack track = mMediaStreamTracks.get(id);
         if (track == null) {
             Log.d(TAG, "mediaStreamTrackSetEnabled() track is null");
             return;
@@ -464,22 +470,19 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
     }
 
     @ReactMethod
-    public void mediaStreamTrackRelease(final int streamId, final String _trackId) {
-        // TODO: need to normalize streamId as a string ( spec wanted )
-        //final int streamId = Integer.parseInt(_streamId);
-        final int trackId = Integer.parseInt(_trackId);
-        MediaStream stream = mMediaStreams.get(streamId, null);
+    public void mediaStreamTrackRelease(final String streamId, final String _trackId) {
+        MediaStream stream = mMediaStreams.get(streamId);
         if (stream == null) {
             Log.d(TAG, "mediaStreamTrackRelease() stream is null");
             return;
         }
-        MediaStreamTrack track = mMediaStreamTracks.get(trackId, null);
+        MediaStreamTrack track = mMediaStreamTracks.get(_trackId);
         if (track == null) {
             Log.d(TAG, "mediaStreamTrackRelease() track is null");
             return;
         }
         track.setEnabled(false); // should we do this?
-        mMediaStreamTracks.remove(trackId);
+        mMediaStreamTracks.remove(_trackId);
         if (track.kind().equals("audio")) {
             stream.removeTrack((AudioTrack)track);
         } else if (track.kind().equals("video")) {
@@ -523,8 +526,8 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
         return constraints;
     }
     @ReactMethod
-    public void peerConnectionAddStream(final int streamId, final int id){
-        MediaStream mediaStream = mMediaStreams.get(streamId, null);
+    public void peerConnectionAddStream(final String streamId, final int id){
+        MediaStream mediaStream = mMediaStreams.get(streamId);
         if (mediaStream == null) {
             Log.d(TAG, "peerConnectionAddStream() mediaStream is null");
             return;
@@ -538,8 +541,8 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
         }
     }
     @ReactMethod
-    public void peerConnectionRemoveStream(final int streamId, final int id){
-        MediaStream mediaStream = mMediaStreams.get(streamId, null);
+    public void peerConnectionRemoveStream(final String streamId, final int id){
+        MediaStream mediaStream = mMediaStreams.get(streamId);
         if (mediaStream == null) {
             Log.d(TAG, "peerConnectionRemoveStream() mediaStream is null");
             return;
@@ -730,25 +733,14 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
         resetAudio();
     }
     @ReactMethod
-    public void mediaStreamRelease(final int id) {
-        MediaStream mediaStream = mMediaStreams.get(id, null);
+    public void mediaStreamRelease(final String id) {
+        MediaStream mediaStream = mMediaStreams.get(id);
         if (mediaStream != null) {
-            int trackIndex;
-            for (int i = 0; i < mediaStream.videoTracks.size(); i++) {
-                VideoTrack track = mediaStream.videoTracks.get(i);
-                trackIndex = mMediaStreamTracks.indexOfValue(track);
-                while (trackIndex >= 0) {
-                    mMediaStreamTracks.removeAt(trackIndex);
-                    trackIndex = mMediaStreamTracks.indexOfValue(track);
-                }
+            for (VideoTrack track : mediaStream.videoTracks) {
+                mMediaStreamTracks.remove(track);
             }
-            for (int i = 0; i < mediaStream.audioTracks.size(); i++) {
-                AudioTrack track = mediaStream.audioTracks.get(i);
-                trackIndex = mMediaStreamTracks.indexOfValue(track);
-                while (trackIndex >= 0) {
-                    mMediaStreamTracks.removeAt(trackIndex);
-                    trackIndex = mMediaStreamTracks.indexOfValue(track);
-                }
+            for (AudioTrack track : mediaStream.audioTracks) {
+                mMediaStreamTracks.remove(track);
             }
 
             mMediaStreams.remove(id);

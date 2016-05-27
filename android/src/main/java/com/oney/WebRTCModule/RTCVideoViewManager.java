@@ -39,9 +39,9 @@ public class RTCVideoViewManager extends SimpleViewManager<WebRTCView> {
     // view.setKeepScreenOn(true);
     return view;
   }
-  @ReactProp(name = "streamURL", defaultInt = -1)
-  public void setStreamURL(WebRTCView view, int streamURL) {
-    if (streamURL >= 0) {
+  @ReactProp(name = "streamURL")
+  public void setStreamURL(WebRTCView view, String streamURL) {
+    if (streamURL != null) {
       WebRTCModule module = mContext.getNativeModule(WebRTCModule.class);
       MediaStream mediaStream = module.mMediaStreams.get(streamURL);
       view.setStream(mediaStream);
