@@ -16,6 +16,7 @@ import com.facebook.react.bridge.UiThreadUtil;
 import com.facebook.react.bridge.WritableArray;
 import com.facebook.react.bridge.WritableMap;
 import com.facebook.react.bridge.ReadableMap;
+import com.facebook.react.bridge.ReadableMapKeySetIterator;
 import com.facebook.react.bridge.ReadableArray;
 import com.facebook.react.bridge.ReadableType;
 import com.facebook.react.modules.core.DeviceEventManagerModule;
@@ -329,98 +330,238 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
         return uuid;
     }
 
-    @ReactMethod
-    public void getUserMedia(ReadableMap constraints, Callback callback){
-        String streamId = getNextStreamUUID();
-        MediaStream mediaStream = mFactory.createLocalMediaStream(streamId);
+    /**
+     * Includes default constraints set for the audio media type.
+     * @param audioConstraints <tt>MediaConstraints</tt> instance to be filled
+     * with the default constraints for audio media type.
+     */
+    private void addDefaultAudioConstraints(MediaConstraints audioConstraints) {
+        audioConstraints.optional.add(
+            new MediaConstraints.KeyValuePair("googNoiseSuppression", "true"));
+        audioConstraints.optional.add(
+            new MediaConstraints.KeyValuePair("googEchoCancellation", "true"));
+        audioConstraints.optional.add(
+            new MediaConstraints.KeyValuePair("echoCancellation", "true"));
+        audioConstraints.optional.add(
+            new MediaConstraints.KeyValuePair("googEchoCancellation2", "true"));
+        audioConstraints.optional.add(
+            new MediaConstraints.KeyValuePair(
+                    "googDAEchoCancellation", "true"));
+    }
 
+    /**
+     * Parses mandatory and optional "GUM" constraints described by given
+     * <tt>ReadableMap</tt>.
+     * @param constraintsMap <tt>ReadableMap</tt> which is a JavaScript object
+     * passed as the constraints argument to get user media call.
+     * @return <tt>MediaConstraints</tt> instance filled with the constraints
+     * from given map.
+     */
+    private MediaConstraints parseConstraints(ReadableMap constraintsMap) {
+
+        MediaConstraints mediaConstraints = new MediaConstraints();
+
+        if (constraintsMap.getType("mandatory") == ReadableType.Map) {
+            ReadableMap mandatory = constraintsMap.getMap("mandatory");
+            ReadableMapKeySetIterator keyIterator = mandatory.keySetIterator();
+
+            while (keyIterator.hasNextKey()) {
+                String key = keyIterator.nextKey();
+                String value = ReactBridgeUtil.getMapStrValue(mandatory, key);
+
+                mediaConstraints.mandatory.add(
+                    new MediaConstraints.KeyValuePair(key, value));
+            }
+        } else {
+            Log.d(TAG, "mandatory constraints are not a map");
+        }
+
+        if (constraintsMap.getType("optional") == ReadableType.Array) {
+            ReadableArray options = constraintsMap.getArray("optional");
+
+            for (int i = 0; i < options.size(); i++) {
+                if (options.getType(i) == ReadableType.Map) {
+                    ReadableMap option = options.getMap(i);
+                    ReadableMapKeySetIterator keyIterator
+                        = option.keySetIterator();
+                    String key = keyIterator.nextKey();
+
+                    if (key != null && !"sourceId".equals(key)) {
+                        mediaConstraints.optional.add(
+                            new MediaConstraints.KeyValuePair(
+                                key,
+                                ReactBridgeUtil.getMapStrValue(option, key)));
+                    }
+                }
+            }
+        } else {
+            Log.d(TAG, "optional constraints are not a map");
+        }
+
+        return mediaConstraints;
+    }
+
+    /**
+     * Retreives "sourceId" constraint value.
+     * @param mediaConstraints a <tt>ReadableMap</tt> which represents "GUM"
+     * constraints argument
+     * @return Integer value of "sourceId" optional "GUM" constraint or
+     * <tt>null</tt> if not specified in the given map.
+     */
+    private Integer getSourceIdConstraint(ReadableMap mediaConstraints) {
+        if (mediaConstraints.hasKey("optional") &&
+            mediaConstraints.getType("optional") == ReadableType.Array) {
+            ReadableArray options = mediaConstraints.getArray("optional");
+
+            for (int i = 0; i < options.size(); i++) {
+                if (options.getType(i) == ReadableType.Map) {
+                    ReadableMap option = options.getMap(i);
+
+                    if (option.hasKey("sourceId") &&
+                        option.getType("sourceId") == ReadableType.String) {
+                        return Integer.parseInt(option.getString("sourceId"));
+                    }
+                }
+            }
+        }
+        return null;
+    }
+
+    @ReactMethod
+    public void getUserMedia(ReadableMap constraints,
+                             Callback    successCallback,
+                             Callback    errorCallback) {
+        AudioTrack audioTrack = null;
+        VideoTrack videoTrack = null;
         WritableArray tracks = Arguments.createArray();
+
         if (constraints.hasKey("video")) {
             ReadableType type = constraints.getType("video");
             VideoSource videoSource = null;
             MediaConstraints videoConstraints = new MediaConstraints();
+            Integer sourceId = null;
             switch (type) {
                 case Boolean:
-                    boolean useVideo = constraints.getBoolean("video");
-                    if (useVideo) {
-                        String name = CameraEnumerationAndroid.getNameOfFrontFacingDevice();
-
-                        VideoCapturerAndroid v = VideoCapturerAndroid.create(name, new CameraEventsHandler());
-                        videoSource = mFactory.createVideoSource(v, videoConstraints);
+                    if (!constraints.getBoolean("video")) {
+                        videoConstraints = null;
                     }
                     break;
                 case Map:
                     ReadableMap useVideoMap = constraints.getMap("video");
-                    if (useVideoMap.hasKey("optional")) {
-                        if (useVideoMap.getType("optional") == ReadableType.Array) {
-                            ReadableArray options = useVideoMap.getArray("optional");
-                            for (int i = 0; i < options.size(); i++) {
-                                if (options.getType(i) == ReadableType.Map) {
-                                    ReadableMap option = options.getMap(i);
-                                    if (option.hasKey("sourceId") && option.getType("sourceId") == ReadableType.String) {
-                                        videoSource = mFactory.createVideoSource(getVideoCapturerById(Integer.parseInt(option.getString("sourceId"))), videoConstraints);
-                                    }
-                                }
-                            }
-                        }
-                    }
+                    videoConstraints = parseConstraints(useVideoMap);
+                    sourceId = getSourceIdConstraint(useVideoMap);
                     break;
             }
-            // videoConstraints.mandatory.add(new MediaConstraints.KeyValuePair("maxHeight", Integer.toString(100)));
-            // videoConstraints.mandatory.add(new MediaConstraints.KeyValuePair("maxWidth", Integer.toString(100)));
-            // videoConstraints.mandatory.add(new MediaConstraints.KeyValuePair("maxFrameRate", Integer.toString(10)));
-            // videoConstraints.mandatory.add(new MediaConstraints.KeyValuePair("minFrameRate", Integer.toString(10)));
+
+            if (videoConstraints != null) {
+                Log.i(TAG, "getUserMedia(video): " + videoConstraints
+                    + ", sourceId: " + sourceId);
+
+                VideoCapturer videoCapturer = getVideoCapturerById(sourceId);
+                if (videoCapturer != null) {
+                    // FIXME it seems that the factory does not care about
+                    //       given mandatory constraints too much
+                    videoSource = mFactory.createVideoSource(
+                            videoCapturer, videoConstraints);
+                }
+            }
 
             if (videoSource != null) {
                 String trackId = getNextTrackUUID();
-                VideoTrack videoTrack = mFactory.createVideoTrack(trackId, videoSource);
+                videoTrack = mFactory.createVideoTrack(trackId, videoSource);
+                if (videoTrack != null) {
+                    mMediaStreamTracks.put(trackId, videoTrack);
 
-                mMediaStreamTracks.put(trackId, videoTrack);
+                    WritableMap trackInfo = Arguments.createMap();
+                    trackInfo.putString("id", trackId);
+                    trackInfo.putString("label", "Video");
+                    trackInfo.putString("kind", videoTrack.kind());
+                    trackInfo.putBoolean("enabled", videoTrack.enabled());
+                    trackInfo.putString(
+                        "readyState", videoTrack.state().toString());
+                    trackInfo.putBoolean("remote", false);
+                    tracks.pushMap(trackInfo);
+                }
+            }
 
-                WritableMap trackInfo = Arguments.createMap();
-                trackInfo.putString("id", trackId);
-                trackInfo.putString("label", "Video");
-                trackInfo.putString("kind", videoTrack.kind());
-                trackInfo.putBoolean("enabled", videoTrack.enabled());
-                trackInfo.putString("readyState", videoTrack.state().toString());
-                trackInfo.putBoolean("remote", false);
-                tracks.pushMap(trackInfo);
-
-                mediaStream.addTrack(videoTrack);
+            if (videoConstraints != null && videoTrack == null) {
+                errorCallback.invoke("Failed to obtain video");
+                return;
             }
         }
-        boolean useAudio = constraints.getBoolean("audio");
-        if (useAudio) {
-            MediaConstraints audioConstarints = new MediaConstraints();
-            audioConstarints.mandatory.add(new MediaConstraints.KeyValuePair("googNoiseSuppression", "true"));
-            audioConstarints.mandatory.add(new MediaConstraints.KeyValuePair("googEchoCancellation", "true"));
-            audioConstarints.mandatory.add(new MediaConstraints.KeyValuePair("echoCancellation", "true"));
-            audioConstarints.mandatory.add(new MediaConstraints.KeyValuePair("googEchoCancellation2", "true"));
-            audioConstarints.mandatory.add(new MediaConstraints.KeyValuePair("googDAEchoCancellation", "true"));
 
-            AudioSource audioSource = mFactory.createAudioSource(audioConstarints);
+        if (constraints.hasKey("audio")) {
+            MediaConstraints audioConstraints = new MediaConstraints();
+            ReadableType type = constraints.getType("audio");
+            switch (type) {
+                case Boolean:
+                    if (constraints.getBoolean("audio")) {
+                        addDefaultAudioConstraints(audioConstraints);
+                    } else {
+                        audioConstraints = null;
+                    }
+                    break;
+                case Map:
+                    audioConstraints
+                        = parseConstraints(constraints.getMap("audio"));
+                    break;
+                default:
+                    audioConstraints = null;
+                    break;
+            }
 
-            String trackId = getNextTrackUUID();
-            AudioTrack audioTrack = mFactory.createAudioTrack(trackId, audioSource);
+            if (audioConstraints != null) {
+                Log.i(TAG, "getUserMedia(audio): " + audioConstraints);
 
-            mMediaStreamTracks.put(trackId, audioTrack);
+                AudioSource audioSource
+                    = mFactory.createAudioSource(audioConstraints);
 
-            WritableMap trackInfo = Arguments.createMap();
-            trackInfo.putString("id", trackId);
-            trackInfo.putString("label", "Audio");
-            trackInfo.putString("kind", audioTrack.kind());
-            trackInfo.putBoolean("enabled", audioTrack.enabled());
-            trackInfo.putString("readyState", audioTrack.state().toString());
-            trackInfo.putBoolean("remote", false);
-            tracks.pushMap(trackInfo);
+                if (audioSource != null) {
+                    String trackId = getNextTrackUUID();
+                    audioTrack
+                        = mFactory.createAudioTrack(trackId, audioSource);
+                    if (audioTrack != null) {
+                        mMediaStreamTracks.put(trackId, audioTrack);
 
-            mediaStream.addTrack(audioTrack);
+                        WritableMap trackInfo = Arguments.createMap();
+                        trackInfo.putString("id", trackId);
+                        trackInfo.putString("label", "Audio");
+                        trackInfo.putString("kind", audioTrack.kind());
+                        trackInfo.putBoolean("enabled", audioTrack.enabled());
+                        trackInfo.putString("readyState",
+                            audioTrack.state().toString());
+                        trackInfo.putBoolean("remote", false);
+                        tracks.pushMap(trackInfo);
+                    }
+                }
+            }
+            if (audioTrack == null && audioConstraints != null) {
+                errorCallback.invoke("Failed to obtain audio");
+                return;
+            }
         }
+
+        if (audioTrack == null && videoTrack == null) {
+            errorCallback.invoke("No audio nor video media requested");
+            return;
+        }
+
+        String streamId = getNextStreamUUID();
+        MediaStream mediaStream = mFactory.createLocalMediaStream(streamId);
+        if (mediaStream == null) {
+            errorCallback.invoke("Failed to create new media stream");
+            return;
+        }
+
+        if (audioTrack != null)
+            mediaStream.addTrack(audioTrack);
+        if (videoTrack != null)
+            mediaStream.addTrack(videoTrack);
 
         Log.d(TAG, "mMediaStreamId: " + streamId);
         mMediaStreams.put(streamId, mediaStream);
 
-        callback.invoke(streamId, tracks);
+        successCallback.invoke(streamId, tracks);
     }
     @ReactMethod
     public void mediaStreamTrackGetSources(Callback callback){
@@ -509,8 +650,9 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
         return params;
     }
 
-    private VideoCapturer getVideoCapturerById(int id) {
-        String name = CameraEnumerationAndroid.getDeviceName(id);
+    private VideoCapturer getVideoCapturerById(Integer id) {
+        String name
+            = id != null ? CameraEnumerationAndroid.getDeviceName(id) : null;
         if (name == null) {
             name = CameraEnumerationAndroid.getNameOfFrontFacingDevice();
         }

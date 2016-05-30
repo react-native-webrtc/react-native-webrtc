@@ -30,7 +30,9 @@
 
 @implementation WebRTCModule (RTCMediaStream)
 
-RCT_EXPORT_METHOD(getUserMedia:(NSDictionary *)constraints callback:(RCTResponseSenderBlock)callback)
+RCT_EXPORT_METHOD(getUserMedia:(NSDictionary *)constraints
+               successCallback:(RCTResponseSenderBlock)successCallback
+                 errorCallback:(RCTResponseSenderBlock)errorCallback)
 {
   NSMutableArray *tracks = [NSMutableArray array];
 
@@ -120,7 +122,7 @@ RCT_EXPORT_METHOD(getUserMedia:(NSDictionary *)constraints callback:(RCTResponse
   }
 
   self.mediaStreams[mediaStreamUUID] = mediaStream;
-  callback(@[mediaStreamUUID, tracks]);
+  successCallback(@[mediaStreamUUID, tracks]);
 }
 
 RCT_EXPORT_METHOD(mediaStreamTrackGetSources:(RCTResponseSenderBlock)callback) {
