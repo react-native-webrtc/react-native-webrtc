@@ -74,7 +74,6 @@ class RTCPeerConnection extends EventTarget(PEER_CONNECTION_EVENTS) {
   onremovestream: ?Function;
 
   _peerConnectionId: number;
-  _localStreams: Array<MediaStream> = [];
   _remoteStreams: Array<MediaStream> = [];
   _subscriptions: Array<any>;
 
@@ -87,14 +86,9 @@ class RTCPeerConnection extends EventTarget(PEER_CONNECTION_EVENTS) {
 
   addStream(stream: MediaStream) {
     WebRTCModule.peerConnectionAddStream(stream.id, this._peerConnectionId);
-    this._localStreams.push(stream);
   }
 
   removeStream(stream: MediaStream) {
-    var index = this._localStreams.indexOf(stream);
-    if (index > -1) {
-      this._localStreams.splice(index, 1);
-    }
     WebRTCModule.peerConnectionRemoveStream(stream.id, this._peerConnectionId);
   }
 
