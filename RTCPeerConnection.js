@@ -1,21 +1,20 @@
 'use strict';
 
-var EventTarget = require('event-target-shim');
-var ReactNative = require('react-native');
-var {
+import EventTarget from 'event-target-shim'
+import {
   DeviceEventEmitter,
   NativeModules,
-} = ReactNative;
-var WebRTCModule = NativeModules.WebRTCModule;
+} from 'react-native';
+const WebRTCModule = NativeModules.WebRTCModule;
 
-var MediaStream = require('./MediaStream');
-var MediaStreamEvent = require('./MediaStreamEvent');
-var MediaStreamTrack = require('./MediaStreamTrack');
-var RTCDataChannel = require('./RTCDataChannel');
-var RTCSessionDescription = require('./RTCSessionDescription');
-var RTCIceCandidate = require('./RTCIceCandidate');
-var RTCIceCandidateEvent = require('./RTCIceCandidateEvent');
-var RTCEvent = require('./RTCEvent');
+import MediaStream from './MediaStream'
+import MediaStreamEvent from './MediaStreamEvent'
+import MediaStreamTrack from './MediaStreamTrack'
+import RTCDataChannel from './RTCDataChannel'
+import RTCSessionDescription from './RTCSessionDescription'
+import RTCIceCandidate from './RTCIceCandidate'
+import RTCIceCandidateEvent from './RTCIceCandidateEvent'
+import RTCEvent from './RTCEvent'
 
 type RTCSignalingState =
   'stable' |
@@ -95,7 +94,7 @@ class RTCPeerConnection extends EventTarget(PEER_CONNECTION_EVENTS) {
   createOffer(success: ?Function, failure: ?Function, constraints) {
     WebRTCModule.peerConnectionCreateOffer(this._peerConnectionId, (successful, data) => {
       if (successful) {
-        var sessionDescription = new RTCSessionDescription(data);
+        const sessionDescription = new RTCSessionDescription(data);
         success(sessionDescription);
       } else {
         failure(data); // TODO: convert to NavigatorUserMediaError
@@ -106,7 +105,7 @@ class RTCPeerConnection extends EventTarget(PEER_CONNECTION_EVENTS) {
   createAnswer(success: ?Function, failure: ?Function, constraints) {
     WebRTCModule.peerConnectionCreateAnswer(this._peerConnectionId, (successful, data) => {
       if (successful) {
-        var sessionDescription = new RTCSessionDescription(data);
+        const sessionDescription = new RTCSessionDescription(data);
         success(sessionDescription);
       } else {
         failure(data);
@@ -195,9 +194,9 @@ class RTCPeerConnection extends EventTarget(PEER_CONNECTION_EVENTS) {
         if (ev.id !== this._peerConnectionId) {
           return;
         }
-        var stream = new MediaStream(ev.streamId);
-        var tracks = ev.tracks;
-        for (var i = 0; i < tracks.length; i++) {
+        const stream = new MediaStream(ev.streamId);
+        const tracks = ev.tracks;
+        for (let i = 0; i < tracks.length; i++) {
           stream.addTrack(new MediaStreamTrack(tracks[i]));
         }
         this._remoteStreams.push(stream);
@@ -207,9 +206,9 @@ class RTCPeerConnection extends EventTarget(PEER_CONNECTION_EVENTS) {
         if (ev.id !== this._peerConnectionId) {
           return;
         }
-        var stream = this._remoteStreams.find(s => s.id === ev.streamId);
+        const stream = this._remoteStreams.find(s => s.id === ev.streamId);
         if (stream) {
-          var index = this._remoteStreams.indexOf(stream);
+          const index = this._remoteStreams.indexOf(stream);
           if (index > -1) {
             this._remoteStreams.splice(index, 1);
           }
@@ -220,8 +219,8 @@ class RTCPeerConnection extends EventTarget(PEER_CONNECTION_EVENTS) {
         if (ev.id !== this._peerConnectionId) {
           return;
         }
-        var candidate = new RTCIceCandidate(ev.candidate);
-        var event = new RTCIceCandidateEvent('icecandidate', {candidate});
+        const candidate = new RTCIceCandidate(ev.candidate);
+        const event = new RTCIceCandidateEvent('icecandidate', {candidate});
         this.dispatchEvent(event);
       }),
       DeviceEventEmitter.addListener('peerConnectionIceGatheringChanged', ev => {

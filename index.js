@@ -1,23 +1,19 @@
 'use strict';
 
-var RTCPeerConnection = require('./RTCPeerConnection');
-var RTCIceCandidate = require('./RTCIceCandidate');
-var RTCSessionDescription = require('./RTCSessionDescription');
-var RTCView = require('./RTCView');
-var RTCSetting = require('./RTCSetting');
-var MediaStream = require('./MediaStream');
-var MediaStreamTrack = require('./MediaStreamTrack');
-var getUserMedia = require('./getUserMedia');
+import RTCPeerConnection from './RTCPeerConnection'
+import RTCIceCandidate from './RTCIceCandidate'
+import RTCSessionDescription from './RTCSessionDescription'
+import RTCView from './RTCView'
+import MediaStream from './MediaStream'
+import MediaStreamTrack from './MediaStreamTrack'
+import getUserMedia from './getUserMedia'
 
-var WebRTC = {
+module.exports = {
   RTCPeerConnection,
   RTCIceCandidate,
   RTCSessionDescription,
   RTCView,
-  RTCSetting,
   MediaStream,
   MediaStreamTrack,
   getUserMedia,
 };
-
-module.exports = WebRTC;

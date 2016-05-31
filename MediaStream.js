@@ -1,9 +1,12 @@
 'use strict';
 
-const EventTarget = require('event-target-shim');
-const WebRTCModule = require('react-native').NativeModules.WebRTCModule;
+import {
+  NativeModules,
+} from 'react-native';
+const WebRTCModule = NativeModules.WebRTCModule;
 
-const MediaStreamTrackEvent = require('./MediaStreamTrackEvent');
+import EventTarget from 'event-target-shim';
+import MediaStreamTrackEvent from './MediaStreamTrackEvent';
 
 import type MediaStreamTrack from './MediaStreamTrack';
 

@@ -1,13 +1,16 @@
 'use strict';
 
-const base64 = require('base64-js');
-const EventTarget = require('event-target-shim');
-const {DeviceEventEmitter, NativeModules} = require('react-native');
 
-const MessageEvent = require('./MessageEvent');
-const RTCDataChannelEvent = require('./RTCDataChannelEvent');
+import {
+  NativeModules,
+  DeviceEventEmitter,
+} from 'react-native';
+const WebRTCModule = NativeModules.WebRTCModule;
 
-const {WebRTCModule} = NativeModules;
+import base64 from 'base64-js'
+import EventTarget from 'event-target-shim'
+import MessageEvent from './MessageEvent'
+import RTCDataChannelEvent from './RTCDataChannelEvent'
 
 type RTCDataChannelInit = {
   ordered?: boolean;
