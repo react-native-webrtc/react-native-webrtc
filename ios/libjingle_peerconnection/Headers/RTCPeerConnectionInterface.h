@@ -63,11 +63,15 @@ typedef NS_ENUM(NSInteger, RTCTcpCandidatePolicy) {
 @property(nonatomic, assign) RTCRtcpMuxPolicy rtcpMuxPolicy;
 @property(nonatomic, assign) RTCTcpCandidatePolicy tcpCandidatePolicy;
 @property(nonatomic, assign) int audioJitterBufferMaxPackets;
+@property(nonatomic, assign) int iceConnectionReceivingTimeout;
+@property(nonatomic, assign) int iceBackupCandidatePairPingInterval;
 
 - (instancetype)initWithIceTransportsType:(RTCIceTransportsType)iceTransportsType
                              bundlePolicy:(RTCBundlePolicy)bundlePolicy
                             rtcpMuxPolicy:(RTCRtcpMuxPolicy)rtcpMuxPolicy
                        tcpCandidatePolicy:(RTCTcpCandidatePolicy)tcpCandidatePolicy
-              audioJitterBufferMaxPackets:(int)audioJitterBufferMaxPackets;
+              audioJitterBufferMaxPackets:(int)audioJitterBufferMaxPackets
+            iceConnectionReceivingTimeout:(int)iceConnectionReceivingTimeout
+       iceBackupCandidatePairPingInterval:(int)iceBackupCandidatePairPingInterval;
 
 @end

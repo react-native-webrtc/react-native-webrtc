@@ -39,21 +39,38 @@ typedef NS_ENUM(NSUInteger, RTCFileLoggerSeverity) {
   kRTCFileLoggerSeverityError
 };
 
+typedef NS_ENUM(NSUInteger, RTCFileLoggerRotationType) {
+  kRTCFileLoggerTypeCall,
+  kRTCFileLoggerTypeApp,
+};
+
 // This class intercepts WebRTC logs and saves them to a file. The file size
 // will not exceed the given maximum bytesize. When the maximum bytesize is
-// reached logs from the beginning and the end are preserved while the middle
-// section is overwritten instead.
+// reached, logs are rotated according to the rotationType specified.
+// For kRTCFileLoggerTypeCall, logs from the beginning and the end
+// are preserved while the middle section is overwritten instead.
+// For kRTCFileLoggerTypeApp, the oldest log is overwritten.
 // This class is not threadsafe.
 @interface RTCFileLogger : NSObject
 
 // The severity level to capture. The default is kRTCFileLoggerSeverityInfo.
 @property(nonatomic, assign) RTCFileLoggerSeverity severity;
 
-// Default constructor provides default settings for dir path and file size.
+// The rotation type for this file logger. The default is
+// kRTCFileLoggerTypeCall.
+@property(nonatomic, readonly) RTCFileLoggerRotationType rotationType;
+
+// Default constructor provides default settings for dir path, file size and
+// rotation type.
 - (instancetype)init;
+
+// Create file logger with default rotation type.
+- (instancetype)initWithDirPath:(NSString *)dirPath
+                    maxFileSize:(NSUInteger)maxFileSize;
 
 - (instancetype)initWithDirPath:(NSString *)dirPath
                     maxFileSize:(NSUInteger)maxFileSize
+                   rotationType:(RTCFileLoggerRotationType)rotationType
     NS_DESIGNATED_INITIALIZER;
 
 // Starts writing WebRTC logs to disk if not already started. Overwrites any
