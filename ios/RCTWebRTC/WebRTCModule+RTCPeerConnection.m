@@ -50,7 +50,13 @@ RCT_EXPORT_METHOD(peerConnectionInit:(NSDictionary *)configuration objectID:(non
 RCT_EXPORT_METHOD(peerConnectionAddStream:(nonnull NSNumber *)streamID objectID:(nonnull NSNumber *)objectID)
 {
   RTCMediaStream *stream = self.mediaStreams[streamID];
+  if (!stream) {
+    return;
+  }
   RTCPeerConnection *peerConnection = self.peerConnections[objectID];
+  if (!peerConnection) {
+    return;
+  }
   BOOL result = [peerConnection addStream:stream];
   NSLog(@"result:%i", result);
 }
@@ -58,7 +64,13 @@ RCT_EXPORT_METHOD(peerConnectionAddStream:(nonnull NSNumber *)streamID objectID:
 RCT_EXPORT_METHOD(peerConnectionRemoveStream:(nonnull NSNumber *)streamID objectID:(nonnull NSNumber *)objectID)
 {
   RTCMediaStream *stream = self.mediaStreams[streamID];
+  if (!stream) {
+    return;
+  }
   RTCPeerConnection *peerConnection = self.peerConnections[objectID];
+  if (!peerConnection) {
+    return;
+  }
   [peerConnection removeStream:stream];
 }
 
@@ -66,6 +78,10 @@ RCT_EXPORT_METHOD(peerConnectionRemoveStream:(nonnull NSNumber *)streamID object
 RCT_EXPORT_METHOD(peerConnectionCreateOffer:(nonnull NSNumber *)objectID callback:(RCTResponseSenderBlock)callback)
 {
   RTCPeerConnection *peerConnection = self.peerConnections[objectID];
+  if (!peerConnection) {
+    return;
+  }
+
   [peerConnection createOfferWithCallback:^(RTCSessionDescription *sdp, NSError *error) {
     if (error) {
       callback(@[@(NO),
@@ -108,6 +124,10 @@ RCT_EXPORT_METHOD(peerConnectionCreateOffer:(nonnull NSNumber *)objectID callbac
 RCT_EXPORT_METHOD(peerConnectionCreateAnswer:(nonnull NSNumber *)objectID callback:(RCTResponseSenderBlock)callback)
 {
   RTCPeerConnection *peerConnection = self.peerConnections[objectID];
+  if (!peerConnection) {
+    return;
+  }
+
   [peerConnection createAnswerWithCallback:^(RTCSessionDescription *sdp, NSError *error) {
     if (error) {
       callback(@[@(NO),
@@ -124,6 +144,10 @@ RCT_EXPORT_METHOD(peerConnectionSetLocalDescription:(NSDictionary *)sdpJSON obje
 {
   RTCSessionDescription *sdp = [[RTCSessionDescription alloc] initWithType:sdpJSON[@"type"] sdp:sdpJSON[@"sdp"]];
   RTCPeerConnection *peerConnection = self.peerConnections[objectID];
+  if (!peerConnection) {
+    return;
+  }
+
   [peerConnection setLocalDescriptionWithCallback:^(NSError *error) {
     if (error) {
       id errorResponse = @{@"name": @"SetLocalDescriptionFailed",
@@ -138,6 +162,10 @@ RCT_EXPORT_METHOD(peerConnectionSetRemoteDescription:(NSDictionary *)sdpJSON obj
 {
   RTCSessionDescription *sdp = [[RTCSessionDescription alloc] initWithType:sdpJSON[@"type"] sdp:sdpJSON[@"sdp"]];
   RTCPeerConnection *peerConnection = self.peerConnections[objectID];
+  if (!peerConnection) {
+    return;
+  }
+
   [peerConnection setRemoteDescriptionWithCallback:^(NSError *error) {
     if (error) {
       id errorResponse = @{@"name": @"SetRemoteDescriptionFailed",
@@ -153,6 +181,10 @@ RCT_EXPORT_METHOD(peerConnectionAddICECandidate:(NSDictionary*)candidateJSON obj
 {
   RTCICECandidate *candidate = [[RTCICECandidate alloc] initWithMid:candidateJSON[@"sdpMid"] index:[candidateJSON[@"sdpMLineIndex"] integerValue] sdp:candidateJSON[@"candidate"]];
   RTCPeerConnection *peerConnection = self.peerConnections[objectID];
+  if (!peerConnection) {
+    return;
+  }
+
   BOOL result = [peerConnection addICECandidate:candidate];
   NSLog(@"addICECandidateresult:%i, %@", result, candidate);
   callback(@[@(result)]);
@@ -161,6 +193,10 @@ RCT_EXPORT_METHOD(peerConnectionAddICECandidate:(NSDictionary*)candidateJSON obj
 RCT_EXPORT_METHOD(peerConnectionClose:(nonnull NSNumber *)objectID)
 {
   RTCPeerConnection *peerConnection = self.peerConnections[objectID];
+  if (!peerConnection) {
+    return;
+  }
+
   [peerConnection close];
   [self.peerConnections removeObjectForKey:objectID];
 }
@@ -173,6 +209,10 @@ RCT_EXPORT_METHOD(peerConnectionGetStats:(nonnull NSNumber *)trackID objectID:(n
   }
 
   RTCPeerConnection *peerConnection = self.peerConnections[objectID];
+  if (!peerConnection) {
+    return;
+  }
+
   BOOL result = [peerConnection getStatsWithCallback:^(NSArray *stats) {
     NSMutableArray *statsCollection = [NSMutableArray new];
     for (RTCStatsReport *statsReport in stats) {
