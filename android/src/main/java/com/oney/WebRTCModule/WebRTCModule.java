@@ -291,6 +291,7 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
                 params.putMap("dataChannel", dataChannelParams);
 
                 mDataChannels.put(dataChannelId, dataChannel);
+                registerDataChannelObserver(dataChannelId, dataChannel);
 
                 sendEvent("peerConnectionDidOpenDataChannel", params);
             }
@@ -946,6 +947,14 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
         }*/
     }
 
+    private void registerDataChannelObserver(int dcId, DataChannel dataChannel){
+        // DataChannel.registerObserver implementation does not allow to
+        // unregister, so the observer is registered here and is never
+        // unregistered
+        dataChannel.registerObserver(
+            new DataChannelObserver(dcId, dataChannel));
+    }
+
     @ReactMethod
     public void createDataChannel(final int peerConnectionId, String label, ReadableMap config) {
         PeerConnection peerConnection = mPeerConnections.get(peerConnectionId, null);
@@ -980,6 +989,7 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
             if (-1 != dataChannelId) {
                 dataChannel.registerObserver(new DataChannelObserver(dataChannelId, dataChannel));
                 mDataChannels.put(dataChannelId, dataChannel);
+                registerDataChannelObserver(dataChannelId, dataChannel);
             }
         } else {
             Log.d(TAG, "createDataChannel() peerConnection is null");
