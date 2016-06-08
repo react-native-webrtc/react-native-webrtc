@@ -440,6 +440,7 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
             VideoSource videoSource = null;
             MediaConstraints videoConstraints = new MediaConstraints();
             Integer sourceId = null;
+            String facingMode = null;
             switch (type) {
                 case Boolean:
                     if (!constraints.getBoolean("video")) {
@@ -450,6 +451,9 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
                     ReadableMap useVideoMap = constraints.getMap("video");
                     videoConstraints = parseConstraints(useVideoMap);
                     sourceId = getSourceIdConstraint(useVideoMap);
+                    facingMode
+                        = ReactBridgeUtil.getMapStrValue(
+                                useVideoMap, "facingMode");
                     break;
             }
 
@@ -457,7 +461,8 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
                 Log.i(TAG, "getUserMedia(video): " + videoConstraints
                     + ", sourceId: " + sourceId);
 
-                VideoCapturer videoCapturer = getVideoCapturerById(sourceId);
+                VideoCapturer videoCapturer
+                    = getVideoCapturerById(sourceId, facingMode);
                 if (videoCapturer != null) {
                     // FIXME it seems that the factory does not care about
                     //       given mandatory constraints too much
@@ -650,11 +655,25 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
         return params;
     }
 
-    private VideoCapturer getVideoCapturerById(Integer id) {
+    /**
+     * Creates <tt>VideoCapturer</tt> for given source ID and facing mode.
+     *
+     * @param id the video source identifier(device id), optional
+     * @param facingMode 'user' or 'environment' facing mode, optional
+     * @return <tt>VideoCapturer</tt> instance obtained for given arguments.
+     */
+    private VideoCapturer getVideoCapturerById(Integer id, String facingMode) {
         String name
             = id != null ? CameraEnumerationAndroid.getDeviceName(id) : null;
         if (name == null) {
-            name = CameraEnumerationAndroid.getNameOfFrontFacingDevice();
+            // https://www.w3.org/TR/mediacapture-streams/#def-constraint-facingMode
+            // The specs also mention "left" and "right", but there's no such
+            // method in CameraEnumerationAndroid
+            if (facingMode == null || facingMode.equals("user")) {
+                name = CameraEnumerationAndroid.getNameOfFrontFacingDevice();
+            } else if (facingMode.equals("environment")){
+                name = CameraEnumerationAndroid.getNameOfBackFacingDevice();
+            }
         }
 
         return VideoCapturerAndroid.create(name, new CameraEventsHandler());
