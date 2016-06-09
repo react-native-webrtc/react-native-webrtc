@@ -42,7 +42,9 @@ RCT_EXPORT_METHOD(getUserMedia:(NSDictionary *)constraints callback:(RCTResponse
   NSString *mediaStreamUUID = [[NSUUID UUID] UUIDString];
   RTCMediaStream *mediaStream = [self.peerConnectionFactory mediaStreamWithLabel:mediaStreamUUID];
 
-  if (constraints[@"audio"] && [constraints[@"audio"] boolValue]) {
+  // constraints.audio
+  id audioConstraints = constraints[@"audio"];
+  if (audioConstraints && [audioConstraints boolValue]) {
     NSString *trackUUID = [[NSUUID UUID] UUIDString];
     RTCAudioTrack *audioTrack = [self.peerConnectionFactory audioTrackWithID:trackUUID];
     [mediaStream addAudioTrack:audioTrack];
@@ -50,16 +52,20 @@ RCT_EXPORT_METHOD(getUserMedia:(NSDictionary *)constraints callback:(RCTResponse
     [tracks addObject:@{@"id": trackUUID, @"kind": audioTrack.kind, @"label": audioTrack.label, @"enabled": @(audioTrack.isEnabled), @"remote": @(NO), @"readyState": @"live"}];
   }
 
-  if (constraints[@"video"]) {
+  // constraints.video
+  id videoConstraints = constraints[@"video"];
+  if (videoConstraints) {
     AVCaptureDevice *videoDevice;
-    if ([constraints[@"video"] isKindOfClass:[NSNumber class]]) {
-      if ([constraints[@"video"] boolValue]) {
+    if ([videoConstraints isKindOfClass:[NSNumber class]]) {
+      if ([videoConstraints boolValue]) {
         videoDevice = [AVCaptureDevice defaultDeviceWithMediaType:AVMediaTypeVideo];
       }
-    } else if ([constraints[@"video"] isKindOfClass:[NSDictionary class]]) {
-      if (constraints[@"video"][@"optional"]) {
-        if ([constraints[@"video"][@"optional"] isKindOfClass:[NSArray class]]) {
-          NSArray *options = constraints[@"video"][@"optional"];
+    } else if ([videoConstraints isKindOfClass:[NSDictionary class]]) {
+      // constraints.video.optional
+      id optionalVideoConstraints = videoConstraints[@"optional"];
+      if (optionalVideoConstraints) {
+        if ([optionalVideoConstraints isKindOfClass:[NSArray class]]) {
+          NSArray *options = optionalVideoConstraints;
           for (id item in options) {
             if ([item isKindOfClass:[NSDictionary class]]) {
               NSDictionary *dict = item;
@@ -71,10 +77,36 @@ RCT_EXPORT_METHOD(getUserMedia:(NSDictionary *)constraints callback:(RCTResponse
         }
       }
       if (!videoDevice) {
+        // constraints.video.facingMode
+        //
+        // https://www.w3.org/TR/mediacapture-streams/#def-constraint-facingMode
+        id facingMode = videoConstraints[@"facingMode"];
+        if (facingMode && [facingMode isKindOfClass:[NSString class]]) {
+          AVCaptureDevicePosition position;
+          if ([facingMode isEqualToString:@"environment"]) {
+            position = AVCaptureDevicePositionBack;
+          } else if ([facingMode isEqualToString:@"user"]) {
+            position = AVCaptureDevicePositionFront;
+          } else {
+            // If the specified facingMode value is not supported, fall back to
+            // the default video device.
+            position = AVCaptureDevicePositionUnspecified;
+          }
+          if (AVCaptureDevicePositionUnspecified != position) {
+            for (AVCaptureDevice *aVideoDevice in [AVCaptureDevice devicesWithMediaType:AVMediaTypeVideo]) {
+              if (aVideoDevice.position == position) {
+                videoDevice = aVideoDevice;
+                break;
+              }
+            }
+          }
+        }
+      }
+      if (!videoDevice) {
         videoDevice = [AVCaptureDevice defaultDeviceWithMediaType:AVMediaTypeVideo];
       }
     }
-    
+
     if (videoDevice) {
       RTCVideoCapturer *capturer = [RTCVideoCapturer capturerWithDeviceName:[videoDevice localizedName]];
       RTCVideoSource *videoSource = [self.peerConnectionFactory videoSourceWithCapturer:capturer constraints:[self defaultMediaStreamConstraints]];
