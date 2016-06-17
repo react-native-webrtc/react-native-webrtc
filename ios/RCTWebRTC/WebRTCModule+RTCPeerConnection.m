@@ -372,7 +372,24 @@ RCT_EXPORT_METHOD(peerConnectionGetStats:(nonnull NSNumber *)trackID objectID:(n
 }
 
 - (void)peerConnection:(RTCPeerConnection*)peerConnection didOpenDataChannel:(RTCDataChannel*)dataChannel {
+  NSInteger dataChannelId = dataChannel.streamId;
+  // XXX RTP data channels are not defined by the WebRTC standard, have been
+  // deprecated in Chromium, and Google have decided (in 2015) to no longer
+  // support them (in the face of multiple reported issues of breakages).
+  if (-1 == dataChannelId) {
+    return;
+  }
 
+  self.dataChannels[@(dataChannelId)] = dataChannel;
+  // WebRTCModule implements the category RTCDataChannel i.e. the protocol
+  // RTCDataChannelDelegate.
+  dataChannel.delegate = self;
+
+  NSDictionary *body = @{@"id": peerConnection.reactTag,
+                        @"dataChannel": @{@"id": @(dataChannelId),
+                                          @"label": dataChannel.label}};
+  [self.bridge.eventDispatcher sendDeviceEventWithName:@"peerConnectionDidOpenDataChannel"
+                                                  body:body];
 }
 
 @end
