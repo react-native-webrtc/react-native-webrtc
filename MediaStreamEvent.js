@@ -2,7 +2,7 @@
 
 import type MediaStream from './MediaStream';
 
-class MediaStreamEvent {
+export default class MediaStreamEvent {
   type: string;
   stream: MediaStream;
   constructor(type, eventInitDict) {
@@ -10,5 +10,3 @@ class MediaStreamEvent {
     Object.assign(this, eventInitDict);
   }
 }
-
-module.exports = MediaStreamEvent;

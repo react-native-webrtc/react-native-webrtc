@@ -1,14 +1,12 @@
 'use strict';
 
-import {
-  NativeModules,
-} from 'react-native';
-const WebRTCModule = NativeModules.WebRTCModule;
-
+import {NativeModules} from 'react-native';
 import EventTarget from 'event-target-shim';
 import MediaStreamTrackEvent from './MediaStreamTrackEvent';
 
 import type MediaStreamTrack from './MediaStreamTrack';
+
+const {WebRTCModule} = NativeModules;
 
 const MEDIA_STREAM_EVENTS = [
   'active',
@@ -17,7 +15,7 @@ const MEDIA_STREAM_EVENTS = [
   'removetrack',
 ];
 
-class MediaStream extends EventTarget(MEDIA_STREAM_EVENTS) {
+export default class MediaStream extends EventTarget(MEDIA_STREAM_EVENTS) {
   id: number; // NOTE: spec wants string here
   active: boolean = true;
 
@@ -76,5 +74,3 @@ class MediaStream extends EventTarget(MEDIA_STREAM_EVENTS) {
     WebRTCModule.mediaStreamRelease(this.id);
   }
 }
-
-module.exports = MediaStream;

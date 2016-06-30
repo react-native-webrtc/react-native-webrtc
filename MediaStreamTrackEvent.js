@@ -2,7 +2,7 @@
 
 import type MediaStreamTrack from './MediaStreamTrack';
 
-class MediaStreamTrackEvent {
+export default class MediaStreamTrackEvent {
   type: string;
   track: MediaStreamTrack;
   constructor(type, eventInitDict) {
@@ -10,5 +10,3 @@ class MediaStreamTrackEvent {
     Object.assign(this, eventInitDict);
   }
 }
-
-module.exports = MediaStreamTrackEvent;

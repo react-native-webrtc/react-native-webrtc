@@ -1,6 +1,6 @@
 'use strict';
 
-class MessageEvent {
+export default class MessageEvent {
   type: string;
   data: string | ArrayBuffer | Blob;
   origin: string;
@@ -9,5 +9,3 @@ class MessageEvent {
     Object.assign(this, eventInitDict);
   }
 }
-
-module.exports = MessageEvent;

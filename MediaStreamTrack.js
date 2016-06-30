@@ -1,20 +1,19 @@
 'use strict';
 
-import {
-  NativeModules,
-} from 'react-native';
-const WebRTCModule = NativeModules.WebRTCModule;
-
+import {NativeModules} from 'react-native';
 import EventTarget from 'event-target-shim';
 import MediaStreamErrorEvent from './MediaStreamErrorEvent';
 
 import type MediaStreamError from './MediaStreamError';
 
+const {WebRTCModule} = NativeModules;
+
 const MEDIA_STREAM_TRACK_EVENTS = [
   'ended',
   'mute',
   'unmute',
-  'overconstrained', // --- see: https://www.w3.org/TR/mediacapture-streams/#constrainable-interface
+  // see: https://www.w3.org/TR/mediacapture-streams/#constrainable-interface
+  'overconstrained',
 ];
 
 type MediaStreamTrackState = "live" | "ended";
@@ -26,7 +25,7 @@ type SourceInfo = {
   kind: string;
 };
 
-class MediaStreamTrack {
+export default class MediaStreamTrack {
   static getSources(success: (sources: Array<SourceInfo>) => void) {
     WebRTCModule.mediaStreamTrackGetSources(success);
   }
@@ -37,7 +36,8 @@ class MediaStreamTrack {
   label: string;
   muted: boolean;
   readonly: boolean; // how to decide?
-  readyState: MediaStreamTrackState; // readyState in java: INITIALIZING, LIVE, ENDED, FAILED
+  // readyState in java: INITIALIZING, LIVE, ENDED, FAILED
+  readyState: MediaStreamTrackState;
   remote: boolean;
 
   onended: ?Function;
@@ -101,5 +101,3 @@ class MediaStreamTrack {
     throw new Error('Not implemented.');
   }
 }
-
-module.exports = MediaStreamTrack;

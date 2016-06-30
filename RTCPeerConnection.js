@@ -1,21 +1,19 @@
 'use strict';
 
-import EventTarget from 'event-target-shim'
-import {
-  DeviceEventEmitter,
-  NativeModules,
-} from 'react-native';
-const WebRTCModule = NativeModules.WebRTCModule;
+import EventTarget from 'event-target-shim';
+import {DeviceEventEmitter, NativeModules} from 'react-native';
 
-import MediaStream from './MediaStream'
-import MediaStreamEvent from './MediaStreamEvent'
-import MediaStreamTrack from './MediaStreamTrack'
-import RTCDataChannel from './RTCDataChannel'
-import RTCDataChannelEvent from './RTCDataChannelEvent'
-import RTCSessionDescription from './RTCSessionDescription'
-import RTCIceCandidate from './RTCIceCandidate'
-import RTCIceCandidateEvent from './RTCIceCandidateEvent'
-import RTCEvent from './RTCEvent'
+import MediaStream from './MediaStream';
+import MediaStreamEvent from './MediaStreamEvent';
+import MediaStreamTrack from './MediaStreamTrack';
+import RTCDataChannel from './RTCDataChannel';
+import RTCDataChannelEvent from './RTCDataChannelEvent';
+import RTCSessionDescription from './RTCSessionDescription';
+import RTCIceCandidate from './RTCIceCandidate';
+import RTCIceCandidateEvent from './RTCIceCandidateEvent';
+import RTCEvent from './RTCEvent';
+
+const {WebRTCModule} = NativeModules;
 
 type RTCSignalingState =
   'stable' |
@@ -56,7 +54,7 @@ const PEER_CONNECTION_EVENTS = [
 
 let nextPeerConnectionId = 0;
 
-class RTCPeerConnection extends EventTarget(PEER_CONNECTION_EVENTS) {
+export default class RTCPeerConnection extends EventTarget(PEER_CONNECTION_EVENTS) {
   localDescription: RTCSessionDescription;
   remoteDescription: RTCSessionDescription;
 
@@ -307,5 +305,3 @@ class RTCPeerConnection extends EventTarget(PEER_CONNECTION_EVENTS) {
     return new RTCDataChannel(label, dataChannelDict);
   }
 }
-
-module.exports = RTCPeerConnection;
