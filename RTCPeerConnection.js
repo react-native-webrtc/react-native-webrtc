@@ -282,7 +282,7 @@ class RTCPeerConnection extends EventTarget(PEER_CONNECTION_EVENTS) {
       if (typeof id !== 'number') {
         throw new TypeError('DataChannel id must be a number: ' + id);
       }
-      if (dataChannelIds.contains(id)) {
+      if (dataChannelIds.has(id)) {
         throw new ResourceInUse('DataChannel id already in use: ' + id);
       }
     } else {
@@ -295,7 +295,7 @@ class RTCPeerConnection extends EventTarget(PEER_CONNECTION_EVENTS) {
       // is reserved due to SCTP INIT and INIT-ACK chunks only allowing a
       // maximum of 65535 streams to be negotiated (as defined by the WebRTC
       // Data Channel Establishment Protocol).
-      for (id = 0; id < 65535 && dataChannelIds.contains(id); ++id);
+      for (id = 0; id < 65535 && dataChannelIds.has(id); ++id);
       // TODO Throw an error if no unused id is available.
       dataChannelDict = Object.assign({id}, dataChannelDict);
     }

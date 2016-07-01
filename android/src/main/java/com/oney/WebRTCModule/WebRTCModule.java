@@ -288,6 +288,8 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
                   return;
                 }
 
+                dataChannel.registerObserver(new DataChannelObserver(dataChannelId, dataChannel));
+
                 WritableMap dataChannelParams = Arguments.createMap();
                 dataChannelParams.putInt("id", dataChannelId);
                 dataChannelParams.putString("label", dataChannel.label());
@@ -830,6 +832,7 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
             // reported issues of breakages).
             int dataChannelId = init.id;
             if (-1 != dataChannelId) {
+                dataChannel.registerObserver(new DataChannelObserver(dataChannelId, dataChannel));
                 mDataChannels.put(dataChannelId, dataChannel);
             }
         } else {
@@ -939,5 +942,52 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
                 return "closed";
         }
         return null;
+    }
+
+    class DataChannelObserver implements DataChannel.Observer {
+
+        private final int mId;
+        private final DataChannel mDataChannel;
+
+        DataChannelObserver(int id, DataChannel dataChannel) {
+            mId = id;
+            mDataChannel = dataChannel;
+        }
+
+        @Override
+        public void onBufferedAmountChange(long amount) {
+        }
+
+        @Override
+        public void onStateChange() {
+            WritableMap params = Arguments.createMap();
+            params.putInt("id", mId);
+            params.putString("state", dataChannelStateString(mDataChannel.state()));
+            sendEvent("dataChannelStateChanged", params);
+        }
+
+        @Override
+        public void onMessage(DataChannel.Buffer buffer) {
+            WritableMap params = Arguments.createMap();
+            params.putInt("id", mId);
+
+            byte[] bytes;
+            if (buffer.data.hasArray()) {
+                bytes = buffer.data.array();
+            } else {
+                bytes = new byte[buffer.data.remaining()];
+                buffer.data.get(bytes);
+            }
+
+            if (buffer.binary) {
+                params.putString("type", "binary");
+                params.putString("data", Base64.encodeToString(bytes, Base64.NO_WRAP));
+            } else {
+                params.putString("type", "text");
+                params.putString("data", new String(bytes, Charset.forName("UTF-8")));
+            }
+
+            sendEvent("dataChannelReceiveMessage", params);
+        }
     }
 }
