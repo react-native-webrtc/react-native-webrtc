@@ -1,6 +1,6 @@
 'use strict';
 
-class RTCSessionDescription {
+export default class RTCSessionDescription {
   sdp: string;
   type: string;
 
@@ -12,4 +12,3 @@ class RTCSessionDescription {
     return {sdp: this.sdp, type: this.type};
   }
 }
-module.exports = RTCSessionDescription;

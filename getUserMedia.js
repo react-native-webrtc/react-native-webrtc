@@ -1,14 +1,13 @@
 'use strict';
 
-import {
-  NativeModules,
-} from 'react-native';
-const WebRTCModule = NativeModules.WebRTCModule;
+import {NativeModules} from 'react-native';
 
 import MediaStream from './MediaStream';
 import MediaStreamTrack from './MediaStreamTrack';
 
-function getUserMedia(constraints, success, failure) {
+const {WebRTCModule} = NativeModules;
+
+export default function getUserMedia(constraints, success, failure) {
   WebRTCModule.getUserMedia(constraints, (id, tracks) => {
     const stream = new MediaStream(id);
     for (let i = 0; i < tracks.length; i++) {
@@ -18,5 +17,3 @@ function getUserMedia(constraints, success, failure) {
     success(stream);
   });
 }
-
-module.exports = getUserMedia;

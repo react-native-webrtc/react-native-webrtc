@@ -2,7 +2,7 @@
 
 import type RTCDataChannel from './RTCDataChannel';
 
-class RTCDataChannelEvent {
+export default class RTCDataChannelEvent {
   type: string;
   channel: RTCDataChannel;
   constructor(type, eventInitDict) {
@@ -10,5 +10,3 @@ class RTCDataChannelEvent {
     Object.assign(this, eventInitDict);
   }
 }
-
-module.exports = RTCDataChannelEvent;

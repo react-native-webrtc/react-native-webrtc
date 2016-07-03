@@ -1,6 +1,6 @@
 'use strict';
 
-class MediaStreamError {
+export default class MediaStreamError {
 
   name: string;
   message: ?string;
@@ -12,5 +12,3 @@ class MediaStreamError {
     this.constraintName = error.constraintName;
   }
 }
-
-module.exports = MediaStreamError;

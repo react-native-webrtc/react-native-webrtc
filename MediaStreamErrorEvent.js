@@ -2,7 +2,7 @@
 
 import type MediaStreamError from './MediaStreamError';
 
-class MediaStreamErrorEvent {
+export default class MediaStreamErrorEvent {
   type: string;
   error: ?MediaStreamError;
   constructor(type, eventInitDict) {
@@ -10,5 +10,3 @@ class MediaStreamErrorEvent {
     Object.assign(this, eventInitDict);
   }
 }
-
-module.exports = MediaStreamErrorEvent;

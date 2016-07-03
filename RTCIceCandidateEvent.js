@@ -1,8 +1,10 @@
 'use strict';
 
-class RTCIceCandidateEvent {
+import type RTCIceCandidate from './RTCIceCandidate';
+
+export default class RTCIceCandidateEvent {
   type: string;
-  candidate;
+  candidate: RTCIceCandidate;
   constructor(type, eventInitDict) {
     this.type = type.toString();
 
@@ -12,5 +14,3 @@ class RTCIceCandidateEvent {
     }
   }
 }
-
-module.exports = RTCIceCandidateEvent;

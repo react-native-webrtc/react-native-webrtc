@@ -1,16 +1,12 @@
 'use strict';
 
+import {NativeModules, DeviceEventEmitter} from 'react-native';
+import base64 from 'base64-js';
+import EventTarget from 'event-target-shim';
+import MessageEvent from './MessageEvent';
+import RTCDataChannelEvent from './RTCDataChannelEvent';
 
-import {
-  NativeModules,
-  DeviceEventEmitter,
-} from 'react-native';
-const WebRTCModule = NativeModules.WebRTCModule;
-
-import base64 from 'base64-js'
-import EventTarget from 'event-target-shim'
-import MessageEvent from './MessageEvent'
-import RTCDataChannelEvent from './RTCDataChannelEvent'
+const {WebRTCModule} = NativeModules;
 
 type RTCDataChannelInit = {
   ordered?: boolean;
@@ -39,7 +35,7 @@ const DATA_CHANNEL_EVENTS = [
 
 class ResourceInUse extends Error {}
 
-class RTCDataChannel extends EventTarget(DATA_CHANNEL_EVENTS) {
+export default class RTCDataChannel extends EventTarget(DATA_CHANNEL_EVENTS) {
 
   binaryType: 'arraybuffer' = 'arraybuffer'; // we only support 'arraybuffer'
   bufferedAmount: number = 0;
@@ -137,5 +133,3 @@ class RTCDataChannel extends EventTarget(DATA_CHANNEL_EVENTS) {
   }
 
 }
-
-module.exports = RTCDataChannel;
