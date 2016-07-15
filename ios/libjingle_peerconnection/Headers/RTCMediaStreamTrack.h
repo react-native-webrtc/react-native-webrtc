@@ -48,7 +48,6 @@
 - (BOOL)isEnabled;
 - (BOOL)setEnabled:(BOOL)enabled;
 - (RTCTrackState)state;
-- (BOOL)setState:(RTCTrackState)state;
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
 // Disallow init and don't add to documentation

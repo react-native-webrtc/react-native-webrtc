@@ -60,6 +60,10 @@ typedef NS_ENUM(NSUInteger, RTCFileLoggerRotationType) {
 // kRTCFileLoggerTypeCall.
 @property(nonatomic, readonly) RTCFileLoggerRotationType rotationType;
 
+// Disables buffering disk writes. Should be set before |start|. Buffering
+// is enabled by default for performance.
+@property(nonatomic, assign) BOOL shouldDisableBuffering;
+
 // Default constructor provides default settings for dir path, file size and
 // rotation type.
 - (instancetype)init;

@@ -54,6 +54,11 @@ typedef NS_ENUM(NSInteger, RTCTcpCandidatePolicy) {
   kRTCTcpCandidatePolicyDisabled,
 };
 
+typedef NS_ENUM(NSInteger, RTCEncryptionKeyType) {
+  kRTCEncryptionKeyTypeRSA,
+  kRTCEncryptionKeyTypeECDSA,
+};
+
 // Configuration object used for creating a peer connection.
 @interface RTCConfiguration : NSObject
 
@@ -65,6 +70,7 @@ typedef NS_ENUM(NSInteger, RTCTcpCandidatePolicy) {
 @property(nonatomic, assign) int audioJitterBufferMaxPackets;
 @property(nonatomic, assign) int iceConnectionReceivingTimeout;
 @property(nonatomic, assign) int iceBackupCandidatePairPingInterval;
+@property(nonatomic, assign) RTCEncryptionKeyType keyType;
 
 - (instancetype)initWithIceTransportsType:(RTCIceTransportsType)iceTransportsType
                              bundlePolicy:(RTCBundlePolicy)bundlePolicy
