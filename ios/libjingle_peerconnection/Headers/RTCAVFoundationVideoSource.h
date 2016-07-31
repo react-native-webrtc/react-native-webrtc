@@ -41,6 +41,8 @@
 - (instancetype)initWithFactory:(RTCPeerConnectionFactory*)factory
                     constraints:(RTCMediaConstraints*)constraints;
 
+// Returns whether rear-facing camera is available for use.
+@property(nonatomic, readonly) BOOL canUseBackCamera;
 // Switches the camera being used (either front or back).
 @property(nonatomic, assign) BOOL useBackCamera;
 // Returns the active capture session.

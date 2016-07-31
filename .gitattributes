@@ -1,0 +1,2 @@
+libjingle_peerconnection.so.jar filter=lfs diff=lfs merge=lfs -text
+libWebRTC.a filter=lfs diff=lfs merge=lfs -text
