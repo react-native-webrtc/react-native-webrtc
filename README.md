@@ -9,7 +9,27 @@ A WebRTC module for React Native.
 - You can use it to build an iOS/Android app that can communicate with web browser.  
 - The WebRTC Library is based on [webrtc-build-scripts](https://github.com/pristineio/webrtc-build-scripts)
 
+## WebRTC Revision
+
+please see [#79](https://github.com/oney/react-native-webrtc/issues/79) for discussions.
+
+| react-native-webrtc | WebRTC(ios) | WebRTC(android)  |
+| :-------------: |:-------------:| :-----:|
+| <= 0.9.0    | branch ~47 beta (11177)  | branch ~47 beta (11139)  |
+| 0.10.0      | branch 52 stable (13039) | branch 52 stable (13039) |
+
 ## Installation
+
+### prerequisite: Git Large File Storage ( Git LFS )
+since 0.10.0, we upgrade webrtc library to branch 52 stable release, and store library on [Git Large File Storage](https://git-lfs.github.com/)  
+you may need to install `git lfs` to automatically download library when `git clone` or `npm install`.  
+
+belows are brief memo, please go to [Git LFS official website](https://git-lfs.github.com/) for details.  
+
+**Linux:** download `git-lfs tar file` and execute `install.sh` inside it.  
+**Mac:** `brew install git-lfs` or `port install git-lfs` then `git lfs install`  
+
+### react-native-webrtc:
 
 - [iOS](https://github.com/oney/react-native-webrtc/blob/master/Documentation/iOSInstallation.md)
 - [Android](https://github.com/oney/react-native-webrtc/blob/master/Documentation/AndroidInstallation.md)
