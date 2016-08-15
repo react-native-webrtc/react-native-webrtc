@@ -12,6 +12,8 @@
 #import "RTCMediaStream.h"
 #import "WebRTCModule.h"
 
+#import <objc/runtime.h>
+
 @interface UIView (WebRTCModule)
 
 @property (nonatomic, strong) RTCVideoTrack *currentRenderer;
