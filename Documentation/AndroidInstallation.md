@@ -28,7 +28,7 @@ dependencies {
 
 ```
 
-4.) In `android/app/src/main/java/com/xxx/MainActivity.java`
+4.) In `android/app/src/main/java/com/xxx/MainApplication.java`
 
 After 0.19.0
 ```java
