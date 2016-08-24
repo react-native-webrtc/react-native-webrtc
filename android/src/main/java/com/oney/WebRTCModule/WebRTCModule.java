@@ -490,8 +490,12 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
                 }
             }
 
-            if (videoConstraints != null && videoTrack == null) {
-                errorCallback.invoke("Failed to obtain video");
+            if (videoTrack == null && videoConstraints != null) {
+		// FIXME The following does not follow the getUserMedia()
+		// algorithm specified by
+		// https://www.w3.org/TR/mediacapture-streams/#dom-mediadevices-getusermedia
+		// with respect to distinguishing the various causes of failure.
+                errorCallback.invoke(/* type */ null, "Failed to obtain video");
                 return;
             }
         }
@@ -542,20 +546,43 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
                 }
             }
             if (audioTrack == null && audioConstraints != null) {
-                errorCallback.invoke("Failed to obtain audio");
+		// FIXME The following does not follow the getUserMedia()
+		// algorithm specified by
+		// https://www.w3.org/TR/mediacapture-streams/#dom-mediadevices-getusermedia
+		// with respect to distinguishing the various causes of failure.
+                errorCallback.invoke(/* type */ null, "Failed to obtain audio");
                 return;
             }
         }
 
+        // According to step 2 of the getUserMedia() algorithm,
+	// requestedMediaTypes is the set of media types in constraints with
+	// either a dictionary value or a value of "true".
+        // According to step 3 of the getUserMedia() algorithm, if
+        // requestedMediaTypes is the empty set, the method invocation fails
+        // with a TypeError.
         if (audioTrack == null && videoTrack == null) {
-            errorCallback.invoke("No audio nor video media requested");
+	    // XXX The JavaScript counterpart of the getUserMedia()
+	    // implementation should have recognized the case here before
+	    // calling into the native counterpart and should have failed the
+	    // method invocation already (in the manner described above).
+	    // Anyway, repeat the logic here just in case.
+            errorCallback.invoke(
+	            "TypeError",
+		    "constraints requests no media types");
             return;
         }
 
         String streamId = getNextStreamUUID();
         MediaStream mediaStream = mFactory.createLocalMediaStream(streamId);
         if (mediaStream == null) {
-            errorCallback.invoke("Failed to create new media stream");
+	    // FIXME The following does not follow the getUserMedia() algorithm
+	    // specified by
+	    // https://www.w3.org/TR/mediacapture-streams/#dom-mediadevices-getusermedia
+	    // with respect to distinguishing the various causes of failure.
+            errorCallback.invoke(
+	            /* type */ null,
+		    "Failed to create new media stream");
             return;
         }
 
