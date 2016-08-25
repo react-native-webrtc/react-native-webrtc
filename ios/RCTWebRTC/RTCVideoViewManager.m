@@ -59,6 +59,11 @@ typedef NS_ENUM(NSInteger, RTCVideoViewObjectFit) {
  */
 @property (nonatomic, readonly) RTCEAGLVideoView *subview;
 
+/**
+ * The {@link RTCVideoTrack}, if any, which this instance renders.
+ */
+@property (nonatomic, strong) RTCVideoTrack *videoTrack;
+
 @end
 
 @implementation RTCVideoView {
@@ -66,6 +71,33 @@ typedef NS_ENUM(NSInteger, RTCVideoViewObjectFit) {
    * The width and height of the video (frames) rendered by {@link #subview}.
    */
   CGSize _videoSize;
+}
+
+/**
+ * Tells this view that its window object changed.
+ */
+- (void)didMoveToWindow {
+  [super didMoveToWindow];
+
+  // XXX This RTCVideoView strongly retains its videoTrack. The latter strongly
+  // retains the former as well though because RTCVideoTrack strongly retains
+  // the RTCVideoRenderers added to it. In other words, there is a cycle of
+  // strong retainments and, consequently, there is a memory leak. In order to
+  // break the cycle, have this RTCVideoView as the RTCVideoRenderer of its
+  // videoTrack only while this view resides in a window.
+  RTCVideoTrack *videoTrack = self.videoTrack;
+
+  if (videoTrack) {
+    if (self.window) {
+      // TODO RTCVideoTrack's addRenderer implementation has an NSAssert1 that
+      // makes sure that the specified RTCVideoRenderer is not added multiple
+      // times (without intervening removals, of course). It may (or may not) be
+      // wise to explicitly make sure here that we will not hit that NSAssert1.
+      [videoTrack addRenderer:self];
+    } else {
+      [videoTrack removeRenderer:self];
+    }
+  }
 }
 
 /**
@@ -178,14 +210,43 @@ typedef NS_ENUM(NSInteger, RTCVideoViewObjectFit) {
 }
 
 /**
+ * Implements the setter of the {@link #videoTrack} property of this
+ * {@code RTCVideoView}.
+ *
+ * @param objectFit The value to set on the {@code videoTrack} property of this
+ * {@code RTCVideoView}.
+ */
+- (void)setVideoTrack:(RTCVideoTrack *)videoTrack {
+  RTCVideoTrack *oldValue = self.videoTrack;
+
+  if (oldValue != videoTrack) {
+    if (oldValue) {
+      [oldValue removeRenderer:self];
+    }
+
+    _videoTrack = videoTrack;
+
+    // XXX This RTCVideoView strongly retains its videoTrack. The latter
+    // strongly retains the former as well though because RTCVideoTrack strongly
+    // retains the RTCVideoRenderers added to it. In other words, there is a
+    // cycle of strong retainments and, consequently, there is a memory leak. In
+    // order to break the cycle, have this RTCVideoView as the RTCVideoRenderer
+    // of its videoTrack only while this view resides in a window.
+    if (videoTrack && self.window) {
+      [videoTrack addRenderer:self];
+    }
+  }
+}
+
+/**
  * Implements the getter of the {@code subview} property of this
  * {@code RTCVideoView}. Gets the {@link RTCEAGLVideoView} subview of this
  * {@code RTCVideoView} which implements the actual {@link RTCVideoRenderer} of
- * this instance and which actually renders {@link #currentRenderer}.
+ * this instance and which actually renders {@link #videoTrack}.
  *
  * @returns The {@code RTCEAGLVideoView} subview of this {@code RTCVideoView}
  * which implements the actual {@code RTCVideoRenderer} of this instance and
- * which actually renders {@code currentRenderer}.
+ * which actually renders {@code videoTrack}.
  */
 - (RTCEAGLVideoView *)subview {
   // In order to reduce the number of strong retainments of the RTCEAGLVideoView
@@ -247,24 +308,6 @@ typedef NS_ENUM(NSInteger, RTCVideoViewObjectFit) {
 
 @end
 
-@interface RTCVideoView (WebRTCModule)
-
-@property (nonatomic, strong) RTCVideoTrack *currentRenderer;
-
-@end
-
-@implementation RTCVideoView (WebRTCModule)
-
-- (RTCVideoTrack *)currentRenderer {
-  return objc_getAssociatedObject(self, _cmd);
-}
-
-- (void)setCurrentRenderer:(RTCVideoTrack *)currentRenderer {
-  objc_setAssociatedObject(self, @selector(currentRenderer), currentRenderer, OBJC_ASSOCIATION_COPY_NONATOMIC);
-}
-
-@end
-
 @implementation RTCVideoViewManager
 
 RCT_EXPORT_MODULE()
@@ -296,21 +339,21 @@ RCT_CUSTOM_VIEW_PROPERTY(objectFit, NSString *, RTCVideoView) {
 }
 
 RCT_CUSTOM_VIEW_PROPERTY(streamURL, NSNumber, RTCVideoView) {
+  RTCVideoTrack *videoTrack;
+
   if (json) {
-    NSString *objectID = (NSString *)json;
+    NSString *streamId = (NSString *)json;
 
     WebRTCModule *module = [self.bridge moduleForName:@"WebRTCModule"];
-    RTCMediaStream *stream = module.mediaStreams[objectID];
+    RTCMediaStream *stream = module.mediaStreams[streamId];
+    NSArray *videoTracks = stream.videoTracks;
 
-    if (stream.videoTracks.count) {
-      RTCVideoTrack *localVideoTrack = stream.videoTracks[0];
-//      if (view.currentRenderer) {
-//        [view.currentRenderer removeRenderer:view];
-//      }
-//      view.currentRenderer = localVideoTrack;
-      [localVideoTrack addRenderer:view];
-    }
+    videoTrack = videoTracks.count ? videoTracks[0] : nil;
+  } else {
+    videoTrack = nil;
   }
+
+  view.videoTrack = videoTrack;
 }
 
 @end
