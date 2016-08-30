@@ -281,8 +281,6 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
                   return;
                 }
 
-                dataChannel.registerObserver(new DataChannelObserver(dataChannelId, dataChannel));
-
                 WritableMap dataChannelParams = Arguments.createMap();
                 dataChannelParams.putInt("id", dataChannelId);
                 dataChannelParams.putString("label", dataChannel.label());
@@ -1055,7 +1053,6 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
             // reported issues of breakages).
             int dataChannelId = init.id;
             if (-1 != dataChannelId) {
-                dataChannel.registerObserver(new DataChannelObserver(dataChannelId, dataChannel));
                 mDataChannels.put(dataChannelId, dataChannel);
                 registerDataChannelObserver(dataChannelId, dataChannel);
             }
