@@ -16,7 +16,7 @@ const MEDIA_STREAM_EVENTS = [
 ];
 
 export default class MediaStream extends EventTarget(MEDIA_STREAM_EVENTS) {
-  id: number; // NOTE: spec wants string here
+  id: string;
   active: boolean = true;
 
   onactive: ?Function;

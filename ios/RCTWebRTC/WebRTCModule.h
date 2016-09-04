@@ -23,10 +23,8 @@
 @property (nonatomic, strong) RTCPeerConnectionFactory *peerConnectionFactory;
 
 @property (nonatomic, strong) NSMutableDictionary<NSNumber *, RTCPeerConnection *> *peerConnections;
-@property (nonatomic, strong) NSMutableDictionary<NSNumber *, RTCMediaStream *> *mediaStreams;
-@property (nonatomic, strong) NSMutableDictionary<NSNumber *, RTCMediaStreamTrack *> *tracks;
+@property (nonatomic, strong) NSMutableDictionary<NSString *, RTCMediaStream *> *mediaStreams;
+@property (nonatomic, strong) NSMutableDictionary<NSString *, RTCMediaStreamTrack *> *tracks;
 @property (nonatomic, strong) NSMutableDictionary<NSNumber *, RTCDataChannel *> *dataChannels;
-@property (nonatomic) NSInteger mediaStreamId;
-@property (nonatomic) NSInteger trackId;
 
 @end

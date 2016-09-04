@@ -19,7 +19,6 @@
 #import "RTCICECandidate.h"
 #import "RTCStatsReport.h"
 
-#import "WebRTCModule+RTCMediaStream.h"
 #import "WebRTCModule+RTCPeerConnection.h"
 
 @implementation RTCPeerConnection (React)
@@ -47,7 +46,7 @@ RCT_EXPORT_METHOD(peerConnectionInit:(NSDictionary *)configuration objectID:(non
   self.peerConnections[objectID] = peerConnection;
 }
 
-RCT_EXPORT_METHOD(peerConnectionAddStream:(nonnull NSNumber *)streamID objectID:(nonnull NSNumber *)objectID)
+RCT_EXPORT_METHOD(peerConnectionAddStream:(nonnull NSString *)streamID objectID:(nonnull NSNumber *)objectID)
 {
   RTCMediaStream *stream = self.mediaStreams[streamID];
   if (!stream) {
@@ -61,7 +60,7 @@ RCT_EXPORT_METHOD(peerConnectionAddStream:(nonnull NSNumber *)streamID objectID:
   NSLog(@"result:%i", result);
 }
 
-RCT_EXPORT_METHOD(peerConnectionRemoveStream:(nonnull NSNumber *)streamID objectID:(nonnull NSNumber *)objectID)
+RCT_EXPORT_METHOD(peerConnectionRemoveStream:(nonnull NSString *)streamID objectID:(nonnull NSNumber *)objectID)
 {
   RTCMediaStream *stream = self.mediaStreams[streamID];
   if (!stream) {
@@ -201,10 +200,10 @@ RCT_EXPORT_METHOD(peerConnectionClose:(nonnull NSNumber *)objectID)
   [self.peerConnections removeObjectForKey:objectID];
 }
 
-RCT_EXPORT_METHOD(peerConnectionGetStats:(nonnull NSNumber *)trackID objectID:(nonnull NSNumber *)objectID callback:(RCTResponseSenderBlock)callback)
+RCT_EXPORT_METHOD(peerConnectionGetStats:(nonnull NSString *)trackID objectID:(nonnull NSNumber *)objectID callback:(RCTResponseSenderBlock)callback)
 {
   RTCMediaStreamTrack *track = nil;
-  if ([trackID integerValue] >= 0) {
+  if (trackID && trackID.length > 0) {
     track = self.tracks[trackID];
   }
 
@@ -313,42 +312,34 @@ RCT_EXPORT_METHOD(peerConnectionGetStats:(nonnull NSNumber *)trackID objectID:(n
 }
 
 - (void)peerConnection:(RTCPeerConnection *)peerConnection addedStream:(RTCMediaStream *)stream {
-  NSNumber *objectID = @(self.mediaStreamId++);
-
-  stream.reactTag = objectID;
   NSMutableArray *tracks = [NSMutableArray array];
   for (RTCVideoTrack *track in stream.videoTracks) {
-    NSNumber *trackId = @(self.trackId++);
-    track.reactTag = trackId;
-    self.tracks[trackId] = track;
-    [tracks addObject:@{@"id": trackId, @"kind": track.kind, @"label": track.label, @"enabled": @(track.isEnabled), @"remote": @(YES), @"readyState": @"live"}];
+    self.tracks[track.label] = track;
+    [tracks addObject:@{@"id": track.label, @"kind": track.kind, @"label": track.label, @"enabled": @(track.isEnabled), @"remote": @(YES), @"readyState": @"live"}];
   }
   for (RTCAudioTrack *track in stream.audioTracks) {
-    NSNumber *trackId = @(self.trackId++);
-    track.reactTag = trackId;
-    self.tracks[trackId] = track;
-    [tracks addObject:@{@"id": trackId, @"kind": track.kind, @"label": track.label, @"enabled": @(track.isEnabled), @"remote": @(YES), @"readyState": @"live"}];
+    self.tracks[track.label] = track;
+    [tracks addObject:@{@"id": track.label, @"kind": track.kind, @"label": track.label, @"enabled": @(track.isEnabled), @"remote": @(YES), @"readyState": @"live"}];
   }
 
-  self.mediaStreams[objectID] = stream;
+  self.mediaStreams[stream.label] = stream;
   [self.bridge.eventDispatcher sendDeviceEventWithName:@"peerConnectionAddedStream" body:
-   @{@"id": peerConnection.reactTag, @"streamId": stream.reactTag, @"tracks": tracks}];
+   @{@"id": peerConnection.reactTag, @"streamId": stream.label, @"tracks": tracks}];
 }
 
 - (void)peerConnection:(RTCPeerConnection *)peerConnection removedStream:(RTCMediaStream *)stream {
-  // TODO: remove stream from self.mediaStreams
-  if (self.mediaStreams[stream.reactTag]) {
-    RTCMediaStream *mediaStream = self.mediaStreams[stream.reactTag];
+  RTCMediaStream *mediaStream = self.mediaStreams[stream.label];
+  if (mediaStream) {
     for (RTCVideoTrack *track in mediaStream.videoTracks) {
-      [self.tracks removeObjectForKey:track.reactTag];
+      [self.tracks removeObjectForKey:track.label];
     }
     for (RTCAudioTrack *track in mediaStream.audioTracks) {
-      [self.tracks removeObjectForKey:track.reactTag];
+      [self.tracks removeObjectForKey:track.label];
     }
-    [self.mediaStreams removeObjectForKey:stream.reactTag];
+    [self.mediaStreams removeObjectForKey:stream.label];
   }
   [self.bridge.eventDispatcher sendDeviceEventWithName:@"peerConnectionRemovedStream" body:
-   @{@"id": peerConnection.reactTag, @"streamId": stream.reactTag}];
+   @{@"id": peerConnection.reactTag, @"streamId": stream.label}];
 }
 
 - (void)peerConnectionOnRenegotiationNeeded:(RTCPeerConnection *)peerConnection {

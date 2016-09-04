@@ -16,6 +16,7 @@ import com.facebook.react.bridge.UiThreadUtil;
 import com.facebook.react.bridge.WritableArray;
 import com.facebook.react.bridge.WritableMap;
 import com.facebook.react.bridge.ReadableMap;
+import com.facebook.react.bridge.ReadableMapKeySetIterator;
 import com.facebook.react.bridge.ReadableArray;
 import com.facebook.react.bridge.ReadableType;
 import com.facebook.react.modules.core.DeviceEventManagerModule;
@@ -32,6 +33,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.net.URISyntaxException;
 import java.util.LinkedList;
+import java.util.UUID;
 
 import android.util.Base64;
 import android.util.SparseArray;
@@ -56,11 +58,9 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
 
     private static final String LANGUAGE =  "language";
     private PeerConnectionFactory mFactory;
-    private int mMediaStreamId = 0;
-    private int mMediaStreamTrackId = 0;
     private final SparseArray<PeerConnection> mPeerConnections;
-    public final SparseArray<MediaStream> mMediaStreams;
-    public final SparseArray<MediaStreamTrack> mMediaStreamTracks;
+    public final Map<String, MediaStream> mMediaStreams;
+    public final Map<String, MediaStreamTrack> mMediaStreamTracks;
     private final SparseArray<DataChannel> mDataChannels;
     private MediaConstraints pcConstraints = new MediaConstraints();
     VideoSource videoSource;
@@ -69,8 +69,8 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
         super(reactContext);
 
         mPeerConnections = new SparseArray<PeerConnection>();
-        mMediaStreams = new SparseArray<MediaStream>();
-        mMediaStreamTracks = new SparseArray<MediaStreamTrack>();
+        mMediaStreams = new HashMap<String, MediaStream>();
+        mMediaStreamTracks = new HashMap<String, MediaStreamTrack>();
         mDataChannels = new SparseArray<DataChannel>();
 
         pcConstraints.mandatory.add(new MediaConstraints.KeyValuePair("OfferToReceiveAudio", "true"));
@@ -200,20 +200,24 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
 
             @Override
             public void onAddStream(MediaStream mediaStream) {
-                mMediaStreamId++;
-                mMediaStreams.put(mMediaStreamId, mediaStream);
+                String streamId = mediaStream.label();
+                if (mMediaStreams.containsKey(streamId)) {
+                    Log.e(TAG,
+                        "onAddStream: Duplicated stream for ID: " + streamId);
+                    return;
+                }
+                mMediaStreams.put(streamId, mediaStream);
                 WritableMap params = Arguments.createMap();
                 params.putInt("id", id);
-                params.putInt("streamId", mMediaStreamId);
+                params.putString("streamId", streamId);
 
                 WritableArray tracks = Arguments.createArray();
 
                 for (int i = 0; i < mediaStream.videoTracks.size(); i++) {
                     VideoTrack track = mediaStream.videoTracks.get(i);
 
-                    int mediaStreamTrackId = mMediaStreamTrackId++;
                     WritableMap trackInfo = Arguments.createMap();
-                    trackInfo.putString("id", mediaStreamTrackId + "");
+                    trackInfo.putString("id", track.id());
                     trackInfo.putString("label", "Video");
                     trackInfo.putString("kind", track.kind());
                     trackInfo.putBoolean("enabled", track.enabled());
@@ -224,9 +228,8 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
                 for (int i = 0; i < mediaStream.audioTracks.size(); i++) {
                     AudioTrack track = mediaStream.audioTracks.get(i);
 
-                    int mediaStreamTrackId = mMediaStreamTrackId++;
                     WritableMap trackInfo = Arguments.createMap();
-                    trackInfo.putString("id", mediaStreamTrackId + "");
+                    trackInfo.putString("id", track.id());
                     trackInfo.putString("label", "Audio");
                     trackInfo.putString("kind", track.kind());
                     trackInfo.putBoolean("enabled", track.enabled());
@@ -242,28 +245,13 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
             @Override
             public void onRemoveStream(MediaStream mediaStream) {
                 if (mediaStream != null) {
-                    int trackIndex;
-                    int streamIndex;
-                    for (int i = 0; i < mediaStream.videoTracks.size(); i++) {
-                        VideoTrack track = mediaStream.videoTracks.get(i);
-                        trackIndex = mMediaStreamTracks.indexOfValue(track);
-                        while (trackIndex >= 0) {
-                            mMediaStreamTracks.removeAt(trackIndex);
-                            trackIndex = mMediaStreamTracks.indexOfValue(track);
-                        }
+                    for (VideoTrack track : mediaStream.videoTracks) {
+                        mMediaStreamTracks.remove(track.id());
                     }
-                    for (int i = 0; i < mediaStream.audioTracks.size(); i++) {
-                        AudioTrack track = mediaStream.audioTracks.get(i);
-                        trackIndex = mMediaStreamTracks.indexOfValue(track);
-                        while (trackIndex >= 0) {
-                            mMediaStreamTracks.removeAt(trackIndex);
-                            trackIndex = mMediaStreamTracks.indexOfValue(track);
-                        }
+                    for (AudioTrack track : mediaStream.audioTracks) {
+                        mMediaStreamTracks.remove(track.id());
                     }
-                    streamIndex = mMediaStreams.indexOfValue(mediaStream);
-                    if (streamIndex >= 0) {
-                        mMediaStreams.removeAt(streamIndex);
-                    }
+                    mMediaStreams.remove(mediaStream.label());
                 }
             }
 
@@ -293,8 +281,6 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
                   return;
                 }
 
-                dataChannel.registerObserver(new DataChannelObserver(dataChannelId, dataChannel));
-
                 WritableMap dataChannelParams = Arguments.createMap();
                 dataChannelParams.putInt("id", dataChannelId);
                 dataChannelParams.putString("label", dataChannel.label());
@@ -303,6 +289,7 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
                 params.putMap("dataChannel", dataChannelParams);
 
                 mDataChannels.put(dataChannelId, dataChannel);
+                registerDataChannelObserver(dataChannelId, dataChannel);
 
                 sendEvent("peerConnectionDidOpenDataChannel", params);
             }
@@ -321,98 +308,291 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
         });
         mPeerConnections.put(id, peerConnection);
     }
-    @ReactMethod
-    public void getUserMedia(ReadableMap constraints, Callback callback){
-        MediaStream mediaStream = mFactory.createLocalMediaStream("ARDAMS");
 
+    private String getNextStreamUUID() {
+        String uuid;
+
+        do {
+            uuid = UUID.randomUUID().toString();
+        } while (mMediaStreams.containsKey(uuid));
+
+        return uuid;
+    }
+
+    private String getNextTrackUUID() {
+        String uuid;
+
+        do {
+            uuid = UUID.randomUUID().toString();
+        } while (mMediaStreamTracks.containsKey(uuid));
+
+        return uuid;
+    }
+
+    /**
+     * Includes default constraints set for the audio media type.
+     * @param audioConstraints <tt>MediaConstraints</tt> instance to be filled
+     * with the default constraints for audio media type.
+     */
+    private void addDefaultAudioConstraints(MediaConstraints audioConstraints) {
+        audioConstraints.optional.add(
+            new MediaConstraints.KeyValuePair("googNoiseSuppression", "true"));
+        audioConstraints.optional.add(
+            new MediaConstraints.KeyValuePair("googEchoCancellation", "true"));
+        audioConstraints.optional.add(
+            new MediaConstraints.KeyValuePair("echoCancellation", "true"));
+        audioConstraints.optional.add(
+            new MediaConstraints.KeyValuePair("googEchoCancellation2", "true"));
+        audioConstraints.optional.add(
+            new MediaConstraints.KeyValuePair(
+                    "googDAEchoCancellation", "true"));
+    }
+
+    /**
+     * Parses mandatory and optional "GUM" constraints described by given
+     * <tt>ReadableMap</tt>.
+     * @param constraintsMap <tt>ReadableMap</tt> which is a JavaScript object
+     * passed as the constraints argument to get user media call.
+     * @return <tt>MediaConstraints</tt> instance filled with the constraints
+     * from given map.
+     */
+    private MediaConstraints parseConstraints(ReadableMap constraintsMap) {
+
+        MediaConstraints mediaConstraints = new MediaConstraints();
+
+        if (constraintsMap.getType("mandatory") == ReadableType.Map) {
+            ReadableMap mandatory = constraintsMap.getMap("mandatory");
+            ReadableMapKeySetIterator keyIterator = mandatory.keySetIterator();
+
+            while (keyIterator.hasNextKey()) {
+                String key = keyIterator.nextKey();
+                String value = ReactBridgeUtil.getMapStrValue(mandatory, key);
+
+                mediaConstraints.mandatory.add(
+                    new MediaConstraints.KeyValuePair(key, value));
+            }
+        } else {
+            Log.d(TAG, "mandatory constraints are not a map");
+        }
+
+        if (constraintsMap.getType("optional") == ReadableType.Array) {
+            ReadableArray options = constraintsMap.getArray("optional");
+
+            for (int i = 0; i < options.size(); i++) {
+                if (options.getType(i) == ReadableType.Map) {
+                    ReadableMap option = options.getMap(i);
+                    ReadableMapKeySetIterator keyIterator
+                        = option.keySetIterator();
+                    String key = keyIterator.nextKey();
+
+                    if (key != null && !"sourceId".equals(key)) {
+                        mediaConstraints.optional.add(
+                            new MediaConstraints.KeyValuePair(
+                                key,
+                                ReactBridgeUtil.getMapStrValue(option, key)));
+                    }
+                }
+            }
+        } else {
+            Log.d(TAG, "optional constraints are not a map");
+        }
+
+        return mediaConstraints;
+    }
+
+    /**
+     * Retreives "sourceId" constraint value.
+     * @param mediaConstraints a <tt>ReadableMap</tt> which represents "GUM"
+     * constraints argument
+     * @return Integer value of "sourceId" optional "GUM" constraint or
+     * <tt>null</tt> if not specified in the given map.
+     */
+    private Integer getSourceIdConstraint(ReadableMap mediaConstraints) {
+        if (mediaConstraints.hasKey("optional") &&
+            mediaConstraints.getType("optional") == ReadableType.Array) {
+            ReadableArray options = mediaConstraints.getArray("optional");
+
+            for (int i = 0; i < options.size(); i++) {
+                if (options.getType(i) == ReadableType.Map) {
+                    ReadableMap option = options.getMap(i);
+
+                    if (option.hasKey("sourceId") &&
+                        option.getType("sourceId") == ReadableType.String) {
+                        return Integer.parseInt(option.getString("sourceId"));
+                    }
+                }
+            }
+        }
+        return null;
+    }
+
+    @ReactMethod
+    public void getUserMedia(ReadableMap constraints,
+                             Callback    successCallback,
+                             Callback    errorCallback) {
+        AudioTrack audioTrack = null;
+        VideoTrack videoTrack = null;
         WritableArray tracks = Arguments.createArray();
+
         if (constraints.hasKey("video")) {
             ReadableType type = constraints.getType("video");
             VideoSource videoSource = null;
             MediaConstraints videoConstraints = new MediaConstraints();
+            Integer sourceId = null;
+            String facingMode = null;
             switch (type) {
                 case Boolean:
-                    boolean useVideo = constraints.getBoolean("video");
-                    if (useVideo) {
-                        String name = CameraEnumerationAndroid.getNameOfFrontFacingDevice();
-
-                        VideoCapturerAndroid v = VideoCapturerAndroid.create(name, new CameraEventsHandler());
-                        videoSource = mFactory.createVideoSource(v, videoConstraints);
+                    if (!constraints.getBoolean("video")) {
+                        videoConstraints = null;
                     }
                     break;
                 case Map:
                     ReadableMap useVideoMap = constraints.getMap("video");
-                    if (useVideoMap.hasKey("optional")) {
-                        if (useVideoMap.getType("optional") == ReadableType.Array) {
-                            ReadableArray options = useVideoMap.getArray("optional");
-                            for (int i = 0; i < options.size(); i++) {
-                                if (options.getType(i) == ReadableType.Map) {
-                                    ReadableMap option = options.getMap(i);
-                                    if (option.hasKey("sourceId") && option.getType("sourceId") == ReadableType.String) {
-                                        videoSource = mFactory.createVideoSource(getVideoCapturerById(Integer.parseInt(option.getString("sourceId"))), videoConstraints);
-                                    }
-                                }
-                            }
-                        }
-                    }
+                    videoConstraints = parseConstraints(useVideoMap);
+                    sourceId = getSourceIdConstraint(useVideoMap);
+                    facingMode
+                        = ReactBridgeUtil.getMapStrValue(
+                                useVideoMap, "facingMode");
                     break;
             }
-            // videoConstraints.mandatory.add(new MediaConstraints.KeyValuePair("maxHeight", Integer.toString(100)));
-            // videoConstraints.mandatory.add(new MediaConstraints.KeyValuePair("maxWidth", Integer.toString(100)));
-            // videoConstraints.mandatory.add(new MediaConstraints.KeyValuePair("maxFrameRate", Integer.toString(10)));
-            // videoConstraints.mandatory.add(new MediaConstraints.KeyValuePair("minFrameRate", Integer.toString(10)));
+
+            if (videoConstraints != null) {
+                Log.i(TAG, "getUserMedia(video): " + videoConstraints
+                    + ", sourceId: " + sourceId);
+
+                VideoCapturer videoCapturer
+                    = getVideoCapturerById(sourceId, facingMode);
+                if (videoCapturer != null) {
+                    // FIXME it seems that the factory does not care about
+                    //       given mandatory constraints too much
+                    videoSource = mFactory.createVideoSource(
+                            videoCapturer, videoConstraints);
+                }
+            }
 
             if (videoSource != null) {
-                VideoTrack videoTrack = mFactory.createVideoTrack("ARDAMSv0", videoSource);
+                String trackId = getNextTrackUUID();
+                videoTrack = mFactory.createVideoTrack(trackId, videoSource);
+                if (videoTrack != null) {
+                    mMediaStreamTracks.put(trackId, videoTrack);
 
-                int mediaStreamTrackId = mMediaStreamTrackId++;
-                mMediaStreamTracks.put(mediaStreamTrackId, videoTrack);
+                    WritableMap trackInfo = Arguments.createMap();
+                    trackInfo.putString("id", trackId);
+                    trackInfo.putString("label", "Video");
+                    trackInfo.putString("kind", videoTrack.kind());
+                    trackInfo.putBoolean("enabled", videoTrack.enabled());
+                    trackInfo.putString(
+                        "readyState", videoTrack.state().toString());
+                    trackInfo.putBoolean("remote", false);
+                    tracks.pushMap(trackInfo);
+                }
+            }
 
-                WritableMap trackInfo = Arguments.createMap();
-                trackInfo.putString("id", mediaStreamTrackId + "");
-                trackInfo.putString("label", "Video");
-                trackInfo.putString("kind", videoTrack.kind());
-                trackInfo.putBoolean("enabled", videoTrack.enabled());
-                trackInfo.putString("readyState", videoTrack.state().toString());
-                trackInfo.putBoolean("remote", false);
-                tracks.pushMap(trackInfo);
-
-                mediaStream.addTrack(videoTrack);
+            if (videoTrack == null && videoConstraints != null) {
+		// FIXME The following does not follow the getUserMedia()
+		// algorithm specified by
+		// https://www.w3.org/TR/mediacapture-streams/#dom-mediadevices-getusermedia
+		// with respect to distinguishing the various causes of failure.
+                errorCallback.invoke(/* type */ null, "Failed to obtain video");
+                return;
             }
         }
-        boolean useAudio = constraints.getBoolean("audio");
-        if (useAudio) {
-            MediaConstraints audioConstarints = new MediaConstraints();
-            audioConstarints.mandatory.add(new MediaConstraints.KeyValuePair("googNoiseSuppression", "true"));
-            audioConstarints.mandatory.add(new MediaConstraints.KeyValuePair("googEchoCancellation", "true"));
-            audioConstarints.mandatory.add(new MediaConstraints.KeyValuePair("echoCancellation", "true"));
-            audioConstarints.mandatory.add(new MediaConstraints.KeyValuePair("googEchoCancellation2", "true"));
-            audioConstarints.mandatory.add(new MediaConstraints.KeyValuePair("googDAEchoCancellation", "true"));
 
-            AudioSource audioSource = mFactory.createAudioSource(audioConstarints);
+        if (constraints.hasKey("audio")) {
+            MediaConstraints audioConstraints = new MediaConstraints();
+            ReadableType type = constraints.getType("audio");
+            switch (type) {
+                case Boolean:
+                    if (constraints.getBoolean("audio")) {
+                        addDefaultAudioConstraints(audioConstraints);
+                    } else {
+                        audioConstraints = null;
+                    }
+                    break;
+                case Map:
+                    audioConstraints
+                        = parseConstraints(constraints.getMap("audio"));
+                    break;
+                default:
+                    audioConstraints = null;
+                    break;
+            }
 
-            AudioTrack audioTrack = mFactory.createAudioTrack("ARDAMSa0", audioSource);
+            if (audioConstraints != null) {
+                Log.i(TAG, "getUserMedia(audio): " + audioConstraints);
 
-            int mediaStreamTrackId = mMediaStreamTrackId++;
-            mMediaStreamTracks.put(mediaStreamTrackId, audioTrack);
+                AudioSource audioSource
+                    = mFactory.createAudioSource(audioConstraints);
 
-            WritableMap trackInfo = Arguments.createMap();
-            trackInfo.putString("id", mediaStreamTrackId + "");
-            trackInfo.putString("label", "Audio");
-            trackInfo.putString("kind", audioTrack.kind());
-            trackInfo.putBoolean("enabled", audioTrack.enabled());
-            trackInfo.putString("readyState", audioTrack.state().toString());
-            trackInfo.putBoolean("remote", false);
-            tracks.pushMap(trackInfo);
+                if (audioSource != null) {
+                    String trackId = getNextTrackUUID();
+                    audioTrack
+                        = mFactory.createAudioTrack(trackId, audioSource);
+                    if (audioTrack != null) {
+                        mMediaStreamTracks.put(trackId, audioTrack);
 
-            mediaStream.addTrack(audioTrack);
+                        WritableMap trackInfo = Arguments.createMap();
+                        trackInfo.putString("id", trackId);
+                        trackInfo.putString("label", "Audio");
+                        trackInfo.putString("kind", audioTrack.kind());
+                        trackInfo.putBoolean("enabled", audioTrack.enabled());
+                        trackInfo.putString("readyState",
+                            audioTrack.state().toString());
+                        trackInfo.putBoolean("remote", false);
+                        tracks.pushMap(trackInfo);
+                    }
+                }
+            }
+            if (audioTrack == null && audioConstraints != null) {
+		// FIXME The following does not follow the getUserMedia()
+		// algorithm specified by
+		// https://www.w3.org/TR/mediacapture-streams/#dom-mediadevices-getusermedia
+		// with respect to distinguishing the various causes of failure.
+                errorCallback.invoke(/* type */ null, "Failed to obtain audio");
+                return;
+            }
         }
 
-        Log.d(TAG, "mMediaStreamId: " + mMediaStreamId);
-        mMediaStreamId++;
-        mMediaStreams.put(mMediaStreamId, mediaStream);
+        // According to step 2 of the getUserMedia() algorithm,
+	// requestedMediaTypes is the set of media types in constraints with
+	// either a dictionary value or a value of "true".
+        // According to step 3 of the getUserMedia() algorithm, if
+        // requestedMediaTypes is the empty set, the method invocation fails
+        // with a TypeError.
+        if (audioTrack == null && videoTrack == null) {
+	    // XXX The JavaScript counterpart of the getUserMedia()
+	    // implementation should have recognized the case here before
+	    // calling into the native counterpart and should have failed the
+	    // method invocation already (in the manner described above).
+	    // Anyway, repeat the logic here just in case.
+            errorCallback.invoke(
+	            "TypeError",
+		    "constraints requests no media types");
+            return;
+        }
 
-        callback.invoke(mMediaStreamId, tracks);
+        String streamId = getNextStreamUUID();
+        MediaStream mediaStream = mFactory.createLocalMediaStream(streamId);
+        if (mediaStream == null) {
+	    // FIXME The following does not follow the getUserMedia() algorithm
+	    // specified by
+	    // https://www.w3.org/TR/mediacapture-streams/#dom-mediadevices-getusermedia
+	    // with respect to distinguishing the various causes of failure.
+            errorCallback.invoke(
+	            /* type */ null,
+		    "Failed to create new media stream");
+            return;
+        }
+
+        if (audioTrack != null)
+            mediaStream.addTrack(audioTrack);
+        if (videoTrack != null)
+            mediaStream.addTrack(videoTrack);
+
+        Log.d(TAG, "mMediaStreamId: " + streamId);
+        mMediaStreams.put(streamId, mediaStream);
+
+        successCallback.invoke(streamId, tracks);
     }
     @ReactMethod
     public void mediaStreamTrackGetSources(Callback callback){
@@ -438,22 +618,20 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
 
     @ReactMethod
     public void mediaStreamTrackStop(final String id) {
-        final int trackId = Integer.parseInt(id);
-        MediaStreamTrack track = mMediaStreamTracks.get(trackId, null);
+        MediaStreamTrack track = mMediaStreamTracks.get(id);
         if (track == null) {
             Log.d(TAG, "mediaStreamTrackStop() track is null");
             return;
         }
         track.setEnabled(false);
-        mMediaStreamTracks.remove(trackId);
+        mMediaStreamTracks.remove(id);
         // what exaclty `detached` means in doc?
         // see: https://www.w3.org/TR/mediacapture-streams/#track-detached
     }
 
     @ReactMethod
     public void mediaStreamTrackSetEnabled(final String id, final boolean enabled) {
-        final int trackId = Integer.parseInt(id);
-        MediaStreamTrack track = mMediaStreamTracks.get(trackId, null);
+        MediaStreamTrack track = mMediaStreamTracks.get(id);
         if (track == null) {
             Log.d(TAG, "mediaStreamTrackSetEnabled() track is null");
             return;
@@ -464,22 +642,19 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
     }
 
     @ReactMethod
-    public void mediaStreamTrackRelease(final int streamId, final String _trackId) {
-        // TODO: need to normalize streamId as a string ( spec wanted )
-        //final int streamId = Integer.parseInt(_streamId);
-        final int trackId = Integer.parseInt(_trackId);
-        MediaStream stream = mMediaStreams.get(streamId, null);
+    public void mediaStreamTrackRelease(final String streamId, final String _trackId) {
+        MediaStream stream = mMediaStreams.get(streamId);
         if (stream == null) {
             Log.d(TAG, "mediaStreamTrackRelease() stream is null");
             return;
         }
-        MediaStreamTrack track = mMediaStreamTracks.get(trackId, null);
+        MediaStreamTrack track = mMediaStreamTracks.get(_trackId);
         if (track == null) {
             Log.d(TAG, "mediaStreamTrackRelease() track is null");
             return;
         }
         track.setEnabled(false); // should we do this?
-        mMediaStreamTracks.remove(trackId);
+        mMediaStreamTracks.remove(_trackId);
         if (track.kind().equals("audio")) {
             stream.removeTrack((AudioTrack)track);
         } else if (track.kind().equals("video")) {
@@ -506,10 +681,25 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
         return params;
     }
 
-    private VideoCapturer getVideoCapturerById(int id) {
-        String name = CameraEnumerationAndroid.getDeviceName(id);
+    /**
+     * Creates <tt>VideoCapturer</tt> for given source ID and facing mode.
+     *
+     * @param id the video source identifier(device id), optional
+     * @param facingMode 'user' or 'environment' facing mode, optional
+     * @return <tt>VideoCapturer</tt> instance obtained for given arguments.
+     */
+    private VideoCapturer getVideoCapturerById(Integer id, String facingMode) {
+        String name
+            = id != null ? CameraEnumerationAndroid.getDeviceName(id) : null;
         if (name == null) {
-            name = CameraEnumerationAndroid.getNameOfFrontFacingDevice();
+            // https://www.w3.org/TR/mediacapture-streams/#def-constraint-facingMode
+            // The specs also mention "left" and "right", but there's no such
+            // method in CameraEnumerationAndroid
+            if (facingMode == null || facingMode.equals("user")) {
+                name = CameraEnumerationAndroid.getNameOfFrontFacingDevice();
+            } else if (facingMode.equals("environment")){
+                name = CameraEnumerationAndroid.getNameOfBackFacingDevice();
+            }
         }
 
         return VideoCapturerAndroid.create(name, new CameraEventsHandler());
@@ -523,8 +713,8 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
         return constraints;
     }
     @ReactMethod
-    public void peerConnectionAddStream(final int streamId, final int id){
-        MediaStream mediaStream = mMediaStreams.get(streamId, null);
+    public void peerConnectionAddStream(final String streamId, final int id){
+        MediaStream mediaStream = mMediaStreams.get(streamId);
         if (mediaStream == null) {
             Log.d(TAG, "peerConnectionAddStream() mediaStream is null");
             return;
@@ -538,8 +728,8 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
         }
     }
     @ReactMethod
-    public void peerConnectionRemoveStream(final int streamId, final int id){
-        MediaStream mediaStream = mMediaStreams.get(streamId, null);
+    public void peerConnectionRemoveStream(final String streamId, final int id){
+        MediaStream mediaStream = mMediaStreams.get(streamId);
         if (mediaStream == null) {
             Log.d(TAG, "peerConnectionRemoveStream() mediaStream is null");
             return;
@@ -718,6 +908,47 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
         callback.invoke(result);
         Log.d(TAG, "peerConnectionAddICECandidate() end");
     }
+    private WritableArray convertWebRTCStats(StatsReport[] wrtcReports) {
+        WritableArray reports = Arguments.createArray();
+        for (StatsReport wrtcReport : wrtcReports) {
+            WritableMap report = Arguments.createMap();
+            report.putString("id", wrtcReport.id);
+            report.putString("type", wrtcReport.type);
+            report.putDouble("timestamp", wrtcReport.timestamp);
+            WritableArray values = Arguments.createArray();
+            for (StatsReport.Value v : wrtcReport.values) {
+                WritableMap keyValue = Arguments.createMap();
+                keyValue.putString(v.name, v.value);
+                values.pushMap(keyValue);
+            }
+            report.putArray("values", values);
+            reports.pushMap(report);
+        }
+        return reports;
+    }
+    @ReactMethod
+    public void peerConnectionGetStats(String trackId,
+                                       int id, final Callback statsCb) {
+        PeerConnection peerConnection = mPeerConnections.get(id);
+        if (peerConnection != null) {
+            MediaStreamTrack mediaTrack = null;
+            if (trackId == null
+                    || trackId.isEmpty()
+                    || (mediaTrack = mMediaStreamTracks.get(trackId)) != null) {
+                peerConnection.getStats(
+                    new StatsObserver() {
+                        public void onComplete(StatsReport[] reports) {
+                            statsCb.invoke(convertWebRTCStats(reports));
+                        }
+                    }, mediaTrack);
+            } else {
+                Log.e(TAG, "peerConnectionGetStats()"
+                    + " mediaTrack not found for id: " + trackId);
+            }
+        } else {
+            Log.d(TAG, "peerConnectionGetStats() peerConnection is null");
+        }
+    }
     @ReactMethod
     public void peerConnectionClose(final int id) {
         PeerConnection peerConnection = mPeerConnections.get(id, null);
@@ -730,25 +961,14 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
         resetAudio();
     }
     @ReactMethod
-    public void mediaStreamRelease(final int id) {
-        MediaStream mediaStream = mMediaStreams.get(id, null);
+    public void mediaStreamRelease(final String id) {
+        MediaStream mediaStream = mMediaStreams.get(id);
         if (mediaStream != null) {
-            int trackIndex;
-            for (int i = 0; i < mediaStream.videoTracks.size(); i++) {
-                VideoTrack track = mediaStream.videoTracks.get(i);
-                trackIndex = mMediaStreamTracks.indexOfValue(track);
-                while (trackIndex >= 0) {
-                    mMediaStreamTracks.removeAt(trackIndex);
-                    trackIndex = mMediaStreamTracks.indexOfValue(track);
-                }
+            for (VideoTrack track : mediaStream.videoTracks) {
+                mMediaStreamTracks.remove(track);
             }
-            for (int i = 0; i < mediaStream.audioTracks.size(); i++) {
-                AudioTrack track = mediaStream.audioTracks.get(i);
-                trackIndex = mMediaStreamTracks.indexOfValue(track);
-                while (trackIndex >= 0) {
-                    mMediaStreamTracks.removeAt(trackIndex);
-                    trackIndex = mMediaStreamTracks.indexOfValue(track);
-                }
+            for (AudioTrack track : mediaStream.audioTracks) {
+                mMediaStreamTracks.remove(track);
             }
 
             mMediaStreams.remove(id);
@@ -793,6 +1013,14 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
         }*/
     }
 
+    private void registerDataChannelObserver(int dcId, DataChannel dataChannel){
+        // DataChannel.registerObserver implementation does not allow to
+        // unregister, so the observer is registered here and is never
+        // unregistered
+        dataChannel.registerObserver(
+            new DataChannelObserver(dcId, dataChannel));
+    }
+
     @ReactMethod
     public void createDataChannel(final int peerConnectionId, String label, ReadableMap config) {
         PeerConnection peerConnection = mPeerConnections.get(peerConnectionId, null);
@@ -825,8 +1053,8 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
             // reported issues of breakages).
             int dataChannelId = init.id;
             if (-1 != dataChannelId) {
-                dataChannel.registerObserver(new DataChannelObserver(dataChannelId, dataChannel));
                 mDataChannels.put(dataChannelId, dataChannel);
+                registerDataChannelObserver(dataChannelId, dataChannel);
             }
         } else {
             Log.d(TAG, "createDataChannel() peerConnection is null");
