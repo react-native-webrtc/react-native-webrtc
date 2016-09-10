@@ -16,10 +16,12 @@ A WebRTC module for React Native.
 
 please see [#79](https://github.com/oney/react-native-webrtc/issues/79) for discussions.
 
-| react-native-webrtc | WebRTC(ios) | WebRTC(android)  |
-| :-------------: |:-------------:| :-----:|
-| <= 0.9.0    | branch ~47 beta (11177)  | branch ~47 beta (11139)  |
-| 0.10.0      | branch 52 stable (13039) | branch 52 stable (13039) |
+| react-native-webrtc | WebRTC(ios) | WebRTC(android)  | npm published |
+| :-------------: | :-------------:| :-----: | :-----: |
+| <= 0.9.0    | branch ~47 beta (11177)  | branch ~47 beta (11139)  | :heavy_check_mark: |
+| 0.10.0      | branch 52 stable (13039) | branch 52 stable (13039) | :heavy_check_mark: |
+| 0.11.0      | branch 52 stable (13039) | branch 52 stable (13039) | :heavy_check_mark: |
+| 0.12.0      | branch 53 stable (13855) | branch 53 stable (13855) | :warning: |
 
 ## Installation
 
