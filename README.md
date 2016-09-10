@@ -19,9 +19,9 @@ please see [#79](https://github.com/oney/react-native-webrtc/issues/79) for disc
 | react-native-webrtc | WebRTC(ios) | WebRTC(android)  | npm published |
 | :-------------: | :-------------:| :-----: | :-----: |
 | <= 0.9.0    | branch ~47 beta (11177)  | branch ~47 beta (11139)  | :heavy_check_mark: |
-| 0.10.0      | branch 52 stable (13039) | branch 52 stable (13039) | :heavy_check_mark: |
-| 0.11.0      | branch 52 stable (13039) | branch 52 stable (13039) | :heavy_check_mark: |
-| 0.12.0      | branch 53 stable (13855) | branch 53 stable (13855) | :warning: |
+| 0.10.0      | branch 52 stable (12798) | branch 52 stable (12798) | :heavy_check_mark: |
+| 0.11.0      | branch 52 stable (12798) | branch 52 stable (12798) | :heavy_check_mark: |
+| 0.12.0      | branch 53 stable (13317) | branch 53 stable (13317) | :warning: |
 
 ## Installation
 
