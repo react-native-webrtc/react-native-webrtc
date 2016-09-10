@@ -14,7 +14,8 @@ A WebRTC module for React Native.
 
 ## WebRTC Revision
 
-please see [#79](https://github.com/oney/react-native-webrtc/issues/79) for discussions.
+please see [#79](https://github.com/oney/react-native-webrtc/issues/79) for discussions.  
+and [wiki page](https://github.com/oney/react-native-webrtc/wiki) to see revisions 
 
 | react-native-webrtc | WebRTC(ios) | WebRTC(android)  | npm published |
 | :-------------: | :-------------:| :-----: | :-----: |
