@@ -161,6 +161,10 @@ export default class RTCPeerConnection extends EventTarget(PEER_CONNECTION_EVENT
     }
   }
 
+  getRemoteStreams() {
+    return this._remoteStreams.slice();
+  }
+
   close() {
     WebRTCModule.peerConnectionClose(this._peerConnectionId);
   }
