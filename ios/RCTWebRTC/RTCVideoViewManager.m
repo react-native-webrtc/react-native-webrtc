@@ -8,9 +8,11 @@
 #import <AVFoundation/AVFoundation.h>
 #import <objc/runtime.h>
 
-#import "RTCEAGLVideoView.h"
-#import "RTCMediaStream.h"
-#import "RTCVideoTrack.h"
+#import <WebRTC/RTCEAGLVideoView.h>
+#import <WebRTC/RTCMediaStream.h>
+#import <WebRTC/RTCVideoFrame.h>
+#import <WebRTC/RTCVideoTrack.h>
+
 #import "RTCVideoViewManager.h"
 #import "WebRTCModule.h"
 
@@ -268,7 +270,7 @@ typedef NS_ENUM(NSInteger, RTCVideoViewObjectFit) {
  *
  * @param frame The video frame to render.
  */
-- (void)renderFrame:(RTCI420Frame*)frame {
+- (void)renderFrame:(RTCVideoFrame *)frame {
   id<RTCVideoRenderer> videoRenderer = self.subview;
   if (videoRenderer) {
     [videoRenderer renderFrame:frame];

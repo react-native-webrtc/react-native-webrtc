@@ -11,12 +11,12 @@
 #import "RCTBridgeModule.h"
 #import "RCTConvert.h"
 
-#import "RTCDataChannel.h"
-#import "RTCMediaStream.h"
-#import "RTCPeerConnectionFactory.h"
-#import "RTCPeerConnection.h"
-#import "RTCAudioTrack.h"
-#import "RTCVideoTrack.h"
+#import <WebRTC/RTCDataChannel.h>
+#import <WebRTC/RTCMediaStream.h>
+#import <WebRTC/RTCPeerConnectionFactory.h>
+#import <WebRTC/RTCPeerConnection.h>
+#import <WebRTC/RTCAudioTrack.h>
+#import <WebRTC/RTCVideoTrack.h>
 
 @interface WebRTCModule : NSObject <RCTBridgeModule>
 
