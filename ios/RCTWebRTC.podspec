@@ -16,7 +16,7 @@ Pod::Spec.new do |s|
   s.default_subspec     = 'libWebRTC'
   s.requires_arc        = true
   s.platform            = :ios, "9.2"
-  s.preserve_paths      = "ios/libjingle_peerconnection/**/*", "ios/RCTWebRTC/**/*"
+  s.preserve_paths      = "ios/libjingle_peerconnection/**/*"
   s.framework           = 'VideoToolbox','CoreVideo','CoreAudio','GLKit','CoreGraphics','AudioToolbox','AVFoundation'
 
   s.subspec 'libWebRTC' do |ss|
