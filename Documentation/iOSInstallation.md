@@ -23,6 +23,15 @@ libstdc++.tbd
 ![Picture 5](http://i.imgur.com/L3QkvzG.jpg)  
 6.) Maybe you have to set `Dead Code Stripping` to `No` and `Enable Bitcode` to `No`.
 
+## iOS Podfile
+
+You can use the included podspec in your podfile to take care of all dependencies instead of manually adding files to the project (instead of steps 2 through 5, but you might still have to do step 6 above).
+
+Include in a Podfile in your react-native ios directory:
+
+```
+pod 'RCTWebRTC', :path => '../node_modules/react-native-webrtc'
+```
 
 ## Note
 If you used this module before, please remove `RCTWebRTC` directory and follow above guide.
