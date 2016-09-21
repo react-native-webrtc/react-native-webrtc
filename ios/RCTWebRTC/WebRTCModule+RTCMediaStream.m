@@ -7,11 +7,10 @@
 
 #import <objc/runtime.h>
 
-#import "RTCMediaConstraints.h"
-#import "RTCPair.h"
-#import "RTCVideoCapturer.h"
-#import "RTCVideoSource.h"
-#import "RTCVideoTrack.h"
+#import <WebRTC/RTCAVFoundationVideoSource.h>
+#import <WebRTC/RTCVideoTrack.h>
+#import <WebRTC/RTCMediaConstraints.h>
+
 #import "WebRTCModule+RTCPeerConnection.h"
 
 @implementation AVCaptureDevice (React)
@@ -70,13 +69,14 @@ typedef void (^NavigatorUserMediaSuccessCallback)(RTCMediaStream *mediaStream);
          mediaStream:(RTCMediaStream *)mediaStream {
   NSString *trackId = [[NSUUID UUID] UUIDString];
   RTCAudioTrack *audioTrack
-    = [self.peerConnectionFactory audioTrackWithID:trackId];
+    = [self.peerConnectionFactory audioTrackWithTrackId:trackId];
 
   [mediaStream addAudioTrack:audioTrack];
 
   successCallback(mediaStream);
 }
 
+// TODO: Use RCTConvert for constraints ...
 RCT_EXPORT_METHOD(getUserMedia:(NSDictionary *)constraints
                successCallback:(RCTResponseSenderBlock)successCallback
                  errorCallback:(RCTResponseSenderBlock)errorCallback) {
@@ -87,28 +87,28 @@ RCT_EXPORT_METHOD(getUserMedia:(NSDictionary *)constraints
   // practice, use a UUID (conforming to RFC4122).
   NSString *mediaStreamId = [[NSUUID UUID] UUIDString];
   RTCMediaStream *mediaStream
-    = [self.peerConnectionFactory mediaStreamWithLabel:mediaStreamId];
+    = [self.peerConnectionFactory mediaStreamWithStreamId:mediaStreamId];
 
   [self
     getUserMedia:constraints
     successCallback:^ (RTCMediaStream *mediaStream) {
-      NSString *mediaStreamId = mediaStream.label;
+      NSString *mediaStreamId = mediaStream.streamId;
       NSMutableArray *tracks = [NSMutableArray array];
 
       for (NSString *propertyName in @[ @"audioTracks", @"videoTracks" ]) {
         SEL sel = NSSelectorFromString(propertyName);
-	for (RTCMediaStreamTrack *track in [mediaStream performSelector:sel]) {
-	  NSString *trackId = track.label;
+        for (RTCMediaStreamTrack *track in [mediaStream performSelector:sel]) {
+          NSString *trackId = track.trackId;
 
           self.tracks[trackId] = track;
           [tracks addObject:@{
-	                      @"enabled": @(track.isEnabled),
-		              @"id": trackId,
+                              @"enabled": @(track.isEnabled),
+                              @"id": trackId,
                               @"kind": track.kind,
-	                      @"label": track.label,
-	                      @"readyState": @"live",
-		              @"remote": @(NO)
-	                      }];
+                              @"label": trackId,
+                              @"readyState": @"live",
+                              @"remote": @(NO)
+                              }];
         }
       }
       self.mediaStreams[mediaStreamId] = mediaStream;
@@ -264,10 +264,10 @@ RCT_EXPORT_METHOD(getUserMedia:(NSDictionary *)constraints
   }
 
   if (videoDevice) {
-    RTCVideoCapturer *capturer = [RTCVideoCapturer capturerWithDeviceName:[videoDevice localizedName]];
-    RTCVideoSource *videoSource = [self.peerConnectionFactory videoSourceWithCapturer:capturer constraints:[self defaultMediaStreamConstraints]];
+    // TODO: Actually use constraints...
+    RTCAVFoundationVideoSource *videoSource = [self.peerConnectionFactory avFoundationVideoSourceWithConstraints:[self defaultMediaStreamConstraints]];
     NSString *trackUUID = [[NSUUID UUID] UUIDString];
-    RTCVideoTrack *videoTrack = [self.peerConnectionFactory videoTrackWithID:trackUUID source:videoSource];
+    RTCVideoTrack *videoTrack = [self.peerConnectionFactory videoTrackWithSource:videoSource trackId:trackUUID];
     [mediaStream addVideoTrack:videoTrack];
 
     successCallback(mediaStream);
@@ -283,10 +283,10 @@ RCT_EXPORT_METHOD(mediaStreamRelease:(nonnull NSString *)streamID)
   RTCMediaStream *mediaStream = self.mediaStreams[streamID];
   if (mediaStream) {
     for (RTCVideoTrack *track in mediaStream.videoTracks) {
-      [self.tracks removeObjectForKey:track.label];
+      [self.tracks removeObjectForKey:track.trackId];
     }
     for (RTCAudioTrack *track in mediaStream.audioTracks) {
-      [self.tracks removeObjectForKey:track.label];
+      [self.tracks removeObjectForKey:track.trackId];
     }
     [self.mediaStreams removeObjectForKey:streamID];
   }
@@ -321,7 +321,7 @@ RCT_EXPORT_METHOD(mediaStreamTrackRelease:(nonnull NSString *)streamID : (nonnul
   RTCMediaStream *mediaStream = self.mediaStreams[streamID];
   RTCMediaStreamTrack *track;
   if (mediaStream && (track = self.tracks[trackID])) {
-    [track setEnabled:NO];
+    track.isEnabled = NO;
     if ([track.kind isEqualToString:@"audio"]) {
       [self.tracks removeObjectForKey:trackID];
       [mediaStream removeAudioTrack:(RTCAudioTrack *)track];
@@ -336,7 +336,7 @@ RCT_EXPORT_METHOD(mediaStreamTrackSetEnabled:(nonnull NSString *)trackID : (BOOL
 {
   RTCMediaStreamTrack *track = self.tracks[trackID];
   if (track && track.isEnabled != enabled) {
-    [track setEnabled:enabled];
+    track.isEnabled = enabled;
   }
 }
 
@@ -344,7 +344,7 @@ RCT_EXPORT_METHOD(mediaStreamTrackStop:(nonnull NSString *)trackID)
 {
   RTCMediaStreamTrack *track = self.tracks[trackID];
   if (track) {
-    [track setEnabled:NO];
+    track.isEnabled = NO;
     [self.tracks removeObjectForKey:trackID];
   }
 }

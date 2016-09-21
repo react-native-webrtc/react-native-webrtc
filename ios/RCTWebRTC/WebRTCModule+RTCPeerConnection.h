@@ -6,7 +6,7 @@
 //
 
 #import "WebRTCModule.h"
-#import "RTCPeerConnection.h"
+#import <WebRTC/RTCPeerConnection.h>
 
 @interface RTCPeerConnection (React)
 

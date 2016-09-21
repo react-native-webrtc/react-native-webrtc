@@ -1,5 +1,5 @@
 #import "WebRTCModule.h"
-#import "RTCDataChannel.h"
+#import <WebRTC/RTCDataChannel.h>
 
 @interface WebRTCModule (RTCDataChannel) <RTCDataChannelDelegate>
 
