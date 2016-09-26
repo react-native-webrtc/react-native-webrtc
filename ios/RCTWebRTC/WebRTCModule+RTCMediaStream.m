@@ -212,9 +212,30 @@ RCT_EXPORT_METHOD(getUserMedia:(NSDictionary *)constraints
      successCallback:(NavigatorUserMediaSuccessCallback)successCallback
        errorCallback:(NavigatorUserMediaErrorCallback)errorCallback
          mediaStream:(RTCMediaStream *)mediaStream {
+  NSMutableDictionary *mandatoryConstraints = [[NSMutableDictionary alloc] init];
+  NSMutableDictionary *optionalConstraints = [[NSMutableDictionary alloc] init];
   id videoConstraints = constraints[@"video"];
   AVCaptureDevice *videoDevice;
   if ([videoConstraints isKindOfClass:[NSDictionary class]]) {
+    // constraints.video.mandatory
+    id mandatoryVideoConstraints = videoConstraints[@"mandatory"];
+    if (mandatoryVideoConstraints
+        && [mandatoryVideoConstraints isKindOfClass:[NSArray class]]) {
+      NSArray *mandatories = mandatoryVideoConstraints;
+      for (id item in mandatories) {
+        if ([item isKindOfClass:[NSDictionary class]]) {
+          NSDictionary *itemDict = (NSDictionary *)item;
+          for (id key in itemDict) {
+            id value = [itemDict objectForKey:key];
+            if ([value isKindOfClass:[NSString class]]) {
+              mandatoryConstraints[key] = value;
+            } else {
+              mandatoryConstraints[key] = [value stringValue];
+            }
+          }
+        }
+      }
+    }
     // constraints.video.optional
     id optionalVideoConstraints = videoConstraints[@"optional"];
     if (optionalVideoConstraints
@@ -223,10 +244,17 @@ RCT_EXPORT_METHOD(getUserMedia:(NSDictionary *)constraints
       for (id item in options) {
         if ([item isKindOfClass:[NSDictionary class]]) {
           NSString *sourceId = ((NSDictionary *)item)[@"sourceId"];
-          if (sourceId) {
+          if (sourceId && !videoDevice) {
             videoDevice = [AVCaptureDevice deviceWithUniqueID:sourceId];
-            if (videoDevice) {
-              break;
+          }
+          
+          NSDictionary *itemDict = (NSDictionary *)item;
+          for(id key in itemDict) {
+            id value = [itemDict objectForKey:key];
+            if ([value isKindOfClass:[NSString class]]) {
+              optionalConstraints[key] = value;
+            } else {
+              optionalConstraints[key] = [value stringValue];
             }
           }
         }
@@ -264,8 +292,12 @@ RCT_EXPORT_METHOD(getUserMedia:(NSDictionary *)constraints
   }
 
   if (videoDevice) {
+    RTCMediaConstraints* mediaConstraints = [[RTCMediaConstraints alloc]
+      initWithMandatoryConstraints:mandatoryConstraints
+      optionalConstraints:optionalConstraints];
+    
     // TODO: Actually use constraints...
-    RTCAVFoundationVideoSource *videoSource = [self.peerConnectionFactory avFoundationVideoSourceWithConstraints:[self defaultMediaStreamConstraints]];
+    RTCAVFoundationVideoSource *videoSource = [self.peerConnectionFactory avFoundationVideoSourceWithConstraints:mediaConstraints];
     NSString *trackUUID = [[NSUUID UUID] UUIDString];
     RTCVideoTrack *videoTrack = [self.peerConnectionFactory videoTrackWithSource:videoSource trackId:trackUUID];
     [mediaStream addVideoTrack:videoTrack];
