@@ -147,11 +147,17 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
         return iceServers;
     }
 
+    private PeerConnection.RTCConfiguration parseRTCConfiguration(ReadableMap map) {
+        List<PeerConnection.IceServer> iceServers = createIceServers(map.getArray("iceServers"));
+        PeerConnection.RTCConfiguration configuration = new PeerConnection.RTCConfiguration(iceServers);
+        // TODO: Implement the rest of the RTCConfigure options ...
+        return configuration;
+    }
+
     @ReactMethod
     public void peerConnectionInit(ReadableMap configuration, final int id){
-        List<PeerConnection.IceServer> iceServers = createIceServers(configuration.getArray("iceServers"));
-
-        PeerConnection peerConnection = mFactory.createPeerConnection(iceServers, pcConstraints, new PeerConnection.Observer() {
+        PeerConnection.RTCConfiguration config = parseRTCConfiguration(configuration);
+        PeerConnection peerConnection = mFactory.createPeerConnection(config, pcConstraints, new PeerConnection.Observer() {
             @Override
             public void onSignalingChange(PeerConnection.SignalingState signalingState) {
                 WritableMap params = Arguments.createMap();
@@ -554,8 +560,8 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
         }
 
         // According to step 2 of the getUserMedia() algorithm,
-	// requestedMediaTypes is the set of media types in constraints with
-	// either a dictionary value or a value of "true".
+        // requestedMediaTypes is the set of media types in constraints with
+        // either a dictionary value or a value of "true".
         // According to step 3 of the getUserMedia() algorithm, if
         // requestedMediaTypes is the empty set, the method invocation fails
         // with a TypeError.
@@ -712,6 +718,18 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
         constraints.optional.add(new MediaConstraints.KeyValuePair("DtlsSrtpKeyAgreement", "true"));
         return constraints;
     }
+
+    @ReactMethod
+    public void peerConnectionSetConfiguration(ReadableMap configuration, final int id) {
+        PeerConnection peerConnection = mPeerConnections.get(id, null);
+        if (peerConnection == null) {
+            Log.d(TAG, "peerConnectionSetConfiguration() peerConnection is null");
+            return;
+        }
+        PeerConnection.RTCConfiguration config = parseRTCConfiguration(configuration);
+        peerConnection.setConfiguration(config);
+    }
+
     @ReactMethod
     public void peerConnectionAddStream(final String streamId, final int id){
         MediaStream mediaStream = mMediaStreams.get(streamId);
@@ -727,6 +745,7 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
             Log.d(TAG, "peerConnectionAddStream() peerConnection is null");
         }
     }
+
     @ReactMethod
     public void peerConnectionRemoveStream(final String streamId, final int id){
         MediaStream mediaStream = mMediaStreams.get(streamId);

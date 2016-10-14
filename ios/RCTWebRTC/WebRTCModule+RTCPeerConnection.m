@@ -45,6 +45,15 @@ RCT_EXPORT_METHOD(peerConnectionInit:(RTCConfiguration*)configuration objectID:(
   self.peerConnections[objectID] = peerConnection;
 }
 
+RCT_EXPORT_METHOD(peerConnectionSetConfiguration:(RTCConfiguration*)configuration objectID:(nonnull NSNumber *)objectID)
+{
+  RTCPeerConnection *peerConnection = self.peerConnections[objectID];
+  if (!peerConnection) {
+    return;
+  }
+  [peerConnection setConfiguration:configuration];
+}
+
 RCT_EXPORT_METHOD(peerConnectionAddStream:(nonnull NSString *)streamID objectID:(nonnull NSNumber *)objectID)
 {
   RTCMediaStream *stream = self.mediaStreams[streamID];
