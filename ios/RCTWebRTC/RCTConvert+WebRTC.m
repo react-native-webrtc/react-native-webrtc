@@ -85,19 +85,18 @@
   return [[RTCIceServer alloc] initWithURLStrings:urls];
 }
 
-+ (RTCConfiguration *)RTCConfiguration:(id)json
++ (nonnull RTCConfiguration *)RTCConfiguration:(id)json
 {
+  RTCConfiguration *config = [[RTCConfiguration alloc] init];
 
   if (!json) {
-    return nil;
+    return config;
   }
 
   if (![json isKindOfClass:[NSDictionary class]]) {
     RCTLogConvertError(json, @"must be an object");
-    return nil;
+    return config;
   }
-
-  RTCConfiguration *config = [[RTCConfiguration alloc] init];
 
   if (json[@"iceServers"] != nil && [json[@"iceServers"] isKindOfClass:[NSArray class]]) {
     NSMutableArray<RTCIceServer *> *iceServers = [NSMutableArray new];
