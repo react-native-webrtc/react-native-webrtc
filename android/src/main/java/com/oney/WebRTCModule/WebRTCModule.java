@@ -250,15 +250,21 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
 
             @Override
             public void onRemoveStream(MediaStream mediaStream) {
-                if (mediaStream != null) {
-                    for (VideoTrack track : mediaStream.videoTracks) {
-                        mMediaStreamTracks.remove(track.id());
-                    }
-                    for (AudioTrack track : mediaStream.audioTracks) {
-                        mMediaStreamTracks.remove(track.id());
-                    }
-                    mMediaStreams.remove(mediaStream.label());
+                if (mediaStream == null) {
+                    return;
                 }
+                String streamId = mediaStream.label();
+                for (VideoTrack track : mediaStream.videoTracks) {
+                    mMediaStreamTracks.remove(track.id());
+                }
+                for (AudioTrack track : mediaStream.audioTracks) {
+                    mMediaStreamTracks.remove(track.id());
+                }
+                mMediaStreams.remove(streamId);
+                WritableMap params = Arguments.createMap();
+                params.putInt("id", id);
+                params.putString("streamId", streamId);
+                sendEvent("peerConnectionRemovedStream", params);
             }
 
             @Override
