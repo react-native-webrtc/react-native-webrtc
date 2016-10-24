@@ -24,6 +24,7 @@ RTC_EXPORT
 
 /** Height without rotation applied. */
 @property(nonatomic, readonly) size_t height;
+@property(nonatomic, readonly) int rotation;
 @property(nonatomic, readonly) size_t chromaWidth;
 @property(nonatomic, readonly) size_t chromaHeight;
 // These can return NULL if the object is not backed by a buffer.
@@ -35,7 +36,7 @@ RTC_EXPORT
 @property(nonatomic, readonly) int32_t vPitch;
 
 /** Timestamp in nanoseconds. */
-@property(nonatomic, readonly) int64_t timeStamp;
+@property(nonatomic, readonly) int64_t timeStampNs;
 
 /** The native handle should be a pixel buffer on iOS. */
 @property(nonatomic, readonly) CVPixelBufferRef nativeHandle;

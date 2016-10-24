@@ -42,3 +42,4 @@
 #import <WebRTC/RTCVideoRenderer.h>
 #import <WebRTC/RTCVideoSource.h>
 #import <WebRTC/RTCVideoTrack.h>
+#import <WebRTC/UIDevice+RTCDevice.h>
