@@ -14,6 +14,8 @@ A WebRTC module for React Native.
 
 ## WebRTC Revision
 
+Since `0.53`, we use same branch version number like in webrtc native.
+
 please see [#79](https://github.com/oney/react-native-webrtc/issues/79) for discussions.  
 and [wiki page](https://github.com/oney/react-native-webrtc/wiki) to see revisions 
 
@@ -31,6 +33,7 @@ note: the order of commit revision is nothing to do with the order of cherry-pic
 | 0.11.0 | 52 stable<br>(12798)<br>(#10-13039)<br>32/64 | 52 stable<br>(12798)<br>(#10-13039)<br>32/64 | :heavy_check_mark: | git-lfs |
 | 0.12.0 | 53 stable<br>(13317)<br>(#6-13855)<br>32/64 | 53 stable<br>(13317)<br>(#6-13855)<br>32/64 | :heavy_check_mark: | git-lfs |
 | 0.13.0 | 53 stable<br>(13317)<br>(#6-13855)<br>32/64 | 53 stable<br>(13317)<br>(#6-13855)<br>32 | :heavy_check_mark: | |
+| 0.53.1 | 53 stable<br>(13317)<br>(#6-13855)<br>32/64 | 53 stable<br>(13317)<br>(#6-13855)<br>32 | :heavy_check_mark: | |
 | master | 53 stable<br>(13317)<br>(#6-13855)<br>32/64 | 53 stable<br>(13317)<br>(#6-13855)<br>32 | :warning:          | |
 
 ## Installation
