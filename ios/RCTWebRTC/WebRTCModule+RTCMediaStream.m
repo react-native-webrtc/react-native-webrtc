@@ -171,9 +171,9 @@ RCT_EXPORT_METHOD(getUserMedia:(NSDictionary *)constraints
     id videoConstraints = constraints[@"video"];
     if (videoConstraints) {
       BOOL requestAccessForVideo
-	= [videoConstraints isKindOfClass:[NSNumber class]]
-	  ? [videoConstraints boolValue]
-	  : [videoConstraints isKindOfClass:[NSDictionary class]];
+        = [videoConstraints isKindOfClass:[NSNumber class]]
+          ? [videoConstraints boolValue]
+          : [videoConstraints isKindOfClass:[NSDictionary class]];
 
       if (requestAccessForVideo) {
         [self requestAccessForMediaType:AVMediaTypeVideo
@@ -266,6 +266,21 @@ RCT_EXPORT_METHOD(getUserMedia:(NSDictionary *)constraints
   if (videoDevice) {
     // TODO: Actually use constraints...
     RTCAVFoundationVideoSource *videoSource = [self.peerConnectionFactory avFoundationVideoSourceWithConstraints:[self defaultMediaStreamConstraints]];
+    // FIXME The effort above to find a videoDevice value which satisfies the
+    // specified constraints was pretty much wasted. Salvage facingMode for
+    // starters because it is kind of a common and hence important feature on
+    // a mobile device.
+    switch (videoDevice.position) {
+    case AVCaptureDevicePositionBack:
+      if (videoSource.canUseBackCamera) {
+        videoSource.useBackCamera = YES;
+      }
+      break;
+    case AVCaptureDevicePositionFront:
+      videoSource.useBackCamera = NO;
+      break;
+    }
+
     NSString *trackUUID = [[NSUUID UUID] UUIDString];
     RTCVideoTrack *videoTrack = [self.peerConnectionFactory videoTrackWithSource:videoSource trackId:trackUUID];
     [mediaStream addVideoTrack:videoTrack];
@@ -392,32 +407,32 @@ RCT_EXPORT_METHOD(mediaStreamTrackStop:(nonnull NSString *)trackID)
     completionHandler:^ (BOOL granted) {
       dispatch_async(dispatch_get_main_queue(), ^ {
         if (granted) {
-	  NavigatorUserMediaSuccessCallback scb
-	    = ^ (RTCMediaStream *mediaStream) {
-	      [self getUserMedia:constraints
-	         successCallback:successCallback
-	           errorCallback:errorCallback
-		     mediaStream:mediaStream];
-	    };
+          NavigatorUserMediaSuccessCallback scb
+            = ^ (RTCMediaStream *mediaStream) {
+              [self getUserMedia:constraints
+                 successCallback:successCallback
+                   errorCallback:errorCallback
+                     mediaStream:mediaStream];
+            };
 
-	  if (mediaType == AVMediaTypeAudio) {
-	    [self getUserAudio:constraints
-	       successCallback:scb
-	         errorCallback:errorCallback
-	           mediaStream:mediaStream];
-	  } else if (mediaType == AVMediaTypeVideo) {
-	    [self getUserVideo:constraints
-	       successCallback:scb
-	         errorCallback:errorCallback
-	           mediaStream:mediaStream];
-	  }
-	} else {
-	  // According to step 10 Permission Failure of the getUserMedia()
-	  // algorithm, if the user has denied permission, fail "with a new
-	  // DOMException object whose name attribute has the value
-	  // NotAllowedError."
-	  errorCallback(@"DOMException", @"NotAllowedError");
-	}
+          if (mediaType == AVMediaTypeAudio) {
+            [self getUserAudio:constraints
+               successCallback:scb
+                 errorCallback:errorCallback
+                   mediaStream:mediaStream];
+          } else if (mediaType == AVMediaTypeVideo) {
+            [self getUserVideo:constraints
+               successCallback:scb
+                 errorCallback:errorCallback
+                   mediaStream:mediaStream];
+          }
+        } else {
+          // According to step 10 Permission Failure of the getUserMedia()
+          // algorithm, if the user has denied permission, fail "with a new
+          // DOMException object whose name attribute has the value
+          // NotAllowedError."
+          errorCallback(@"DOMException", @"NotAllowedError");
+        }
       });
     }];
 }
