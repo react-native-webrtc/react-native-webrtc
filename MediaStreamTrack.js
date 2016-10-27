@@ -25,7 +25,7 @@ type SourceInfo = {
   kind: string;
 };
 
-export default class MediaStreamTrack {
+export default class MediaStreamTrack extends EventTarget(MEDIA_STREAM_TRACK_EVENTS) {
   static getSources(success: (sources: Array<SourceInfo>) => void) {
     WebRTCModule.mediaStreamTrackGetSources(success);
   }
@@ -46,6 +46,8 @@ export default class MediaStreamTrack {
   overconstrained: ?Function;
 
   constructor(info) {
+    super();
+
     let _readyState = info.readyState.toLowerCase();
     this._enabled = info.enabled;
     this.id = info.id;

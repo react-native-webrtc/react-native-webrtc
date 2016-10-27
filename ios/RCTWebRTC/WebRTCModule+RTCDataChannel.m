@@ -68,12 +68,28 @@ RCT_EXPORT_METHOD(dataChannelClose:(nonnull NSNumber *)dataChannelId
 // Called when a data buffer was successfully received.
 - (void)dataChannel:(RTCDataChannel *)channel didReceiveMessageWithBuffer:(RTCDataBuffer *)buffer
 {
-  NSString *data = buffer.isBinary ?
-    [buffer.data base64EncodedStringWithOptions:0] :
-    [[NSString alloc] initWithData:buffer.data encoding:NSUTF8StringEncoding];
+  NSString *type;
+  NSString *data;
+  if (buffer.isBinary) {
+    type = @"binary";
+    data = [buffer.data base64EncodedStringWithOptions:0];
+  } else {
+    type = @"text";
+    // XXX NSData has a length property which means that, when it represents
+    // text, the value of its bytes property does not have to be terminated by
+    // null. In such a case, NSString's stringFromUTF8String may fail and return
+    // nil (which would crash the process when inserting data into NSDictionary
+    // without the nil protection implemented below).
+    data = [[NSString alloc] initWithData:buffer.data
+                                 encoding:NSUTF8StringEncoding];
+  }
   NSDictionary *event = @{@"id": @(channel.channelId),
-                          @"type": buffer.isBinary ? @"binary" : @"text",
-                          @"data": data};
+                          @"type": type,
+                          // XXX NSDictionary will crash the process upon
+                          // attempting to insert nil. Such behavior is
+                          // unacceptable given that protection in such a
+                          // scenario is extremely simple.
+                          @"data": (data ? data : [NSNull null])};
   [self.bridge.eventDispatcher sendDeviceEventWithName:@"dataChannelReceiveMessage"
                                                   body:event];
 }
