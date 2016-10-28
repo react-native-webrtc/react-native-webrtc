@@ -31,7 +31,6 @@
     _peerConnections = [NSMutableDictionary new];
     _mediaStreams = [NSMutableDictionary new];
     _tracks = [NSMutableDictionary new];
-    _dataChannels = [NSMutableDictionary new];
   }
   return self;
 }
@@ -42,12 +41,6 @@
   _tracks = nil;
   [_mediaStreams removeAllObjects];
   _mediaStreams = nil;
-  for (NSNumber *dataChannelId in _dataChannels) {
-    RTCDataChannel *dataChannel = _dataChannels[dataChannelId];
-    dataChannel.delegate = nil;
-    [dataChannel close];
-  }
-  [_dataChannels removeAllObjects];
 
   for (NSNumber *peerConnectionId in _peerConnections) {
     RTCPeerConnection *peerConnection = _peerConnections[peerConnectionId];

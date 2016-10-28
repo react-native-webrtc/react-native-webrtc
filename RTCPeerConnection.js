@@ -262,7 +262,11 @@ export default class RTCPeerConnection extends EventTarget(PEER_CONNECTION_EVENT
         if (typeof id !== 'number' || id === -1) {
           return;
         }
-        const channel = new RTCDataChannel(evDataChannel.label, evDataChannel);
+        const channel
+          = new RTCDataChannel(
+              this._peerConnectionId,
+              evDataChannel.label,
+              evDataChannel);
         // XXX webrtc::PeerConnection checked that id was not in use in its own
         // SID allocator before it invoked us. Additionally, its own SID
         // allocator is the authority on ResourceInUse. Consequently, it is
@@ -315,6 +319,6 @@ export default class RTCPeerConnection extends EventTarget(PEER_CONNECTION_EVENT
         label,
         dataChannelDict);
     dataChannelIds.add(id);
-    return new RTCDataChannel(label, dataChannelDict);
+    return new RTCDataChannel(this._peerConnectionId, label, dataChannelDict);
   }
 }

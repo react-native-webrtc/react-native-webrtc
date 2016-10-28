@@ -21,12 +21,6 @@ import com.facebook.react.bridge.ReadableArray;
 import com.facebook.react.bridge.ReadableType;
 import com.facebook.react.modules.core.DeviceEventManagerModule;
 
-import java.io.UnsupportedEncodingException;
-import java.nio.ByteBuffer;
-import java.nio.CharBuffer;
-import java.nio.charset.CharacterCodingException;
-import java.nio.charset.Charset;
-import java.nio.charset.CharsetEncoder;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
@@ -54,24 +48,22 @@ import android.hardware.Camera.Size;
 import org.webrtc.*;
 
 public class WebRTCModule extends ReactContextBaseJavaModule {
-    private final static String TAG = WebRTCModule.class.getCanonicalName();
+    final static String TAG = WebRTCModule.class.getCanonicalName();
 
     private static final String LANGUAGE =  "language";
-    private PeerConnectionFactory mFactory;
-    private final SparseArray<PeerConnection> mPeerConnections;
+
+    private final PeerConnectionFactory mFactory;
+    private final SparseArray<PeerConnectionObserver> mPeerConnectionObservers;
     public final Map<String, MediaStream> mMediaStreams;
     public final Map<String, MediaStreamTrack> mMediaStreamTracks;
-    private final SparseArray<DataChannel> mDataChannels;
-    private MediaConstraints pcConstraints = new MediaConstraints();
-    VideoSource videoSource;
+    private final MediaConstraints pcConstraints = new MediaConstraints();
 
     public WebRTCModule(ReactApplicationContext reactContext) {
         super(reactContext);
 
-        mPeerConnections = new SparseArray<PeerConnection>();
+        mPeerConnectionObservers = new SparseArray<PeerConnectionObserver>();
         mMediaStreams = new HashMap<String, MediaStream>();
         mMediaStreamTracks = new HashMap<String, MediaStreamTrack>();
-        mDataChannels = new SparseArray<DataChannel>();
 
         pcConstraints.mandatory.add(new MediaConstraints.KeyValuePair("OfferToReceiveAudio", "true"));
         pcConstraints.mandatory.add(new MediaConstraints.KeyValuePair("OfferToReceiveVideo", "true"));
@@ -104,7 +96,13 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
         System.out.println("The current language is "+language);
         callback.invoke(null, language);
     }
-    private void sendEvent(String eventName, @Nullable WritableMap params) {
+
+    private PeerConnection getPeerConnection(int id) {
+        PeerConnectionObserver pco = mPeerConnectionObservers.get(id);
+        return (pco == null) ? null : pco.getPeerConnection();
+    }
+
+    void sendEvent(String eventName, @Nullable WritableMap params) {
         getReactApplicationContext()
             .getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter.class)
             .emit(eventName, params);
@@ -155,170 +153,12 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
     }
 
     @ReactMethod
-    public void peerConnectionInit(ReadableMap configuration, final int id){
+    public void peerConnectionInit(ReadableMap configuration, int id){
         PeerConnection.RTCConfiguration config = parseRTCConfiguration(configuration);
-        PeerConnection peerConnection = mFactory.createPeerConnection(config, pcConstraints, new PeerConnection.Observer() {
-            @Override
-            public void onSignalingChange(PeerConnection.SignalingState signalingState) {
-                WritableMap params = Arguments.createMap();
-                params.putInt("id", id);
-                params.putString("signalingState", signalingStateString(signalingState));
-                sendEvent("peerConnectionSignalingStateChanged", params);
-            }
-
-            @Override
-            public void onIceConnectionChange(PeerConnection.IceConnectionState iceConnectionState) {
-
-                WritableMap params = Arguments.createMap();
-                params.putInt("id", id);
-                params.putString("iceConnectionState", iceConnectionStateString(iceConnectionState));
-
-                sendEvent("peerConnectionIceConnectionChanged", params);
-            }
-
-            @Override
-            public void onIceGatheringChange(PeerConnection.IceGatheringState iceGatheringState) {
-                Log.d(TAG, "onIceGatheringChangedwe" + iceGatheringState.name());
-                WritableMap params = Arguments.createMap();
-                params.putInt("id", id);
-                params.putString("iceGatheringState", iceGatheringStateString(iceGatheringState));
-                sendEvent("peerConnectionIceGatheringChanged", params);
-            }
-
-            @Override
-            public void onIceCandidate(final IceCandidate candidate) {
-                Log.d(TAG, "onIceCandidatewqerqwrsdfsd");
-                WritableMap params = Arguments.createMap();
-                params.putInt("id", id);
-                WritableMap candidateParams = Arguments.createMap();
-                candidateParams.putInt("sdpMLineIndex", candidate.sdpMLineIndex);
-                candidateParams.putString("sdpMid", candidate.sdpMid);
-                candidateParams.putString("candidate", candidate.sdp);
-                params.putMap("candidate", candidateParams);
-
-                sendEvent("peerConnectionGotICECandidate", params);
-            }
-
-            @Override
-            public void onIceCandidatesRemoved(final IceCandidate[] candidates) {
-                Log.d(TAG, "onIceCandidatesRemoved");
-            }
-
-            @Override
-            public void onAddStream(MediaStream mediaStream) {
-                String streamId = mediaStream.label();
-                if (mMediaStreams.containsKey(streamId)) {
-                    Log.e(TAG,
-                        "onAddStream: Duplicated stream for ID: " + streamId);
-                    return;
-                }
-                mMediaStreams.put(streamId, mediaStream);
-                WritableMap params = Arguments.createMap();
-                params.putInt("id", id);
-                params.putString("streamId", streamId);
-
-                WritableArray tracks = Arguments.createArray();
-
-                for (int i = 0; i < mediaStream.videoTracks.size(); i++) {
-                    VideoTrack track = mediaStream.videoTracks.get(i);
-
-                    WritableMap trackInfo = Arguments.createMap();
-                    trackInfo.putString("id", track.id());
-                    trackInfo.putString("label", "Video");
-                    trackInfo.putString("kind", track.kind());
-                    trackInfo.putBoolean("enabled", track.enabled());
-                    trackInfo.putString("readyState", track.state().toString());
-                    trackInfo.putBoolean("remote", true);
-                    tracks.pushMap(trackInfo);
-                }
-                for (int i = 0; i < mediaStream.audioTracks.size(); i++) {
-                    AudioTrack track = mediaStream.audioTracks.get(i);
-
-                    WritableMap trackInfo = Arguments.createMap();
-                    trackInfo.putString("id", track.id());
-                    trackInfo.putString("label", "Audio");
-                    trackInfo.putString("kind", track.kind());
-                    trackInfo.putBoolean("enabled", track.enabled());
-                    trackInfo.putString("readyState", track.state().toString());
-                    trackInfo.putBoolean("remote", true);
-                    tracks.pushMap(trackInfo);
-                }
-                params.putArray("tracks", tracks);
-
-                sendEvent("peerConnectionAddedStream", params);
-            }
-
-            @Override
-            public void onRemoveStream(MediaStream mediaStream) {
-                if (mediaStream == null) {
-                    return;
-                }
-                String streamId = mediaStream.label();
-                for (VideoTrack track : mediaStream.videoTracks) {
-                    mMediaStreamTracks.remove(track.id());
-                }
-                for (AudioTrack track : mediaStream.audioTracks) {
-                    mMediaStreamTracks.remove(track.id());
-                }
-                mMediaStreams.remove(streamId);
-                WritableMap params = Arguments.createMap();
-                params.putInt("id", id);
-                params.putString("streamId", streamId);
-                sendEvent("peerConnectionRemovedStream", params);
-            }
-
-            @Override
-            public void onDataChannel(DataChannel dataChannel) {
-                // XXX Unfortunately, the Java WebRTC API doesn't expose the id
-                // of the underlying C++/native DataChannel (even though the
-                // WebRTC standard defines the DataChannel.id property). As a
-                // workaround, generated an id which will surely not clash with
-                // the ids of the remotely-opened (and standard-compliant
-                // locally-opened) DataChannels.
-                int dataChannelId = -1;
-                // The RTCDataChannel.id space is limited to unsigned short by
-                // the standard:
-                // https://www.w3.org/TR/webrtc/#dom-datachannel-id.
-                // Additionally, 65535 is reserved due to SCTP INIT and
-                // INIT-ACK chunks only allowing a maximum of 65535 streams to
-                // be negotiated (as defined by the WebRTC Data Channel
-                // Establishment Protocol).
-                for (int i = 65536; i <= Integer.MAX_VALUE; ++i) {
-                    if (null == mDataChannels.get(i, null)) {
-                        dataChannelId = i;
-                        break;
-                    }
-                }
-                if (-1 == dataChannelId) {
-                  return;
-                }
-
-                WritableMap dataChannelParams = Arguments.createMap();
-                dataChannelParams.putInt("id", dataChannelId);
-                dataChannelParams.putString("label", dataChannel.label());
-                WritableMap params = Arguments.createMap();
-                params.putInt("id", id);
-                params.putMap("dataChannel", dataChannelParams);
-
-                mDataChannels.put(dataChannelId, dataChannel);
-                registerDataChannelObserver(dataChannelId, dataChannel);
-
-                sendEvent("peerConnectionDidOpenDataChannel", params);
-            }
-
-            @Override
-            public void onRenegotiationNeeded() {
-                WritableMap params = Arguments.createMap();
-                params.putInt("id", id);
-                sendEvent("peerConnectionOnRenegotiationNeeded", params);
-            }
-
-            @Override
-            public void onIceConnectionReceivingChange(boolean var1) {
-
-            }
-        });
-        mPeerConnections.put(id, peerConnection);
+        PeerConnectionObserver observer = new PeerConnectionObserver(this, id);
+        PeerConnection peerConnection = mFactory.createPeerConnection(config, pcConstraints, observer); 
+        observer.setPeerConnection(peerConnection);
+        mPeerConnectionObservers.put(id, observer);
     }
 
     private String getNextStreamUUID() {
@@ -727,13 +567,24 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
 
     @ReactMethod
     public void peerConnectionSetConfiguration(ReadableMap configuration, final int id) {
-        PeerConnection peerConnection = mPeerConnections.get(id, null);
+        PeerConnection peerConnection = getPeerConnection(id);
         if (peerConnection == null) {
             Log.d(TAG, "peerConnectionSetConfiguration() peerConnection is null");
             return;
         }
         PeerConnection.RTCConfiguration config = parseRTCConfiguration(configuration);
         peerConnection.setConfiguration(config);
+    }
+
+    boolean onAddStream(MediaStream mediaStream) {
+        String streamId = mediaStream.label();
+        if (mMediaStreams.containsKey(streamId)) {
+            Log.e(TAG, "onAddStream: Duplicated stream for ID: " + streamId);
+            return false;
+        } else {
+            mMediaStreams.put(streamId, mediaStream);
+            return true;
+        }
     }
 
     @ReactMethod
@@ -743,13 +594,28 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
             Log.d(TAG, "peerConnectionAddStream() mediaStream is null");
             return;
         }
-        PeerConnection peerConnection = mPeerConnections.get(id, null);
+        PeerConnection peerConnection = getPeerConnection(id);
         if (peerConnection != null) {
             boolean result = peerConnection.addStream(mediaStream);
             Log.d(TAG, "addStream" + result);
         } else {
             Log.d(TAG, "peerConnectionAddStream() peerConnection is null");
         }
+    }
+
+    boolean onRemoveStream(MediaStream mediaStream) {
+        if (mediaStream == null) {
+            return false;
+        }
+        String streamId = mediaStream.label();
+        for (VideoTrack track : mediaStream.videoTracks) {
+            mMediaStreamTracks.remove(track.id());
+        }
+        for (AudioTrack track : mediaStream.audioTracks) {
+            mMediaStreamTracks.remove(track.id());
+        }
+        mMediaStreams.remove(streamId);
+        return true;
     }
 
     @ReactMethod
@@ -759,7 +625,7 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
             Log.d(TAG, "peerConnectionRemoveStream() mediaStream is null");
             return;
         }
-        PeerConnection peerConnection = mPeerConnections.get(id, null);
+        PeerConnection peerConnection = getPeerConnection(id);
         if (peerConnection != null) {
             peerConnection.removeStream(mediaStream);
         } else {
@@ -769,7 +635,7 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
 
     @ReactMethod
     public void peerConnectionCreateOffer(final int id, final Callback callback) {
-        PeerConnection peerConnection = mPeerConnections.get(id, null);
+        PeerConnection peerConnection = getPeerConnection(id);
 
         // MediaConstraints constraints = new MediaConstraints();
         // constraints.mandatory.add(new MediaConstraints.KeyValuePair("OfferToReceiveAudio", "true"));
@@ -805,7 +671,7 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
 
     @ReactMethod
     public void peerConnectionCreateAnswer(final int id, final Callback callback) {
-        PeerConnection peerConnection = mPeerConnections.get(id, null);
+        PeerConnection peerConnection = getPeerConnection(id);
 
         // MediaConstraints constraints = new MediaConstraints();
         // constraints.mandatory.add(new MediaConstraints.KeyValuePair("OfferToReceiveAudio", "true"));
@@ -844,7 +710,7 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
 
     @ReactMethod
     public void peerConnectionSetLocalDescription(ReadableMap sdpMap, final int id, final Callback callback) {
-        PeerConnection peerConnection = mPeerConnections.get(id, null);
+        PeerConnection peerConnection = getPeerConnection(id);
 
         Log.d(TAG, "peerConnectionSetLocalDescription() start");
         if (peerConnection != null) {
@@ -880,7 +746,7 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
     }
     @ReactMethod
     public void peerConnectionSetRemoteDescription(final ReadableMap sdpMap, final int id, final Callback callback) {
-        PeerConnection peerConnection = mPeerConnections.get(id, null);
+        PeerConnection peerConnection = getPeerConnection(id);
         // final String d = sdpMap.getString("type");
 
         Log.d(TAG, "peerConnectionSetRemoteDescription() start");
@@ -918,7 +784,7 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
     @ReactMethod
     public void peerConnectionAddICECandidate(ReadableMap candidateMap, final int id, final Callback callback) {
         boolean result = false;
-        PeerConnection peerConnection = mPeerConnections.get(id, null);
+        PeerConnection peerConnection = getPeerConnection(id);
         Log.d(TAG, "peerConnectionAddICECandidate() start");
         if (peerConnection != null) {
             IceCandidate candidate = new IceCandidate(
@@ -954,7 +820,7 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
     @ReactMethod
     public void peerConnectionGetStats(String trackId,
                                        int id, final Callback statsCb) {
-        PeerConnection peerConnection = mPeerConnections.get(id);
+        PeerConnection peerConnection = getPeerConnection(id);
         if (peerConnection != null) {
             MediaStreamTrack mediaTrack = null;
             if (trackId == null
@@ -976,10 +842,10 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
     }
     @ReactMethod
     public void peerConnectionClose(final int id) {
-        PeerConnection peerConnection = mPeerConnections.get(id, null);
+        PeerConnection peerConnection = getPeerConnection(id);
         if (peerConnection != null) {
             peerConnection.close();
-            mPeerConnections.remove(id);
+            mPeerConnectionObservers.remove(id);
         } else {
             Log.d(TAG, "peerConnectionClose() peerConnection is null");
         }
@@ -1038,246 +904,42 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
         }*/
     }
 
-    private void registerDataChannelObserver(int dcId, DataChannel dataChannel){
-        // DataChannel.registerObserver implementation does not allow to
-        // unregister, so the observer is registered here and is never
-        // unregistered
-        dataChannel.registerObserver(
-            new DataChannelObserver(dcId, dataChannel));
-    }
-
     @ReactMethod
     public void createDataChannel(final int peerConnectionId, String label, ReadableMap config) {
-        PeerConnection peerConnection = mPeerConnections.get(peerConnectionId, null);
-        if (peerConnection != null) {
-            DataChannel.Init init = new DataChannel.Init();
-            if (config != null) {
-                if (config.hasKey("id")) {
-                    init.id = config.getInt("id");
-                }
-                if (config.hasKey("ordered")) {
-                    init.ordered = config.getBoolean("ordered");
-                }
-                if (config.hasKey("maxRetransmitTime")) {
-                    init.maxRetransmitTimeMs = config.getInt("maxRetransmitTime");
-                }
-                if (config.hasKey("maxRetransmits")) {
-                    init.maxRetransmits = config.getInt("maxRetransmits");
-                }
-                if (config.hasKey("protocol")) {
-                    init.protocol = config.getString("protocol");
-                }
-                if (config.hasKey("negotiated")) {
-                    init.negotiated = config.getBoolean("negotiated");
-                }
-            }
-            DataChannel dataChannel = peerConnection.createDataChannel(label, init);
-            // XXX RTP data channels are not defined by the WebRTC standard,
-            // have been deprecated in Chromium, and Google have decided (in
-            // 2015) to no longer support them (in the face of multiple
-            // reported issues of breakages).
-            int dataChannelId = init.id;
-            if (-1 != dataChannelId) {
-                mDataChannels.put(dataChannelId, dataChannel);
-                registerDataChannelObserver(dataChannelId, dataChannel);
-            }
-        } else {
+        // Forward to PeerConnectionObserver which deals with DataChannels
+        // because DataChannel is owned by PeerConnection.
+        PeerConnectionObserver pco
+            = mPeerConnectionObservers.get(peerConnectionId);
+        if (pco == null || pco.getPeerConnection() == null) {
             Log.d(TAG, "createDataChannel() peerConnection is null");
+        } else {
+            pco.createDataChannel(label, config);
         }
     }
 
     @ReactMethod
-    public void dataChannelSend(final int dataChannelId, String data, String type) {
-        DataChannel dataChannel = mDataChannels.get(dataChannelId, null);
-        if (dataChannel != null) {
-            byte[] byteArray;
-            if (type.equals("text")) {
-                try {
-                    byteArray = data.getBytes("UTF-8");
-                } catch (UnsupportedEncodingException e) {
-                    Log.d(TAG, "Could not encode text string as UTF-8.");
-                    return;
-                }
-            } else if (type.equals("binary")) {
-                byteArray = Base64.decode(data, Base64.NO_WRAP);
-            } else {
-                Log.e(TAG, "Unsupported data type: " + type);
-                return;
-            }
-            ByteBuffer byteBuffer = ByteBuffer.wrap(byteArray);
-            DataChannel.Buffer buffer = new DataChannel.Buffer(byteBuffer, type.equals("binary"));
-            dataChannel.send(buffer);
+    public void dataChannelSend(int peerConnectionId, int dataChannelId, String data, String type) {
+        // Forward to PeerConnectionObserver which deals with DataChannels
+        // because DataChannel is owned by PeerConnection.
+        PeerConnectionObserver pco
+            = mPeerConnectionObservers.get(peerConnectionId);
+        if (pco == null || pco.getPeerConnection() == null) {
+            Log.d(TAG, "dataChannelSend() peerConnection is null");
         } else {
-            Log.d(TAG, "dataChannelSend() dataChannel is null");
+            pco.dataChannelSend(dataChannelId, data, type);
         }
     }
 
     @ReactMethod
-    public void dataChannelClose(final int dataChannelId) {
-        DataChannel dataChannel = mDataChannels.get(dataChannelId, null);
-        if (dataChannel != null) {
-            dataChannel.close();
-            mDataChannels.remove(dataChannelId);
+    public void dataChannelClose(int peerConnectionId, int dataChannelId) {
+        // Forward to PeerConnectionObserver which deals with DataChannels
+        // because DataChannel is owned by PeerConnection.
+        PeerConnectionObserver pco
+            = mPeerConnectionObservers.get(peerConnectionId);
+        if (pco == null || pco.getPeerConnection() == null) {
+            Log.d(TAG, "dataChannelClose() peerConnection is null");
         } else {
-            Log.d(TAG, "dataChannelClose() dataChannel is null");
+            pco.dataChannelClose(dataChannelId);
         }
     }
-
-    @Nullable
-    public String iceConnectionStateString(PeerConnection.IceConnectionState iceConnectionState) {
-        switch (iceConnectionState) {
-            case NEW:
-                return "new";
-            case CHECKING:
-                return "checking";
-            case CONNECTED:
-                return "connected";
-            case COMPLETED:
-                return "completed";
-            case FAILED:
-                return "failed";
-            case DISCONNECTED:
-                return "disconnected";
-            case CLOSED:
-                return "closed";
-        }
-        return null;
-    }
-
-    @Nullable
-    public String signalingStateString(PeerConnection.SignalingState signalingState) {
-        switch (signalingState) {
-            case STABLE:
-                return "stable";
-            case HAVE_LOCAL_OFFER:
-                return "have-local-offer";
-            case HAVE_LOCAL_PRANSWER:
-                return "have-local-pranswer";
-            case HAVE_REMOTE_OFFER:
-                return "have-remote-offer";
-            case HAVE_REMOTE_PRANSWER:
-                return "have-remote-pranswer";
-            case CLOSED:
-                return "closed";
-        }
-        return null;
-    }
-
-    @Nullable
-    public String iceGatheringStateString(PeerConnection.IceGatheringState iceGatheringState) {
-        switch (iceGatheringState) {
-            case NEW:
-                return "new";
-            case GATHERING:
-                return "gathering";
-            case COMPLETE:
-                return "complete";
-        }
-        return null;
-    }
-    @Nullable
-    public String dataChannelStateString(DataChannel.State dataChannelState) {
-        switch (dataChannelState) {
-            case CONNECTING:
-                return "connecting";
-            case OPEN:
-                return "open";
-            case CLOSING:
-                return "closing";
-            case CLOSED:
-                return "closed";
-        }
-        return null;
-    }
-
-    class DataChannelObserver implements DataChannel.Observer {
-
-        private final int mId;
-        private final DataChannel mDataChannel;
-
-        DataChannelObserver(int id, DataChannel dataChannel) {
-            mId = id;
-            mDataChannel = dataChannel;
-        }
-
-        @Override
-        public void onBufferedAmountChange(long amount) {
-        }
-
-        @Override
-        public void onStateChange() {
-            WritableMap params = Arguments.createMap();
-            params.putInt("id", mId);
-            params.putString("state", dataChannelStateString(mDataChannel.state()));
-            sendEvent("dataChannelStateChanged", params);
-        }
-
-        @Override
-        public void onMessage(DataChannel.Buffer buffer) {
-            WritableMap params = Arguments.createMap();
-            params.putInt("id", mId);
-
-            byte[] bytes;
-            if (buffer.data.hasArray()) {
-                bytes = buffer.data.array();
-            } else {
-                bytes = new byte[buffer.data.remaining()];
-                buffer.data.get(bytes);
-            }
-
-            if (buffer.binary) {
-                params.putString("type", "binary");
-                params.putString("data", Base64.encodeToString(bytes, Base64.NO_WRAP));
-            } else {
-                params.putString("type", "text");
-                params.putString("data", new String(bytes, Charset.forName("UTF-8")));
-            }
-
-            sendEvent("dataChannelReceiveMessage", params);
-        }
-    }
-
-    static class CameraEventsHandler implements VideoCapturerAndroid.CameraEventsHandler {
-        // Camera error handler - invoked when camera can not be opened
-        // or any camera exception happens on camera thread.
-        @Override
-        public void onCameraError(String errorDescription) {
-            Log.d(TAG, String.format("CameraEventsHandler.onCameraError: errorDescription=%s", errorDescription));
-        }
-
-        // Invoked when camera stops receiving frames
-        @Override
-        public void onCameraFreezed(String errorDescription) {
-            Log.d(TAG, String.format("CameraEventsHandler.onCameraFreezed: errorDescription=%s", errorDescription));
-        }
-
-        // Callback invoked when camera is opening.
-        @Override
-        public void onCameraOpening(int cameraId) {
-            Log.d(TAG, String.format("CameraEventsHandler.onCameraOpening: cameraId=%s", cameraId));
-        }
-
-        // Callback invoked when first camera frame is available after camera is opened.
-        @Override
-        public void onFirstFrameAvailable() {
-            Log.d(TAG, "CameraEventsHandler.onFirstFrameAvailable");
-        }
-
-        // Callback invoked when camera closed.
-        @Override
-        public void onCameraClosed() {
-            Log.d(TAG, "CameraEventsHandler.onFirstFrameAvailable");
-        }
-    }
-
-    /*
-    // Camera switch handler - one of these functions are invoked with the result of switchCamera().
-    // The callback may be called on an arbitrary thread.
-    static interface CameraSwitchHandler {
-        // Invoked on success. |isFrontCamera| is true if the new camera is front facing.
-        void onCameraSwitchDone(boolean isFrontCamera);
-        // Invoked on failure, e.g. camera is stopped or only one camera available.
-        void onCameraSwitchError(String errorDescription);
-    }
-    */
 }

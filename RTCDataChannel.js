@@ -37,10 +37,12 @@ class ResourceInUse extends Error {}
 
 export default class RTCDataChannel extends EventTarget(DATA_CHANNEL_EVENTS) {
 
+  _peerConnectionId: number;
+
   binaryType: 'arraybuffer' = 'arraybuffer'; // we only support 'arraybuffer'
   bufferedAmount: number = 0;
   bufferedAmountLowThreshold: number = 0;
-  id: string;
+  id: number;
   label: string;
   maxPacketLifeTime: ?number = null;
   maxRetransmits: ?number = null;
@@ -55,8 +57,13 @@ export default class RTCDataChannel extends EventTarget(DATA_CHANNEL_EVENTS) {
   onerror: ?Function;
   onclose: ?Function;
 
-  constructor(label: string, dataChannelDict: RTCDataChannelInit) {
+  constructor(
+      peerConnectionId: number,
+      label: string,
+      dataChannelDict: RTCDataChannelInit) {
     super();
+
+    this._peerConnectionId = peerConnectionId;
 
     this.label = label;
 
@@ -79,7 +86,7 @@ export default class RTCDataChannel extends EventTarget(DATA_CHANNEL_EVENTS) {
 
   send(data: string | ArrayBuffer | ArrayBufferView) {
     if (typeof data === 'string') {
-      WebRTCModule.dataChannelSend(this.id, data, 'text');
+      WebRTCModule.dataChannelSend(this._peerConnectionId, this.id, data, 'text');
       return;
     }
 
@@ -89,7 +96,7 @@ export default class RTCDataChannel extends EventTarget(DATA_CHANNEL_EVENTS) {
     if (!(data instanceof ArrayBuffer)) {
       throw new TypeError('Data must be either string, ArrayBuffer, or ArrayBufferView');
     }
-    WebRTCModule.dataChannelSend(this.id, base64.fromByteArray(new Uint8Array(data)), 'binary');
+    WebRTCModule.dataChannelSend(this._peerConnectionId, this.id, base64.fromByteArray(new Uint8Array(data)), 'binary');
   }
 
   close() {
@@ -97,7 +104,7 @@ export default class RTCDataChannel extends EventTarget(DATA_CHANNEL_EVENTS) {
       return;
     }
     this.readyState = 'closing';
-    WebRTCModule.dataChannelClose(this.id);
+    WebRTCModule.dataChannelClose(this._peerConnectionId, this.id);
   }
 
   _unregisterEvents() {
@@ -108,7 +115,8 @@ export default class RTCDataChannel extends EventTarget(DATA_CHANNEL_EVENTS) {
   _registerEvents() {
     this._subscriptions = [
       DeviceEventEmitter.addListener('dataChannelStateChanged', ev => {
-        if (ev.id !== this.id) {
+        if (ev.peerConnectionId !== this._peerConnectionId
+            || ev.id !== this.id) {
           return;
         }
         this.readyState = ev.state;
@@ -120,7 +128,8 @@ export default class RTCDataChannel extends EventTarget(DATA_CHANNEL_EVENTS) {
         }
       }),
       DeviceEventEmitter.addListener('dataChannelReceiveMessage', ev => {
-        if (ev.id !== this.id) {
+        if (ev.peerConnectionId !== this._peerConnectionId
+            || ev.id !== this.id) {
           return;
         }
         let data = ev.data;

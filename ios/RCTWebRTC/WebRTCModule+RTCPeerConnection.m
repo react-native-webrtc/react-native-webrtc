@@ -19,9 +19,20 @@
 #import <WebRTC/RTCSessionDescription.h>
 #import <WebRTC/RTCConfiguration.h>
 
+#import "WebRTCModule+RTCDataChannel.h"
 #import "WebRTCModule+RTCPeerConnection.h"
 
 @implementation RTCPeerConnection (React)
+
+- (NSMutableDictionary<NSNumber *, RTCDataChannel *> *)dataChannels
+{
+  return objc_getAssociatedObject(self, _cmd);
+}
+
+- (void)setDataChannels:(NSMutableDictionary<NSNumber *, RTCDataChannel *> *)dataChannels
+{
+  objc_setAssociatedObject(self, @selector(dataChannels), dataChannels, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+}
 
 - (NSNumber *)reactTag
 {
@@ -30,7 +41,7 @@
 
 - (void)setReactTag:(NSNumber *)reactTag
 {
-  objc_setAssociatedObject(self, @selector(reactTag), reactTag, OBJC_ASSOCIATION_COPY_NONATOMIC);
+  objc_setAssociatedObject(self, @selector(reactTag), reactTag, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
 }
 
 @end
@@ -41,6 +52,7 @@ RCT_EXPORT_METHOD(peerConnectionInit:(RTCConfiguration*)configuration objectID:(
 {
 
   RTCPeerConnection *peerConnection = [self.peerConnectionFactory peerConnectionWithConfiguration:configuration constraints:[self defaultPeerConnectionConstraints] delegate:self];
+  peerConnection.dataChannels = [NSMutableDictionary new];
   peerConnection.reactTag = objectID;
   self.peerConnections[objectID] = peerConnection;
 }
@@ -208,6 +220,16 @@ RCT_EXPORT_METHOD(peerConnectionClose:(nonnull NSNumber *)objectID)
   }
 
   [peerConnection close];
+
+  // Clean up peerConnection's dataChannels.
+  NSMutableDictionary<NSNumber *, RTCDataChannel *> *dataChannels = peerConnection.dataChannels;
+  for (NSNumber *dataChannelId in dataChannels) {
+    RTCDataChannel *dataChannel = dataChannels[dataChannelId];
+    dataChannel.delegate = nil;
+    [dataChannel close];
+  }
+  [dataChannels removeAllObjects];
+
   [self.peerConnections removeObjectForKey:objectID];
 }
 
@@ -338,21 +360,22 @@ RCT_EXPORT_METHOD(peerConnectionGetStats:(nonnull NSString *)trackID objectID:(n
 }
 
 - (void)peerConnection:(RTCPeerConnection*)peerConnection didOpenDataChannel:(RTCDataChannel*)dataChannel {
-  NSInteger dataChannelId = dataChannel.streamId;
   // XXX RTP data channels are not defined by the WebRTC standard, have been
   // deprecated in Chromium, and Google have decided (in 2015) to no longer
   // support them (in the face of multiple reported issues of breakages).
-  if (-1 == dataChannelId) {
+  if (-1 == dataChannel.channelId) {
     return;
   }
 
-  self.dataChannels[@(dataChannelId)] = dataChannel;
+  NSNumber *dataChannelId = [NSNumber numberWithInteger:dataChannel.channelId];
+  dataChannel.peerConnectionId = peerConnection.reactTag;
+  peerConnection.dataChannels[dataChannelId] = dataChannel;
   // WebRTCModule implements the category RTCDataChannel i.e. the protocol
   // RTCDataChannelDelegate.
   dataChannel.delegate = self;
 
   NSDictionary *body = @{@"id": peerConnection.reactTag,
-                        @"dataChannel": @{@"id": @(dataChannelId),
+                        @"dataChannel": @{@"id": dataChannelId,
                                           @"label": dataChannel.label}};
   [self.bridge.eventDispatcher sendDeviceEventWithName:@"peerConnectionDidOpenDataChannel"
                                                   body:body];
