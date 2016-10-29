@@ -22,6 +22,7 @@ import com.facebook.react.bridge.ReadableType;
 import com.facebook.react.modules.core.DeviceEventManagerModule;
 
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -576,15 +577,27 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
         peerConnection.setConfiguration(config);
     }
 
-    boolean onAddStream(MediaStream mediaStream) {
-        String streamId = mediaStream.label();
-        if (mMediaStreams.containsKey(streamId)) {
-            Log.e(TAG, "onAddStream: Duplicated stream for ID: " + streamId);
-            return false;
-        } else {
-            mMediaStreams.put(streamId, mediaStream);
-            return true;
+    String onAddStream(MediaStream mediaStream) {
+        String id = mediaStream.label();
+        String reactTag = null;
+        // The native WebRTC implementation has a special concept of a default
+        // MediaStream instance with the label default that the implementation
+        // reuses.
+        if ("default".equals(id)) {
+            for (Map.Entry<String, MediaStream> e : mMediaStreams.entrySet()) {
+                if (e.getValue().equals(mediaStream)) {
+                    reactTag = e.getKey();
+                    break;
+                }
+            }
         }
+        if (reactTag == null) {
+            reactTag = getNextStreamUUID();
+        }
+        if (!mMediaStreams.containsKey(reactTag)) {
+            mMediaStreams.put(reactTag, mediaStream);
+        }
+        return reactTag;
     }
 
     @ReactMethod
@@ -603,19 +616,31 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
         }
     }
 
-    boolean onRemoveStream(MediaStream mediaStream) {
+    String onRemoveStream(MediaStream mediaStream) {
         if (mediaStream == null) {
-            return false;
+            return null;
         }
-        String streamId = mediaStream.label();
         for (VideoTrack track : mediaStream.videoTracks) {
             mMediaStreamTracks.remove(track.id());
         }
         for (AudioTrack track : mediaStream.audioTracks) {
             mMediaStreamTracks.remove(track.id());
         }
-        mMediaStreams.remove(streamId);
-        return true;
+        String reactTag = null;
+        for (Iterator<Map.Entry<String, MediaStream>> i
+                    = mMediaStreams.entrySet().iterator();
+                i.hasNext();) {
+            Map.Entry<String, MediaStream> e = i.next();
+            if (e.getValue().equals(mediaStream)) {
+                reactTag = e.getKey();
+                i.remove();
+                break;
+            }
+        }
+        if (reactTag != null) {
+            mMediaStreams.remove(reactTag);
+        }
+        return reactTag;
     }
 
     @ReactMethod

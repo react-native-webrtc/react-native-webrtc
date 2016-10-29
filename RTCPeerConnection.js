@@ -90,11 +90,11 @@ export default class RTCPeerConnection extends EventTarget(PEER_CONNECTION_EVENT
   }
 
   addStream(stream: MediaStream) {
-    WebRTCModule.peerConnectionAddStream(stream.id, this._peerConnectionId);
+    WebRTCModule.peerConnectionAddStream(stream.reactTag, this._peerConnectionId);
   }
 
   removeStream(stream: MediaStream) {
-    WebRTCModule.peerConnectionRemoveStream(stream.id, this._peerConnectionId);
+    WebRTCModule.peerConnectionRemoveStream(stream.reactTag, this._peerConnectionId);
   }
 
   createOffer(success: ?Function, failure: ?Function, constraints) {
@@ -208,7 +208,7 @@ export default class RTCPeerConnection extends EventTarget(PEER_CONNECTION_EVENT
         if (ev.id !== this._peerConnectionId) {
           return;
         }
-        const stream = new MediaStream(ev.streamId);
+        const stream = new MediaStream(ev.streamId, ev.streamReactTag);
         const tracks = ev.tracks;
         for (let i = 0; i < tracks.length; i++) {
           stream.addTrack(new MediaStreamTrack(tracks[i]));
@@ -220,7 +220,7 @@ export default class RTCPeerConnection extends EventTarget(PEER_CONNECTION_EVENT
         if (ev.id !== this._peerConnectionId) {
           return;
         }
-        const stream = this._remoteStreams.find(s => s.id === ev.streamId);
+        const stream = this._remoteStreams.find(s => s.reactTag === ev.streamId);
         if (stream) {
           const index = this._remoteStreams.indexOf(stream);
           if (index > -1) {

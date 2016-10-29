@@ -154,13 +154,12 @@ class PeerConnectionObserver implements PeerConnection.Observer {
 
     @Override
     public void onAddStream(MediaStream mediaStream) {
-        if (!webRTCModule.onAddStream(mediaStream)) {
-            return;
-        }
-        String streamId = mediaStream.label();
+        String streamReactTag = webRTCModule.onAddStream(mediaStream);
+
         WritableMap params = Arguments.createMap();
         params.putInt("id", id);
-        params.putString("streamId", streamId);
+        params.putString("streamId", mediaStream.label());
+        params.putString("streamReactTag", streamReactTag);
 
         WritableArray tracks = Arguments.createArray();
 
@@ -195,13 +194,13 @@ class PeerConnectionObserver implements PeerConnection.Observer {
 
     @Override
     public void onRemoveStream(MediaStream mediaStream) {
-        if (!webRTCModule.onRemoveStream(mediaStream)) {
+        String streamReactTag = webRTCModule.onRemoveStream(mediaStream);
+        if (streamReactTag == null) {
             return;
         }
-        String streamId = mediaStream.label();
         WritableMap params = Arguments.createMap();
         params.putInt("id", id);
-        params.putString("streamId", streamId);
+        params.putString("streamId", streamReactTag);
         webRTCModule.sendEvent("peerConnectionRemovedStream", params);
     }
 
