@@ -42,6 +42,14 @@ class PeerConnectionObserver implements PeerConnection.Observer {
         this.peerConnection = peerConnection;
     }
 
+    void close() {
+         peerConnection.close();
+
+         // Unlike on iOS, we cannot unregister the DataChannel.Observer
+         // instance on Android. At least do whatever else we do on iOS.
+         dataChannels.clear();
+    }
+
     void createDataChannel(String label, ReadableMap config) {
         DataChannel.Init init = new DataChannel.Init();
         if (config != null) {

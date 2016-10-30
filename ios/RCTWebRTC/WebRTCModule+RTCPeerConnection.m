@@ -220,17 +220,17 @@ RCT_EXPORT_METHOD(peerConnectionClose:(nonnull NSNumber *)objectID)
   }
 
   [peerConnection close];
+  [self.peerConnections removeObjectForKey:objectID];
 
   // Clean up peerConnection's dataChannels.
-  NSMutableDictionary<NSNumber *, RTCDataChannel *> *dataChannels = peerConnection.dataChannels;
+  NSMutableDictionary<NSNumber *, RTCDataChannel *> *dataChannels
+    = peerConnection.dataChannels;
   for (NSNumber *dataChannelId in dataChannels) {
-    RTCDataChannel *dataChannel = dataChannels[dataChannelId];
-    dataChannel.delegate = nil;
-    [dataChannel close];
+    dataChannels[dataChannelId].delegate = nil;
+    // There is no need to close the RTCDataChannel because it is owned by the
+    // RTCPeerConnection and the latter will close the former.
   }
   [dataChannels removeAllObjects];
-
-  [self.peerConnections removeObjectForKey:objectID];
 }
 
 RCT_EXPORT_METHOD(peerConnectionGetStats:(nonnull NSString *)trackID objectID:(nonnull NSNumber *)objectID callback:(RCTResponseSenderBlock)callback)

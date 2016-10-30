@@ -637,9 +637,6 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
                 break;
             }
         }
-        if (reactTag != null) {
-            mMediaStreams.remove(reactTag);
-        }
         return reactTag;
     }
 
@@ -867,13 +864,14 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
     }
     @ReactMethod
     public void peerConnectionClose(final int id) {
-        PeerConnection peerConnection = getPeerConnection(id);
-        if (peerConnection != null) {
-            peerConnection.close();
-            mPeerConnectionObservers.remove(id);
-        } else {
+        PeerConnectionObserver pco = mPeerConnectionObservers.get(id);
+        if (pco == null || pco.getPeerConnection() == null) {
             Log.d(TAG, "peerConnectionClose() peerConnection is null");
+        } else {
+            pco.close();
+            mPeerConnectionObservers.remove(id);
         }
+
         resetAudio();
     }
     @ReactMethod

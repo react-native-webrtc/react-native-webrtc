@@ -295,12 +295,12 @@ RCT_EXPORT_METHOD(getUserMedia:(NSDictionary *)constraints
 
 RCT_EXPORT_METHOD(mediaStreamRelease:(nonnull NSString *)streamID)
 {
-  RTCMediaStream *mediaStream = self.mediaStreams[streamID];
-  if (mediaStream) {
-    for (RTCVideoTrack *track in mediaStream.videoTracks) {
+  RTCMediaStream *stream = self.mediaStreams[streamID];
+  if (stream) {
+    for (RTCVideoTrack *track in stream.videoTracks) {
       [self.tracks removeObjectForKey:track.trackId];
     }
-    for (RTCAudioTrack *track in mediaStream.audioTracks) {
+    for (RTCAudioTrack *track in stream.audioTracks) {
       [self.tracks removeObjectForKey:track.trackId];
     }
     [self.mediaStreams removeObjectForKey:streamID];
