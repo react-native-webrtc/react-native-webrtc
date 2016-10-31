@@ -14,6 +14,15 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
+RTC_EXTERN NSString * const kRTCMediaConstraintsMinAspectRatio;
+RTC_EXTERN NSString * const kRTCMediaConstraintsMaxAspectRatio;
+RTC_EXTERN NSString * const kRTCMediaConstraintsMaxWidth;
+RTC_EXTERN NSString * const kRTCMediaConstraintsMinWidth;
+RTC_EXTERN NSString * const kRTCMediaConstraintsMaxHeight;
+RTC_EXTERN NSString * const kRTCMediaConstraintsMinHeight;
+RTC_EXTERN NSString * const kRTCMediaConstraintsMaxFrameRate;
+RTC_EXTERN NSString * const kRTCMediaConstraintsMinFrameRate;
+
 RTC_EXPORT
 @interface RTCMediaConstraints : NSObject
 

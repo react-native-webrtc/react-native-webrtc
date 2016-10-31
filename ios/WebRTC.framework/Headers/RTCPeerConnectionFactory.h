@@ -53,11 +53,6 @@ RTC_EXPORT
                                               delegate:
     (nullable id<RTCPeerConnectionDelegate>)delegate;
 
-/** Temporary interface. Use at your own risk. See peerconnectioninterface.h for details. */
-- (BOOL)startRtcEventLogWithFilePath:(NSString *)filePath
-                      maxSizeInBytes:(int64_t)maxSizeInBytes;
-- (void)stopRtcEventLog;
-
 @end
 
 NS_ASSUME_NONNULL_END
