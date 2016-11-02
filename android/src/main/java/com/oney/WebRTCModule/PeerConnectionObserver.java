@@ -1,6 +1,7 @@
 package com.oney.WebRTCModule;
 
 import java.io.UnsupportedEncodingException;
+import java.lang.ref.SoftReference;
 import java.nio.ByteBuffer;
 
 import android.support.annotation.Nullable;
@@ -9,6 +10,7 @@ import android.util.Log;
 import android.util.SparseArray;
 
 import com.facebook.react.bridge.Arguments;
+import com.facebook.react.bridge.Callback;
 import com.facebook.react.bridge.ReadableMap;
 import com.facebook.react.bridge.WritableArray;
 import com.facebook.react.bridge.WritableMap;
@@ -17,7 +19,10 @@ import org.webrtc.AudioTrack;
 import org.webrtc.DataChannel;
 import org.webrtc.IceCandidate;
 import org.webrtc.MediaStream;
+import org.webrtc.MediaStreamTrack;
 import org.webrtc.PeerConnection;
+import org.webrtc.StatsObserver;
+import org.webrtc.StatsReport;
 import org.webrtc.VideoTrack;
 
 class PeerConnectionObserver implements PeerConnection.Observer {
@@ -28,6 +33,15 @@ class PeerConnectionObserver implements PeerConnection.Observer {
     private final int id;
     private PeerConnection peerConnection;
     private final WebRTCModule webRTCModule;
+
+    /**
+     * The <tt>StringBuilder</tt> cache utilized by {@link #convertWebRTCStats}
+     * in order to minimize the number of allocations of <tt>StringBuilder</tt>
+     * instances and, more importantly, the allocations of its <tt>char</tt>
+     * buffer in an attempt to improve performance.
+     */
+    private SoftReference<StringBuilder> convertWebRTCStatsStringBuilder
+        = new SoftReference(null);
 
     PeerConnectionObserver(WebRTCModule webRTCModule, int id) {
         this.webRTCModule = webRTCModule;
@@ -48,6 +62,54 @@ class PeerConnectionObserver implements PeerConnection.Observer {
          // Unlike on iOS, we cannot unregister the DataChannel.Observer
          // instance on Android. At least do whatever else we do on iOS.
          dataChannels.clear();
+    }
+
+    private String convertWebRTCStats(StatsReport[] reports) {
+        // It turns out that on Android it is faster to construct a single JSON
+        // string representing the array of StatsReports and have it pass
+        // through the React Native bridge rather than the array of
+        // StatsReports.
+
+        // If possible, reuse a single StringBuilder instance across multiple
+        // getStats method calls in order to reduce the total number of
+        // allocations.
+        StringBuilder s = convertWebRTCStatsStringBuilder.get();
+        if (s == null) {
+            s = new StringBuilder();
+            convertWebRTCStatsStringBuilder = new SoftReference(s);
+        }
+
+        s.append('[');
+        final int reportCount = reports.length;
+        for (int i = 0; i < reportCount; ++i) {
+            StatsReport report = reports[i];
+            if (i != 0) {
+                s.append(',');
+            }
+            s.append("{\"id\":\"").append(report.id)
+                .append("\",\"type\":\"").append(report.type)
+                .append("\",\"timestamp\":").append(report.timestamp)
+                .append(",\"values\":[");
+            StatsReport.Value[] values = report.values;
+            final int valueCount = values.length;
+            for (int j = 0; j < valueCount; ++j) {
+                StatsReport.Value v = values[j];
+                if (j != 0) {
+                    s.append(',');
+                }
+                s.append("{\"").append(v.name).append("\":\"").append(v.value)
+                    .append("\"}");
+            }
+            s.append("]}");
+        }
+        s.append("]");
+
+        String r = s.toString();
+        // Prepare the StringBuilder instance for reuse (in order to reduce the
+        // total number of allocations performed during multiple getStats method
+        // calls).
+        s.setLength(0);
+        return r;
     }
 
     void createDataChannel(String label, ReadableMap config) {
@@ -119,9 +181,28 @@ class PeerConnectionObserver implements PeerConnection.Observer {
         }
     }
 
+    void getStats(String trackId, final Callback cb) {
+        MediaStreamTrack track = null;
+        if (trackId == null
+                || trackId.isEmpty()
+                || (track = webRTCModule.mMediaStreamTracks.get(trackId))
+                    != null) {
+            peerConnection.getStats(
+                    new StatsObserver() {
+                        @Override
+                        public void onComplete(StatsReport[] reports) {
+                            cb.invoke(convertWebRTCStats(reports));
+                        }
+                    },
+                    track);
+        } else {
+            Log.e(TAG, "peerConnectionGetStats() MediaStreamTrack not found for id: " + trackId);
+        }
+    }
+
     @Override
     public void onIceCandidate(final IceCandidate candidate) {
-        Log.d(TAG, "onIceCandidatewqerqwrsdfsd");
+        Log.d(TAG, "onIceCandidate");
         WritableMap params = Arguments.createMap();
         params.putInt("id", id);
         WritableMap candidateParams = Arguments.createMap();
@@ -153,7 +234,7 @@ class PeerConnectionObserver implements PeerConnection.Observer {
 
     @Override
     public void onIceGatheringChange(PeerConnection.IceGatheringState iceGatheringState) {
-        Log.d(TAG, "onIceGatheringChangedwe" + iceGatheringState.name());
+        Log.d(TAG, "onIceGatheringChange" + iceGatheringState.name());
         WritableMap params = Arguments.createMap();
         params.putInt("id", id);
         params.putString("iceGatheringState", iceGatheringStateString(iceGatheringState));

@@ -157,11 +157,28 @@ export default class RTCPeerConnection extends EventTarget(PEER_CONNECTION_EVENT
 
   getStats(track, success, failure) {
     if (WebRTCModule.peerConnectionGetStats) {
-      WebRTCModule.peerConnectionGetStats((track && track.id) || "", this._peerConnectionId, stats => {
-        success && success(stats);
-      });
+      WebRTCModule.peerConnectionGetStats(
+        (track && track.id) || '',
+        this._peerConnectionId,
+        stats => {
+          if (success) {
+            // It turns out that on Android it is faster to construct a single
+            // JSON string representing the array of StatsReports and have it
+            // pass through the React Native bridge rather than the array of
+            // StatsReports.
+            if (typeof stats === 'string') {
+              try {
+                stats = JSON.parse(stats);
+              } catch (e) {
+                failure(e);
+                return;
+              }
+            }
+            success(stats);
+          }
+        });
     } else {
-      console.warn('RTCPeerConnection getStats doesn\'t support');
+      console.warn('RTCPeerConnection getStats not supported');
     }
   }
 

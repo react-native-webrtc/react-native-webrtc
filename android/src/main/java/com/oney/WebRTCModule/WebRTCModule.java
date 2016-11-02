@@ -821,47 +821,17 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
         callback.invoke(result);
         Log.d(TAG, "peerConnectionAddICECandidate() end");
     }
-    private WritableArray convertWebRTCStats(StatsReport[] wrtcReports) {
-        WritableArray reports = Arguments.createArray();
-        for (StatsReport wrtcReport : wrtcReports) {
-            WritableMap report = Arguments.createMap();
-            report.putString("id", wrtcReport.id);
-            report.putString("type", wrtcReport.type);
-            report.putDouble("timestamp", wrtcReport.timestamp);
-            WritableArray values = Arguments.createArray();
-            for (StatsReport.Value v : wrtcReport.values) {
-                WritableMap keyValue = Arguments.createMap();
-                keyValue.putString(v.name, v.value);
-                values.pushMap(keyValue);
-            }
-            report.putArray("values", values);
-            reports.pushMap(report);
-        }
-        return reports;
-    }
+
     @ReactMethod
-    public void peerConnectionGetStats(String trackId,
-                                       int id, final Callback statsCb) {
-        PeerConnection peerConnection = getPeerConnection(id);
-        if (peerConnection != null) {
-            MediaStreamTrack mediaTrack = null;
-            if (trackId == null
-                    || trackId.isEmpty()
-                    || (mediaTrack = mMediaStreamTracks.get(trackId)) != null) {
-                peerConnection.getStats(
-                    new StatsObserver() {
-                        public void onComplete(StatsReport[] reports) {
-                            statsCb.invoke(convertWebRTCStats(reports));
-                        }
-                    }, mediaTrack);
-            } else {
-                Log.e(TAG, "peerConnectionGetStats()"
-                    + " mediaTrack not found for id: " + trackId);
-            }
-        } else {
+    public void peerConnectionGetStats(String trackId, int id, Callback cb) {
+        PeerConnectionObserver pco = mPeerConnectionObservers.get(id);
+        if (pco == null || pco.getPeerConnection() == null) {
             Log.d(TAG, "peerConnectionGetStats() peerConnection is null");
+        } else {
+            pco.getStats(trackId, cb);
         }
     }
+
     @ReactMethod
     public void peerConnectionClose(final int id) {
         PeerConnectionObserver pco = mPeerConnectionObservers.get(id);
