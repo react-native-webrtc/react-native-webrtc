@@ -236,13 +236,16 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
                     ReadableMap option = options.getMap(i);
                     ReadableMapKeySetIterator keyIterator
                         = option.keySetIterator();
-                    String key = keyIterator.nextKey();
 
-                    if (key != null && !"sourceId".equals(key)) {
-                        mediaConstraints.optional.add(
-                            new MediaConstraints.KeyValuePair(
-                                key,
-                                ReactBridgeUtil.getMapStrValue(option, key)));
+                    if (keyIterator.hasNextKey()) {
+                        String key = keyIterator.nextKey();
+
+                        if (key != null && !"sourceId".equals(key)) {
+                            mediaConstraints.optional.add(
+                                new MediaConstraints.KeyValuePair(
+                                    key,
+                                    ReactBridgeUtil.getMapStrValue(option, key)));
+                        }
                     }
                 }
             }
