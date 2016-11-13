@@ -21,13 +21,12 @@ import com.facebook.react.bridge.ReadableArray;
 import com.facebook.react.bridge.ReadableType;
 import com.facebook.react.modules.core.DeviceEventManagerModule;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.net.URISyntaxException;
-import java.util.LinkedList;
 import java.util.UUID;
 
 import android.util.Base64;
@@ -110,16 +109,14 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
     }
 
     private List<PeerConnection.IceServer> createIceServers(ReadableArray iceServersArray) {
-        LinkedList<PeerConnection.IceServer> iceServers = new LinkedList<>();
-        if (iceServersArray == null) {
-            return iceServers;
-        }
-        for (int i = 0; i < iceServersArray.size(); i++) {
+        final int size = (iceServersArray == null) ? 0 : iceServersArray.size();
+        List<PeerConnection.IceServer> iceServers = new ArrayList<>(size);
+        for (int i = 0; i < size; i++) {
             ReadableMap iceServerMap = iceServersArray.getMap(i);
             boolean hasUsernameAndCredential = iceServerMap.hasKey("username") && iceServerMap.hasKey("credential");
             if (iceServerMap.hasKey("url")) {
                 if (hasUsernameAndCredential) {
-                    iceServers.add(new PeerConnection.IceServer(iceServerMap.getString("url"),iceServerMap.getString("username"), iceServerMap.getString("credential")));
+                    iceServers.add(new PeerConnection.IceServer(iceServerMap.getString("url"), iceServerMap.getString("username"), iceServerMap.getString("credential")));
                 } else {
                     iceServers.add(new PeerConnection.IceServer(iceServerMap.getString("url")));
                 }
@@ -127,7 +124,7 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
                 switch (iceServerMap.getType("urls")) {
                     case String:
                         if (hasUsernameAndCredential) {
-                            iceServers.add(new PeerConnection.IceServer(iceServerMap.getString("urls"),iceServerMap.getString("username"), iceServerMap.getString("credential")));
+                            iceServers.add(new PeerConnection.IceServer(iceServerMap.getString("urls"), iceServerMap.getString("username"), iceServerMap.getString("credential")));
                         } else {
                             iceServers.add(new PeerConnection.IceServer(iceServerMap.getString("urls")));
                         }
@@ -154,7 +151,7 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
         if (map != null) {
             iceServersArray = map.getArray("iceServers");
         }
-        List<PeerConnection.IceServer> iceServers = createIceServers(iceSeversArray);
+        List<PeerConnection.IceServer> iceServers = createIceServers(iceServersArray);
         PeerConnection.RTCConfiguration configuration = new PeerConnection.RTCConfiguration(iceServers);
         // TODO: Implement the rest of the RTCConfigure options ...
         return configuration;
