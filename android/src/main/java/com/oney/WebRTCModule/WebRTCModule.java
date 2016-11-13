@@ -111,6 +111,9 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
 
     private List<PeerConnection.IceServer> createIceServers(ReadableArray iceServersArray) {
         LinkedList<PeerConnection.IceServer> iceServers = new LinkedList<>();
+        if (iceServersArray == null) {
+            return iceServers;
+        }
         for (int i = 0; i < iceServersArray.size(); i++) {
             ReadableMap iceServerMap = iceServersArray.getMap(i);
             boolean hasUsernameAndCredential = iceServerMap.hasKey("username") && iceServerMap.hasKey("credential");
@@ -147,7 +150,11 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
     }
 
     private PeerConnection.RTCConfiguration parseRTCConfiguration(ReadableMap map) {
-        List<PeerConnection.IceServer> iceServers = createIceServers(map.getArray("iceServers"));
+        ReadableArray iceServersArray = null;
+        if (map != null) {
+            iceServersArray = map.getArray("iceServers");
+        }
+        List<PeerConnection.IceServer> iceServers = createIceServers(iceSeversArray);
         PeerConnection.RTCConfiguration configuration = new PeerConnection.RTCConfiguration(iceServers);
         // TODO: Implement the rest of the RTCConfigure options ...
         return configuration;
