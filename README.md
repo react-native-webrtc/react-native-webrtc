@@ -30,7 +30,7 @@ the order of commit revision is nothing to do with the order of cherry-picks, fo
 | react-native-webrtc | WebRTC(ios) | WebRTC(android)  | npm published | note |
 | :-------------: | :-------------:| :-----: | :-----: | :-----: | :-----: |
 | 0.53.2 | 53 stable<br>(13317)<br>(+6-13855)<br>32/64 | 53 stable<br>(13317)<br>(+6-13855)<br>32 | :heavy_check_mark: | |
-| 0.54.1 | 54 stable<br>(13869)<br>(+6-14091)<br>32/64 | 54 stable<br>(13869)<br>(+6-14091)<br>32 | :heavy_check_mark: | |
+| 0.54.2 | 54 stable<br>(13869)<br>(+6-14091)<br>32/64 | 54 stable<br>(13869)<br>(+6-14091)<br>32 | :heavy_check_mark: | |
 | master | 54 stable<br>(13869)<br>(+6-14091)<br>32/64 | 54 stable<br>(13869)<br>(+6-14091)<br>32 | :warning:          | |
 
 ## Installation
