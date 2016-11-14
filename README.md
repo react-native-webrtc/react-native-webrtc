@@ -25,7 +25,7 @@ please see [wiki page](https://github.com/oney/react-native-webrtc/wiki) about r
 * the number follows with `+` is the additional amount of cherry-picks since `Branched-From` revision.
 
 ### note:
-the order of commit revision is nothing to do with the order of cherry-picks, for example, the esarlier committed `cherry-pick-#2` may have higher revision than `cherry-pick-#3` and vice versa.
+the order of commit revision is nothing to do with the order of cherry-picks, for example, the earlier committed `cherry-pick-#2` may have higher revision than `cherry-pick-#3` and vice versa.
 
 | react-native-webrtc | WebRTC(ios) | WebRTC(android)  | npm published | note |
 | :-------------: | :-------------:| :-----: | :-----: | :-----: | :-----: |
