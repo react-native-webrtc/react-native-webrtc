@@ -56,6 +56,7 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
     private final SparseArray<PeerConnectionObserver> mPeerConnectionObservers;
     public final Map<String, MediaStream> mMediaStreams;
     public final Map<String, MediaStreamTrack> mMediaStreamTracks;
+    private final Map<String, VideoCapturer> mVideoCapturers;
     private final MediaConstraints pcConstraints = new MediaConstraints();
 
     public WebRTCModule(ReactApplicationContext reactContext) {
@@ -64,6 +65,7 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
         mPeerConnectionObservers = new SparseArray<PeerConnectionObserver>();
         mMediaStreams = new HashMap<String, MediaStream>();
         mMediaStreamTracks = new HashMap<String, MediaStreamTrack>();
+        mVideoCapturers = new HashMap<String, VideoCapturer>();
 
         pcConstraints.mandatory.add(new MediaConstraints.KeyValuePair("OfferToReceiveAudio", "true"));
         pcConstraints.mandatory.add(new MediaConstraints.KeyValuePair("OfferToReceiveVideo", "true"));
@@ -300,6 +302,7 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
             MediaConstraints videoConstraints = new MediaConstraints();
             Integer sourceId = null;
             String facingMode = null;
+            String trackId = null;
             switch (type) {
                 case Boolean:
                     if (!constraints.getBoolean("video")) {
@@ -327,11 +330,14 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
                     //       given mandatory constraints too much
                     videoSource = mFactory.createVideoSource(
                             videoCapturer, videoConstraints);
+
+                    trackId = getNextTrackUUID();
+
+                    mVideoCapturers.put(trackId, videoCapturer);
                 }
             }
 
             if (videoSource != null) {
-                String trackId = getNextTrackUUID();
                 videoTrack = mFactory.createVideoTrack(trackId, videoSource);
                 if (videoTrack != null) {
                     mMediaStreamTracks.put(trackId, videoTrack);
@@ -349,10 +355,10 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
             }
 
             if (videoTrack == null && videoConstraints != null) {
-		// FIXME The following does not follow the getUserMedia()
-		// algorithm specified by
-		// https://www.w3.org/TR/mediacapture-streams/#dom-mediadevices-getusermedia
-		// with respect to distinguishing the various causes of failure.
+                // FIXME The following does not follow the getUserMedia()
+                // algorithm specified by
+                // https://www.w3.org/TR/mediacapture-streams/#dom-mediadevices-getusermedia
+                // with respect to distinguishing the various causes of failure.
                 errorCallback.invoke(/* type */ null, "Failed to obtain video");
                 return;
             }
@@ -404,10 +410,10 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
                 }
             }
             if (audioTrack == null && audioConstraints != null) {
-		// FIXME The following does not follow the getUserMedia()
-		// algorithm specified by
-		// https://www.w3.org/TR/mediacapture-streams/#dom-mediadevices-getusermedia
-		// with respect to distinguishing the various causes of failure.
+                // FIXME The following does not follow the getUserMedia()
+                // algorithm specified by
+                // https://www.w3.org/TR/mediacapture-streams/#dom-mediadevices-getusermedia
+                // with respect to distinguishing the various causes of failure.
                 errorCallback.invoke(/* type */ null, "Failed to obtain audio");
                 return;
             }
@@ -420,27 +426,27 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
         // requestedMediaTypes is the empty set, the method invocation fails
         // with a TypeError.
         if (audioTrack == null && videoTrack == null) {
-	    // XXX The JavaScript counterpart of the getUserMedia()
-	    // implementation should have recognized the case here before
-	    // calling into the native counterpart and should have failed the
-	    // method invocation already (in the manner described above).
-	    // Anyway, repeat the logic here just in case.
+        // XXX The JavaScript counterpart of the getUserMedia()
+        // implementation should have recognized the case here before
+        // calling into the native counterpart and should have failed the
+        // method invocation already (in the manner described above).
+        // Anyway, repeat the logic here just in case.
             errorCallback.invoke(
-	            "TypeError",
-		    "constraints requests no media types");
+                "TypeError",
+            "constraints requests no media types");
             return;
         }
 
         String streamId = getNextStreamUUID();
         MediaStream mediaStream = mFactory.createLocalMediaStream(streamId);
         if (mediaStream == null) {
-	    // FIXME The following does not follow the getUserMedia() algorithm
-	    // specified by
-	    // https://www.w3.org/TR/mediacapture-streams/#dom-mediadevices-getusermedia
-	    // with respect to distinguishing the various causes of failure.
+            // FIXME The following does not follow the getUserMedia() algorithm
+            // specified by
+            // https://www.w3.org/TR/mediacapture-streams/#dom-mediadevices-getusermedia
+            // with respect to distinguishing the various causes of failure.
             errorCallback.invoke(
-	            /* type */ null,
-		    "Failed to create new media stream");
+                /* type */ null,
+            "Failed to create new media stream");
             return;
         }
 
@@ -519,6 +525,7 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
             stream.removeTrack((AudioTrack)track);
         } else if (track.kind().equals("video")) {
             stream.removeTrack((VideoTrack)track);
+            removeVideoCapturer(_trackId);
         }
     }
 
@@ -571,6 +578,19 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
         constraints.mandatory.add(new MediaConstraints.KeyValuePair("OfferToReceiveVideo", "true"));
         constraints.optional.add(new MediaConstraints.KeyValuePair("DtlsSrtpKeyAgreement", "true"));
         return constraints;
+    }
+
+    private void removeVideoCapturer(String id) {
+        VideoCapturer videoCapturer = mVideoCapturers.get(id);
+        if (videoCapturer != null) {
+            try {
+                videoCapturer.stopCapture();
+            }
+            catch (InterruptedException e){
+                Log.e(TAG, "removeVideoCapturer() Failed to stop video capturer");
+            }
+            mVideoCapturers.remove(id);
+        }
     }
 
     @ReactMethod
@@ -857,6 +877,7 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
         if (mediaStream != null) {
             for (VideoTrack track : mediaStream.videoTracks) {
                 mMediaStreamTracks.remove(track);
+                removeVideoCapturer(track.id());
             }
             for (AudioTrack track : mediaStream.audioTracks) {
                 mMediaStreamTracks.remove(track);
