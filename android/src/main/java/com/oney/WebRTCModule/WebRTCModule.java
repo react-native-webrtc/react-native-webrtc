@@ -334,33 +334,37 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
                     trackId = getNextTrackUUID();
 
                     mVideoCapturers.put(trackId, videoCapturer);
+
+                    if (videoSource != null) {
+                        videoTrack = mFactory.createVideoTrack(trackId, videoSource);
+                        if (videoTrack != null) {
+                            mMediaStreamTracks.put(trackId, videoTrack);
+
+                            WritableMap trackInfo = Arguments.createMap();
+                            trackInfo.putString("id", trackId);
+                            trackInfo.putString("label", "Video");
+                            trackInfo.putString("kind", videoTrack.kind());
+                            trackInfo.putBoolean("enabled", videoTrack.enabled());
+                            trackInfo.putString(
+                                "readyState", videoTrack.state().toString());
+                            trackInfo.putBoolean("remote", false);
+                            tracks.pushMap(trackInfo);
+                        }
+                    }
                 }
-            }
 
-            if (videoSource != null) {
-                videoTrack = mFactory.createVideoTrack(trackId, videoSource);
-                if (videoTrack != null) {
-                    mMediaStreamTracks.put(trackId, videoTrack);
-
-                    WritableMap trackInfo = Arguments.createMap();
-                    trackInfo.putString("id", trackId);
-                    trackInfo.putString("label", "Video");
-                    trackInfo.putString("kind", videoTrack.kind());
-                    trackInfo.putBoolean("enabled", videoTrack.enabled());
-                    trackInfo.putString(
-                        "readyState", videoTrack.state().toString());
-                    trackInfo.putBoolean("remote", false);
-                    tracks.pushMap(trackInfo);
+                // return error if videoTrack did not create successfully
+                if (videoTrack == null) {
+                    // FIXME The following does not follow the getUserMedia()
+                    // algorithm specified by
+                    // https://www.w3.org/TR/mediacapture-streams/#dom-mediadevices-getusermedia
+                    // with respect to distinguishing the various causes of failure.
+                    if (videoCapturer != null) {
+                        removeVideoCapturer(trackId);
+                    }
+                    errorCallback.invoke(/* type */ null, "Failed to obtain video");
+                    return;
                 }
-            }
-
-            if (videoTrack == null && videoConstraints != null) {
-                // FIXME The following does not follow the getUserMedia()
-                // algorithm specified by
-                // https://www.w3.org/TR/mediacapture-streams/#dom-mediadevices-getusermedia
-                // with respect to distinguishing the various causes of failure.
-                errorCallback.invoke(/* type */ null, "Failed to obtain video");
-                return;
             }
         }
 
@@ -484,12 +488,17 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
 
     @ReactMethod
     public void mediaStreamTrackStop(final String id) {
+        // are this functionality equivalent to `mediaStreamTrackRelease()` ?
+        // if so, we should merge this two and remove strack from stream as well.
         MediaStreamTrack track = mMediaStreamTracks.get(id);
         if (track == null) {
             Log.d(TAG, "mediaStreamTrackStop() track is null");
             return;
         }
         track.setEnabled(false);
+        if (track.kind().equals("video")) {
+            removeVideoCapturer(id);
+        }
         mMediaStreamTracks.remove(id);
         // what exaclty `detached` means in doc?
         // see: https://www.w3.org/TR/mediacapture-streams/#track-detached
@@ -649,6 +658,7 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
         }
         for (VideoTrack track : mediaStream.videoTracks) {
             mMediaStreamTracks.remove(track.id());
+            removeVideoCapturer(track.id());
         }
         for (AudioTrack track : mediaStream.audioTracks) {
             mMediaStreamTracks.remove(track.id());
