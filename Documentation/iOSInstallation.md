@@ -58,3 +58,16 @@ libstdc++.tbd
 5.) Under `Build setting` set `Dead Code Stripping` to `No` also under `Build Options` set `Enable Bitcode` to `No` as well  
 
 ![Picture 4](https://github.com/oney/react-native-webrtc/blob/master/Documentation/doc_install_xcode_link_libraries.png)
+
+
+## CLEAN PROCESS
+
+if you encounter any build time errors, like "linking library not found",  
+try the cleaning steps below, and do it again carefully with every steps.
+
+1. remove npm module: `rm -rf $YourProject/node_modules/react-native-webrtc`
+2. clean npm cache: `npm cache clean`
+3. clear temporary build files ( depends on your env )
+    * ANDROID: clear intermediate files in `gradle buildDir`
+    * iOS: in xocde project, click `Product` -> `clean`
+4. `npm install react-native-webrtc`
