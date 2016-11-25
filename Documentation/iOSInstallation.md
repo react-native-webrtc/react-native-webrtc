@@ -55,6 +55,6 @@ libsqlite3.tbd
 libstdc++.tbd
 ```
 
-5.) you may have to set `Dead Code Stripping` to `No` and `Enable Bitcode` to `No` as well  
+5.) Under `Build setting` set `Dead Code Stripping` to `No` also under `Build Options` set `Enable Bitcode` to `No` as well  
 
 ![Picture 4](https://github.com/oney/react-native-webrtc/blob/master/Documentation/doc_install_xcode_link_libraries.png)
