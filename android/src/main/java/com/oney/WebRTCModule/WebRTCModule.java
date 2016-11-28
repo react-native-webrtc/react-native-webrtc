@@ -216,7 +216,6 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
      * from given map.
      */
     private MediaConstraints parseConstraints(ReadableMap constraintsMap) {
-
         MediaConstraints mediaConstraints = new MediaConstraints();
 
         if (constraintsMap.getType("mandatory") == ReadableType.Map) {
@@ -430,14 +429,14 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
         // requestedMediaTypes is the empty set, the method invocation fails
         // with a TypeError.
         if (audioTrack == null && videoTrack == null) {
-        // XXX The JavaScript counterpart of the getUserMedia()
-        // implementation should have recognized the case here before
-        // calling into the native counterpart and should have failed the
-        // method invocation already (in the manner described above).
-        // Anyway, repeat the logic here just in case.
+            // XXX The JavaScript counterpart of the getUserMedia()
+            // implementation should have recognized the case here before
+            // calling into the native counterpart and should have failed the
+            // method invocation already (in the manner described above).
+            // Anyway, repeat the logic here just in case.
             errorCallback.invoke(
                 "TypeError",
-            "constraints requests no media types");
+                "constraints requests no media types");
             return;
         }
 
@@ -450,7 +449,7 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
             // with respect to distinguishing the various causes of failure.
             errorCallback.invoke(
                 /* type */ null,
-            "Failed to create new media stream");
+                "Failed to create new media stream");
             return;
         }
 
@@ -488,8 +487,8 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
 
     @ReactMethod
     public void mediaStreamTrackStop(final String id) {
-        // are this functionality equivalent to `mediaStreamTrackRelease()` ?
-        // if so, we should merge this two and remove strack from stream as well.
+        // Is this functionality equivalent to `mediaStreamTrackRelease()` ?
+        // if so, we should merge this two and remove track from stream as well.
         MediaStreamTrack track = mMediaStreamTracks.get(id);
         if (track == null) {
             Log.d(TAG, "mediaStreamTrackStop() track is null");
@@ -500,7 +499,7 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
             removeVideoCapturer(id);
         }
         mMediaStreamTracks.remove(id);
-        // what exaclty `detached` means in doc?
+        // What exactly does `detached` mean in doc?
         // see: https://www.w3.org/TR/mediacapture-streams/#track-detached
     }
 
@@ -543,8 +542,8 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
 
         try {
             Camera.getCameraInfo(index, info);
-        } catch (Exception var3) {
-            Logging.e("CameraEnumerationAndroid", "getCameraInfo failed on index " + index, var3);
+        } catch (Exception e) {
+            Logging.e("CameraEnumerationAndroid", "getCameraInfo failed on index " + index, e);
             return null;
         }
         WritableMap params = Arguments.createMap();
@@ -594,8 +593,7 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
         if (videoCapturer != null) {
             try {
                 videoCapturer.stopCapture();
-            }
-            catch (InterruptedException e){
+            } catch (InterruptedException e) {
                 Log.e(TAG, "removeVideoCapturer() Failed to stop video capturer");
             }
             mVideoCapturers.remove(id);
