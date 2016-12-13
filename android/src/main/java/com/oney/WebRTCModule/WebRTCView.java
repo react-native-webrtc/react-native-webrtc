@@ -2,9 +2,12 @@ package com.oney.WebRTCModule;
 
 import android.content.Context;
 import android.graphics.Point;
+import android.support.v4.view.ViewCompat;
 import android.view.View;
 import android.view.ViewGroup;
 
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.List;
 
 import org.webrtc.MediaStream;
@@ -32,6 +35,30 @@ public class WebRTCView extends ViewGroup {
      */
     private static final ScalingType DEFAULT_SCALING_TYPE
         = ScalingType.SCALE_ASPECT_FIT;
+
+    /**
+     * {@link View#isInLayout()} as a <tt>Method</tt> to be invoked via
+     * reflection in order to accommodate its lack of availability before API
+     * level 18. {@link ViewCompat#isInLayout(View)} is the best solution but I
+     * could not make it available along with
+     * {@link ViewCompat#isAttachedToWindow(View)} at the time of this writing.
+     */
+    private static final Method IS_IN_LAYOUT;
+
+    static {
+        // IS_IN_LAYOUT
+        Method isInLayout = null;
+
+        try {
+            Method m = WebRTCView.class.getMethod("isInLayout");
+            if (boolean.class.isAssignableFrom(m.getReturnType())) {
+                isInLayout = m;
+            }
+        } catch (NoSuchMethodException e) {
+            // Fall back to the behavior of ViewCompat#isInLayout(View).
+        }
+        IS_IN_LAYOUT = isInLayout;
+    }
 
     /**
      * The height of the last video frame rendered by
@@ -144,6 +171,28 @@ public class WebRTCView extends ViewGroup {
      */
     private final SurfaceViewRenderer getSurfaceViewRenderer() {
         return surfaceViewRenderer;
+    }
+
+    /**
+     * If this <tt>View</tt> has {@link View#isInLayout()}, invokes it and
+     * returns its return value; otherwise, returns <tt>false</tt> like
+     * {@link ViewCompat#isInLayout(View)}.
+     *
+     * @return If this <tt>View</tt> has <tt>View#isInLayout()</tt>, invokes it
+     * and returns its return value; otherwise, returns <tt>false</tt>.
+     */
+    private boolean invokeIsInLayout() {
+        Method m = IS_IN_LAYOUT;
+        boolean b = false;
+
+        if (m != null) {
+            try {
+                b = (boolean) m.invoke(this);
+            } catch (IllegalAccessException | InvocationTargetException e) {
+                // Fall back to the behavior of ViewCompat#isInLayout(View).
+            }
+        }
+        return b;
     }
 
     /**
@@ -314,7 +363,7 @@ public class WebRTCView extends ViewGroup {
         getSurfaceViewRenderer().requestLayout();
         // The above is not enough though when the video frame's dimensions or
         // rotation change. The following will suffice.
-        if (!isInLayout()) {
+        if (!invokeIsInLayout()) {
             onLayout(
                     /* changed */ false,
                     getLeft(), getTop(), getRight(), getBottom());
@@ -454,7 +503,7 @@ public class WebRTCView extends ViewGroup {
     private void tryAddRendererToVideoTrack() {
         if (videoRenderer == null
                 && videoTrack != null
-                && isAttachedToWindow()) {
+                && ViewCompat.isAttachedToWindow(this)) {
             SurfaceViewRenderer surfaceViewRenderer = getSurfaceViewRenderer();
 
             surfaceViewRenderer.init(/* sharedContext */ null, rendererEvents);
