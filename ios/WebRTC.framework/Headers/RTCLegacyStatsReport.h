@@ -16,7 +16,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 /** This does not currently conform to the spec. */
 RTC_EXPORT
-@interface RTCStatsReport : NSObject
+@interface RTCLegacyStatsReport : NSObject
 
 /** Time since 1970-01-01T00:00:00Z in milliseconds. */
 @property(nonatomic, readonly) CFTimeInterval timestamp;
