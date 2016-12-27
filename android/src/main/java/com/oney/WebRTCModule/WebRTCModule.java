@@ -333,8 +333,7 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
                 if (videoCapturer != null) {
                     // FIXME it seems that the factory does not care about
                     //       given mandatory constraints too much
-                    videoSource = mFactory.createVideoSource(
-                            videoCapturer, videoConstraints);
+                    videoSource = mFactory.createVideoSource(videoCapturer);
 
                     trackId = getNextTrackUUID();
 
