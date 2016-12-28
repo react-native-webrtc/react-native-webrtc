@@ -14,6 +14,7 @@ import com.facebook.react.bridge.ReactContextBaseJavaModule;
 import com.facebook.react.bridge.ReactMethod;
 import com.facebook.react.bridge.WritableArray;
 import com.facebook.react.bridge.WritableMap;
+import com.facebook.react.bridge.WritableNativeMap;
 import com.facebook.react.bridge.ReadableMap;
 import com.facebook.react.bridge.ReadableMapKeySetIterator;
 import com.facebook.react.bridge.ReadableArray;
@@ -301,39 +302,93 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
         VideoTrack videoTrack = null;
         WritableArray tracks = Arguments.createArray();
 
+        // NOTE: we don't need videoConstraints for now since createVideoSource doesn't accept
+        //   videoConstraints, we should extract resolution and pass to startCapture
+
+        // TODO: change getUserMedia constraints format to support new syntax 
+        //   constraint format seems changed, and there is no mandatory any more.
+        //   and has a new sytax/attrs to specify resolution
+        //   should change `parseConstraints()` according
+        //   see: https://www.w3.org/TR/mediacapture-streams/#idl-def-MediaTrackConstraints
         if (constraints.hasKey("video")) {
             ReadableType type = constraints.getType("video");
             VideoSource videoSource = null;
-            MediaConstraints videoConstraints = new MediaConstraints();
+            //MediaConstraints videoConstraints = new MediaConstraints();
+            ReadableMap videoConstraintsManatory = null;
+            ReadableMap video = null;
+            boolean enableVideo = true;
             Integer sourceId = null;
             String facingMode = null;
             String trackId = null;
             switch (type) {
             case Boolean:
-                if (!constraints.getBoolean("video")) {
-                    videoConstraints = null;
+                if (constraints.getBoolean("video")) {
+                    // use default value for video resolution
+                    WritableMap defaultVideoMandatory = new WritableNativeMap();
+                    defaultVideoMandatory.putInt("minWidth", 1280);
+                    defaultVideoMandatory.putInt("minHeight", 720);
+                    defaultVideoMandatory.putInt("minFrameRate", 30);
+                    videoConstraintsManatory = (ReadableMap) defaultVideoMandatory;
+                } else {
+                    enableVideo = false;
                 }
                 break;
-            case Map: {
-                ReadableMap video = constraints.getMap("video");
-                videoConstraints = parseMediaConstraints(video);
+            case Map:
+                video = constraints.getMap("video");
+                if (video.hasKey("mandatory") && 
+                        video.getType("mandatory") == ReadableType.Map) {
+                    videoConstraintsManatory = video.getMap("mandatory");
+                }
+
+                // video resolution is mandatory
+                if (videoConstraintsManatory == null) {
+                    errorCallback.invoke(null, "video mandatory constraints not found");
+                    return;
+                }
+                
+                //videoConstraints = parseConstraints(video);
                 sourceId = getSourceIdConstraint(video);
                 facingMode
                     = ReactBridgeUtil.getMapStrValue(video, "facingMode");
                 break;
-            }
+            default:
+                errorCallback.invoke(null, "invalid type of video constraints");
+                return;
             }
 
-            if (videoConstraints != null) {
-                Log.i(TAG, "getUserMedia(video): " + videoConstraints
-                    + ", sourceId: " + sourceId);
+            if (enableVideo) {
+                Log.i(TAG, "getUserMedia(video): video: " + video
+                        + ", videoConstraintsManatory: " + videoConstraintsManatory
+                        + ", sourceId: " + sourceId);
 
-                VideoCapturer videoCapturer
-                    = getVideoCapturerById(sourceId, facingMode);
+                Context context = (Context) getReactApplicationContext();
+                final boolean isFacing = (facingMode != null && facingMode.equals("environment"))
+                    ? false : true;
+                VideoCapturer videoCapturer = null;
+
+                // NOTE: to support Camera2, the device should:
+                //   1. Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP
+                //   2. all camera support level should greater than LEGACY
+                //   see: https://developer.android.com/reference/android/hardware/camera2/CameraCharacteristics.html#INFO_SUPPORTED_HARDWARE_LEVEL
+                if (Camera2Enumerator.isSupported(context)) {
+                    Log.d(TAG, "Creating video capturer using Camera2 API.");
+                    videoCapturer = createVideoCapturer(
+                        new Camera2Enumerator(context), isFacing, sourceId);
+                } else {
+                    Log.d(TAG, "Creating video capturer using Camera1 API.");
+                    final boolean captureToTexture = false;
+                    videoCapturer = createVideoCapturer(
+                        new Camera1Enumerator(captureToTexture), isFacing, sourceId);
+                }
+
                 if (videoCapturer != null) {
-                    // FIXME it seems that the factory does not care about
-                    //       given mandatory constraints too much
+
+                    final int videoWidth = videoConstraintsManatory.getInt("minWidth");
+                    final int videoHeight = videoConstraintsManatory.getInt("minHeight");
+                    final int videoFps = videoConstraintsManatory.getInt("minFrameRate");
+
                     videoSource = mFactory.createVideoSource(videoCapturer);
+                    videoCapturer.startCapture(videoWidth, videoHeight, videoFps);
 
                     trackId = getNextTrackUUID();
 
@@ -575,6 +630,8 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
     }
 
     /**
+     * @Deprecated - use `createVideoCapturer` instead
+     *
      * Creates <tt>VideoCapturer</tt> for given source ID and facing mode.
      *
      * @param id the video source identifier(device id), optional
@@ -597,6 +654,59 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
 
         return VideoCapturerAndroid.create(name, new CameraEventsHandler());
     }
+
+    /**
+     * Create video capturer via given facing mode
+     * @param cameraEnumerator a <tt>CameraEnumerator</tt> provided by webrtc
+     *        it can be Camera1Enumerator or Camera2Enumerator
+     * @param isFacing 'user' mapped with 'front' is true (default)
+     *                 'environment' mapped with 'back' is false
+     * @param sourceId (Integer) use this sourceId and ignore facing mode if specified.
+     * @return VideoCapturer can invoke with <tt>startCapture</tt>/<tt>stopCapture</tt>
+     *         <tt>null</tt> if not matched camera with specified facing mode.
+     */
+    private VideoCapturer createVideoCapturer(CameraEnumerator cameraEnumerator, boolean isFacing,
+            Integer sourceId) {
+        VideoCapturer videoCapturer = null;
+
+        // if sourceId givin, use specified sourceId
+        String specifiedDeviceName
+            = sourceId != null ? CameraEnumerationAndroid.getDeviceName(sourceId) : null;
+        if (specifiedDeviceName != null) {
+            videoCapturer = cameraEnumerator.createCapturer(specifiedDeviceName,
+                new CameraEventsHandler());
+        }
+
+        if (videoCapturer != null) {
+            Log.d(TAG, "Create camera capturer by sourceId " + sourceId +
+                ". deviceName=" + specifiedDeviceName);
+            return videoCapturer;
+        } else {
+            // otherwise, use facing mode
+            final String[] deviceNames = cameraEnumerator.getDeviceNames();
+            String facingStr = isFacing ? "front" : "back";
+
+            Log.d(TAG, "Looking for " + facingStr + " cameras.");
+            for (String deviceName : deviceNames) {
+                if (cameraEnumerator.isFrontFacing(deviceName) == isFacing) {
+                    Log.d(TAG, "Creating " + facingStr + " camera capturer. deviceName=" + deviceName);
+                    videoCapturer = cameraEnumerator.createCapturer(deviceName,
+                        new CameraEventsHandler());
+
+                    if (videoCapturer != null) {
+                        return videoCapturer;
+                    } else {
+                        Log.d(TAG, "Create " + facingStr + " camera capturer failed. deviceName="
+                            + deviceName);
+                    }
+                }
+            }
+        }
+
+        // should we fallback to available camera automatically?
+        return null;
+    }
+
     private MediaConstraints defaultConstraints() {
         MediaConstraints constraints = new MediaConstraints();
         // TODO video media
