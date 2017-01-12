@@ -218,7 +218,7 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
     private MediaConstraints parseConstraints(ReadableMap constraintsMap) {
         MediaConstraints mediaConstraints = new MediaConstraints();
 
-        if (constraintsMap.getType("mandatory") == ReadableType.Map) {
+        if (constraintsMap.hasKey("mandatory") && constraintsMap.getType("mandatory") == ReadableType.Map) {
             ReadableMap mandatory = constraintsMap.getMap("mandatory");
             ReadableMapKeySetIterator keyIterator = mandatory.keySetIterator();
 
@@ -233,7 +233,7 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
             Log.d(TAG, "mandatory constraints are not a map");
         }
 
-        if (constraintsMap.getType("optional") == ReadableType.Array) {
+        if (constraintsMap.hasKey("optional") && constraintsMap.getType("optional") == ReadableType.Array) {
             ReadableArray options = constraintsMap.getArray("optional");
 
             for (int i = 0; i < options.size(); i++) {
