@@ -241,7 +241,7 @@
 					"$(inherited)",
 					"$(PROJECT_DIR)",
 				);
-				HEADER_SEARCH_PATHS = "$(BUILT_PRODUCTS_DIR)/usr/local/include/**";
+				HEADER_SEARCH_PATHS = "$(SRCROOT)/../../react-native/React/**";
 				LIBRARY_SEARCH_PATHS = (
 					"$(inherited)",
 					"$(PROJECT_DIR)/libjingle_peerconnection",
@@ -259,7 +259,7 @@
 					"$(inherited)",
 					"$(PROJECT_DIR)",
 				);
-				HEADER_SEARCH_PATHS = "$(BUILT_PRODUCTS_DIR)/usr/local/include/**";
+				HEADER_SEARCH_PATHS = "$(SRCROOT)/../../react-native/React/**";
 				LIBRARY_SEARCH_PATHS = (
 					"$(inherited)",
 					"$(PROJECT_DIR)/libjingle_peerconnection",

@@ -1,7 +1,7 @@
 #import <objc/runtime.h>
 
-#import <React/RCTBridge.h>
-#import <React/RCTEventDispatcher.h>
+#import "RCTBridge.h"
+#import "RCTEventDispatcher.h"
 
 #import "WebRTCModule+RTCDataChannel.h"
 #import "WebRTCModule+RTCPeerConnection.h"

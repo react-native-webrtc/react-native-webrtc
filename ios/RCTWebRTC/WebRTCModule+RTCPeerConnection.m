@@ -7,10 +7,10 @@
 
 #import <objc/runtime.h>
 
-#import <React/RCTLog.h>
-#import <React/RCTUtils.h>
-#import <React/RCTBridge.h>
-#import <React/RCTEventDispatcher.h>
+#import "RCTLog.h"
+#import "RCTUtils.h"
+#import "RCTBridge.h"
+#import "RCTEventDispatcher.h"
 
 #import <WebRTC/RTCIceServer.h>
 #import <WebRTC/RTCMediaConstraints.h>
