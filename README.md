@@ -5,6 +5,13 @@
 
 A WebRTC module for React Native.
 
+# BREAKING FOR RN 40:
+
+master branch needs RN >= 40 for now.
+if you RN version under < 40, use version `0.54.4`
+
+see [#190](https://github.com/oney/react-native-webrtc/pull/190) for detials
+
 ## Support
 - Currently support for iOS and Android.  
 - Support video and audio communication.  
@@ -30,7 +37,8 @@ the order of commit revision is nothing to do with the order of cherry-picks, fo
 | react-native-webrtc | WebRTC(ios) | WebRTC(android)  | npm published | note |
 | :-------------: | :-------------:| :-----: | :-----: | :-----: | :-----: |
 | 0.53.2 | 53 stable<br>(13317)<br>(+6-13855)<br>32/64 | 53 stable<br>(13317)<br>(+6-13855)<br>32 | :heavy_check_mark: | |
-| 0.54.4 | 54 stable<br>(13869)<br>(+6-14091)<br>32/64 | 54 stable<br>(13869)<br>(+6-14091)<br>32 | :heavy_check_mark: | |
+| 0.54.4 | 54 stable<br>(13869)<br>(+6-14091)<br>32/64 | 54 stable<br>(13869)<br>(+6-14091)<br>32 | :heavy_check_mark: | RN < 40 |
+| 1.54.5 | 54 stable<br>(13869)<br>(+6-14091)<br>32/64 | 54 stable<br>(13869)<br>(+6-14091)<br>32 | :heavy_check_mark: | RN >= 40 |
 | master | 54 stable<br>(13869)<br>(+6-14091)<br>32/64 | 54 stable<br>(13869)<br>(+6-14091)<br>32 | :warning:          | |
 
 ## Installation
