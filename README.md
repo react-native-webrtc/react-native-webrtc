@@ -40,6 +40,7 @@ the order of commit revision is nothing to do with the order of cherry-picks, fo
 | 0.54.6 | 54 stable<br>(13869)<br>(+6-14091)<br>32/64 | 54 stable<br>(13869)<br>(+6-14091)<br>32 | :heavy_check_mark: | RN < 40 |
 | 1.54.6 | 54 stable<br>(13869)<br>(+6-14091)<br>32/64 | 54 stable<br>(13869)<br>(+6-14091)<br>32 | :heavy_check_mark: | RN >= 40 |
 | master | 54 stable<br>(13869)<br>(+6-14091)<br>32/64 | 54 stable<br>(13869)<br>(+6-14091)<br>32 | :warning:          | |
+| M55 | 55 stable<br>(14500)<br>(+8 15071)<br>32/64<br>w/o ipad | 55 stable<br>(14500)<br>(+8 15071)<br>32 | :warning:          | please help to check if it works. (RN < 40) |
 
 ## Installation
 
