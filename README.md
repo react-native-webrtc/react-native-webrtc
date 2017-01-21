@@ -71,21 +71,31 @@ Support most WebRTC APIs, please see the [Document](https://developer.mozilla.or
 ```javascript
 var configuration = {"iceServers": [{"url": "stun:stun.l.google.com:19302"}]};
 var pc = new RTCPeerConnection(configuration);
+
+let isFront = true;
 MediaStreamTrack.getSources(sourceInfos => {
-  var videoSourceId;
-  for (var i = 0; i < sourceInfos.length; i++) {
-    var sourceInfo = sourceInfos[i];
-    if(sourceInfo.kind == "video" && sourceInfo.facing == "front") {
+  console.log(sourceInfos);
+  let videoSourceId;
+  for (const i = 0; i < sourceInfos.length; i++) {
+    const sourceInfo = sourceInfos[i];
+    if(sourceInfo.kind == "video" && sourceInfo.facing == (isFront ? "front" : "back")) {
       videoSourceId = sourceInfo.id;
     }
   }
   getUserMedia({
-    "audio": true,
-    "video": {
-      optional: [{sourceId: videoSourceId}]
+    audio: true,
+    video: {
+      mandatory: {
+        minWidth: 500, // Provide your own width, height and frame rate here
+        minHeight: 300,
+        minFrameRate: 30
+      },
+      facingMode: (isFront ? "user" : "environment"),
+      optional: (videoSourceId ? [{sourceId: videoSourceId}] : [])
     }
   }, function (stream) {
-    pc.addStream(stream);
+    console.log('dddd', stream);
+    callback(stream);
   }, logError);
 });
 
@@ -94,9 +104,11 @@ pc.createOffer(function(desc) {
     // Send pc.localDescription to peer
   }, function(e) {});
 }, function(e) {});
+
 pc.onicecandidate = function (event) {
   // send event.candidate to peer
 };
+
 // also support setRemoteDescription, createAnswer, addIceCandidate, onnegotiationneeded, oniceconnectionstatechange, onsignalingstatechange, onaddstream
 
 ```
