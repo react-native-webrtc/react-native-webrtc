@@ -189,6 +189,11 @@ public class SurfaceViewRenderer extends SurfaceView
             GLES20.glPixelStorei(GLES20.GL_UNPACK_ALIGNMENT, 1);
           }
         }
+
+        // XXX by Saúl Ibarra Corretgé <saghul@gmail.com>: Until an actual frame
+        // is available to render, draw black; otherwise, this SurfaceView will
+        // appear transparent.
+        makeBlack();
       }
     });
   }
