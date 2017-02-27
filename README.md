@@ -58,10 +58,10 @@ In your `index.ios.js`/`index.android.js`, you can require WebRTC to import RTCP
 var WebRTC = require('react-native-webrtc');
 var {
   RTCPeerConnection,
-  RTCMediaStream,
   RTCIceCandidate,
   RTCSessionDescription,
   RTCView,
+  MediaStream,
   MediaStreamTrack,
   getUserMedia,
 } = WebRTC;
