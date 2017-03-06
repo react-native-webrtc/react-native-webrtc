@@ -7,17 +7,17 @@
 
 #import <objc/runtime.h>
 
-#import <React/RCTLog.h>
-#import <React/RCTUtils.h>
 #import <React/RCTBridge.h>
 #import <React/RCTEventDispatcher.h>
+#import <React/RCTLog.h>
+#import <React/RCTUtils.h>
 
+#import <WebRTC/RTCConfiguration.h>
+#import <WebRTC/RTCIceCandidate.h>
 #import <WebRTC/RTCIceServer.h>
 #import <WebRTC/RTCMediaConstraints.h>
-#import <WebRTC/RTCIceCandidate.h>
-#import <WebRTC/RTCStatsReport.h>
 #import <WebRTC/RTCSessionDescription.h>
-#import <WebRTC/RTCConfiguration.h>
+#import <WebRTC/RTCStatsReport.h>
 
 #import "WebRTCModule+RTCDataChannel.h"
 #import "WebRTCModule+RTCPeerConnection.h"
@@ -48,9 +48,15 @@
 
 @implementation WebRTCModule (RTCPeerConnection)
 
-RCT_EXPORT_METHOD(peerConnectionInit:(RTCConfiguration*)configuration objectID:(nonnull NSNumber *)objectID)
+RCT_EXPORT_METHOD(peerConnectionInit:(RTCConfiguration*)configuration
+                         constraints:(NSDictionary *)constraints
+                            objectID:(nonnull NSNumber *)objectID)
 {
-  RTCPeerConnection *peerConnection = [self.peerConnectionFactory peerConnectionWithConfiguration:configuration constraints:[self defaultPeerConnectionConstraints] delegate:self];
+  RTCPeerConnection *peerConnection
+    = [self.peerConnectionFactory
+      peerConnectionWithConfiguration:configuration
+			  constraints:[self parseMediaConstraints:constraints]
+                             delegate:self];
   peerConnection.dataChannels = [NSMutableDictionary new];
   peerConnection.reactTag = objectID;
   self.peerConnections[objectID] = peerConnection;
@@ -92,75 +98,56 @@ RCT_EXPORT_METHOD(peerConnectionRemoveStream:(nonnull NSString *)streamID object
 }
 
 
-RCT_EXPORT_METHOD(peerConnectionCreateOffer:(nonnull NSNumber *)objectID callback:(RCTResponseSenderBlock)callback)
+RCT_EXPORT_METHOD(peerConnectionCreateOffer:(nonnull NSNumber *)objectID
+                                constraints:(NSDictionary *)constraints
+                                   callback:(RCTResponseSenderBlock)callback)
 {
   RTCPeerConnection *peerConnection = self.peerConnections[objectID];
   if (!peerConnection) {
     return;
   }
 
-  RTCMediaConstraints *constraints = [self defaultOfferConstraints];
-  [peerConnection offerForConstraints: constraints completionHandler: ^(RTCSessionDescription *sdp, NSError *error) {
-    if (error) {
-      callback(@[@(NO),
-                 @{@"type": @"CreateOfferFailed", @"message": error.userInfo[@"error"]}
-                 ]);
-    } else {
-      NSString *type = [RTCSessionDescription stringForType:sdp.type];
-      callback(@[@(YES), @{@"sdp": sdp.sdp, @"type": type}]);
-    }
-
-  }];
+  [peerConnection
+    offerForConstraints:[self parseMediaConstraints:constraints]
+      completionHandler:^(RTCSessionDescription *sdp, NSError *error) {
+        if (error) {
+          callback(@[
+            @(NO),
+            @{
+              @"type": @"CreateOfferFailed",
+              @"message": error.userInfo[@"error"]}
+          ]);
+        } else {
+          NSString *type = [RTCSessionDescription stringForType:sdp.type];
+          callback(@[@(YES), @{@"sdp": sdp.sdp, @"type": type}]);
+        }
+      }];
 }
 
-- (RTCMediaConstraints *)defaultAnswerConstraints {
-  return [self defaultOfferConstraints];
-}
-
-- (RTCMediaConstraints *)defaultOfferConstraints {
-  NSDictionary *mandatoryConstraints = @{
-    @"OfferToReceiveAudio": @"true",
-    @"OfferToReceiveVideo": @"true",
-  };
-
-  RTCMediaConstraints* constraints =
-  [[RTCMediaConstraints alloc]
-   initWithMandatoryConstraints:mandatoryConstraints
-   optionalConstraints:nil];
-  return constraints;
-}
-
-- (RTCMediaConstraints *)defaultPeerConnectionConstraints {
-  // Allow this for interoperability with firefox...
-  NSDictionary *optionalConstraints = @{
-    @"DtlsSrtpKeyAgreement": @"true"
-  };
-  RTCMediaConstraints* constraints =
-  [[RTCMediaConstraints alloc]
-   initWithMandatoryConstraints:nil
-   optionalConstraints:optionalConstraints];
-  return constraints;
-}
-
-RCT_EXPORT_METHOD(peerConnectionCreateAnswer:(nonnull NSNumber *)objectID callback:(RCTResponseSenderBlock)callback)
+RCT_EXPORT_METHOD(peerConnectionCreateAnswer:(nonnull NSNumber *)objectID
+                                 constraints:(NSDictionary *)constraints
+                                    callback:(RCTResponseSenderBlock)callback)
 {
   RTCPeerConnection *peerConnection = self.peerConnections[objectID];
   if (!peerConnection) {
     return;
   }
 
-  RTCMediaConstraints *constraints = [self defaultAnswerConstraints];
-  [peerConnection answerForConstraints: constraints completionHandler: ^(RTCSessionDescription *sdp, NSError *error) {
-    if (error) {
-      callback(@[@(NO),
-                 @{@"type": @"CreateAnswerFailed", @"message": error.userInfo[@"error"]}
-                 ]);
-    } else {
-      NSString *type = [RTCSessionDescription stringForType:sdp.type];
-      callback(@[@(YES), @{@"sdp": sdp.sdp, @"type": type}]);
-    }
-
-  }];
+  [peerConnection
+    answerForConstraints:[self parseMediaConstraints:constraints]
+       completionHandler:^(RTCSessionDescription *sdp, NSError *error) {
+         if (error) {
+           callback(@[
+             @(NO),
+             @{
+               @"type": @"CreateAnswerFailed",
+               @"message": error.userInfo[@"error"]}
+           ]);
+         } else {
+           NSString *type = [RTCSessionDescription stringForType:sdp.type];
+           callback(@[@(YES), @{@"sdp": sdp.sdp, @"type": type}]);
+         }
+       }];
 }
 
 RCT_EXPORT_METHOD(peerConnectionSetLocalDescription:(RTCSessionDescription *)sdp objectID:(nonnull NSNumber *)objectID callback:(RCTResponseSenderBlock)callback)
@@ -378,6 +365,68 @@ RCT_EXPORT_METHOD(peerConnectionGetStats:(nonnull NSString *)trackID objectID:(n
                                           @"label": dataChannel.label}};
   [self.bridge.eventDispatcher sendDeviceEventWithName:@"peerConnectionDidOpenDataChannel"
                                                   body:body];
+}
+
+/**
+ * Parses the constraint keys and values of a specific JavaScript object into
+ * a specific <tt>NSMutableDictionary</tt> in a format suitable for the
+ * initialization of a <tt>RTCMediaConstraints</tt> instance.
+ *
+ * @param src The JavaScript object which defines constraint keys and values and
+ * which is to be parsed into the specified <tt>dst</tt>.
+ * @param dst The <tt>NSMutableDictionary</tt> into which the constraint keys
+ * and values defined by <tt>src</tt> are to be written in a format suitable for
+ * the initialization of a <tt>RTCMediaConstraints</tt> instance.
+ */
+- (void)parseJavaScriptConstraints:(NSDictionary *)src
+             intoWebRTCConstraints:(NSMutableDictionary<NSString *, NSString *> *)dst {
+  for (id srcKey in src) {
+    id srcValue = src[srcKey];
+    NSString *dstValue;
+
+    if ([srcValue isKindOfClass:[NSNumber class]]) {
+      dstValue = [srcValue boolValue] ? @"true" : @"false";
+    } else {
+      dstValue = [srcValue description];
+    }
+    dst[[srcKey description]] = dstValue;
+  }
+}
+
+/**
+ * Parses a JavaScript object into a new <tt>RTCMediaConstraints</tt> instance.
+ *
+ * @param constraints The JavaScript object to parse into a new
+ * <tt>RTCMediaConstraints</tt> instance.
+ * @returns A new <tt>RTCMediaConstraints</tt> instance initialized with the
+ * mandatory and optional constraint keys and values specified by
+ * <tt>constraints</tt>.
+ */
+- (RTCMediaConstraints *)parseMediaConstraints:(NSDictionary *)constraints {
+  id mandatory = constraints[@"mandatory"];
+  NSMutableDictionary<NSString *, NSString *> *mandatory_
+    = [NSMutableDictionary new];
+
+  if ([mandatory isKindOfClass:[NSDictionary class]]) {
+    [self parseJavaScriptConstraints:(NSDictionary *)mandatory
+               intoWebRTCConstraints:mandatory_];
+  }
+
+  id optional = constraints[@"optional"];
+  NSMutableDictionary<NSString *, NSString *> *optional_
+    = [NSMutableDictionary new];
+
+  if ([optional isKindOfClass:[NSArray class]]) {
+    for (id o in (NSArray *)optional) {
+      if ([o isKindOfClass:[NSDictionary class]]) {
+        [self parseJavaScriptConstraints:(NSDictionary *)o
+                   intoWebRTCConstraints:optional_];
+      }
+    }
+  }
+
+  return [[RTCMediaConstraints alloc] initWithMandatoryConstraints:mandatory_
+                                               optionalConstraints:optional_];
 }
 
 @end

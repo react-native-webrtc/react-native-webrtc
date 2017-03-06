@@ -37,6 +37,17 @@ type RTCIceConnectionState =
   'disconnected' |
   'closed';
 
+/**
+ * The default constraints of RTCPeerConnection's createOffer() and
+ * createAnswer().
+ */
+const DEFAULT_SDP_CONSTRAINTS = {
+  mandatory: {
+    OfferToReceiveAudio: true,
+    OfferToReceiveVideo: true
+  }
+};
+
 const PEER_CONNECTION_EVENTS = [
   'connectionstatechange',
   'icecandidate',
@@ -85,7 +96,14 @@ export default class RTCPeerConnection extends EventTarget(PEER_CONNECTION_EVENT
   constructor(configuration) {
     super();
     this._peerConnectionId = nextPeerConnectionId++;
-    WebRTCModule.peerConnectionInit(configuration, this._peerConnectionId);
+    WebRTCModule.peerConnectionInit(
+        configuration,
+        {
+          optional: [
+            { DtlsSrtpKeyAgreement: true }
+          ]
+        },
+        this._peerConnectionId);
     this._registerEvents();
   }
 
@@ -97,26 +115,30 @@ export default class RTCPeerConnection extends EventTarget(PEER_CONNECTION_EVENT
     WebRTCModule.peerConnectionRemoveStream(stream.reactTag, this._peerConnectionId);
   }
 
-  createOffer(success: ?Function, failure: ?Function, constraints) {
-    WebRTCModule.peerConnectionCreateOffer(this._peerConnectionId, (successful, data) => {
-      if (successful) {
-        const sessionDescription = new RTCSessionDescription(data);
-        success(sessionDescription);
-      } else {
-        failure(data); // TODO: convert to NavigatorUserMediaError
-      }
-    });
+  createOffer(successCallback: ?Function, failureCallback: ?Function, options) {
+    WebRTCModule.peerConnectionCreateOffer(
+        this._peerConnectionId,
+        DEFAULT_SDP_CONSTRAINTS,
+        (successful, data) => {
+          if (successful) {
+            successCallback(new RTCSessionDescription(data));
+          } else {
+            failureCallback(data); // TODO: convert to NavigatorUserMediaError
+          }
+        });
   }
 
-  createAnswer(success: ?Function, failure: ?Function, constraints) {
-    WebRTCModule.peerConnectionCreateAnswer(this._peerConnectionId, (successful, data) => {
-      if (successful) {
-        const sessionDescription = new RTCSessionDescription(data);
-        success(sessionDescription);
-      } else {
-        failure(data);
-      }
-    });
+  createAnswer(successCallback: ?Function, failureCallback: ?Function, options) {
+    WebRTCModule.peerConnectionCreateAnswer(
+        this._peerConnectionId,
+        DEFAULT_SDP_CONSTRAINTS,
+        (successful, data) => {
+          if (successful) {
+            successCallback(new RTCSessionDescription(data));
+          } else {
+            failureCallback(data);
+          }
+        });
   }
 
   setConfiguration(configuration) {

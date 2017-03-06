@@ -52,7 +52,6 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
     public final Map<String, MediaStream> mMediaStreams;
     public final Map<String, MediaStreamTrack> mMediaStreamTracks;
     private final Map<String, VideoCapturer> mVideoCapturers;
-    private final MediaConstraints pcConstraints = new MediaConstraints();
 
     public WebRTCModule(ReactApplicationContext reactContext) {
         super(reactContext);
@@ -61,10 +60,6 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
         mMediaStreams = new HashMap<String, MediaStream>();
         mMediaStreamTracks = new HashMap<String, MediaStreamTrack>();
         mVideoCapturers = new HashMap<String, VideoCapturer>();
-
-        pcConstraints.mandatory.add(new MediaConstraints.KeyValuePair("OfferToReceiveAudio", "true"));
-        pcConstraints.mandatory.add(new MediaConstraints.KeyValuePair("OfferToReceiveVideo", "true"));
-        pcConstraints.optional.add(new MediaConstraints.KeyValuePair("DtlsSrtpKeyAgreement", "true"));
 
         PeerConnectionFactory.initializeAndroidGlobals(reactContext, true, true, true);
         mFactory = new PeerConnectionFactory();
@@ -155,10 +150,17 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
     }
 
     @ReactMethod
-    public void peerConnectionInit(ReadableMap configuration, int id){
-        PeerConnection.RTCConfiguration config = parseRTCConfiguration(configuration);
+    public void peerConnectionInit(
+            ReadableMap configuration,
+            ReadableMap constraints,
+            int id) {
         PeerConnectionObserver observer = new PeerConnectionObserver(this, id);
-        PeerConnection peerConnection = mFactory.createPeerConnection(config, pcConstraints, observer);
+        PeerConnection peerConnection
+            = mFactory.createPeerConnection(
+                     parseRTCConfiguration(configuration),
+                     parseMediaConstraints(constraints),
+                     observer);
+
         observer.setPeerConnection(peerConnection);
         mPeerConnectionObservers.put(id, observer);
     }
@@ -203,54 +205,63 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
     }
 
     /**
-     * Parses mandatory and optional "GUM" constraints described by given
-     * <tt>ReadableMap</tt>.
-     * @param constraintsMap <tt>ReadableMap</tt> which is a JavaScript object
-     * passed as the constraints argument to get user media call.
-     * @return <tt>MediaConstraints</tt> instance filled with the constraints
-     * from given map.
+     * Parses a constraint set specified in the form of a JavaScript object into
+     * a specific <tt>List</tt> of <tt>MediaConstraints.KeyValuePair</tt>s.
+     *
+     * @param src The constraint set in the form of a JavaScript object to
+     * parse.
+     * @param dst The <tt>List</tt> of <tt>MediaConstraints.KeyValuePair</tt>s
+     * into which the specified <tt>src</tt> is to be parsed.
      */
-    private MediaConstraints parseConstraints(ReadableMap constraintsMap) {
+    private void parseConstraints(
+            ReadableMap src,
+            List<MediaConstraints.KeyValuePair> dst) {
+        ReadableMapKeySetIterator keyIterator = src.keySetIterator();
+
+        while (keyIterator.hasNextKey()) {
+            String key = keyIterator.nextKey();
+            String value = ReactBridgeUtil.getMapStrValue(src, key);
+
+            dst.add(new MediaConstraints.KeyValuePair(key, value));
+        }
+    }
+
+    /**
+     * Parses mandatory and optional "GUM" constraints described by a specific
+     * <tt>ReadableMap</tt>.
+     *
+     * @param constraints A <tt>ReadableMap</tt> which represents a JavaScript
+     * object specifying the constraints to be parsed into a
+     * <tt>MediaConstraints</tt> instance.
+     * @return A new <tt>MediaConstraints</tt> instance initialized with the
+     * mandatory and optional constraint keys and values specified by
+     * <tt>constraints</tt>.
+     */
+    private MediaConstraints parseMediaConstraints(ReadableMap constraints) {
         MediaConstraints mediaConstraints = new MediaConstraints();
 
-        if (constraintsMap.hasKey("mandatory") && constraintsMap.getType("mandatory") == ReadableType.Map) {
-            ReadableMap mandatory = constraintsMap.getMap("mandatory");
-            ReadableMapKeySetIterator keyIterator = mandatory.keySetIterator();
-
-            while (keyIterator.hasNextKey()) {
-                String key = keyIterator.nextKey();
-                String value = ReactBridgeUtil.getMapStrValue(mandatory, key);
-
-                mediaConstraints.mandatory.add(
-                    new MediaConstraints.KeyValuePair(key, value));
-            }
+        if (constraints.hasKey("mandatory")
+                && constraints.getType("mandatory") == ReadableType.Map) {
+            parseConstraints(
+                    constraints.getMap("mandatory"),
+                    mediaConstraints.mandatory);
         } else {
             Log.d(TAG, "mandatory constraints are not a map");
         }
 
-        if (constraintsMap.hasKey("optional") && constraintsMap.getType("optional") == ReadableType.Array) {
-            ReadableArray options = constraintsMap.getArray("optional");
+        if (constraints.hasKey("optional")
+                && constraints.getType("optional") == ReadableType.Array) {
+            ReadableArray optional = constraints.getArray("optional");
 
-            for (int i = 0; i < options.size(); i++) {
-                if (options.getType(i) == ReadableType.Map) {
-                    ReadableMap option = options.getMap(i);
-                    ReadableMapKeySetIterator keyIterator
-                        = option.keySetIterator();
-
-                    if (keyIterator.hasNextKey()) {
-                        String key = keyIterator.nextKey();
-
-                        if (key != null && !"sourceId".equals(key)) {
-                            mediaConstraints.optional.add(
-                                new MediaConstraints.KeyValuePair(
-                                    key,
-                                    ReactBridgeUtil.getMapStrValue(option, key)));
-                        }
-                    }
+            for (int i = 0, size = optional.size(); i < size; i++) {
+                if (optional.getType(i) == ReadableType.Map) {
+                    parseConstraints(
+                            optional.getMap(i),
+                            mediaConstraints.optional);
                 }
             }
         } else {
-            Log.d(TAG, "optional constraints are not a map");
+            Log.d(TAG, "optional constraints are not an array");
         }
 
         return mediaConstraints;
@@ -264,16 +275,16 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
      * <tt>null</tt> if not specified in the given map.
      */
     private Integer getSourceIdConstraint(ReadableMap mediaConstraints) {
-        if (mediaConstraints.hasKey("optional") &&
-            mediaConstraints.getType("optional") == ReadableType.Array) {
-            ReadableArray options = mediaConstraints.getArray("optional");
+        if (mediaConstraints.hasKey("optional")
+                && mediaConstraints.getType("optional") == ReadableType.Array) {
+            ReadableArray optional = mediaConstraints.getArray("optional");
 
-            for (int i = 0; i < options.size(); i++) {
-                if (options.getType(i) == ReadableType.Map) {
-                    ReadableMap option = options.getMap(i);
+            for (int i = 0, size = optional.size(); i < size; i++) {
+                if (optional.getType(i) == ReadableType.Map) {
+                    ReadableMap option = optional.getMap(i);
 
-                    if (option.hasKey("sourceId") &&
-                        option.getType("sourceId") == ReadableType.String) {
+                    if (option.hasKey("sourceId")
+                            && option.getType("sourceId") == ReadableType.String) {
                         return Integer.parseInt(option.getString("sourceId"));
                     }
                 }
@@ -298,19 +309,19 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
             String facingMode = null;
             String trackId = null;
             switch (type) {
-                case Boolean:
-                    if (!constraints.getBoolean("video")) {
-                        videoConstraints = null;
-                    }
-                    break;
-                case Map:
-                    ReadableMap useVideoMap = constraints.getMap("video");
-                    videoConstraints = parseConstraints(useVideoMap);
-                    sourceId = getSourceIdConstraint(useVideoMap);
-                    facingMode
-                        = ReactBridgeUtil.getMapStrValue(
-                                useVideoMap, "facingMode");
-                    break;
+            case Boolean:
+                if (!constraints.getBoolean("video")) {
+                    videoConstraints = null;
+                }
+                break;
+            case Map: {
+                ReadableMap video = constraints.getMap("video");
+                videoConstraints = parseMediaConstraints(video);
+                sourceId = getSourceIdConstraint(video);
+                facingMode
+                    = ReactBridgeUtil.getMapStrValue(video, "facingMode");
+                break;
+            }
             }
 
             if (videoConstraints != null) {
@@ -375,7 +386,7 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
                     break;
                 case Map:
                     audioConstraints
-                        = parseConstraints(constraints.getMap("audio"));
+                        = parseMediaConstraints(constraints.getMap("audio"));
                     break;
                 default:
                     audioConstraints = null;
@@ -602,8 +613,7 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
             Log.d(TAG, "peerConnectionSetConfiguration() peerConnection is null");
             return;
         }
-        PeerConnection.RTCConfiguration config = parseRTCConfiguration(configuration);
-        peerConnection.setConfiguration(config);
+        peerConnection.setConfiguration(parseRTCConfiguration(configuration));
     }
 
     String onAddStream(MediaStream mediaStream) {
@@ -686,78 +696,71 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
     }
 
     @ReactMethod
-    public void peerConnectionCreateOffer(final int id, final Callback callback) {
+    public void peerConnectionCreateOffer(
+            int id,
+            ReadableMap constraints,
+            final Callback callback) {
         PeerConnection peerConnection = getPeerConnection(id);
 
-        // MediaConstraints constraints = new MediaConstraints();
-        // constraints.mandatory.add(new MediaConstraints.KeyValuePair("OfferToReceiveAudio", "true"));
-        // constraints.mandatory.add(new MediaConstraints.KeyValuePair("OfferToReceiveVideo", "false"));
-
-        Log.d(TAG, "RTCPeerConnectionCreateOfferWithObjectID start");
         if (peerConnection != null) {
             peerConnection.createOffer(new SdpObserver() {
                 @Override
-                public void onCreateSuccess(final SessionDescription sdp) {
-                    WritableMap params = Arguments.createMap();
-                    params.putString("type", sdp.type.canonicalForm());
-                    params.putString("sdp", sdp.description);
-                    callback.invoke(true, params);
-                }
-                @Override
-                public void onSetSuccess() {}
-
-                @Override
                 public void onCreateFailure(String s) {
                     callback.invoke(false, s);
+                }
+
+                @Override
+                public void onCreateSuccess(final SessionDescription sdp) {
+                    WritableMap params = Arguments.createMap();
+                    params.putString("sdp", sdp.description);
+                    params.putString("type", sdp.type.canonicalForm());
+                    callback.invoke(true, params);
                 }
 
                 @Override
                 public void onSetFailure(String s) {}
-            }, pcConstraints);
+
+                @Override
+                public void onSetSuccess() {}
+            }, parseMediaConstraints(constraints));
         } else {
             Log.d(TAG, "peerConnectionCreateOffer() peerConnection is null");
             callback.invoke(false, "peerConnection is null");
         }
-        Log.d(TAG, "RTCPeerConnectionCreateOfferWithObjectID end");
     }
 
     @ReactMethod
-    public void peerConnectionCreateAnswer(final int id, final Callback callback) {
+    public void peerConnectionCreateAnswer(
+            int id,
+            ReadableMap constraints,
+            final Callback callback) {
         PeerConnection peerConnection = getPeerConnection(id);
 
-        // MediaConstraints constraints = new MediaConstraints();
-        // constraints.mandatory.add(new MediaConstraints.KeyValuePair("OfferToReceiveAudio", "true"));
-        // constraints.mandatory.add(new MediaConstraints.KeyValuePair("OfferToReceiveVideo", "false"));
-
-        Log.d(TAG, "RTCPeerConnectionCreateAnswerWithObjectID start");
         if (peerConnection != null) {
             peerConnection.createAnswer(new SdpObserver() {
-                @Override
-                public void onCreateSuccess(final SessionDescription sdp) {
-                    WritableMap params = Arguments.createMap();
-                    params.putString("type", sdp.type.canonicalForm());
-                    params.putString("sdp", sdp.description);
-                    callback.invoke(true, params);
-                }
-
-                @Override
-                public void onSetSuccess() {
-                }
-
                 @Override
                 public void onCreateFailure(String s) {
                     callback.invoke(false, s);
                 }
 
                 @Override
-                public void onSetFailure(String s) {
+                public void onCreateSuccess(final SessionDescription sdp) {
+                    WritableMap params = Arguments.createMap();
+                    params.putString("sdp", sdp.description);
+                    params.putString("type", sdp.type.canonicalForm());
+                    callback.invoke(true, params);
                 }
-            }, pcConstraints);
+
+                @Override
+                public void onSetFailure(String s) {}
+
+                @Override
+                public void onSetSuccess() {}
+            }, parseMediaConstraints(constraints));
         } else {
             Log.d(TAG, "peerConnectionCreateAnswer() peerConnection is null");
             callback.invoke(false, "peerConnection is null");
         }
-        Log.d(TAG, "RTCPeerConnectionCreateAnswerWithObjectID end");
     }
 
     @ReactMethod
