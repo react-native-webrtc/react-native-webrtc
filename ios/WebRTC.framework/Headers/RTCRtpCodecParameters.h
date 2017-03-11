@@ -17,6 +17,7 @@ NS_ASSUME_NONNULL_BEGIN
 RTC_EXTERN const NSString * const kRTCRtxCodecMimeType;
 RTC_EXTERN const NSString * const kRTCRedCodecMimeType;
 RTC_EXTERN const NSString * const kRTCUlpfecCodecMimeType;
+RTC_EXTERN const NSString * const kRTCFlexfecCodecMimeType;
 RTC_EXTERN const NSString * const kRTCOpusCodecMimeType;
 RTC_EXTERN const NSString * const kRTCIsacCodecMimeType;
 RTC_EXTERN const NSString * const kRTCL16CodecMimeType;
