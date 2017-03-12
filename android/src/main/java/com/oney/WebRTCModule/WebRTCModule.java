@@ -145,9 +145,191 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
             iceServersArray = map.getArray("iceServers");
         }
         List<PeerConnection.IceServer> iceServers = createIceServers(iceServersArray);
-        PeerConnection.RTCConfiguration configuration = new PeerConnection.RTCConfiguration(iceServers);
-        // TODO: Implement the rest of the RTCConfigure options ...
-        return configuration;
+        PeerConnection.RTCConfiguration conf = new PeerConnection.RTCConfiguration(iceServers);
+        if (map == null) {
+            return conf;
+        }
+
+        // iceTransportPolicy (public api)
+        if (map.hasKey("iceTransportPolicy")
+                && map.getType("iceTransportPolicy") == ReadableType.String) {
+            final String v = map.getString("iceTransportPolicy");
+            if (v != null) {
+                switch (v) {
+                case "all": // public
+                    conf.iceTransportsType = PeerConnection.IceTransportsType.ALL;
+                    break;
+                case "relay": // public
+                    conf.iceTransportsType = PeerConnection.IceTransportsType.RELAY;
+                    break;
+                case "nohost":
+                    conf.iceTransportsType = PeerConnection.IceTransportsType.NOHOST;
+                    break;
+                case "none":
+                    conf.iceTransportsType = PeerConnection.IceTransportsType.NONE;
+                    break;
+                }
+            }
+        }
+
+        // bundlePolicy (public api)
+        if (map.hasKey("bundlePolicy")
+                && map.getType("bundlePolicy") == ReadableType.String) {
+            final String v = map.getString("bundlePolicy");
+            if (v != null) {
+                switch (v) {
+                case "balanced": // public
+                    conf.bundlePolicy = PeerConnection.BundlePolicy.BALANCED;
+                    break;
+                case "max-compat": // public
+                    conf.bundlePolicy = PeerConnection.BundlePolicy.MAXCOMPAT;
+                    break;
+                case "max-bundle": // public
+                    conf.bundlePolicy = PeerConnection.BundlePolicy.MAXBUNDLE;
+                    break;
+                }
+            }
+        }
+
+        // rtcpMuxPolicy (public api)
+        if (map.hasKey("rtcpMuxPolicy")
+                && map.getType("rtcpMuxPolicy") == ReadableType.String) {
+            final String v = map.getString("rtcpMuxPolicy");
+            if (v != null) {
+                switch (v) {
+                case "negotiate": // public
+                    conf.rtcpMuxPolicy = PeerConnection.RtcpMuxPolicy.NEGOTIATE;
+                    break;
+                case "require": // public
+                    conf.rtcpMuxPolicy = PeerConnection.RtcpMuxPolicy.REQUIRE;
+                    break;
+                }
+            }
+        }
+
+        // FIXME: peerIdentity of type DOMString (public api)
+        // FIXME: certificates of type sequence<RTCCertificate> (public api)
+
+        // iceCandidatePoolSize of type unsigned short, defaulting to 0
+        if (map.hasKey("iceCandidatePoolSize")
+                && map.getType("iceCandidatePoolSize") == ReadableType.Number) {
+            final int v = map.getInt("iceCandidatePoolSize");
+            if (v > 0) {
+                conf.iceCandidatePoolSize = v;
+            }
+        }
+
+        // === below is private api in webrtc ===
+
+        // tcpCandidatePolicy (private api)
+        if (map.hasKey("tcpCandidatePolicy")
+                && map.getType("tcpCandidatePolicy") == ReadableType.String) {
+            final String v = map.getString("tcpCandidatePolicy");
+            if (v != null) {
+                switch (v) {
+                case "enabled":
+                    conf.tcpCandidatePolicy = PeerConnection.TcpCandidatePolicy.ENABLED;
+                    break;
+                case "disabled":
+                    conf.tcpCandidatePolicy = PeerConnection.TcpCandidatePolicy.DISABLED;
+                    break;
+                }
+            }
+        }
+
+        // candidateNetworkPolicy (private api)
+        if (map.hasKey("candidateNetworkPolicy")
+                && map.getType("candidateNetworkPolicy") == ReadableType.String) {
+            final String v = map.getString("candidateNetworkPolicy");
+            if (v != null) {
+                switch (v) {
+                case "all":
+                    conf.candidateNetworkPolicy = PeerConnection.CandidateNetworkPolicy.ALL;
+                    break;
+                case "low_cost":
+                    conf.candidateNetworkPolicy = PeerConnection.CandidateNetworkPolicy.LOW_COST;
+                    break;
+                }
+            }
+        }
+
+        // KeyType (private api)
+        if (map.hasKey("keyType")
+                && map.getType("keyType") == ReadableType.String) {
+            final String v = map.getString("keyType");
+            if (v != null) {
+                switch (v) {
+                case "RSA":
+                    conf.keyType = PeerConnection.KeyType.RSA;
+                    break;
+                case "ECDSA":
+                    conf.keyType = PeerConnection.KeyType.ECDSA;
+                    break;
+                }
+            }
+        }
+
+        // continualGatheringPolicy (private api)
+        if (map.hasKey("continualGatheringPolicy")
+                && map.getType("continualGatheringPolicy") == ReadableType.String) {
+            final String v = map.getString("continualGatheringPolicy");
+            if (v != null) {
+                switch (v) {
+                case "gather_once":
+                    conf.continualGatheringPolicy = PeerConnection.ContinualGatheringPolicy.GATHER_ONCE;
+                    break;
+                case "gather_continually":
+                    conf.continualGatheringPolicy = PeerConnection.ContinualGatheringPolicy.GATHER_CONTINUALLY;
+                    break;
+                }
+            }
+        }
+
+        // audioJitterBufferMaxPackets (private api)
+        if (map.hasKey("audioJitterBufferMaxPackets")
+                && map.getType("audioJitterBufferMaxPackets") == ReadableType.Number) {
+            final int v = map.getInt("audioJitterBufferMaxPackets");
+            if (v > 0) {
+                conf.audioJitterBufferMaxPackets = v;
+            }
+        }
+
+        // iceConnectionReceivingTimeout (private api)
+        if (map.hasKey("iceConnectionReceivingTimeout")
+                && map.getType("iceConnectionReceivingTimeout") == ReadableType.Number) {
+            final int v = map.getInt("iceConnectionReceivingTimeout");
+            conf.iceConnectionReceivingTimeout = v;
+        }
+
+        // iceBackupCandidatePairPingInterval (private api)
+        if (map.hasKey("iceBackupCandidatePairPingInterval")
+                && map.getType("iceBackupCandidatePairPingInterval") == ReadableType.Number) {
+            final int v = map.getInt("iceBackupCandidatePairPingInterval");
+            conf.iceBackupCandidatePairPingInterval = v;
+        }
+
+        // audioJitterBufferFastAccelerate (private api)
+        if (map.hasKey("audioJitterBufferFastAccelerate")
+                && map.getType("audioJitterBufferFastAccelerate") == ReadableType.Boolean) {
+            final boolean v = map.getBoolean("audioJitterBufferFastAccelerate");
+            conf.audioJitterBufferFastAccelerate = v;
+        }
+
+        // pruneTurnPorts (private api)
+        if (map.hasKey("pruneTurnPorts")
+                && map.getType("pruneTurnPorts") == ReadableType.Boolean) {
+            final boolean v = map.getBoolean("pruneTurnPorts");
+            conf.pruneTurnPorts = v;
+        }
+
+        // presumeWritableWhenFullyRelayed (private api)
+        if (map.hasKey("presumeWritableWhenFullyRelayed")
+                && map.getType("presumeWritableWhenFullyRelayed") == ReadableType.Boolean) {
+            final boolean v = map.getBoolean("presumeWritableWhenFullyRelayed");
+            conf.presumeWritableWhenFullyRelayed = v;
+        }
+
+        return conf;
     }
 
     @ReactMethod
