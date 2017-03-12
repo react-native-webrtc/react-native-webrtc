@@ -272,10 +272,10 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
      * Retreives "sourceId" constraint value.
      * @param mediaConstraints a <tt>ReadableMap</tt> which represents "GUM"
      * constraints argument
-     * @return Integer value of "sourceId" optional "GUM" constraint or
+     * @return String value of "sourceId" optional "GUM" constraint or
      * <tt>null</tt> if not specified in the given map.
      */
-    private Integer getSourceIdConstraint(ReadableMap mediaConstraints) {
+    private String getSourceIdConstraint(ReadableMap mediaConstraints) {
         if (mediaConstraints.hasKey("optional")
                 && mediaConstraints.getType("optional") == ReadableType.Array) {
             ReadableArray optional = mediaConstraints.getArray("optional");
@@ -286,7 +286,7 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
 
                     if (option.hasKey("sourceId")
                             && option.getType("sourceId") == ReadableType.String) {
-                        return Integer.parseInt(option.getString("sourceId"));
+                        return option.getString("sourceId");
                     }
                 }
             }
@@ -317,7 +317,7 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
             ReadableMap videoConstraintsManatory = null;
             ReadableMap video = null;
             boolean enableVideo = true;
-            Integer sourceId = null;
+            String sourceId = null;
             String facingMode = null;
             String trackId = null;
             switch (type) {
@@ -631,48 +631,45 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
 
     /**
      * Create video capturer via given facing mode
-     * @param cameraEnumerator a <tt>CameraEnumerator</tt> provided by webrtc
+     * @param enumerator a <tt>CameraEnumerator</tt> provided by webrtc
      *        it can be Camera1Enumerator or Camera2Enumerator
      * @param isFacing 'user' mapped with 'front' is true (default)
      *                 'environment' mapped with 'back' is false
-     * @param sourceId (Integer) use this sourceId and ignore facing mode if specified.
+     * @param sourceId (String) use this sourceId and ignore facing mode if specified.
      * @return VideoCapturer can invoke with <tt>startCapture</tt>/<tt>stopCapture</tt>
      *         <tt>null</tt> if not matched camera with specified facing mode.
      */
-    private VideoCapturer createVideoCapturer(CameraEnumerator cameraEnumerator, boolean isFacing,
-            Integer sourceId) {
+    private VideoCapturer createVideoCapturer(CameraEnumerator enumerator, boolean isFacing,
+            String sourceId) {
         VideoCapturer videoCapturer = null;
 
-        // if sourceId givin, use specified sourceId
-        String specifiedDeviceName
-            = sourceId != null ? CameraEnumerationAndroid.getDeviceName(sourceId) : null;
-        if (specifiedDeviceName != null) {
-            videoCapturer = cameraEnumerator.createCapturer(specifiedDeviceName,
-                new CameraEventsHandler());
-        }
-
-        if (videoCapturer != null) {
-            Log.d(TAG, "Create camera capturer by sourceId " + sourceId +
-                ". deviceName=" + specifiedDeviceName);
-            return videoCapturer;
-        } else {
-            // otherwise, use facing mode
-            final String[] deviceNames = cameraEnumerator.getDeviceNames();
-            String facingStr = isFacing ? "front" : "back";
-
-            Log.d(TAG, "Looking for " + facingStr + " cameras.");
-            for (String deviceName : deviceNames) {
-                if (cameraEnumerator.isFrontFacing(deviceName) == isFacing) {
-                    Log.d(TAG, "Creating " + facingStr + " camera capturer. deviceName=" + deviceName);
-                    videoCapturer = cameraEnumerator.createCapturer(deviceName,
-                        new CameraEventsHandler());
-
+        // if sourceId given, use specified sourceId first
+        final String[] deviceNames = enumerator.getDeviceNames();
+        if (sourceId != null) {
+            for (String name : deviceNames) {
+                if (name.equals(sourceId)) {
+                    videoCapturer = enumerator.createCapturer(name, new CameraEventsHandler());
                     if (videoCapturer != null) {
+                        Log.d(TAG, "create user specified camera " + name + " succeeded");
                         return videoCapturer;
                     } else {
-                        Log.d(TAG, "Create " + facingStr + " camera capturer failed. deviceName="
-                            + deviceName);
+                        Log.d(TAG, "create user specified camera " + name + " failed");
+                        break; // fallback to facing mode
                     }
+                }
+            }
+        }
+
+        // otherwise, use facing mode
+        String facingStr = isFacing ? "front" : "back";
+        for (String name : deviceNames) {
+            if (enumerator.isFrontFacing(name) == isFacing) {
+                videoCapturer = enumerator.createCapturer(name, new CameraEventsHandler());
+                if (videoCapturer != null) {
+                    Log.d(TAG, "Create " + facingStr + " camera " + name + " succeeded");
+                    return videoCapturer;
+                } else {
+                    Log.d(TAG, "Create " + facingStr + " camera " + name + " failed");
                 }
             }
         }
