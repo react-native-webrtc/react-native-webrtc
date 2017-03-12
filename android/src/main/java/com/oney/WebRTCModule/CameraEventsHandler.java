@@ -14,6 +14,12 @@ class CameraEventsHandler implements CameraVideoCapturer.CameraEventsHandler {
         Log.d(TAG, String.format("CameraEventsHandler.onCameraError: errorDescription=%s", errorDescription));
     }
 
+    // Called when camera is disconnected.
+    @Override
+    public void onCameraDisconnected() {
+        Log.d(TAG, "CameraEventsHandler.onCameraDisconnected");
+    }
+
     // Invoked when camera stops receiving frames
     @Override
     public void onCameraFreezed(String errorDescription) {
