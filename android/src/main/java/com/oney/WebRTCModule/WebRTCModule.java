@@ -630,32 +630,6 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
     }
 
     /**
-     * @Deprecated - use `createVideoCapturer` instead
-     *
-     * Creates <tt>VideoCapturer</tt> for given source ID and facing mode.
-     *
-     * @param id the video source identifier(device id), optional
-     * @param facingMode 'user' or 'environment' facing mode, optional
-     * @return <tt>VideoCapturer</tt> instance obtained for given arguments.
-     */
-    private VideoCapturer getVideoCapturerById(Integer id, String facingMode) {
-        String name
-            = id != null ? CameraEnumerationAndroid.getDeviceName(id) : null;
-        if (name == null) {
-            // https://www.w3.org/TR/mediacapture-streams/#def-constraint-facingMode
-            // The specs also mention "left" and "right", but there's no such
-            // method in CameraEnumerationAndroid
-            if (facingMode == null || facingMode.equals("user")) {
-                name = CameraEnumerationAndroid.getNameOfFrontFacingDevice();
-            } else if (facingMode.equals("environment")){
-                name = CameraEnumerationAndroid.getNameOfBackFacingDevice();
-            }
-        }
-
-        return VideoCapturerAndroid.create(name, new CameraEventsHandler());
-    }
-
-    /**
      * Create video capturer via given facing mode
      * @param cameraEnumerator a <tt>CameraEnumerator</tt> provided by webrtc
      *        it can be Camera1Enumerator or Camera2Enumerator
