@@ -116,7 +116,7 @@ export default class RTCPeerConnection extends EventTarget(PEER_CONNECTION_EVENT
   }
 
   _mergeMediaConstraints(options) {
-    let constraints = DEFAULT_SDP_CONSTRAINTS;
+    const constraints = Object.assign({}, DEFAULT_SDP_CONSTRAINTS);
     if (options) {
       if (options.mandatory) {
         constraints.mandatory = {...constraints.mandatory, ...options.mandatory};
