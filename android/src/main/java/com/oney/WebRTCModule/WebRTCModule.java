@@ -14,6 +14,7 @@ import com.facebook.react.bridge.ReactContextBaseJavaModule;
 import com.facebook.react.bridge.ReactMethod;
 import com.facebook.react.bridge.WritableArray;
 import com.facebook.react.bridge.WritableMap;
+import com.facebook.react.bridge.WritableNativeMap;
 import com.facebook.react.bridge.ReadableMap;
 import com.facebook.react.bridge.ReadableMapKeySetIterator;
 import com.facebook.react.bridge.ReadableArray;
@@ -144,9 +145,191 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
             iceServersArray = map.getArray("iceServers");
         }
         List<PeerConnection.IceServer> iceServers = createIceServers(iceServersArray);
-        PeerConnection.RTCConfiguration configuration = new PeerConnection.RTCConfiguration(iceServers);
-        // TODO: Implement the rest of the RTCConfigure options ...
-        return configuration;
+        PeerConnection.RTCConfiguration conf = new PeerConnection.RTCConfiguration(iceServers);
+        if (map == null) {
+            return conf;
+        }
+
+        // iceTransportPolicy (public api)
+        if (map.hasKey("iceTransportPolicy")
+                && map.getType("iceTransportPolicy") == ReadableType.String) {
+            final String v = map.getString("iceTransportPolicy");
+            if (v != null) {
+                switch (v) {
+                case "all": // public
+                    conf.iceTransportsType = PeerConnection.IceTransportsType.ALL;
+                    break;
+                case "relay": // public
+                    conf.iceTransportsType = PeerConnection.IceTransportsType.RELAY;
+                    break;
+                case "nohost":
+                    conf.iceTransportsType = PeerConnection.IceTransportsType.NOHOST;
+                    break;
+                case "none":
+                    conf.iceTransportsType = PeerConnection.IceTransportsType.NONE;
+                    break;
+                }
+            }
+        }
+
+        // bundlePolicy (public api)
+        if (map.hasKey("bundlePolicy")
+                && map.getType("bundlePolicy") == ReadableType.String) {
+            final String v = map.getString("bundlePolicy");
+            if (v != null) {
+                switch (v) {
+                case "balanced": // public
+                    conf.bundlePolicy = PeerConnection.BundlePolicy.BALANCED;
+                    break;
+                case "max-compat": // public
+                    conf.bundlePolicy = PeerConnection.BundlePolicy.MAXCOMPAT;
+                    break;
+                case "max-bundle": // public
+                    conf.bundlePolicy = PeerConnection.BundlePolicy.MAXBUNDLE;
+                    break;
+                }
+            }
+        }
+
+        // rtcpMuxPolicy (public api)
+        if (map.hasKey("rtcpMuxPolicy")
+                && map.getType("rtcpMuxPolicy") == ReadableType.String) {
+            final String v = map.getString("rtcpMuxPolicy");
+            if (v != null) {
+                switch (v) {
+                case "negotiate": // public
+                    conf.rtcpMuxPolicy = PeerConnection.RtcpMuxPolicy.NEGOTIATE;
+                    break;
+                case "require": // public
+                    conf.rtcpMuxPolicy = PeerConnection.RtcpMuxPolicy.REQUIRE;
+                    break;
+                }
+            }
+        }
+
+        // FIXME: peerIdentity of type DOMString (public api)
+        // FIXME: certificates of type sequence<RTCCertificate> (public api)
+
+        // iceCandidatePoolSize of type unsigned short, defaulting to 0
+        if (map.hasKey("iceCandidatePoolSize")
+                && map.getType("iceCandidatePoolSize") == ReadableType.Number) {
+            final int v = map.getInt("iceCandidatePoolSize");
+            if (v > 0) {
+                conf.iceCandidatePoolSize = v;
+            }
+        }
+
+        // === below is private api in webrtc ===
+
+        // tcpCandidatePolicy (private api)
+        if (map.hasKey("tcpCandidatePolicy")
+                && map.getType("tcpCandidatePolicy") == ReadableType.String) {
+            final String v = map.getString("tcpCandidatePolicy");
+            if (v != null) {
+                switch (v) {
+                case "enabled":
+                    conf.tcpCandidatePolicy = PeerConnection.TcpCandidatePolicy.ENABLED;
+                    break;
+                case "disabled":
+                    conf.tcpCandidatePolicy = PeerConnection.TcpCandidatePolicy.DISABLED;
+                    break;
+                }
+            }
+        }
+
+        // candidateNetworkPolicy (private api)
+        if (map.hasKey("candidateNetworkPolicy")
+                && map.getType("candidateNetworkPolicy") == ReadableType.String) {
+            final String v = map.getString("candidateNetworkPolicy");
+            if (v != null) {
+                switch (v) {
+                case "all":
+                    conf.candidateNetworkPolicy = PeerConnection.CandidateNetworkPolicy.ALL;
+                    break;
+                case "low_cost":
+                    conf.candidateNetworkPolicy = PeerConnection.CandidateNetworkPolicy.LOW_COST;
+                    break;
+                }
+            }
+        }
+
+        // KeyType (private api)
+        if (map.hasKey("keyType")
+                && map.getType("keyType") == ReadableType.String) {
+            final String v = map.getString("keyType");
+            if (v != null) {
+                switch (v) {
+                case "RSA":
+                    conf.keyType = PeerConnection.KeyType.RSA;
+                    break;
+                case "ECDSA":
+                    conf.keyType = PeerConnection.KeyType.ECDSA;
+                    break;
+                }
+            }
+        }
+
+        // continualGatheringPolicy (private api)
+        if (map.hasKey("continualGatheringPolicy")
+                && map.getType("continualGatheringPolicy") == ReadableType.String) {
+            final String v = map.getString("continualGatheringPolicy");
+            if (v != null) {
+                switch (v) {
+                case "gather_once":
+                    conf.continualGatheringPolicy = PeerConnection.ContinualGatheringPolicy.GATHER_ONCE;
+                    break;
+                case "gather_continually":
+                    conf.continualGatheringPolicy = PeerConnection.ContinualGatheringPolicy.GATHER_CONTINUALLY;
+                    break;
+                }
+            }
+        }
+
+        // audioJitterBufferMaxPackets (private api)
+        if (map.hasKey("audioJitterBufferMaxPackets")
+                && map.getType("audioJitterBufferMaxPackets") == ReadableType.Number) {
+            final int v = map.getInt("audioJitterBufferMaxPackets");
+            if (v > 0) {
+                conf.audioJitterBufferMaxPackets = v;
+            }
+        }
+
+        // iceConnectionReceivingTimeout (private api)
+        if (map.hasKey("iceConnectionReceivingTimeout")
+                && map.getType("iceConnectionReceivingTimeout") == ReadableType.Number) {
+            final int v = map.getInt("iceConnectionReceivingTimeout");
+            conf.iceConnectionReceivingTimeout = v;
+        }
+
+        // iceBackupCandidatePairPingInterval (private api)
+        if (map.hasKey("iceBackupCandidatePairPingInterval")
+                && map.getType("iceBackupCandidatePairPingInterval") == ReadableType.Number) {
+            final int v = map.getInt("iceBackupCandidatePairPingInterval");
+            conf.iceBackupCandidatePairPingInterval = v;
+        }
+
+        // audioJitterBufferFastAccelerate (private api)
+        if (map.hasKey("audioJitterBufferFastAccelerate")
+                && map.getType("audioJitterBufferFastAccelerate") == ReadableType.Boolean) {
+            final boolean v = map.getBoolean("audioJitterBufferFastAccelerate");
+            conf.audioJitterBufferFastAccelerate = v;
+        }
+
+        // pruneTurnPorts (private api)
+        if (map.hasKey("pruneTurnPorts")
+                && map.getType("pruneTurnPorts") == ReadableType.Boolean) {
+            final boolean v = map.getBoolean("pruneTurnPorts");
+            conf.pruneTurnPorts = v;
+        }
+
+        // presumeWritableWhenFullyRelayed (private api)
+        if (map.hasKey("presumeWritableWhenFullyRelayed")
+                && map.getType("presumeWritableWhenFullyRelayed") == ReadableType.Boolean) {
+            final boolean v = map.getBoolean("presumeWritableWhenFullyRelayed");
+            conf.presumeWritableWhenFullyRelayed = v;
+        }
+
+        return conf;
     }
 
     @ReactMethod
@@ -271,10 +454,10 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
      * Retreives "sourceId" constraint value.
      * @param mediaConstraints a <tt>ReadableMap</tt> which represents "GUM"
      * constraints argument
-     * @return Integer value of "sourceId" optional "GUM" constraint or
+     * @return String value of "sourceId" optional "GUM" constraint or
      * <tt>null</tt> if not specified in the given map.
      */
-    private Integer getSourceIdConstraint(ReadableMap mediaConstraints) {
+    private String getSourceIdConstraint(ReadableMap mediaConstraints) {
         if (mediaConstraints.hasKey("optional")
                 && mediaConstraints.getType("optional") == ReadableType.Array) {
             ReadableArray optional = mediaConstraints.getArray("optional");
@@ -285,7 +468,7 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
 
                     if (option.hasKey("sourceId")
                             && option.getType("sourceId") == ReadableType.String) {
-                        return Integer.parseInt(option.getString("sourceId"));
+                        return option.getString("sourceId");
                     }
                 }
             }
@@ -301,40 +484,93 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
         VideoTrack videoTrack = null;
         WritableArray tracks = Arguments.createArray();
 
+        // NOTE: we don't need videoConstraints for now since createVideoSource doesn't accept
+        //   videoConstraints, we should extract resolution and pass to startCapture
+
+        // TODO: change getUserMedia constraints format to support new syntax 
+        //   constraint format seems changed, and there is no mandatory any more.
+        //   and has a new sytax/attrs to specify resolution
+        //   should change `parseConstraints()` according
+        //   see: https://www.w3.org/TR/mediacapture-streams/#idl-def-MediaTrackConstraints
         if (constraints.hasKey("video")) {
             ReadableType type = constraints.getType("video");
             VideoSource videoSource = null;
-            MediaConstraints videoConstraints = new MediaConstraints();
-            Integer sourceId = null;
+            //MediaConstraints videoConstraints = new MediaConstraints();
+            ReadableMap videoConstraintsManatory = null;
+            ReadableMap video = null;
+            boolean enableVideo = true;
+            String sourceId = null;
             String facingMode = null;
             String trackId = null;
             switch (type) {
             case Boolean:
-                if (!constraints.getBoolean("video")) {
-                    videoConstraints = null;
+                if (constraints.getBoolean("video")) {
+                    // use default value for video resolution
+                    WritableMap defaultVideoMandatory = new WritableNativeMap();
+                    defaultVideoMandatory.putInt("minWidth", 1280);
+                    defaultVideoMandatory.putInt("minHeight", 720);
+                    defaultVideoMandatory.putInt("minFrameRate", 30);
+                    videoConstraintsManatory = (ReadableMap) defaultVideoMandatory;
+                } else {
+                    enableVideo = false;
                 }
                 break;
-            case Map: {
-                ReadableMap video = constraints.getMap("video");
-                videoConstraints = parseMediaConstraints(video);
+            case Map:
+                video = constraints.getMap("video");
+                if (video.hasKey("mandatory") && 
+                        video.getType("mandatory") == ReadableType.Map) {
+                    videoConstraintsManatory = video.getMap("mandatory");
+                }
+
+                // video resolution is mandatory
+                if (videoConstraintsManatory == null) {
+                    errorCallback.invoke(null, "video mandatory constraints not found");
+                    return;
+                }
+                
+                //videoConstraints = parseConstraints(video);
                 sourceId = getSourceIdConstraint(video);
                 facingMode
                     = ReactBridgeUtil.getMapStrValue(video, "facingMode");
                 break;
-            }
+            default:
+                errorCallback.invoke(null, "invalid type of video constraints");
+                return;
             }
 
-            if (videoConstraints != null) {
-                Log.i(TAG, "getUserMedia(video): " + videoConstraints
-                    + ", sourceId: " + sourceId);
+            if (enableVideo) {
+                Log.i(TAG, "getUserMedia(video): video: " + video
+                        + ", videoConstraintsManatory: " + videoConstraintsManatory
+                        + ", sourceId: " + sourceId);
 
-                VideoCapturer videoCapturer
-                    = getVideoCapturerById(sourceId, facingMode);
+                Context context = (Context) getReactApplicationContext();
+                final boolean isFacing = (facingMode != null && facingMode.equals("environment"))
+                    ? false : true;
+                VideoCapturer videoCapturer = null;
+
+                // NOTE: to support Camera2, the device should:
+                //   1. Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP
+                //   2. all camera support level should greater than LEGACY
+                //   see: https://developer.android.com/reference/android/hardware/camera2/CameraCharacteristics.html#INFO_SUPPORTED_HARDWARE_LEVEL
+                if (Camera2Enumerator.isSupported(context)) {
+                    Log.d(TAG, "Creating video capturer using Camera2 API.");
+                    videoCapturer = createVideoCapturer(
+                        new Camera2Enumerator(context), isFacing, sourceId);
+                } else {
+                    Log.d(TAG, "Creating video capturer using Camera1 API.");
+                    final boolean captureToTexture = false;
+                    videoCapturer = createVideoCapturer(
+                        new Camera1Enumerator(captureToTexture), isFacing, sourceId);
+                }
+
                 if (videoCapturer != null) {
-                    // FIXME it seems that the factory does not care about
-                    //       given mandatory constraints too much
-                    videoSource = mFactory.createVideoSource(
-                            videoCapturer, videoConstraints);
+
+                    final int videoWidth = videoConstraintsManatory.getInt("minWidth");
+                    final int videoHeight = videoConstraintsManatory.getInt("minHeight");
+                    final int videoFps = videoConstraintsManatory.getInt("minFrameRate");
+
+                    videoSource = mFactory.createVideoSource(videoCapturer);
+                    videoCapturer.startCapture(videoWidth, videoHeight, videoFps);
 
                     trackId = getNextTrackUUID();
 
@@ -563,28 +799,54 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
     }
 
     /**
-     * Creates <tt>VideoCapturer</tt> for given source ID and facing mode.
-     *
-     * @param id the video source identifier(device id), optional
-     * @param facingMode 'user' or 'environment' facing mode, optional
-     * @return <tt>VideoCapturer</tt> instance obtained for given arguments.
+     * Create video capturer via given facing mode
+     * @param enumerator a <tt>CameraEnumerator</tt> provided by webrtc
+     *        it can be Camera1Enumerator or Camera2Enumerator
+     * @param isFacing 'user' mapped with 'front' is true (default)
+     *                 'environment' mapped with 'back' is false
+     * @param sourceId (String) use this sourceId and ignore facing mode if specified.
+     * @return VideoCapturer can invoke with <tt>startCapture</tt>/<tt>stopCapture</tt>
+     *         <tt>null</tt> if not matched camera with specified facing mode.
      */
-    private VideoCapturer getVideoCapturerById(Integer id, String facingMode) {
-        String name
-            = id != null ? CameraEnumerationAndroid.getDeviceName(id) : null;
-        if (name == null) {
-            // https://www.w3.org/TR/mediacapture-streams/#def-constraint-facingMode
-            // The specs also mention "left" and "right", but there's no such
-            // method in CameraEnumerationAndroid
-            if (facingMode == null || facingMode.equals("user")) {
-                name = CameraEnumerationAndroid.getNameOfFrontFacingDevice();
-            } else if (facingMode.equals("environment")){
-                name = CameraEnumerationAndroid.getNameOfBackFacingDevice();
+    private VideoCapturer createVideoCapturer(CameraEnumerator enumerator, boolean isFacing,
+            String sourceId) {
+        VideoCapturer videoCapturer = null;
+
+        // if sourceId given, use specified sourceId first
+        final String[] deviceNames = enumerator.getDeviceNames();
+        if (sourceId != null) {
+            for (String name : deviceNames) {
+                if (name.equals(sourceId)) {
+                    videoCapturer = enumerator.createCapturer(name, new CameraEventsHandler());
+                    if (videoCapturer != null) {
+                        Log.d(TAG, "create user specified camera " + name + " succeeded");
+                        return videoCapturer;
+                    } else {
+                        Log.d(TAG, "create user specified camera " + name + " failed");
+                        break; // fallback to facing mode
+                    }
+                }
             }
         }
 
-        return VideoCapturerAndroid.create(name, new CameraEventsHandler());
+        // otherwise, use facing mode
+        String facingStr = isFacing ? "front" : "back";
+        for (String name : deviceNames) {
+            if (enumerator.isFrontFacing(name) == isFacing) {
+                videoCapturer = enumerator.createCapturer(name, new CameraEventsHandler());
+                if (videoCapturer != null) {
+                    Log.d(TAG, "Create " + facingStr + " camera " + name + " succeeded");
+                    return videoCapturer;
+                } else {
+                    Log.d(TAG, "Create " + facingStr + " camera " + name + " failed");
+                }
+            }
+        }
+
+        // should we fallback to available camera automatically?
+        return null;
     }
+
     private MediaConstraints defaultConstraints() {
         MediaConstraints constraints = new MediaConstraints();
         // TODO video media
