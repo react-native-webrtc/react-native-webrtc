@@ -556,7 +556,8 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
                 //   1. Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP
                 //   2. all camera support level should greater than LEGACY
                 //   see: https://developer.android.com/reference/android/hardware/camera2/CameraCharacteristics.html#INFO_SUPPORTED_HARDWARE_LEVEL
-                if (Camera2Enumerator.isSupported(context)) {
+                // TODO Enable camera2 enumerator
+                if (false && Camera2Enumerator.isSupported(context)) {
                     Log.d(TAG, "Creating video capturer using Camera2 API.");
                     videoCapturer = createVideoCapturer(
                         new Camera2Enumerator(context), isFacing, sourceId);
