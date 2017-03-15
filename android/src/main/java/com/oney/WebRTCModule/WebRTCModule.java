@@ -48,6 +48,10 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
 
     private static final String LANGUAGE =  "language";
 
+    private static final int DEFAULT_WIDTH  = 1280;
+    private static final int DEFAULT_HEIGHT = 720;
+    private static final int DEFAULT_FPS    = 30;
+
     private final PeerConnectionFactory mFactory;
     private final SparseArray<PeerConnectionObserver> mPeerConnectionObservers;
     public final Map<String, MediaStream> mMediaStreams;
@@ -507,9 +511,9 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
                 if (constraints.getBoolean("video")) {
                     // use default value for video resolution
                     WritableMap defaultVideoMandatory = new WritableNativeMap();
-                    defaultVideoMandatory.putInt("minWidth", 1280);
-                    defaultVideoMandatory.putInt("minHeight", 720);
-                    defaultVideoMandatory.putInt("minFrameRate", 30);
+                    defaultVideoMandatory.putInt("minWidth", DEFAULT_HEIGHT);
+                    defaultVideoMandatory.putInt("minHeight", DEFAULT_WIDTH);
+                    defaultVideoMandatory.putInt("minFrameRate", DEFAULT_FPS);
                     videoConstraintsManatory = (ReadableMap) defaultVideoMandatory;
                 } else {
                     enableVideo = false;
@@ -564,10 +568,19 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
                 }
 
                 if (videoCapturer != null) {
-
-                    final int videoWidth = videoConstraintsManatory.getInt("minWidth");
-                    final int videoHeight = videoConstraintsManatory.getInt("minHeight");
-                    final int videoFps = videoConstraintsManatory.getInt("minFrameRate");
+                    // Fallback to defaults if keys are missing
+                    final int videoWidth
+                        = videoConstraintsManatory.hasKey("minWidth") ?
+                            videoConstraintsManatory.getInt("minWidth") :
+                            DEFAULT_WIDTH;
+                    final int videoHeight
+                        = videoConstraintsManatory.hasKey("minHeight") ?
+                            videoConstraintsManatory.getInt("minHeight") :
+                            DEFAULT_HEIGHT;
+                    final int videoFps
+                        = videoConstraintsManatory.hasKey("minFrameRate") ?
+                            videoConstraintsManatory.getInt("minFrameRate") :
+                            DEFAULT_FPS;
 
                     videoSource = mFactory.createVideoSource(videoCapturer);
                     videoCapturer.startCapture(videoWidth, videoHeight, videoFps);
