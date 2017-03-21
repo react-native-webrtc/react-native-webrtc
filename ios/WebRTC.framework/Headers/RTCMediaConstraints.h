@@ -22,10 +22,6 @@ RTC_EXTERN NSString * const kRTCMediaConstraintsMaxHeight;
 RTC_EXTERN NSString * const kRTCMediaConstraintsMinHeight;
 RTC_EXTERN NSString * const kRTCMediaConstraintsMaxFrameRate;
 RTC_EXTERN NSString * const kRTCMediaConstraintsMinFrameRate;
-RTC_EXTERN NSString * const kRTCMediaConstraintsLevelControl;
-
-RTC_EXTERN NSString * const kRTCMediaConstraintsValueTrue;
-RTC_EXTERN NSString * const kRTCMediaConstraintsValueFalse;
 
 RTC_EXPORT
 @interface RTCMediaConstraints : NSObject

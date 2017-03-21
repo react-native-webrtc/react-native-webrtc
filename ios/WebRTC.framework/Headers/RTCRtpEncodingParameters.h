@@ -25,9 +25,6 @@ RTC_EXPORT
  */
 @property(nonatomic, copy, nullable) NSNumber *maxBitrateBps;
 
-/** The SSRC being used by this encoding. */
-@property(nonatomic, readonly, nullable) NSNumber *ssrc;
-
 - (instancetype)init NS_DESIGNATED_INITIALIZER;
 
 @end

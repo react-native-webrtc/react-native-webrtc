@@ -16,9 +16,8 @@
 #import <WebRTC/RTCIceCandidate.h>
 #import <WebRTC/RTCIceServer.h>
 #import <WebRTC/RTCMediaConstraints.h>
-#import <WebRTC/RTCIceCandidate.h>
-#import <WebRTC/RTCLegacyStatsReport.h>
 #import <WebRTC/RTCSessionDescription.h>
+#import <WebRTC/RTCStatsReport.h>
 
 #import "WebRTCModule+RTCDataChannel.h"
 #import "WebRTCModule+RTCPeerConnection.h"
@@ -234,9 +233,9 @@ RCT_EXPORT_METHOD(peerConnectionGetStats:(nonnull NSString *)trackID objectID:(n
 
   [peerConnection statsForTrack:track
                statsOutputLevel: RTCStatsOutputLevelStandard
-              completionHandler: ^(NSArray<RTCLegacyStatsReport *> *stats) {
+              completionHandler: ^(NSArray<RTCStatsReport *> *stats) {
     NSMutableArray *statsCollection = [NSMutableArray new];
-    for (RTCLegacyStatsReport *statsReport in stats) {
+    for (RTCStatsReport *statsReport in stats) {
       NSMutableArray *valuesCollection = [NSMutableArray new];
       for (NSString *key in statsReport.values) {
         NSString *value = [statsReport.values objectForKey:key];

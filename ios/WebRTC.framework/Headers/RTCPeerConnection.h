@@ -23,7 +23,7 @@
 @class RTCRtpReceiver;
 @class RTCRtpSender;
 @class RTCSessionDescription;
-@class RTCLegacyStatsReport;
+@class RTCStatsReport;
 
 NS_ASSUME_NONNULL_BEGIN
 
@@ -217,7 +217,7 @@ RTC_EXPORT
     (nullable RTCMediaStreamTrack *)mediaStreamTrack
      statsOutputLevel:(RTCStatsOutputLevel)statsOutputLevel
     completionHandler:
-    (nullable void (^)(NSArray<RTCLegacyStatsReport *> *stats))completionHandler;
+    (nullable void (^)(NSArray<RTCStatsReport *> *stats))completionHandler;
 
 @end
 

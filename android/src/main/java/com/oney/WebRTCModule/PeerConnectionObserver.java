@@ -21,7 +21,6 @@ import org.webrtc.IceCandidate;
 import org.webrtc.MediaStream;
 import org.webrtc.MediaStreamTrack;
 import org.webrtc.PeerConnection;
-import org.webrtc.RtpReceiver;
 import org.webrtc.StatsObserver;
 import org.webrtc.StatsReport;
 import org.webrtc.VideoTrack;
@@ -354,11 +353,6 @@ class PeerConnectionObserver implements PeerConnection.Observer {
         params.putInt("id", id);
         params.putString("signalingState", signalingStateString(signalingState));
         webRTCModule.sendEvent("peerConnectionSignalingStateChanged", params);
-    }
-
-    @Override
-    public void onAddTrack(final RtpReceiver receiver, final MediaStream[] mediaStreams) {
-        Log.d(TAG, "onAddTrack");
     }
 
     @Nullable

@@ -84,7 +84,6 @@ RTC_EXPORT
 @property(nonatomic, assign)
     RTCContinualGatheringPolicy continualGatheringPolicy;
 @property(nonatomic, assign) int audioJitterBufferMaxPackets;
-@property(nonatomic, assign) BOOL audioJitterBufferFastAccelerate;
 @property(nonatomic, assign) int iceConnectionReceivingTimeout;
 @property(nonatomic, assign) int iceBackupCandidatePairPingInterval;
 

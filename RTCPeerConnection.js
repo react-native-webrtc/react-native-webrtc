@@ -44,7 +44,7 @@ type RTCIceConnectionState =
 const DEFAULT_SDP_CONSTRAINTS = {
   mandatory: {
     OfferToReceiveAudio: true,
-    OfferToReceiveVideo: true,
+    OfferToReceiveVideo: true
   }
 };
 
@@ -115,23 +115,10 @@ export default class RTCPeerConnection extends EventTarget(PEER_CONNECTION_EVENT
     WebRTCModule.peerConnectionRemoveStream(stream.reactTag, this._peerConnectionId);
   }
 
-  _mergeMediaConstraints(options) {
-    const constraints = Object.assign({}, DEFAULT_SDP_CONSTRAINTS);
-    if (options) {
-      if (options.mandatory) {
-        constraints.mandatory = {...constraints.mandatory, ...options.mandatory};
-      }
-      if (options.optional) {
-        constraints.optional = {...constraints.optional, ...options.optional};
-      }
-    }
-    return constraints;
-  }
-
   createOffer(successCallback: ?Function, failureCallback: ?Function, options) {
     WebRTCModule.peerConnectionCreateOffer(
         this._peerConnectionId,
-        this._mergeMediaConstraints(options),
+        DEFAULT_SDP_CONSTRAINTS,
         (successful, data) => {
           if (successful) {
             successCallback(new RTCSessionDescription(data));
@@ -144,7 +131,7 @@ export default class RTCPeerConnection extends EventTarget(PEER_CONNECTION_EVENT
   createAnswer(successCallback: ?Function, failureCallback: ?Function, options) {
     WebRTCModule.peerConnectionCreateAnswer(
         this._peerConnectionId,
-        this._mergeMediaConstraints(options),
+        DEFAULT_SDP_CONSTRAINTS,
         (successful, data) => {
           if (successful) {
             successCallback(new RTCSessionDescription(data));
