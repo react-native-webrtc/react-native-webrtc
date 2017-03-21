@@ -11,21 +11,12 @@
 #import <Foundation/Foundation.h>
 
 #import <WebRTC/RTCMacros.h>
-
-typedef NS_ENUM(NSInteger, RTCSourceState) {
-  RTCSourceStateInitializing,
-  RTCSourceStateLive,
-  RTCSourceStateEnded,
-  RTCSourceStateMuted,
-};
+#import <WebRTC/RTCMediaSource.h>
 
 NS_ASSUME_NONNULL_BEGIN
 
 RTC_EXPORT
-@interface RTCVideoSource : NSObject
-
-/** The current state of the RTCVideoSource. */
-@property(nonatomic, readonly) RTCSourceState state;
+@interface RTCVideoSource : RTCMediaSource
 
 - (instancetype)init NS_UNAVAILABLE;
 

@@ -15,7 +15,7 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
-// RTCVideoFrame is an ObjectiveC version of cricket::VideoFrame.
+// RTCVideoFrame is an ObjectiveC version of webrtc::VideoFrame.
 RTC_EXPORT
 @interface RTCVideoFrame : NSObject
 
