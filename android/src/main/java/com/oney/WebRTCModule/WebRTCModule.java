@@ -522,6 +522,19 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
     }
 
     @ReactMethod
+    public void mediaStreamTrackSwitchCamera(final String id) {
+        MediaStreamTrack track = mMediaStreamTracks.get(id);
+        if (track != null) {
+            VideoCapturer videoCapturer = mVideoCapturers.get(id);
+            if (videoCapturer != null) {
+                CameraVideoCapturer cameraVideoCapturer
+                    = (CameraVideoCapturer) videoCapturer;
+                cameraVideoCapturer.switchCamera(null);
+            }
+        }
+    }
+
+    @ReactMethod
     public void mediaStreamTrackRelease(final String streamId, final String _trackId) {
         MediaStream stream = mMediaStreams.get(streamId);
         if (stream == null) {
