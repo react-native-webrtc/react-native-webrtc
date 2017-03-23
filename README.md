@@ -137,6 +137,14 @@ And set stream to RTCView
 ```javascript
 container.setState({videoURL: stream.toURL()});
 ```
+
+### Custom APIs
+
+#### MediaStreamTrack.prototype._switchCameras()
+
+This function allows to switch the front / back cameras in a video track
+on the fly, without the need for adding / removing tracks or renegotiating.
+
 ## Demos
 
 **Official Demo**

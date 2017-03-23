@@ -355,6 +355,19 @@ RCT_EXPORT_METHOD(mediaStreamTrackSetEnabled:(nonnull NSString *)trackID : (BOOL
   }
 }
 
+RCT_EXPORT_METHOD(mediaStreamTrackSwitchCamera:(nonnull NSString *)trackID)
+{
+  RTCMediaStreamTrack *track = self.tracks[trackID];
+  if (track) {
+    RTCVideoTrack *videoTrack = (RTCVideoTrack *)track;
+    RTCVideoSource *source = videoTrack.source;
+    if ([source isKindOfClass:[RTCAVFoundationVideoSource class]]) {
+      RTCAVFoundationVideoSource *avSource = (RTCAVFoundationVideoSource *)source;
+      avSource.useBackCamera = !avSource.useBackCamera;
+    }
+  }
+}
+
 RCT_EXPORT_METHOD(mediaStreamTrackStop:(nonnull NSString *)trackID)
 {
   RTCMediaStreamTrack *track = self.tracks[trackID];

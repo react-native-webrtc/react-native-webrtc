@@ -83,6 +83,23 @@ export default class MediaStreamTrack extends EventTarget(MEDIA_STREAM_TRACK_EVE
     this.muted = !this._enabled;
   }
 
+  /**
+   * Private / custom API for switching the cameras on the fly, without the
+   * need for adding / removing tracks or doing any SDP renegotiation.
+   *
+   * This is how the reference application (AppRTCMobile) implements camera
+   * switching.
+   */
+  _switchCamera() {
+    if (this.remote) {
+      throw new Error('Not implemented for remote tracks');
+    }
+    if (this.kind !== 'video') {
+      throw new Error('Only implemented for video tracks');
+    }
+    WebRTCModule.mediaStreamTrackSwitchCamera(this.id);
+  }
+
   applyConstraints() {
     throw new Error('Not implemented.');
   }
