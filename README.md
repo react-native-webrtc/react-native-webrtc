@@ -17,7 +17,6 @@ see [#190](https://github.com/oney/react-native-webrtc/pull/190) for detials
 - Support video and audio communication.  
 - Supports data channels.  
 - You can use it to build an iOS/Android app that can communicate with web browser.  
-- The WebRTC Library is based on [webrtc-build-scripts](https://github.com/pristineio/webrtc-build-scripts)
 
 ## WebRTC Revision
 
@@ -34,13 +33,11 @@ please see [wiki page](https://github.com/oney/react-native-webrtc/wiki) about r
 ### note:
 the order of commit revision is nothing to do with the order of cherry-picks, for example, the earlier committed `cherry-pick-#2` may have higher revision than `cherry-pick-#3` and vice versa.
 
-| react-native-webrtc | WebRTC(ios) | WebRTC(android)  | npm published | note |
-| :-------------: | :-------------:| :-----: | :-----: | :-----: | :-----: |
-| 0.53.2 | 53 stable<br>(13317)<br>(+6-13855)<br>32/64 | 53 stable<br>(13317)<br>(+6-13855)<br>32 | :heavy_check_mark: | |
-| 0.54.7 | 54 stable<br>(13869)<br>(+6-14091)<br>32/64 | 54 stable<br>(13869)<br>(+6-14091)<br>32 | :heavy_check_mark: | RN < 40 |
-| 1.54.7 | 54 stable<br>(13869)<br>(+6-14091)<br>32/64 | 54 stable<br>(13869)<br>(+6-14091)<br>32 | :heavy_check_mark: | RN >= 40 |
-| master | 54 stable<br>(13869)<br>(+6-14091)<br>32/64 | 54 stable<br>(13869)<br>(+6-14091)<br>32 | :warning:          | |
-| M55 | 55 stable<br>(14500)<br>(+8 15071)<br>32/64<br>w/o ipad | 55 stable<br>(14500)<br>(+8 15071)<br>32 | :warning:          | please help to check if it works. (RN < 40) |
+| react-native-webrtc | WebRTC Version | arch(ios) | arch(android)  | npm published | note | additional picks |
+| :-------------: | :-------------:| :-----: | :-----: | :-----: | :-----: | :-----: |
+| 0.54.7 | [M54](https://chromium.googlesource.com/external/webrtc/+/branch-heads/54)<br>(13869)<br>(+6-14091) | x86_64<br>i386<br>armv7<br>arm64 | armeabi-v7a<br>x86 | :heavy_check_mark: | RN < 40 | |
+| 1.54.7 | [M54](https://chromium.googlesource.com/external/webrtc/+/branch-heads/54)<br>(13869)<br>(+6-14091) | x86_64<br>i386<br>armv7<br>arm64 | armeabi-v7a<br>x86 | :heavy_check_mark: | RN >= 40 | |
+| master | [M57](https://chromium.googlesource.com/external/webrtc/+/branch-heads/57)<br>(16123)<br>(+7-16178) | x86_64<br>i386<br>armv7<br>arm64 | armeabi-v7a<br>x86 | :warning: | RN >= 40 | [Android HW decoder: Support odd heights for non-texture output](https://chromium.googlesource.com/external/webrtc/+/0e22a4cfd3790d80ad1ae699891341fe322cb418)  |
 
 ## Installation
 
