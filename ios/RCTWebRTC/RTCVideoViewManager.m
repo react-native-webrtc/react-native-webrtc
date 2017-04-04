@@ -215,7 +215,7 @@ typedef NS_ENUM(NSInteger, RTCVideoViewObjectFit) {
  * Implements the setter of the {@link #videoTrack} property of this
  * {@code RTCVideoView}.
  *
- * @param objectFit The value to set on the {@code videoTrack} property of this
+ * @param videoTrack The value to set on the {@code videoTrack} property of this
  * {@code RTCVideoView}.
  */
 - (void)setVideoTrack:(RTCVideoTrack *)videoTrack {
