@@ -46,6 +46,13 @@ typedef NS_ENUM(NSInteger, RTCVideoViewObjectFit) {
 @interface RTCVideoView : UIView <RTCVideoRenderer, RTCEAGLVideoViewDelegate>
 
 /**
+ * The indicator which determines whether this {@code RTCVideoView} is to mirror
+ * the video specified by {@link #videoTrack} during its rendering. Typically,
+ * applications choose to mirror the front/user-facing camera.
+ */
+@property (nonatomic) BOOL mirror;
+
+/**
  * In the fashion of
  * https://www.w3.org/TR/html5/embedded-content-0.html#dom-video-videowidth
  * and https://www.w3.org/TR/html5/rendering.html#video-object-fit, resembles
@@ -195,6 +202,25 @@ typedef NS_ENUM(NSInteger, RTCVideoViewObjectFit) {
       || newValue.size.height != oldValue.size.height) {
     subview.frame = newValue;
   }
+
+  subview.transform
+    = self.mirror
+        ? CGAffineTransformMakeScale(-1.0, 1.0)
+        : CGAffineTransformIdentity;
+}
+
+/**
+ * Implements the setter of the {@link #mirror} property of this
+ * {@code RTCVideoView}.
+ *
+ * @param mirror The value to set on the {@code mirror} property of this
+ * {@code RTCVideoView}.
+ */
+- (void)setMirror:(BOOL)mirror {
+  if (_mirror != mirror) {
+      _mirror = mirror;
+      [self dispatchAsyncSetNeedsLayout];
+  }
 }
 
 /**
@@ -323,6 +349,8 @@ RCT_EXPORT_MODULE()
 - (dispatch_queue_t)methodQueue {
   return dispatch_get_main_queue();
 }
+
+RCT_EXPORT_VIEW_PROPERTY(mirror, BOOL)
 
 /**
  * In the fashion of
