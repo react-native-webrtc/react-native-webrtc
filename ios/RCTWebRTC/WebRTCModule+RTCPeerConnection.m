@@ -108,7 +108,8 @@ RCT_EXPORT_METHOD(peerConnectionRemoveStream:(nonnull NSString *)streamID object
 
 RCT_EXPORT_METHOD(peerConnectionCreateOffer:(nonnull NSNumber *)objectID
                                 constraints:(NSDictionary *)constraints
-                                   callback:(RCTResponseSenderBlock)callback)
+                                   resolver:(RCTPromiseResolveBlock)resolve
+                                   rejecter:(RCTPromiseRejectBlock)reject)
 {
   RTCPeerConnection *peerConnection = self.peerConnections[objectID];
   if (!peerConnection) {
@@ -119,22 +120,18 @@ RCT_EXPORT_METHOD(peerConnectionCreateOffer:(nonnull NSNumber *)objectID
     offerForConstraints:[self parseMediaConstraints:constraints]
       completionHandler:^(RTCSessionDescription *sdp, NSError *error) {
         if (error) {
-          callback(@[
-            @(NO),
-            @{
-              @"type": @"CreateOfferFailed",
-              @"message": error.userInfo[@"error"]}
-          ]);
+            reject(@"CreateOfferFailed", error.userInfo[@"error"], error);
         } else {
-          NSString *type = [RTCSessionDescription stringForType:sdp.type];
-          callback(@[@(YES), @{@"sdp": sdp.sdp, @"type": type}]);
+            NSString *type = [RTCSessionDescription stringForType:sdp.type];
+            resolve(@{@"sdp": sdp.sdp, @"type": type});
         }
       }];
 }
 
 RCT_EXPORT_METHOD(peerConnectionCreateAnswer:(nonnull NSNumber *)objectID
                                  constraints:(NSDictionary *)constraints
-                                    callback:(RCTResponseSenderBlock)callback)
+                                    resolver:(RCTPromiseResolveBlock)resolve
+                                    rejecter:(RCTPromiseRejectBlock)reject)
 {
   RTCPeerConnection *peerConnection = self.peerConnections[objectID];
   if (!peerConnection) {
@@ -144,21 +141,16 @@ RCT_EXPORT_METHOD(peerConnectionCreateAnswer:(nonnull NSNumber *)objectID
   [peerConnection
     answerForConstraints:[self parseMediaConstraints:constraints]
        completionHandler:^(RTCSessionDescription *sdp, NSError *error) {
-         if (error) {
-           callback(@[
-             @(NO),
-             @{
-               @"type": @"CreateAnswerFailed",
-               @"message": error.userInfo[@"error"]}
-           ]);
+        if (error) {
+            reject(@"CreateAnswerFailed", error.userInfo[@"error"], error);
          } else {
            NSString *type = [RTCSessionDescription stringForType:sdp.type];
-           callback(@[@(YES), @{@"sdp": sdp.sdp, @"type": type}]);
+           resolve(@{@"sdp": sdp.sdp, @"type": type});
          }
        }];
 }
 
-RCT_EXPORT_METHOD(peerConnectionSetLocalDescription:(RTCSessionDescription *)sdp objectID:(nonnull NSNumber *)objectID callback:(RCTResponseSenderBlock)callback)
+RCT_EXPORT_METHOD(peerConnectionSetLocalDescription:(RTCSessionDescription *)sdp objectID:(nonnull NSNumber *)objectID resolver:(RCTPromiseResolveBlock)resolve rejecter:(RCTPromiseRejectBlock)reject)
 {
   RTCPeerConnection *peerConnection = self.peerConnections[objectID];
   if (!peerConnection) {
@@ -167,16 +159,14 @@ RCT_EXPORT_METHOD(peerConnectionSetLocalDescription:(RTCSessionDescription *)sdp
 
   [peerConnection setLocalDescription:sdp completionHandler: ^(NSError *error) {
     if (error) {
-      id errorResponse = @{@"name": @"SetLocalDescriptionFailed",
-                           @"message": error.localizedDescription};
-      callback(@[@(NO), errorResponse]);
+      reject(@"SetLocalDescriptionFailed", error.localizedDescription, error);
     } else {
-      callback(@[@(YES)]);
+      resolve(nil);
     }
   }];
 }
 
-RCT_EXPORT_METHOD(peerConnectionSetRemoteDescription:(RTCSessionDescription *)sdp objectID:(nonnull NSNumber *)objectID callback:(RCTResponseSenderBlock)callback)
+RCT_EXPORT_METHOD(peerConnectionSetRemoteDescription:(RTCSessionDescription *)sdp objectID:(nonnull NSNumber *)objectID resolver:(RCTPromiseResolveBlock)resolve rejecter:(RCTPromiseRejectBlock)reject)
 {
   RTCPeerConnection *peerConnection = self.peerConnections[objectID];
   if (!peerConnection) {
@@ -185,16 +175,14 @@ RCT_EXPORT_METHOD(peerConnectionSetRemoteDescription:(RTCSessionDescription *)sd
 
   [peerConnection setRemoteDescription: sdp completionHandler: ^(NSError *error) {
     if (error) {
-      id errorResponse = @{@"name": @"SetRemoteDescriptionFailed",
-                           @"message": error.localizedDescription};
-      callback(@[@(NO), errorResponse]);
+        reject(@"SetRemoteDescriptionFailed", error.localizedDescription, error);
     } else {
-      callback(@[@(YES)]);
+        resolve(nil);
     }
   }];
 }
 
-RCT_EXPORT_METHOD(peerConnectionAddICECandidate:(RTCIceCandidate*)candidate objectID:(nonnull NSNumber *)objectID callback:(RCTResponseSenderBlock)callback)
+RCT_EXPORT_METHOD(peerConnectionAddICECandidate:(RTCIceCandidate*)candidate objectID:(nonnull NSNumber *)objectID resolver:(RCTPromiseResolveBlock)resolve rejecter:(RCTPromiseRejectBlock)reject)
 {
   RTCPeerConnection *peerConnection = self.peerConnections[objectID];
   if (!peerConnection) {
@@ -203,7 +191,7 @@ RCT_EXPORT_METHOD(peerConnectionAddICECandidate:(RTCIceCandidate*)candidate obje
 
   [peerConnection addIceCandidate:candidate];
   NSLog(@"addICECandidateresult: %@", candidate);
-  callback(@[@true]);
+  resolve(nil);
 }
 
 RCT_EXPORT_METHOD(peerConnectionClose:(nonnull NSNumber *)objectID)
@@ -245,7 +233,7 @@ RCT_EXPORT_METHOD(peerConnectionClose:(nonnull NSNumber *)objectID)
   [dataChannels removeAllObjects];
 }
 
-RCT_EXPORT_METHOD(peerConnectionGetStats:(nonnull NSString *)trackID objectID:(nonnull NSNumber *)objectID callback:(RCTResponseSenderBlock)callback)
+RCT_EXPORT_METHOD(peerConnectionGetStats:(nonnull NSString *)trackID objectID:(nonnull NSNumber *)objectID resolver:(RCTPromiseResolveBlock)resolve rejecter:(RCTPromiseRejectBlock)reject)
 {
   RTCPeerConnection *peerConnection = self.peerConnections[objectID];
   if (!peerConnection) {
@@ -278,7 +266,7 @@ RCT_EXPORT_METHOD(peerConnectionGetStats:(nonnull NSString *)trackID objectID:(n
                                    @"values": valuesCollection,
                                    }];
     }
-    callback(@[statsCollection]);
+    resolve(@[statsCollection]);
   }];
 }
 
