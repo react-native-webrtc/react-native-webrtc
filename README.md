@@ -137,7 +137,7 @@ container.setState({videoURL: stream.toURL()});
 
 ### Custom APIs
 
-#### MediaStreamTrack.prototype._switchCameras()
+#### MediaStreamTrack.prototype._switchCamera()
 
 This function allows to switch the front / back cameras in a video track
 on the fly, without the need for adding / removing tracks or renegotiating.
