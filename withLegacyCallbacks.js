@@ -10,8 +10,8 @@ module.exports = withLegacyCallbacks;
 */
 function withLegacyCallbacks(method, callbackFirst, successIndex, failureIndex) {
   return function(...args) {
-    const successPos = successIndex || callbackFirst ? 0 : args.length - 2;
-    const failurePos = failureIndex || callbackFirst ? 1 : args.length - 1;
+    const successPos = successIndex || (callbackFirst ? 0 : args.length - 2);
+    const failurePos = failureIndex || (callbackFirst ? 1 : args.length - 1);
     const success = args[successPos];
     const failure = args[failurePos];
     // If legacy callbacks
