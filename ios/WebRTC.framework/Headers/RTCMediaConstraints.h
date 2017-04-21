@@ -23,6 +23,10 @@ RTC_EXTERN NSString * const kRTCMediaConstraintsMinHeight;
 RTC_EXTERN NSString * const kRTCMediaConstraintsMaxFrameRate;
 RTC_EXTERN NSString * const kRTCMediaConstraintsMinFrameRate;
 RTC_EXTERN NSString * const kRTCMediaConstraintsLevelControl;
+/** The value for this key should be a base64 encoded string containing
+ *  the data from the serialized configuration proto.
+ */
+RTC_EXTERN NSString * const kRTCMediaConstraintsAudioNetworkAdaptorConfig;
 
 RTC_EXTERN NSString * const kRTCMediaConstraintsValueTrue;
 RTC_EXTERN NSString * const kRTCMediaConstraintsValueFalse;
