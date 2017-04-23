@@ -368,17 +368,20 @@ RCT_CUSTOM_VIEW_PROPERTY(objectFit, NSString *, RTCVideoView) {
   view.objectFit = e;
 }
 
-RCT_CUSTOM_VIEW_PROPERTY(streamURL, NSNumber, RTCVideoView) {
+RCT_CUSTOM_VIEW_PROPERTY(streamURL, NSString, RTCVideoView) {
   RTCVideoTrack *videoTrack;
 
   if (json) {
     NSString *streamId = (NSString *)json;
 
     WebRTCModule *module = [self.bridge moduleForName:@"WebRTCModule"];
-    RTCMediaStream *stream = module.mediaStreams[streamId];
-    NSArray *videoTracks = stream.videoTracks;
+    RTCMediaStream *stream = module.localStreams[streamId];
+    if (!stream) {
+      stream = module.remoteStreams[streamId];
+    }
+    NSArray *videoTracks = stream ? stream.videoTracks : nil;
 
-    videoTrack = videoTracks.count ? videoTracks[0] : nil;
+    videoTrack = videoTracks && videoTracks.count ? videoTracks[0] : nil;
   } else {
     videoTrack = nil;
   }

@@ -49,6 +49,11 @@
 
 @implementation WebRTCModule (RTCPeerConnection)
 
+-(NSString*)reactTagForID:(NSString*)streamOrTrackID RTCPC:(RTCPeerConnection*)pc
+{
+    return [NSString stringWithFormat:@"%@_%@", pc.reactTag, streamOrTrackID];
+}
+
 RCT_EXPORT_METHOD(peerConnectionInit:(RTCConfiguration*)configuration
                          constraints:(NSDictionary *)constraints
                             objectID:(nonnull NSNumber *)objectID)
@@ -74,27 +79,29 @@ RCT_EXPORT_METHOD(peerConnectionSetConfiguration:(RTCConfiguration*)configuratio
 
 RCT_EXPORT_METHOD(peerConnectionAddStream:(nonnull NSString *)streamID objectID:(nonnull NSNumber *)objectID)
 {
-  RTCMediaStream *stream = self.mediaStreams[streamID];
-  if (!stream) {
-    return;
-  }
   RTCPeerConnection *peerConnection = self.peerConnections[objectID];
   if (!peerConnection) {
     return;
   }
+  RTCMediaStream *stream = self.localStreams[streamID];
+  if (!stream) {
+    return;
+  }
+
   [peerConnection addStream:stream];
 }
 
 RCT_EXPORT_METHOD(peerConnectionRemoveStream:(nonnull NSString *)streamID objectID:(nonnull NSNumber *)objectID)
 {
-  RTCMediaStream *stream = self.mediaStreams[streamID];
-  if (!stream) {
-    return;
-  }
   RTCPeerConnection *peerConnection = self.peerConnections[objectID];
   if (!peerConnection) {
     return;
   }
+  RTCMediaStream *stream = self.localStreams[streamID];
+  if (!stream) {
+    return;
+  }
+
   [peerConnection removeStream:stream];
 }
 
@@ -206,6 +213,24 @@ RCT_EXPORT_METHOD(peerConnectionClose:(nonnull NSNumber *)objectID)
     return;
   }
 
+  NSMutableArray *discardedStreams = [NSMutableArray array];
+    
+  for (NSString *streamReactTag in self.remoteStreams.keyEnumerator) {
+    if ([streamReactTag hasPrefix:[NSString stringWithFormat:@"%@_", peerConnection.reactTag]]) {
+      RTCMediaStream *remoteStream = self.remoteStreams[streamReactTag];
+      for (RTCMediaStreamTrack *track in remoteStream.audioTracks) {
+        NSString *tag = [self reactTagForID: track.trackId RTCPC: peerConnection];
+        [self.remoteTracks removeObjectForKey: tag];
+      }
+      for (RTCMediaStreamTrack *track in remoteStream.videoTracks) {
+        NSString *tag = [self reactTagForID: track.trackId RTCPC: peerConnection];
+        [self.remoteTracks removeObjectForKey: tag];
+      }
+      [discardedStreams addObject:streamReactTag];
+    }
+  }
+  [self.remoteStreams removeObjectsForKeys:discardedStreams];
+
   [peerConnection close];
   [self.peerConnections removeObjectForKey:objectID];
 
@@ -222,16 +247,20 @@ RCT_EXPORT_METHOD(peerConnectionClose:(nonnull NSNumber *)objectID)
 
 RCT_EXPORT_METHOD(peerConnectionGetStats:(nonnull NSString *)trackID objectID:(nonnull NSNumber *)objectID callback:(RCTResponseSenderBlock)callback)
 {
-  RTCMediaStreamTrack *track = nil;
-  if (trackID && trackID.length > 0) {
-    track = self.tracks[trackID];
-  }
-
   RTCPeerConnection *peerConnection = self.peerConnections[objectID];
   if (!peerConnection) {
     return;
   }
 
+  RTCMediaStreamTrack *track = nil;
+  if (trackID && trackID.length > 0) {
+    track = self.localTracks[trackID];
+    if (!track) {
+      track = self.remoteTracks[[self reactTagForID:trackID RTCPC: peerConnection]];
+    }
+  }
+
+  // FIXME can this crash with track == nil ?
   [peerConnection statsForTrack:track
                statsOutputLevel: RTCStatsOutputLevelStandard
               completionHandler: ^(NSArray<RTCLegacyStatsReport *> *stats) {
@@ -298,32 +327,36 @@ RCT_EXPORT_METHOD(peerConnectionGetStats:(nonnull NSString *)trackID objectID:(n
 - (void)peerConnection:(RTCPeerConnection *)peerConnection didAddStream:(RTCMediaStream *)stream {
   NSMutableArray *tracks = [NSMutableArray array];
   for (RTCVideoTrack *track in stream.videoTracks) {
-    self.tracks[track.trackId] = track;
+    NSString *tag = [self reactTagForID:track.trackId RTCPC:peerConnection];
+    self.remoteTracks[tag] = track;
     [tracks addObject:@{@"id": track.trackId, @"kind": track.kind, @"label": track.trackId, @"enabled": @(track.isEnabled), @"remote": @(YES), @"readyState": @"live"}];
   }
   for (RTCAudioTrack *track in stream.audioTracks) {
-    self.tracks[track.trackId] = track;
+    NSString *tag = [self reactTagForID:track.trackId RTCPC:peerConnection];
+    self.remoteTracks[tag] = track;
     [tracks addObject:@{@"id": track.trackId, @"kind": track.kind, @"label": track.trackId, @"enabled": @(track.isEnabled), @"remote": @(YES), @"readyState": @"live"}];
   }
 
-  self.mediaStreams[stream.streamId] = stream;
+  NSString *streamReactTag =  [self reactTagForID:stream.streamId RTCPC:peerConnection];
+  self.remoteStreams[streamReactTag] = stream;
   [self.bridge.eventDispatcher sendDeviceEventWithName:@"peerConnectionAddedStream"
-                                                  body:@{@"id": peerConnection.reactTag, @"streamId": stream.streamId, @"tracks": tracks}];
+                                                  body:@{@"id": peerConnection.reactTag, @"streamId": stream.streamId, @"streamReactTag": streamReactTag, @"tracks": tracks}];
 }
 
 - (void)peerConnection:(RTCPeerConnection *)peerConnection didRemoveStream:(RTCMediaStream *)stream {
-  RTCMediaStream *mediaStream = self.mediaStreams[stream.streamId];
+  NSString *streamReactTag = [self reactTagForID:stream.streamId RTCPC:peerConnection];
+  RTCMediaStream *mediaStream = self.remoteStreams[streamReactTag];
   if (mediaStream) {
     for (RTCVideoTrack *track in mediaStream.videoTracks) {
-      [self.tracks removeObjectForKey:track.trackId];
+      [self.remoteTracks removeObjectForKey:[self reactTagForID: track.trackId RTCPC: peerConnection]];
     }
     for (RTCAudioTrack *track in mediaStream.audioTracks) {
-      [self.tracks removeObjectForKey:track.trackId];
+      [self.remoteTracks removeObjectForKey:[self reactTagForID: track.trackId RTCPC: peerConnection]];
     }
-    [self.mediaStreams removeObjectForKey:stream.streamId];
+    [self.remoteStreams removeObjectForKey:streamReactTag];
   }
   [self.bridge.eventDispatcher sendDeviceEventWithName:@"peerConnectionRemovedStream" body:
-   @{@"id": peerConnection.reactTag, @"streamId": stream.streamId}];
+   @{@"id": peerConnection.reactTag, @"streamId": streamReactTag}];
 }
 
 - (void)peerConnectionShouldNegotiate:(RTCPeerConnection *)peerConnection {
