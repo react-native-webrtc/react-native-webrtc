@@ -29,18 +29,24 @@
 //    [RTCPeerConnectionFactory initializeSSL];
 
     _peerConnections = [NSMutableDictionary new];
-    _mediaStreams = [NSMutableDictionary new];
-    _tracks = [NSMutableDictionary new];
+    _remoteStreams = [NSMutableDictionary new];
+    _remoteTracks = [NSMutableDictionary new];
+    _localStreams = [NSMutableDictionary new];
+    _localTracks = [NSMutableDictionary new];
   }
   return self;
 }
 
 - (void)dealloc
 {
-  [_tracks removeAllObjects];
-  _tracks = nil;
-  [_mediaStreams removeAllObjects];
-  _mediaStreams = nil;
+  [_remoteTracks removeAllObjects];
+  _remoteTracks = nil;
+  [_remoteStreams removeAllObjects];
+  _remoteStreams = nil;
+  [_localTracks removeAllObjects];
+  _localTracks = nil;
+  [_localStreams removeAllObjects];
+  _localStreams = nil;
 
   for (NSNumber *peerConnectionId in _peerConnections) {
     RTCPeerConnection *peerConnection = _peerConnections[peerConnectionId];
