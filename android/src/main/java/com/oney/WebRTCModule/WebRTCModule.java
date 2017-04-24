@@ -906,6 +906,7 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
     }
 
     String onAddStream(MediaStream mediaStream) {
+        Log.d("WebRTCModule", "onAddStream: " + mediaStream);
         String id = mediaStream.label();
         String reactTag = null;
         // The native WebRTC implementation has a special concept of a default
@@ -924,6 +925,12 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
         }
         if (!mMediaStreams.containsKey(reactTag)) {
             mMediaStreams.put(reactTag, mediaStream);
+            for (MediaStreamTrack track : mediaStream.videoTracks) {
+                mMediaStreamTracks.put(track.id(), track);
+            }
+            for (MediaStreamTrack track : mediaStream.audioTracks) {
+                mMediaStreamTracks.put(track.id(), track);
+            }
         }
         return reactTag;
     }
@@ -945,6 +952,7 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
     }
 
     String onRemoveStream(MediaStream mediaStream) {
+        Log.d("WebRTCModule", "onRemoveStream: " + mediaStream);
         if (mediaStream == null) {
             return null;
         }

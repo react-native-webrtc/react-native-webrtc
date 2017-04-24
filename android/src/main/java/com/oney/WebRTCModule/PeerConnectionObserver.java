@@ -3,6 +3,7 @@ package com.oney.WebRTCModule;
 import java.io.UnsupportedEncodingException;
 import java.lang.ref.SoftReference;
 import java.nio.ByteBuffer;
+import java.util.HashSet;
 
 import android.support.annotation.Nullable;
 import android.util.Base64;
@@ -34,6 +35,7 @@ class PeerConnectionObserver implements PeerConnection.Observer {
     private final int id;
     private PeerConnection peerConnection;
     private final WebRTCModule webRTCModule;
+    private HashSet<MediaStream> remoteStreams;
 
     /**
      * The <tt>StringBuilder</tt> cache utilized by {@link #convertWebRTCStats}
@@ -47,6 +49,7 @@ class PeerConnectionObserver implements PeerConnection.Observer {
     PeerConnectionObserver(WebRTCModule webRTCModule, int id) {
         this.webRTCModule = webRTCModule;
         this.id = id;
+        this.remoteStreams = new HashSet<>();
     }
 
     PeerConnection getPeerConnection() {
@@ -58,6 +61,10 @@ class PeerConnectionObserver implements PeerConnection.Observer {
     }
 
     void close() {
+        for (MediaStream stream : remoteStreams) {
+            webRTCModule.onRemoveStream(stream);
+        }
+        remoteStreams.clear();
          peerConnection.close();
 
          // Unlike on iOS, we cannot unregister the DataChannel.Observer
@@ -245,6 +252,7 @@ class PeerConnectionObserver implements PeerConnection.Observer {
     @Override
     public void onAddStream(MediaStream mediaStream) {
         String streamReactTag = webRTCModule.onAddStream(mediaStream);
+        remoteStreams.add(mediaStream);
 
         WritableMap params = Arguments.createMap();
         params.putInt("id", id);
@@ -285,6 +293,7 @@ class PeerConnectionObserver implements PeerConnection.Observer {
     @Override
     public void onRemoveStream(MediaStream mediaStream) {
         String streamReactTag = webRTCModule.onRemoveStream(mediaStream);
+        remoteStreams.remove(mediaStream);
         if (streamReactTag == null) {
             return;
         }
