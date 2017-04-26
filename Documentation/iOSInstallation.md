@@ -16,6 +16,15 @@
 
 ![Picture 4](https://github.com/oney/react-native-webrtc/blob/master/Documentation/doc_install_xcode_file_structure.png)
 
+## iOS Podfile
+
+You can use the included podspec in your podfile to take care of all dependencies instead of manually adding files to the project (instead of steps 2 through 5, but you might still have to do step 6 above).
+
+Include in a Podfile in your react-native ios directory:
+
+```
+pod 'react-native-webrtc', :path => '../node_modules/react-native-webrtc'
+```
 
 ## 2. Add Library Search Path
 
