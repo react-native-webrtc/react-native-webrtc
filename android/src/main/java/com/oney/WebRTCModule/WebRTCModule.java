@@ -7,6 +7,7 @@ import android.provider.ContactsContract;
 import android.support.annotation.Nullable;
 
 import com.facebook.react.bridge.Arguments;
+import com.facebook.react.bridge.Promise;
 import com.facebook.react.bridge.ReactApplicationContext;
 import com.facebook.react.bridge.Callback;
 import com.facebook.react.bridge.ReactContext;
@@ -719,6 +720,61 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
 
         successCallback.invoke(streamId, tracks);
     }
+
+    @ReactMethod
+    public void getEmptyVideoStream(Callback successCallback, Callback errorCallback) {
+        VideoCapturer capturer = new VideoCapturer() {
+            @Override
+            public void initialize(SurfaceTextureHelper surfaceTextureHelper, Context context, CapturerObserver capturerObserver) {
+            }
+
+            @Override
+            public void startCapture(int i, int i1, int i2) {
+
+            }
+
+            @Override
+            public void stopCapture() throws InterruptedException {
+
+            }
+
+            @Override
+            public void changeCaptureFormat(int i, int i1, int i2) {
+
+            }
+
+            @Override
+            public void dispose() {
+
+            }
+
+            @Override
+            public boolean isScreencast() {
+                return false;
+            }
+        };
+        VideoSource source = mFactory.createVideoSource(capturer);
+        String trackId = getNextTrackUUID();
+        VideoTrack track = mFactory.createVideoTrack(trackId, source);
+        String streamId = getNextStreamUUID();
+        MediaStream stream = mFactory.createLocalMediaStream(streamId);
+        stream.addTrack(track);
+        WritableArray result = Arguments.createArray();
+        WritableMap trackInfo = Arguments.createMap();
+        trackInfo.putString("id", trackId);
+        trackInfo.putString("label", "Video");
+        trackInfo.putString("kind", track.kind());
+        trackInfo.putBoolean("enabled", track.enabled());
+        trackInfo.putString(
+                "readyState", track.state().toString());
+        trackInfo.putBoolean("remote", false);
+        result.pushMap(trackInfo);
+        mVideoCapturers.put(trackId, capturer);
+        mMediaStreamTracks.put(trackId, track);
+        mMediaStreams.put(streamId, stream);
+        successCallback.invoke(streamId, result);
+    }
+
     @ReactMethod
     public void mediaStreamTrackGetSources(Callback callback){
         WritableArray array = Arguments.createArray();
