@@ -75,6 +75,7 @@ RCT_EXPORT_METHOD(peerConnectionSetConfiguration:(RTCConfiguration*)configuratio
 RCT_EXPORT_METHOD(peerConnectionAddStream:(nonnull NSString *)streamID objectID:(nonnull NSNumber *)objectID)
 {
   RTCMediaStream *stream = self.mediaStreams[streamID];
+  NSLog(@"peerConnectionAddStream: %@ --> %@", streamID, stream);
   if (!stream) {
     return;
   }
@@ -176,10 +177,12 @@ RCT_EXPORT_METHOD(peerConnectionSetRemoteDescription:(RTCSessionDescription *)sd
     return;
   }
 
+  NSLog(@"setRemoteDescription(%@): %@", objectID, sdp);
   [peerConnection setRemoteDescription: sdp completionHandler: ^(NSError *error) {
     if (error) {
       id errorResponse = @{@"name": @"SetRemoteDescriptionFailed",
                            @"message": error.localizedDescription};
+      NSLog(@"setRemoteDescription(%@) error: %@", objectID, error);
       callback(@[@(NO), errorResponse]);
     } else {
       callback(@[@(YES)]);
@@ -297,6 +300,7 @@ RCT_EXPORT_METHOD(peerConnectionGetStats:(nonnull NSString *)trackID objectID:(n
 
 - (void)peerConnection:(RTCPeerConnection *)peerConnection didAddStream:(RTCMediaStream *)stream {
   NSMutableArray *tracks = [NSMutableArray array];
+  NSLog(@"peerConnection didAddStream: %@", stream);
   for (RTCVideoTrack *track in stream.videoTracks) {
     self.tracks[track.trackId] = track;
     [tracks addObject:@{@"id": track.trackId, @"kind": track.kind, @"label": track.trackId, @"enabled": @(track.isEnabled), @"remote": @(YES), @"readyState": @"live"}];

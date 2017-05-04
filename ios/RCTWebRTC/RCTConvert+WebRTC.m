@@ -110,6 +110,7 @@
   }
 
   // TODO: Implement the rest of the RTCConfigure options ...
+  config.bundlePolicy = RTCBundlePolicyBalanced;
 
   return config;
 }

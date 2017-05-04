@@ -6,10 +6,14 @@
 //
 
 #import <objc/runtime.h>
+//#import <AVFoundation/AVFoundation.h>
 
-#import <WebRTC/RTCAVFoundationVideoSource.h>
-#import <WebRTC/RTCVideoTrack.h>
-#import <WebRTC/RTCMediaConstraints.h>
+#import <WebRTC/WebRTC.h>
+//#import <WebRTC/RTCAVFoundationVideoSource.h>
+//#import <WebRTC/RTCVideoTrack.h>
+//#import <WebRTC/RTCMediaConstraints.h>
+
+//#import <WebRTC/RTCVideoCapturer.h>
 
 #import "WebRTCModule+RTCPeerConnection.h"
 
@@ -72,6 +76,7 @@ typedef void (^NavigatorUserMediaSuccessCallback)(RTCMediaStream *mediaStream);
        errorCallback:(NavigatorUserMediaErrorCallback)errorCallback
          mediaStream:(RTCMediaStream *)mediaStream {
   NSString *trackId = [[NSUUID UUID] UUIDString];
+  NSLog(@"getUserAudio: %@", constraints);
   RTCAudioTrack *audioTrack
     = [self.peerConnectionFactory audioTrackWithTrackId:trackId];
 
@@ -93,6 +98,7 @@ RCT_EXPORT_METHOD(getUserMedia:(NSDictionary *)constraints
   RTCMediaStream *mediaStream
     = [self.peerConnectionFactory mediaStreamWithStreamId:mediaStreamId];
 
+    NSLog(@"getUserMedia: %@", constraints);
   [self
     getUserMedia:constraints
     successCallback:^ (RTCMediaStream *mediaStream) {
@@ -153,7 +159,9 @@ RCT_EXPORT_METHOD(getUserMedia:(NSDictionary *)constraints
          mediaStream:(RTCMediaStream *)mediaStream {
   // If mediaStream contains no audioTracks and the constraints request such a
   // track, then run an iteration of the getUserMedia() algorithm to obtain
-  // local audio content. 
+  // local audio content.
+  NSLog(@"getUserMedia id: %@", mediaStream.streamId);
+  NSLog(@"Audio tracks: %@. Video tracks: %@", mediaStream.audioTracks, mediaStream.videoTracks);
   if (mediaStream.audioTracks.count == 0) {
     // constraints.audio
     id audioConstraints = constraints[@"audio"];
@@ -178,6 +186,7 @@ RCT_EXPORT_METHOD(getUserMedia:(NSDictionary *)constraints
         = [videoConstraints isKindOfClass:[NSNumber class]]
           ? [videoConstraints boolValue]
           : [videoConstraints isKindOfClass:[NSDictionary class]];
+      NSLog(@"videoConstraints: %@. requestAccessForVideo: %d", videoConstraints, requestAccessForVideo);
 
       if (requestAccessForVideo) {
         [self requestAccessForMediaType:AVMediaTypeVideo
@@ -216,6 +225,7 @@ RCT_EXPORT_METHOD(getUserMedia:(NSDictionary *)constraints
      successCallback:(NavigatorUserMediaSuccessCallback)successCallback
        errorCallback:(NavigatorUserMediaErrorCallback)errorCallback
          mediaStream:(RTCMediaStream *)mediaStream {
+  NSLog(@"getUserVideo: %@", constraints);
   id videoConstraints = constraints[@"video"];
   AVCaptureDevice *videoDevice;
   if ([videoConstraints isKindOfClass:[NSDictionary class]]) {
@@ -295,6 +305,33 @@ RCT_EXPORT_METHOD(getUserMedia:(NSDictionary *)constraints
     // source, fail with a new OverconstrainedError.
     errorCallback(@"OverconstrainedError", /* errorMessage */ nil);
   }
+}
+
+RCT_EXPORT_METHOD(getEmptyVideoStream:(RCTResponseSenderBlock)successCallback
+                        errorCallback:(RCTResponseSenderBlock)errorCallback)
+{
+  for (AVCaptureDevice *device in [AVCaptureDevice devices]) {
+    NSLog(@"AVCaptureDevice: %@", device);
+  }
+  NSString *streamId = [[NSUUID UUID] UUIDString];
+  RTCMediaStream *stream = [self.peerConnectionFactory mediaStreamWithStreamId:streamId];
+//  RTCAVFoundationVideoSource *source = [self.peerConnectionFactory avFoundationVideoSourceWithConstraints:NULL];
+//  NSString *trackId = [[NSUUID UUID] UUIDString];
+//  NSLog(@"Getting video track (id = %@) with source: %@", trackId, source);
+//  RTCMediaStreamTrack *track = [self.peerConnectionFactory videoTrackWithSource:source trackId:trackId];
+//  NSLog(@"Track: %@", track);
+//  [stream addVideoTrack:track];
+//  self.tracks[trackId] = track;
+//  self.mediaStreams[streamId] = stream;
+//  successCallback(@[streamId, @[@{@"enabled": @(track.isEnabled),
+//                                  @"id": trackId,
+//                                  @"kind": track.kind,
+//                                  @"label": trackId,
+//                                  @"readyState": @"live",
+//                                  @"remote": @(NO)
+//                                  }]]);
+  self.mediaStreams[streamId] = stream;
+  successCallback(@[streamId, @[]]);
 }
 
 RCT_EXPORT_METHOD(mediaStreamRelease:(nonnull NSString *)streamID)
@@ -409,6 +446,7 @@ RCT_EXPORT_METHOD(mediaStreamTrackStop:(nonnull NSString *)trackID)
   // because audio capture is done using AVAudioSession which does not use
   // AVCaptureDevice there. Anyway, Simulator will not (visually) request access
   // for audio.
+  NSLog(@"requestAccessForMediaType: %@", mediaType);
   if (mediaType == AVMediaTypeVideo
       && [AVCaptureDevice devicesWithMediaType:mediaType].count == 0) {
     // Since successCallback and errorCallback are asynchronously invoked
