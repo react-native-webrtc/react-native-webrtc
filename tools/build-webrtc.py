@@ -135,7 +135,7 @@ def build(target_dir, platform, debug):
     else:
         for cpu in ANDROID_BUILD_CPUS:
             gn_out_dir = 'out/%s-%s' % (build_type, cpu)
-            ninja_cmd = 'ninja -C %s libjingle_peerconnection_so libjingle_peerconnection_java' % gn_out_dir
+            ninja_cmd = 'ninja -C %s libwebrtc libjingle_peerconnection_so' % gn_out_dir
             sh(ninja_cmd, env)
 
     # Cleanup build dir
@@ -152,9 +152,7 @@ def build(target_dir, platform, debug):
         sh('lipo %s -create -output %s' % (' '.join(slice_paths), out_lib_path))
     else:
         gn_out_dir = 'out/%s-%s' % (build_type, ANDROID_BUILD_CPUS[0])
-        shutil.copy(os.path.join(gn_out_dir, 'lib.java/webrtc/base/base_java.jar'), build_dir)
-        shutil.copy(os.path.join(gn_out_dir, 'lib.java/webrtc/modules/audio_device/audio_device_java.jar'), build_dir)
-        shutil.copy(os.path.join(gn_out_dir, 'lib.java/webrtc/sdk/android/libjingle_peerconnection_java.jar'), build_dir)
+        shutil.copy(os.path.join(gn_out_dir, 'lib.java/webrtc/sdk/android/libwebrtc.jar'), build_dir)
 
         for cpu in ANDROID_BUILD_CPUS:
             lib_dir = os.path.join(build_dir, 'lib', ANDROID_CPU_ABI_MAP[cpu])
@@ -164,6 +162,7 @@ def build(target_dir, platform, debug):
 
         os.chdir(build_dir)
         sh('jar cvfM libjingle_peerconnection.so.jar lib')
+        rmr('lib')
 
 
 if __name__ == "__main__":
