@@ -48,6 +48,16 @@ const DEFAULT_SDP_CONSTRAINTS = {
   }
 };
 
+/**
+ * The default constraints of RTCPeerConnection's WebRTCModule.peerConnectionInit.
+ */
+const DEFAULT_PC_CONSTRAINTS = {
+  mandatory: {},
+  optional: [
+    { DtlsSrtpKeyAgreement: true },
+  ],
+};
+
 const PEER_CONNECTION_EVENTS = [
   'connectionstatechange',
   'icecandidate',
@@ -98,11 +108,7 @@ export default class RTCPeerConnection extends EventTarget(PEER_CONNECTION_EVENT
     this._peerConnectionId = nextPeerConnectionId++;
     WebRTCModule.peerConnectionInit(
         configuration,
-        {
-          optional: [
-            { DtlsSrtpKeyAgreement: true }
-          ]
-        },
+        DEFAULT_PC_CONSTRAINTS,
         this._peerConnectionId);
     this._registerEvents();
   }
