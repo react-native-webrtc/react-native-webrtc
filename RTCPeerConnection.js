@@ -195,6 +195,9 @@ export default class RTCPeerConnection extends EventTarget(PEER_CONNECTION_EVENT
   }
 
   addIceCandidate(candidate, success, failure) { // TODO: success, failure
+    if (!candidate.sdpMid) {
+      candidate.sdpMid = '';
+    }
     WebRTCModule.peerConnectionAddICECandidate(candidate.toJSON(), this._peerConnectionId, (successful) => {
       if (successful) {
         success && success();
