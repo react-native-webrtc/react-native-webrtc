@@ -45,7 +45,8 @@ const DEFAULT_SDP_CONSTRAINTS = {
   mandatory: {
     OfferToReceiveAudio: true,
     OfferToReceiveVideo: true,
-  }
+  },
+  optional: [],
 };
 
 /**
@@ -121,14 +122,21 @@ export default class RTCPeerConnection extends EventTarget(PEER_CONNECTION_EVENT
     WebRTCModule.peerConnectionRemoveStream(stream.reactTag, this._peerConnectionId);
   }
 
+  /**
+   * Merge custom constraints with the default one. The custom one take precedence.
+   *
+   * @param {Object} options - webrtc constraints
+   * @return {Object} constraints - merged webrtc constraints
+   */
   _mergeMediaConstraints(options) {
     const constraints = Object.assign({}, DEFAULT_SDP_CONSTRAINTS);
     if (options) {
       if (options.mandatory) {
         constraints.mandatory = {...constraints.mandatory, ...options.mandatory};
       }
-      if (options.optional) {
-        constraints.optional = {...constraints.optional, ...options.optional};
+      if (options.optional && Array.isArray(options.optional)) {
+        // `optional` is an array, webrtc only finds first and ignore the rest if duplicate.
+        constraints.optional = options.optional.concat(constraints.optional);
       }
     }
     return constraints;
