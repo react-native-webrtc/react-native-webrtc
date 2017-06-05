@@ -268,8 +268,90 @@ RCT_EXPORT_METHOD(getUserMedia:(NSDictionary *)constraints
   }
 
   if (videoDevice) {
+
+  NSLog(@"CHECKING CONSTRAINTS");
+
+        NSMutableDictionary *mandatory =[[NSMutableDictionary alloc]init];
+        NSDictionary *video=constraints[@"video"];
+        NSLog(@"%@", video);
+
+
+
+        if(video != nil){
+
+
+            NSDictionary *frameRateObj = video[@"frameRate"];
+
+           if(frameRateObj != nil){
+
+                NSString *frameRateMax=frameRateObj[@"max"];
+
+                if(frameRateMax != nil){
+                   NSLog(@"Set the frame rate via constraints...");
+                   NSLog(@"%@", frameRateMax);
+                   [mandatory setObject:frameRateMax forKey:@"maxFrameRate"];
+
+                }
+
+          }
+
+            NSDictionary *heightObj = video[@"height"];
+
+          if(heightObj != nil){
+
+               NSString *heightMax=heightObj[@"max"];
+
+
+               if(heightMax != nil){
+                   NSLog(@"Set the maximum height via constraints...");
+                   NSLog(@"%@", heightMax);
+                  [mandatory setObject:heightMax forKey:@"maxHeight"];
+
+                }
+
+           }
+           NSDictionary *widthObj=video[@"width"];
+
+            if(widthObj != nil){
+
+                NSString *widthMax=widthObj[@"max"];
+
+                if(widthMax != nil){
+                    NSLog(@"Set the maximum width via constraints...");
+                    NSLog(@"%@", widthMax);
+                    [mandatory setObject:widthMax forKey:@"maxWidth"];
+
+               }
+
+            }
+
+
+        }else{
+
+
+
+            [mandatory setObject:@"320" forKey:@"maxWidth"];
+            [mandatory setObject:@"240" forKey:@"maxHeight"];
+            [mandatory setObject:@"30" forKey:@"minFrameRate"];
+
+
+        }
+
+
+        RTCMediaConstraints* betterConstraints =
+        [[RTCMediaConstraints alloc]
+         initWithMandatoryConstraints:mandatory
+         optionalConstraints:nil];
+
+
+
+
+        RTCAVFoundationVideoSource *videoSource = [self.peerConnectionFactory avFoundationVideoSourceWithConstraints:betterConstraints];
+
+
+
     // TODO: Actually use constraints...
-    RTCAVFoundationVideoSource *videoSource = [self.peerConnectionFactory avFoundationVideoSourceWithConstraints:[self defaultMediaStreamConstraints]];
+   // RTCAVFoundationVideoSource *videoSource = [self.peerConnectionFactory avFoundationVideoSourceWithConstraints:[self defaultMediaStreamConstraints]];
     // FIXME The effort above to find a videoDevice value which satisfies the
     // specified constraints was pretty much wasted. Salvage facingMode for
     // starters because it is kind of a common and hence important feature on
