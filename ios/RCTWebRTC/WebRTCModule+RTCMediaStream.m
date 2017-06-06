@@ -269,8 +269,8 @@ RCT_EXPORT_METHOD(getUserMedia:(NSDictionary *)constraints
 
   if (videoDevice) {
 
-     //Actually Filter the passed constraints, creating a new dictionary object to pass them as the correct format.
-     //Minimum Resolution 240 * 160
+
+      //Actually Filter the passed constraints, creating a new dictionary object to pass them as the correct format
 
       NSMutableDictionary *mandatory =[[NSMutableDictionary alloc]init];
       NSDictionary *video=constraints[@"video"];
@@ -287,7 +287,7 @@ RCT_EXPORT_METHOD(getUserMedia:(NSDictionary *)constraints
 
              if ([[frameRateObj valueForKey:@"max"] isKindOfClass:[NSNumber class]]) {
                  NSLog(@"framerate is a number");
-                 frameRateMax = [NSMutableString stringWithFormat:@"%d", (NSInteger)frameRateObj[@"max"]];
+                 frameRateMax = [NSMutableString stringWithFormat:@"%@", (NSInteger)frameRateObj[@"max"]];
 
 
              }
@@ -313,7 +313,7 @@ RCT_EXPORT_METHOD(getUserMedia:(NSDictionary *)constraints
 
             NSMutableString *heightMax = nil;
             if ([[heightObj valueForKey:@"max"] isKindOfClass:[NSNumber class]]) {
-                heightMax = [NSMutableString stringWithFormat:@"%d", (NSInteger)heightObj[@"max"]];
+                heightMax = [NSMutableString stringWithFormat:@"%@", (NSInteger)heightObj[@"max"]];
                 NSLog(@"height is number");
 
             }else{
@@ -334,8 +334,8 @@ RCT_EXPORT_METHOD(getUserMedia:(NSDictionary *)constraints
           NSMutableString *widthMax=nil;
 
           if(widthObj != nil){
-              if ([[heightObj valueForKey:@"max"] isKindOfClass:[NSNumber class]]) {
-                  widthMax = [NSMutableString stringWithFormat:@"%d", (NSInteger)widthObj[@"max"]];
+              if ([[widthObj valueForKey:@"max"] isKindOfClass:[NSNumber class]]) {
+                  widthMax = [NSMutableString stringWithFormat:@"%@", (NSInteger)widthObj[@"max"]];
 
                   NSLog(@"width is number");
               }else{
@@ -367,7 +367,6 @@ RCT_EXPORT_METHOD(getUserMedia:(NSDictionary *)constraints
 
 
       }
-
 
 
       RTCMediaConstraints* betterConstraints =
