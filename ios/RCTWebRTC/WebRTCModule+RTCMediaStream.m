@@ -269,94 +269,119 @@ RCT_EXPORT_METHOD(getUserMedia:(NSDictionary *)constraints
 
   if (videoDevice) {
 
-  NSLog(@"CHECKING CONSTRAINTS");
+     //Actually Filter the passed constraints, creating a new dictionary object to pass them as the correct format.
+     //Minimum Resolution 240 * 160
 
-        NSMutableDictionary *mandatory =[[NSMutableDictionary alloc]init];
-        NSDictionary *video=constraints[@"video"];
-        NSLog(@"%@", video);
+      NSMutableDictionary *mandatory =[[NSMutableDictionary alloc]init];
+      NSDictionary *video=constraints[@"video"];
 
+      //If the video constraints exists, continue to parse its properties.  These properties match the format that is currently passed to chrome.
 
-
-        if(video != nil){
-
-
-            NSDictionary *frameRateObj = video[@"frameRate"];
-
-           if(frameRateObj != nil){
-
-                NSString *frameRateMax=frameRateObj[@"max"];
-
-                if(frameRateMax != nil){
-                   NSLog(@"Set the frame rate via constraints...");
-                   NSLog(@"%@", frameRateMax);
-                   [mandatory setObject:frameRateMax forKey:@"maxFrameRate"];
-
-                }
-
-          }
-
-            NSDictionary *heightObj = video[@"height"];
-
-          if(heightObj != nil){
-
-               NSString *heightMax=heightObj[@"max"];
+      if(video != nil){
 
 
-               if(heightMax != nil){
-                   NSLog(@"Set the maximum height via constraints...");
-                   NSLog(@"%@", heightMax);
-                  [mandatory setObject:heightMax forKey:@"maxHeight"];
+          NSDictionary *frameRateObj = video[@"frameRate"];
+         if(frameRateObj != nil){
 
-                }
+             NSMutableString *frameRateMax = nil;
 
-           }
-           NSDictionary *widthObj=video[@"width"];
-
-            if(widthObj != nil){
-
-                NSString *widthMax=widthObj[@"max"];
-
-                if(widthMax != nil){
-                    NSLog(@"Set the maximum width via constraints...");
-                    NSLog(@"%@", widthMax);
-                    [mandatory setObject:widthMax forKey:@"maxWidth"];
-
-               }
-
-            }
+             if ([[frameRateObj valueForKey:@"max"] isKindOfClass:[NSNumber class]]) {
+                 NSLog(@"framerate is a number");
+                 frameRateMax = [NSMutableString stringWithFormat:@"%d", (NSInteger)frameRateObj[@"max"]];
 
 
-        }else{
+             }
+             else {
 
+                 NSLog(@"framerate is a string");
+                 frameRateMax =frameRateObj[@"max"];
 
+             }
 
-            [mandatory setObject:@"320" forKey:@"maxWidth"];
-            [mandatory setObject:@"240" forKey:@"maxHeight"];
-            [mandatory setObject:@"30" forKey:@"minFrameRate"];
+             if(frameRateMax != nil){
+                 NSLog(@"Set the frame rate via constraints...");
+                 NSLog(@"%@", frameRateMax);
+                 [mandatory setObject:frameRateMax forKey:@"maxFrameRate"];
 
+              }
 
         }
 
+          NSDictionary *heightObj = video[@"height"];
 
-        RTCMediaConstraints* betterConstraints =
-        [[RTCMediaConstraints alloc]
-         initWithMandatoryConstraints:mandatory
-         optionalConstraints:nil];
+        if(heightObj != nil){
+
+            NSMutableString *heightMax = nil;
+            if ([[heightObj valueForKey:@"max"] isKindOfClass:[NSNumber class]]) {
+                heightMax = [NSMutableString stringWithFormat:@"%d", (NSInteger)heightObj[@"max"]];
+                NSLog(@"height is number");
+
+            }else{
+                heightMax = heightObj[@"max"];
+                NSLog(@"height is a string");
+            }
+
+             if(heightMax != nil){
+                 NSLog(@"Set the maximum height via constraints...");
+                 NSLog(@"%@", heightMax);
+                [mandatory setObject:heightMax forKey:@"maxHeight"];
+
+              }
+
+         }
+         NSDictionary *widthObj=video[@"width"];
+
+          NSMutableString *widthMax=nil;
+
+          if(widthObj != nil){
+              if ([[heightObj valueForKey:@"max"] isKindOfClass:[NSNumber class]]) {
+                  widthMax = [NSMutableString stringWithFormat:@"%d", (NSInteger)widthObj[@"max"]];
+
+                  NSLog(@"width is number");
+              }else{
+                 widthMax = widthObj[@"max"];
+                  NSLog(@"width is string");
+
+
+              }
+
+
+              if(widthMax != nil){
+                  NSLog(@"Set the maximum width via constraints...");
+                  NSLog(@"%@", widthMax);
+
+                  [mandatory setObject:widthMax forKey:@"maxWidth"];
+
+             }
+
+          }
+
+
+      }else{
+
+
+
+          [mandatory setObject:@"320" forKey:@"maxWidth"];
+          [mandatory setObject:@"240" forKey:@"maxHeight"];
+          [mandatory setObject:@"30" forKey:@"minFrameRate"];
+
+
+      }
+
+
+
+      RTCMediaConstraints* betterConstraints =
+      [[RTCMediaConstraints alloc]
+       initWithMandatoryConstraints:mandatory
+       optionalConstraints:nil];
 
 
 
 
-        RTCAVFoundationVideoSource *videoSource = [self.peerConnectionFactory avFoundationVideoSourceWithConstraints:betterConstraints];
+      RTCAVFoundationVideoSource *videoSource = [self.peerConnectionFactory avFoundationVideoSourceWithConstraints:betterConstraints];
 
 
-
-    // TODO: Actually use constraints...
-   // RTCAVFoundationVideoSource *videoSource = [self.peerConnectionFactory avFoundationVideoSourceWithConstraints:[self defaultMediaStreamConstraints]];
-    // FIXME The effort above to find a videoDevice value which satisfies the
-    // specified constraints was pretty much wasted. Salvage facingMode for
-    // starters because it is kind of a common and hence important feature on
-    // a mobile device.
-    switch (videoDevice.position) {
+      switch (videoDevice.position) {
     case AVCaptureDevicePositionBack:
       if (videoSource.canUseBackCamera) {
         videoSource.useBackCamera = YES;
