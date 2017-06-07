@@ -268,61 +268,96 @@ RCT_EXPORT_METHOD(getUserMedia:(NSDictionary *)constraints
   }
 
   if (videoDevice) {
+     //Actually Filter the passed constraints, creating a new dictionary object to pass them as the correct format
+         NSMutableDictionary *mandatory =[[NSMutableDictionary alloc]init];
+         NSDictionary *video=constraints[@"video"];
+         RTCMediaConstraints* betterConstraints = nil;
+         //If the video constraints exists, continue to parse its properties.  These properties match the format that is currently passed to chrome.
 
+         if(video != nil){
+           NSDictionary *mandatoryParameters = video[@"mandatory"];
+             if(mandatoryParameters != nil){
+                 if([mandatoryParameters valueForKey:@"maxFrameRate"] != nil) {
+                     // The key existed...
+                     NSMutableString *frameRateMax = nil;
+                     if ([[mandatoryParameters valueForKey:@"maxFrameRate"] isKindOfClass:[NSNumber class]]) {
+                         frameRateMax = [NSMutableString stringWithFormat:@"%@", (NSInteger)mandatoryParameters[@"maxFrameRate"]];
+                     }else{
+                         frameRateMax =mandatoryParameters[@"maxFrameRate"];
+                     }
+                     if(frameRateMax != nil){
+                         [mandatory setObject:frameRateMax forKey:@"maxFrameRate"];
+                     }
+                 }
+                 if([mandatoryParameters valueForKey:@"maxHeight"] != nil) {
+                     // The key existed...
+                     NSMutableString *heightMax = nil;
+                     if ([[mandatoryParameters valueForKey:@"maxHeight"] isKindOfClass:[NSNumber class]]) {
+                         heightMax = [NSMutableString stringWithFormat:@"%@", (NSInteger)mandatoryParameters[@"maxHeight"]];
+                     }else{
+                         heightMax =mandatoryParameters[@"max"];
+                     }
+                     if(heightMax != nil){
+                         [mandatory setObject:heightMax forKey:@"maxHeight"];
+                     }
+                 }
+                 if([mandatoryParameters valueForKey:@"maxWidth"] != nil) {
+                     // The key existed...
+                     NSMutableString *widthMax = nil;
+                     if ([[mandatoryParameters valueForKey:@"maxWidth"] isKindOfClass:[NSNumber class]]) {
+                         widthMax = [NSMutableString stringWithFormat:@"%@", (NSInteger)mandatoryParameters[@"maxWidth"]];
+                     }else{
+                         widthMax =mandatoryParameters[@"maxWidth"];
+                     }
+                     if(widthMax != nil){
+                         [mandatory setObject:widthMax forKey:@"maxWidth"];
+                     }
+                 }
+                 if([mandatoryParameters valueForKey:@"minFrameRate"] != nil) {
+                     // The key existed...
+                     NSMutableString *frameRateMin = nil;
+                     if ([[mandatoryParameters valueForKey:@"minFrameRate"] isKindOfClass:[NSNumber class]]) {
+                         frameRateMin = [NSMutableString stringWithFormat:@"%@", (NSInteger)mandatoryParameters[@"minFrameRate"]];
+                     }else{
+                         frameRateMin =mandatoryParameters[@"minFrameRate"];
+                     }
+                     if(frameRateMin != nil){
+                         [mandatory setObject:frameRateMin forKey:@"minFrameRate"];
+                     }
+                 }
+                 if([mandatoryParameters valueForKey:@"minHeight"] != nil) {
+                     // The key existed...
+                     NSMutableString *heightMin = nil;
+                     if ([[mandatoryParameters valueForKey:@"minHeight"] isKindOfClass:[NSNumber class]]) {
+                         heightMin = [NSMutableString stringWithFormat:@"%@", (NSInteger)mandatoryParameters[@"minHeight"]];
+                     }else{
+                         heightMin =mandatoryParameters[@"max"];
+                     }
+                     if(heightMin != nil){
+                         [mandatory setObject:heightMin forKey:@"minHeight"];
+                     }
+                 }
 
-      //Actually Filter the passed constraints, creating a new dictionary object to pass them as the correct format
-
-      NSMutableDictionary *mandatory =[[NSMutableDictionary alloc]init];
-      NSDictionary *video=constraints[@"video"];
-      RTCMediaConstraints* betterConstraints = nil;
-      //If the video constraints exists, continue to parse its properties.  These properties match the format that is currently passed to chrome.
-
-      if(video != nil){
-        NSDictionary *frameRateObj = video[@"frameRate"];
-        if(frameRateObj != nil){
-          NSMutableString *frameRateMax = nil;
-          if ([[frameRateObj valueForKey:@"max"] isKindOfClass:[NSNumber class]]) {
-            frameRateMax = [NSMutableString stringWithFormat:@"%@", (NSInteger)frameRateObj[@"max"]];
-          }else{
-            frameRateMax =frameRateObj[@"max"];
-          }
-          if(frameRateMax != nil){
-                 [mandatory setObject:frameRateMax forKey:@"kRTCMediaConstraintsMaxFrameRate"];
-          }
-        }
-        NSDictionary *heightObj = video[@"height"];
-        if(heightObj != nil){
-          NSMutableString *heightMax = nil;
-          if ([[heightObj valueForKey:@"max"] isKindOfClass:[NSNumber class]]) {
-            heightMax = [NSMutableString stringWithFormat:@"%@", (NSInteger)heightObj[@"max"]];
-          }else{
-            heightMax = heightObj[@"max"];
-          }
-          if(heightMax != nil){
-            [mandatory setObject:heightMax forKey:@"kRTCMediaConstraintsMaxHeight"];
-          }
-        }
-        NSDictionary *widthObj=video[@"width"];
-          if(widthObj != nil){
-          NSMutableString *widthMax=nil;
-            if ([[widthObj valueForKey:@"max"] isKindOfClass:[NSNumber class]]) {
-              widthMax = [NSMutableString stringWithFormat:@"%@", (NSInteger)widthObj[@"max"]];
-            }else{
-              widthMax = widthObj[@"max"];
-            }
-            if(widthMax != nil){
-              [mandatory setObject:widthMax forKey:@"kRTCMediaConstraintsMaxWidth"];
-            }
-          }
-      betterConstraints = [[RTCMediaConstraints alloc] initWithMandatoryConstraints:mandatory optionalConstraints:nil];
-      }else{
-      betterConstraints = [self defaultMediaStreamConstraints];
-      }
-
-
-
-      RTCAVFoundationVideoSource *videoSource = [self.peerConnectionFactory avFoundationVideoSourceWithConstraints:betterConstraints];
-
+                 if([mandatoryParameters valueForKey:@"minWidth"] != nil) {
+                     // The key existed...
+                     NSMutableString *widthMin = nil;
+                     if ([[mandatoryParameters valueForKey:@"minWidth"] isKindOfClass:[NSNumber class]]) {
+                         widthMin = [NSMutableString stringWithFormat:@"%@", (NSInteger)mandatoryParameters[@"minWidth"]];
+                     }else{
+                         widthMin =mandatoryParameters[@"minWidth"];
+                     }
+                     if(widthMin != nil){
+                         [mandatory setObject:widthMin forKey:@"minWidth"];
+                     }
+                 }
+                 betterConstraints = [[RTCMediaConstraints alloc] initWithMandatoryConstraints:mandatory optionalConstraints:nil];
+             }else{
+               betterConstraints = [self defaultMediaStreamConstraints];
+             }
+         }else{
+         betterConstraints = [self defaultMediaStreamConstraints];
+         }
+         RTCAVFoundationVideoSource *videoSource = [self.peerConnectionFactory avFoundationVideoSourceWithConstraints:betterConstraints];
 
       switch (videoDevice.position) {
     case AVCaptureDevicePositionBack:
