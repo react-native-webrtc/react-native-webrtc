@@ -270,7 +270,7 @@ RCT_EXPORT_METHOD(getUserMedia:(NSDictionary *)constraints
   if (videoDevice) {
      NSMutableDictionary *mandatory =[[NSMutableDictionary alloc]init];
        NSDictionary *video=constraints[@"video"];
-       RTCMediaConstraints* betterConstraints = nil;
+       RTCMediaConstraints* customConstraints = nil;
        if (video != nil){
          NSDictionary *mandatoryParameters = video[@"mandatory"];
          if(mandatoryParameters != nil){
@@ -340,14 +340,14 @@ RCT_EXPORT_METHOD(getUserMedia:(NSDictionary *)constraints
                [mandatory setObject:minWidth forKey:@"minWidth"];
              }
            }
-           betterConstraints = [[RTCMediaConstraints alloc] initWithMandatoryConstraints:mandatory optionalConstraints:nil];
+           customConstraints = [[RTCMediaConstraints alloc] initWithMandatoryConstraints:mandatory optionalConstraints:nil];
          }else{
-         betterConstraints = [self defaultMediaStreamConstraints];
+         customConstraints = [self defaultMediaStreamConstraints];
          }
        }else{
-       betterConstraints = [self defaultMediaStreamConstraints];
+       customConstraints = [self defaultMediaStreamConstraints];
        }
-    RTCAVFoundationVideoSource *videoSource = [self.peerConnectionFactory avFoundationVideoSourceWithConstraints:betterConstraints];
+    RTCAVFoundationVideoSource *videoSource = [self.peerConnectionFactory avFoundationVideoSourceWithConstraints:customConstraints];
 
     switch (videoDevice.position) {
     case AVCaptureDevicePositionBack:
