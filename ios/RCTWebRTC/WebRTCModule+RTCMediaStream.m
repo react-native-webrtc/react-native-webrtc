@@ -268,8 +268,8 @@ RCT_EXPORT_METHOD(getUserMedia:(NSDictionary *)constraints
   }
 
   if (videoDevice) {
-     NSMutableDictionary *mandatory =[[NSMutableDictionary alloc]init];
-       NSDictionary *video=constraints[@"video"];
+     NSMutableDictionary *mandatory = [[NSMutableDictionary alloc]init];
+       NSDictionary *video = constraints[@"video"];
        RTCMediaConstraints* customConstraints = nil;
        if (video != nil){
          NSDictionary *mandatoryParameters = video[@"mandatory"];
@@ -279,7 +279,7 @@ RCT_EXPORT_METHOD(getUserMedia:(NSDictionary *)constraints
              if ([[mandatoryParameters valueForKey:@"maxFrameRate"] isKindOfClass:[NSNumber class]]) {
                maxFrameRate = [NSMutableString stringWithFormat:@"%@", (NSInteger)mandatoryParameters[@"maxFrameRate"]];
              }else{
-               maxFrameRate =mandatoryParameters[@"maxFrameRate"];
+               maxFrameRate = mandatoryParameters[@"maxFrameRate"];
              }
              if (maxFrameRate != nil){
                [mandatory setObject:maxFrameRate forKey:@"maxFrameRate"];
@@ -290,7 +290,7 @@ RCT_EXPORT_METHOD(getUserMedia:(NSDictionary *)constraints
              if ([[mandatoryParameters valueForKey:@"maxHeight"] isKindOfClass:[NSNumber class]]) {
                maxHeight = [NSMutableString stringWithFormat:@"%@", (NSInteger)mandatoryParameters[@"maxHeight"]];
              }else{
-               maxHeight =mandatoryParameters[@"max"];
+               maxHeight = mandatoryParameters[@"max"];
              }
              if (maxHeight != nil){
                [mandatory setObject:maxHeight forKey:@"maxHeight"];
@@ -301,7 +301,7 @@ RCT_EXPORT_METHOD(getUserMedia:(NSDictionary *)constraints
              if ([[mandatoryParameters valueForKey:@"maxWidth"] isKindOfClass:[NSNumber class]]) {
                maxWidth = [NSMutableString stringWithFormat:@"%@", (NSInteger)mandatoryParameters[@"maxWidth"]];
              }else{
-               maxWidth =mandatoryParameters[@"maxWidth"];
+               maxWidth = mandatoryParameters[@"maxWidth"];
              }
              if(maxWidth != nil){
                [mandatory setObject:maxWidth forKey:@"maxWidth"];
@@ -312,7 +312,7 @@ RCT_EXPORT_METHOD(getUserMedia:(NSDictionary *)constraints
              if ([[mandatoryParameters valueForKey:@"minFrameRate"] isKindOfClass:[NSNumber class]]) {
                minFrameRate = [NSMutableString stringWithFormat:@"%@", (NSInteger)mandatoryParameters[@"minFrameRate"]];
              }else{
-               minFrameRate =mandatoryParameters[@"minFrameRate"];
+               minFrameRate = mandatoryParameters[@"minFrameRate"];
              }
              if(minFrameRate != nil){
                [mandatory setObject:minFrameRate forKey:@"minFrameRate"];
@@ -323,7 +323,7 @@ RCT_EXPORT_METHOD(getUserMedia:(NSDictionary *)constraints
              if ([[mandatoryParameters valueForKey:@"minHeight"] isKindOfClass:[NSNumber class]]) {
                minHeight = [NSMutableString stringWithFormat:@"%@", (NSInteger)mandatoryParameters[@"minHeight"]];
              }else{
-               minHeight =mandatoryParameters[@"max"];
+               minHeight = mandatoryParameters[@"max"];
              }
              if(minHeight != nil){
                [mandatory setObject:minHeight forKey:@"minHeight"];
@@ -334,7 +334,7 @@ RCT_EXPORT_METHOD(getUserMedia:(NSDictionary *)constraints
              if ([[mandatoryParameters valueForKey:@"minWidth"] isKindOfClass:[NSNumber class]]) {
                minWidth = [NSMutableString stringWithFormat:@"%@", (NSInteger)mandatoryParameters[@"minWidth"]];
              }else{
-               minWidth =mandatoryParameters[@"minWidth"];
+               minWidth = mandatoryParameters[@"minWidth"];
              }
              if(minWidth != nil){
                [mandatory setObject:minWidth forKey:@"minWidth"];
