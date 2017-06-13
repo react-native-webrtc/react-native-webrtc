@@ -21,6 +21,7 @@ import com.facebook.react.bridge.ReadableArray;
 import com.facebook.react.bridge.ReadableType;
 import com.facebook.react.modules.core.DeviceEventManagerModule;
 
+import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -42,6 +43,7 @@ import android.hardware.Camera.Parameters;
 import android.hardware.Camera.Size;
 
 import org.webrtc.*;
+import org.webrtc.voiceengine.WebRtcAudioRecord;
 
 public class WebRTCModule extends ReactContextBaseJavaModule {
     final static String TAG = WebRTCModule.class.getCanonicalName();
@@ -1219,6 +1221,20 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
             Log.d(TAG, "dataChannelClose() peerConnection is null");
         } else {
             pco.dataChannelClose(dataChannelId);
+        }
+    }
+
+    /**
+     * Stops audio recording only when {@link WebRtcAudioRecord} was previously instantiated by C++ layer.
+     */
+    @ReactMethod
+    public void stopAudioRecording() {
+        synchronized (this) {
+            WebRtcAudioRecord audioRecord = WebRtcAudioRecord.getInstance();
+            // Null check, because there is not implemented regular singleton and instance could be null.
+            if (audioRecord != null) {
+                audioRecord.stopAudioRecording();
+            }
         }
     }
 }
