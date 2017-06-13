@@ -51,12 +51,26 @@ public class WebRTCView extends ViewGroup {
 
     private static final String TAG = WebRTCModule.TAG;
 
+    /**
+     * The {@link EglBase} instance shared by {@code WebRTCView} instances (1)
+     * for the purposes of their own {@link #eglBase} and (2) for the sake of
+     * reducing utilization of system resources (such as EGL contexts).
+     */
+    private static EglBase sharedEglBase;
+
+    /**
+     * The number of references to {@link #sharedEglBase} acquired by
+     * {@code WebRTCView} instances and not released yet.
+     */
+    private static int sharedEglBaseRefCount;
+
     static {
         // IS_IN_LAYOUT
         Method isInLayout = null;
 
         try {
             Method m = WebRTCView.class.getMethod("isInLayout");
+
             if (boolean.class.isAssignableFrom(m.getReturnType())) {
                 isInLayout = m;
             }
@@ -65,6 +79,68 @@ public class WebRTCView extends ViewGroup {
         }
         IS_IN_LAYOUT = isInLayout;
     }
+
+    private static synchronized EglBase acquireEglBase() {
+        if (sharedEglBase == null) {
+            // XXX EglBase14 will report that isEGL14Supported() but its
+            // getEglConfig() will fail with a RuntimeException with message
+            // "Unable to find any matching EGL config". Fall back to EglBase10
+            // in the described scenario.
+            EglBase eglBase = null;
+            int[] configAttributes = EglBase.CONFIG_PLAIN;
+            RuntimeException cause = null;
+
+            try {
+                if (EglBase14.isEGL14Supported()) {
+                    eglBase
+                        = new EglBase14(
+                                /* sharedContext */ null,
+                                configAttributes);
+                }
+            } catch (RuntimeException ex) {
+                // Fall back to EglBase10.
+                cause = ex;
+            }
+            if (eglBase == null) {
+                try {
+                    eglBase
+                        = new EglBase10(
+                                /* sharedContext */ null,
+                                configAttributes);
+                } catch (RuntimeException ex) {
+                    // Neither EglBase14, nor EglBase10 succeeded to initialize.
+                    cause = ex;
+                }
+            }
+            if (cause != null) {
+                throw new RuntimeException(cause);
+            } else if (eglBase != null) {
+                sharedEglBase = eglBase;
+            }
+        }
+        if (sharedEglBase != null) {
+            ++sharedEglBaseRefCount;
+        }
+
+        return sharedEglBase;
+    }
+
+    private static synchronized void releaseEglBase(EglBase eglBase) {
+        if (eglBase == sharedEglBase) {
+            if (sharedEglBaseRefCount > 0 && --sharedEglBaseRefCount == 0) {
+                sharedEglBase = null;
+            } else {
+                return;
+            }
+        }
+        eglBase.release();
+    }
+
+    /**
+     * The {@link EglBase} instance which selects between {@link EglBase10} and
+     * {@link EglBase14} on behalf of {@link #surfaceViewRenderer}.
+     */
+    private EglBase eglBase;
 
     /**
      * The height of the last video frame rendered by
@@ -346,6 +422,10 @@ public class WebRTCView extends ViewGroup {
             videoRenderer = null;
 
             getSurfaceViewRenderer().release();
+            if (eglBase != null) {
+                releaseEglBase(eglBase);
+                eglBase = null;
+            }
 
             // Since this WebRTCView is no longer rendering anything, make sure
             // surfaceViewRenderer displays nothing as well.
@@ -365,7 +445,7 @@ public class WebRTCView extends ViewGroup {
      */
     private void requestSurfaceViewRendererLayout() {
         // Google/WebRTC just call requestLayout() on surfaceViewRenderer when
-        // they change the value of its mirror or surfaceType property. 
+        // they change the value of its mirror or surfaceType property.
         getSurfaceViewRenderer().requestLayout();
         // The above is not enough though when the video frame's dimensions or
         // rotation change. The following will suffice.
@@ -510,47 +590,28 @@ public class WebRTCView extends ViewGroup {
         if (videoRenderer == null
                 && videoTrack != null
                 && ViewCompat.isAttachedToWindow(this)) {
-            SurfaceViewRenderer surfaceViewRenderer = getSurfaceViewRenderer();
-
-            // XXX EglBase14 will report that isEGL14Supported() but its
-            // getEglConfig() will fail with a RuntimeException with message
-            // "Unable to find any matching EGL config". Fall back to EglBase10
-            // in the described scenario.
-            EglBase eglBase = null;
-            int[] configAttributes = EglBase.CONFIG_PLAIN;
-            Throwable throwable = null;
+            EglBase eglBase;
+            Throwable cause;
 
             try {
-                if (EglBase14.isEGL14Supported()) {
-                    eglBase
-                        = new EglBase14(
-                                /* sharedContext */ null,
-                                configAttributes);
-                }
+                eglBase = acquireEglBase();
+                cause = null;
             } catch (RuntimeException ex) {
-                // Fall back to EglBase10.
-                throwable = ex;
+                eglBase = null;
+                cause = ex;
             }
-            if (eglBase == null) {
-                try {
-                    eglBase
-                        = new EglBase10(
-                                /* sharedContext */ null,
-                                configAttributes);
-                } catch (RuntimeException ex) {
-                    // Neither EglBase14, nor EglBase10 succeeded to initialize.
-                    throwable = ex;
-                }
-            }
+
+            this.eglBase = eglBase;
             if (eglBase == null) {
                 // If SurfaceViewRenderer#init() is invoked, it will throw a
                 // RuntimeException which will very likely kill the application.
-                Log.e(TAG, "Failed to render a VideoTrack!", throwable);
+                Log.e(TAG, "Failed to render a VideoTrack!", cause);
                 return;
             }
 
             // The type of sharedContext will instruct SurfaceViewRenderer which
             // EglBase implementation to utilize.
+            SurfaceViewRenderer surfaceViewRenderer = getSurfaceViewRenderer();
             EglBase.Context sharedContext = eglBase.getEglBaseContext();
 
             surfaceViewRenderer.init(sharedContext, rendererEvents);
