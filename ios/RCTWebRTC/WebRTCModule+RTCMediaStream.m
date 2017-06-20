@@ -268,85 +268,41 @@ RCT_EXPORT_METHOD(getUserMedia:(NSDictionary *)constraints
   }
 
   if (videoDevice) {
-     NSMutableDictionary *mandatory = [[NSMutableDictionary alloc]init];
-       NSDictionary *video = constraints[@"video"];
-       RTCMediaConstraints* customConstraints = nil;
-       if (video != nil){
-         NSDictionary *mandatoryParameters = video[@"mandatory"];
-         if(mandatoryParameters != nil){
-           if ([mandatoryParameters valueForKey:@"maxFrameRate"] != nil) {
-             NSMutableString *maxFrameRate = nil;
-             if ([[mandatoryParameters valueForKey:@"maxFrameRate"] isKindOfClass:[NSNumber class]]) {
-               maxFrameRate = [NSMutableString stringWithFormat:@"%@", (NSInteger)mandatoryParameters[@"maxFrameRate"]];
-             }else{
-               maxFrameRate = mandatoryParameters[@"maxFrameRate"];
-             }
-             if (maxFrameRate != nil){
-               [mandatory setObject:maxFrameRate forKey:@"maxFrameRate"];
-             }
-           }
-           if ([mandatoryParameters valueForKey:@"maxHeight"] != nil) {
-             NSMutableString *maxHeight = nil;
-             if ([[mandatoryParameters valueForKey:@"maxHeight"] isKindOfClass:[NSNumber class]]) {
-               maxHeight = [NSMutableString stringWithFormat:@"%@", (NSInteger)mandatoryParameters[@"maxHeight"]];
-             }else{
-               maxHeight = mandatoryParameters[@"max"];
-             }
-             if (maxHeight != nil){
-               [mandatory setObject:maxHeight forKey:@"maxHeight"];
-             }
-           }
-           if ([mandatoryParameters valueForKey:@"maxWidth"] != nil) {
-             NSMutableString *maxWidth = nil;
-             if ([[mandatoryParameters valueForKey:@"maxWidth"] isKindOfClass:[NSNumber class]]) {
-               maxWidth = [NSMutableString stringWithFormat:@"%@", (NSInteger)mandatoryParameters[@"maxWidth"]];
-             }else{
-               maxWidth = mandatoryParameters[@"maxWidth"];
-             }
-             if(maxWidth != nil){
-               [mandatory setObject:maxWidth forKey:@"maxWidth"];
-             }
-           }
-           if ([mandatoryParameters valueForKey:@"minFrameRate"] != nil) {
-             NSMutableString *minFrameRate = nil;
-             if ([[mandatoryParameters valueForKey:@"minFrameRate"] isKindOfClass:[NSNumber class]]) {
-               minFrameRate = [NSMutableString stringWithFormat:@"%@", (NSInteger)mandatoryParameters[@"minFrameRate"]];
-             }else{
-               minFrameRate = mandatoryParameters[@"minFrameRate"];
-             }
-             if(minFrameRate != nil){
-               [mandatory setObject:minFrameRate forKey:@"minFrameRate"];
-             }
-           }
-           if ([mandatoryParameters valueForKey:@"minHeight"] != nil) {
-             NSMutableString *minHeight = nil;
-             if ([[mandatoryParameters valueForKey:@"minHeight"] isKindOfClass:[NSNumber class]]) {
-               minHeight = [NSMutableString stringWithFormat:@"%@", (NSInteger)mandatoryParameters[@"minHeight"]];
-             }else{
-               minHeight = mandatoryParameters[@"max"];
-             }
-             if(minHeight != nil){
-               [mandatory setObject:minHeight forKey:@"minHeight"];
-             }
-           }
-           if ([mandatoryParameters valueForKey:@"minWidth"] != nil) {
-             NSMutableString *minWidth = nil;
-             if ([[mandatoryParameters valueForKey:@"minWidth"] isKindOfClass:[NSNumber class]]) {
-               minWidth = [NSMutableString stringWithFormat:@"%@", (NSInteger)mandatoryParameters[@"minWidth"]];
-             }else{
-               minWidth = mandatoryParameters[@"minWidth"];
-             }
-             if(minWidth != nil){
-               [mandatory setObject:minWidth forKey:@"minWidth"];
-             }
-           }
-           customConstraints = [[RTCMediaConstraints alloc] initWithMandatoryConstraints:mandatory optionalConstraints:nil];
-         }else{
-         customConstraints = [self defaultMediaStreamConstraints];
-         }
-       }else{
-       customConstraints = [self defaultMediaStreamConstraints];
-       }
+    NSMutableDictionary *mandatory = [[NSMutableDictionary alloc]init];
+    [mandatory setObject:@"720" forKey:@"maxHeight"];
+    [mandatory setObject:@"1280" forKey:@"maxWidth"];
+    [mandatory setObject:@"30" forKey:@"maxFrameRate"];
+    NSDictionary *video = constraints[@"video"];
+    if (video != nil){
+      NSDictionary *mandatoryParameters = video[@"mandatory"];
+      if(mandatoryParameters != nil){
+        if ([mandatoryParameters valueForKey:@"maxFrameRate"] != nil) {
+          NSMutableString *maxFrameRate = mandatoryParameters[@"maxFrameRate"];
+          [mandatory setObject:maxFrameRate forKey:@"maxFrameRate"];
+        }
+        if ([mandatoryParameters valueForKey:@"maxHeight"] != nil) {
+          NSMutableString *maxHeight = mandatoryParameters[@"maxHeight"];
+          [mandatory setObject:maxHeight forKey:@"maxHeight"];
+        }
+        if ([mandatoryParameters valueForKey:@"maxWidth"] != nil) {
+          NSMutableString *maxWidth = mandatoryParameters[@"maxWidth"];
+          [mandatory setObject:maxWidth forKey:@"maxWidth"];
+        }
+        if ([mandatoryParameters valueForKey:@"minFrameRate"] != nil) {
+          NSMutableString *minFrameRate = mandatoryParameters[@"minFrameRate"];
+          [mandatory setObject:minFrameRate forKey:@"minFrameRate"];
+        }
+        if ([mandatoryParameters valueForKey:@"minHeight"] != nil) {
+          NSMutableString *minHeight = mandatoryParameters[@"minHeight"];
+          [mandatory setObject:minHeight forKey:@"minHeight"];
+        }
+        if ([mandatoryParameters valueForKey:@"minWidth"] != nil) {
+          NSMutableString *minWidth = mandatoryParameters[@"minWidth"];
+          [mandatory setObject:minWidth forKey:@"minWidth"];
+        }
+      }
+    }
+    RTCMediaConstraints* customConstraints = [[RTCMediaConstraints alloc] initWithMandatoryConstraints:mandatory optionalConstraints:nil];
     RTCAVFoundationVideoSource *videoSource = [self.peerConnectionFactory avFoundationVideoSourceWithConstraints:customConstraints];
 
     switch (videoDevice.position) {
