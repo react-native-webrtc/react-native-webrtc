@@ -450,9 +450,7 @@ public class WebRTCView extends ViewGroup {
         // The above is not enough though when the video frame's dimensions or
         // rotation change. The following will suffice.
         if (!invokeIsInLayout()) {
-            onLayout(
-                    /* changed */ false,
-                    getLeft(), getTop(), getRight(), getBottom());
+            layout(getLeft(), getTop(), getRight(), getBottom());
         }
     }
 
