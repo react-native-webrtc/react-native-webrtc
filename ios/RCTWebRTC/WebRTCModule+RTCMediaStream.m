@@ -38,16 +38,13 @@ typedef void (^NavigatorUserMediaErrorCallback)(NSString *errorType, NSString *e
  */
 typedef void (^NavigatorUserMediaSuccessCallback)(RTCMediaStream *mediaStream);
 
-- (RTCMediaConstraints *)defaultMediaStreamConstraints {
-  NSDictionary *mandatoryConstraints
-      = @{ kRTCMediaConstraintsMinWidth     : @"1280",
-           kRTCMediaConstraintsMinHeight    : @"720",
-           kRTCMediaConstraintsMinFrameRate : @"30" };
-  RTCMediaConstraints* constraints =
-  [[RTCMediaConstraints alloc]
-   initWithMandatoryConstraints:mandatoryConstraints
-   optionalConstraints:nil];
-  return constraints;
+
+- (NSMutableDictionary *)defaultMediaStreamConstraints {
+    NSMutableDictionary *mandatory = [[NSMutableDictionary alloc]init];
+    [mandatory setObject:@"720" forKey:@"maxHeight"];
+    [mandatory setObject:@"1280" forKey:@"maxWidth"];
+    [mandatory setObject:@"30" forKey:@"maxFrameRate"];
+    return mandatory;
 }
 
 /**
@@ -269,12 +266,8 @@ RCT_EXPORT_METHOD(getUserMedia:(NSDictionary *)constraints
 
   if (videoDevice) {
     NSMutableDictionary *mandatory = [[NSMutableDictionary alloc]init];
-    [mandatory setObject:@"720" forKey:@"maxHeight"];
-    [mandatory setObject:@"1280" forKey:@"maxWidth"];
-    [mandatory setObject:@"30" forKey:@"maxFrameRate"];
-    NSDictionary *video = constraints[@"video"];
-    if (video != nil){
-      NSDictionary *mandatoryParameters = video[@"mandatory"];
+    if (videoConstraints != nil){
+      NSDictionary *mandatoryParameters = videoConstraints[@"mandatory"];
       if(mandatoryParameters != nil){
         if ([mandatoryParameters valueForKey:@"maxFrameRate"] != nil) {
           NSMutableString *maxFrameRate = mandatoryParameters[@"maxFrameRate"];
