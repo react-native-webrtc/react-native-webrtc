@@ -266,9 +266,9 @@ RCT_EXPORT_METHOD(getUserMedia:(NSDictionary *)constraints
 
   if (videoDevice) {
     NSMutableDictionary *mandatory = [[NSMutableDictionary alloc]init];
-    if (videoConstraints != nil){
+    if (videoConstraints != nil) {
       NSDictionary *mandatoryParameters = videoConstraints[@"mandatory"];
-      if(mandatoryParameters != nil){
+      if (mandatoryParameters != nil) {
         if ([mandatoryParameters valueForKey:@"maxFrameRate"] != nil) {
           NSMutableString *maxFrameRate = mandatoryParameters[@"maxFrameRate"];
           [mandatory setObject:maxFrameRate forKey:@"maxFrameRate"];
