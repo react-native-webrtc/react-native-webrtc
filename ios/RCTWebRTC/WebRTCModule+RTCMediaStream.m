@@ -265,7 +265,7 @@ RCT_EXPORT_METHOD(getUserMedia:(NSDictionary *)constraints
   }
 
   if (videoDevice) {
-    NSMutableDictionary *mandatory = [[NSMutableDictionary alloc]init];
+    NSMutableDictionary *mandatory = [self defaultMediaStreamConstraints];
     if (videoConstraints != nil) {
       NSDictionary *mandatoryParameters = videoConstraints[@"mandatory"];
       if (mandatoryParameters != nil) {
