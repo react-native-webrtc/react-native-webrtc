@@ -1,5 +1,7 @@
 package com.oney.WebRTCModule;
 
+import android.Manifest;
+import android.content.pm.PackageManager;
 import android.support.annotation.Nullable;
 
 import com.facebook.react.bridge.Arguments;
@@ -9,7 +11,6 @@ import com.facebook.react.bridge.ReactContextBaseJavaModule;
 import com.facebook.react.bridge.ReactMethod;
 import com.facebook.react.bridge.WritableArray;
 import com.facebook.react.bridge.WritableMap;
-import com.facebook.react.bridge.WritableNativeMap;
 import com.facebook.react.bridge.ReadableMap;
 import com.facebook.react.bridge.ReadableMapKeySetIterator;
 import com.facebook.react.bridge.ReadableArray;
@@ -37,6 +38,9 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
     final static String TAG = WebRTCModule.class.getCanonicalName();
 
     private static final String LANGUAGE =  "language";
+
+    private static final String PERMISSION_AUDIO = Manifest.permission.RECORD_AUDIO;
+    private static final String PERMISSION_VIDEO = Manifest.permission.CAMERA;
 
     private static final int DEFAULT_WIDTH  = 1280;
     private static final int DEFAULT_HEIGHT = 720;
@@ -445,6 +449,18 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
     }
 
     /**
+     * Retrieves "facingMode" constraint value.
+     * @param mediaConstraints a <tt>ReadableMap</tt> which represents "GUM" constraints argument.
+     * @return String value of "facingMode" constraints in "GUM" or <tt>null</tt> if not specified.
+     */
+    private String getFacingMode(ReadableMap mediaConstraints) {
+        if (mediaConstraints != null) {
+            return ReactBridgeUtil.getMapStrValue(mediaConstraints, "facingMode");
+        }
+        return null;
+    }
+
+    /**
      * Retreives "sourceId" constraint value.
      * @param mediaConstraints a <tt>ReadableMap</tt> which represents "GUM"
      * constraints argument
@@ -452,244 +468,41 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
      * <tt>null</tt> if not specified in the given map.
      */
     private String getSourceIdConstraint(ReadableMap mediaConstraints) {
-        if (mediaConstraints.hasKey("optional")
-                && mediaConstraints.getType("optional") == ReadableType.Array) {
-            ReadableArray optional = mediaConstraints.getArray("optional");
+        if (mediaConstraints != null
+            && mediaConstraints.hasKey("optional")
+            && mediaConstraints.getType("optional") == ReadableType.Array) {
 
+            ReadableArray optional = mediaConstraints.getArray("optional");
             for (int i = 0, size = optional.size(); i < size; i++) {
                 if (optional.getType(i) == ReadableType.Map) {
                     ReadableMap option = optional.getMap(i);
 
                     if (option.hasKey("sourceId")
-                            && option.getType("sourceId") == ReadableType.String) {
+                        && option.getType("sourceId") == ReadableType.String) {
+
                         return option.getString("sourceId");
                     }
                 }
             }
         }
+
         return null;
     }
 
     @ReactMethod
-    public void getUserMedia(ReadableMap constraints,
-                             Callback    successCallback,
-                             Callback    errorCallback) {
-        AudioTrack audioTrack = null;
-        VideoTrack videoTrack = null;
-        WritableArray tracks = Arguments.createArray();
+    public void getUserMedia(final ReadableMap constraints,
+                             final Callback    successCallback,
+                             final Callback    errorCallback) {
+        final WritableArray tracks = Arguments.createArray();
 
-        // NOTE: we don't need videoConstraints for now since createVideoSource doesn't accept
-        //   videoConstraints, we should extract resolution and pass to startCapture
+        final ArrayList<String> requestPermissions = new ArrayList<>();
+        final ArrayList<String> grantedPermissions = new ArrayList<>();
+        final ArrayList<String> rejectedPermissions = new ArrayList<>();
 
-        // TODO: change getUserMedia constraints format to support new syntax 
-        //   constraint format seems changed, and there is no mandatory any more.
-        //   and has a new sytax/attrs to specify resolution
-        //   should change `parseConstraints()` according
-        //   see: https://www.w3.org/TR/mediacapture-streams/#idl-def-MediaTrackConstraints
-        if (constraints.hasKey("video")) {
-            ReadableType type = constraints.getType("video");
-            VideoSource videoSource = null;
-            //MediaConstraints videoConstraints = new MediaConstraints();
-            ReadableMap videoConstraintsManatory = null;
-            ReadableMap video = null;
-            boolean enableVideo = true;
-            String sourceId = null;
-            String facingMode = null;
-            String trackId = null;
-            switch (type) {
-            case Boolean:
-                if (constraints.getBoolean("video")) {
-                    // use default value for video resolution
-                    WritableMap defaultVideoMandatory = new WritableNativeMap();
-                    defaultVideoMandatory.putInt("minWidth", DEFAULT_HEIGHT);
-                    defaultVideoMandatory.putInt("minHeight", DEFAULT_WIDTH);
-                    defaultVideoMandatory.putInt("minFrameRate", DEFAULT_FPS);
-                    videoConstraintsManatory = (ReadableMap) defaultVideoMandatory;
-                } else {
-                    enableVideo = false;
-                }
-                break;
-            case Map:
-                video = constraints.getMap("video");
-                if (video.hasKey("mandatory") && 
-                        video.getType("mandatory") == ReadableType.Map) {
-                    videoConstraintsManatory = video.getMap("mandatory");
-                }
-
-                // video resolution is mandatory
-                if (videoConstraintsManatory == null) {
-                    errorCallback.invoke(null, "video mandatory constraints not found");
-                    return;
-                }
-                
-                //videoConstraints = parseConstraints(video);
-                sourceId = getSourceIdConstraint(video);
-                facingMode
-                    = ReactBridgeUtil.getMapStrValue(video, "facingMode");
-                break;
-            default:
-                errorCallback.invoke(null, "invalid type of video constraints");
-                return;
-            }
-
-            if (enableVideo) {
-                Log.i(TAG, "getUserMedia(video): video: " + video
-                        + ", videoConstraintsManatory: " + videoConstraintsManatory
-                        + ", sourceId: " + sourceId);
-
-                Context context = (Context) getReactApplicationContext();
-                final boolean isFacing = (facingMode != null && facingMode.equals("environment"))
-                    ? false : true;
-                VideoCapturer videoCapturer = null;
-
-                // NOTE: to support Camera2, the device should:
-                //   1. Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP
-                //   2. all camera support level should greater than LEGACY
-                //   see: https://developer.android.com/reference/android/hardware/camera2/CameraCharacteristics.html#INFO_SUPPORTED_HARDWARE_LEVEL
-                // TODO Enable camera2 enumerator
-                if (false && Camera2Enumerator.isSupported(context)) {
-                    Log.d(TAG, "Creating video capturer using Camera2 API.");
-                    videoCapturer = createVideoCapturer(
-                        new Camera2Enumerator(context), isFacing, sourceId);
-                } else {
-                    Log.d(TAG, "Creating video capturer using Camera1 API.");
-                    final boolean captureToTexture = false;
-                    videoCapturer = createVideoCapturer(
-                        new Camera1Enumerator(captureToTexture), isFacing, sourceId);
-                }
-
-                if (videoCapturer != null) {
-                    // Fallback to defaults if keys are missing
-                    final int videoWidth
-                        = videoConstraintsManatory.hasKey("minWidth") ?
-                            videoConstraintsManatory.getInt("minWidth") :
-                            DEFAULT_WIDTH;
-                    final int videoHeight
-                        = videoConstraintsManatory.hasKey("minHeight") ?
-                            videoConstraintsManatory.getInt("minHeight") :
-                            DEFAULT_HEIGHT;
-                    final int videoFps
-                        = videoConstraintsManatory.hasKey("minFrameRate") ?
-                            videoConstraintsManatory.getInt("minFrameRate") :
-                            DEFAULT_FPS;
-
-                    videoSource = mFactory.createVideoSource(videoCapturer);
-                    videoCapturer.startCapture(videoWidth, videoHeight, videoFps);
-
-                    trackId = getNextTrackUUID();
-
-                    mVideoCapturers.put(trackId, videoCapturer);
-
-                    if (videoSource != null) {
-                        videoTrack = mFactory.createVideoTrack(trackId, videoSource);
-                        if (videoTrack != null) {
-                            mMediaStreamTracks.put(trackId, videoTrack);
-
-                            WritableMap trackInfo = Arguments.createMap();
-                            trackInfo.putString("id", trackId);
-                            trackInfo.putString("label", "Video");
-                            trackInfo.putString("kind", videoTrack.kind());
-                            trackInfo.putBoolean("enabled", videoTrack.enabled());
-                            trackInfo.putString(
-                                "readyState", videoTrack.state().toString());
-                            trackInfo.putBoolean("remote", false);
-                            tracks.pushMap(trackInfo);
-                        }
-                    }
-                }
-
-                // return error if videoTrack did not create successfully
-                if (videoTrack == null) {
-                    // FIXME The following does not follow the getUserMedia()
-                    // algorithm specified by
-                    // https://www.w3.org/TR/mediacapture-streams/#dom-mediadevices-getusermedia
-                    // with respect to distinguishing the various causes of failure.
-                    if (videoCapturer != null) {
-                        removeVideoCapturer(trackId);
-                    }
-                    errorCallback.invoke(/* type */ null, "Failed to obtain video");
-                    return;
-                }
-            }
-        }
-
-        if (constraints.hasKey("audio")) {
-            MediaConstraints audioConstraints = new MediaConstraints();
-            ReadableType type = constraints.getType("audio");
-            switch (type) {
-                case Boolean:
-                    if (constraints.getBoolean("audio")) {
-                        addDefaultAudioConstraints(audioConstraints);
-                    } else {
-                        audioConstraints = null;
-                    }
-                    break;
-                case Map:
-                    audioConstraints
-                        = parseMediaConstraints(constraints.getMap("audio"));
-                    break;
-                default:
-                    audioConstraints = null;
-                    break;
-            }
-
-            if (audioConstraints != null) {
-                Log.i(TAG, "getUserMedia(audio): " + audioConstraints);
-
-                AudioSource audioSource
-                    = mFactory.createAudioSource(audioConstraints);
-
-                if (audioSource != null) {
-                    String trackId = getNextTrackUUID();
-                    audioTrack
-                        = mFactory.createAudioTrack(trackId, audioSource);
-                    if (audioTrack != null) {
-                        mMediaStreamTracks.put(trackId, audioTrack);
-
-                        WritableMap trackInfo = Arguments.createMap();
-                        trackInfo.putString("id", trackId);
-                        trackInfo.putString("label", "Audio");
-                        trackInfo.putString("kind", audioTrack.kind());
-                        trackInfo.putBoolean("enabled", audioTrack.enabled());
-                        trackInfo.putString("readyState",
-                            audioTrack.state().toString());
-                        trackInfo.putBoolean("remote", false);
-                        tracks.pushMap(trackInfo);
-                    }
-                }
-            }
-            if (audioTrack == null && audioConstraints != null) {
-                // FIXME The following does not follow the getUserMedia()
-                // algorithm specified by
-                // https://www.w3.org/TR/mediacapture-streams/#dom-mediadevices-getusermedia
-                // with respect to distinguishing the various causes of failure.
-                errorCallback.invoke(/* type */ null, "Failed to obtain audio");
-                return;
-            }
-        }
-
-        // According to step 2 of the getUserMedia() algorithm,
-        // requestedMediaTypes is the set of media types in constraints with
-        // either a dictionary value or a value of "true".
-        // According to step 3 of the getUserMedia() algorithm, if
-        // requestedMediaTypes is the empty set, the method invocation fails
-        // with a TypeError.
-        if (audioTrack == null && videoTrack == null) {
-            // XXX The JavaScript counterpart of the getUserMedia()
-            // implementation should have recognized the case here before
-            // calling into the native counterpart and should have failed the
-            // method invocation already (in the manner described above).
-            // Anyway, repeat the logic here just in case.
-            errorCallback.invoke(
-                "TypeError",
-                "constraints requests no media types");
-            return;
-        }
-
-        String streamId = getNextStreamUUID();
-        MediaStream mediaStream = mFactory.createLocalMediaStream(streamId);
+        final String streamId = getNextStreamUUID();
+        final MediaStream mediaStream = mFactory.createLocalMediaStream(streamId);
         if (mediaStream == null) {
-            // FIXME The following does not follow the getUserMedia() algorithm
+            // XXX The following does not follow the getUserMedia() algorithm
             // specified by
             // https://www.w3.org/TR/mediacapture-streams/#dom-mediadevices-getusermedia
             // with respect to distinguishing the various causes of failure.
@@ -699,16 +512,238 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
             return;
         }
 
-        if (audioTrack != null)
-            mediaStream.addTrack(audioTrack);
-        if (videoTrack != null)
-            mediaStream.addTrack(videoTrack);
+        // TODO: change getUserMedia constraints format to support new syntax
+        //   constraint format seems changed, and there is no mandatory any more.
+        //   and has a new syntax/attrs to specify resolution
+        //   should change `parseConstraints()` according
+        //   see: https://www.w3.org/TR/mediacapture-streams/#idl-def-MediaTrackConstraints
 
-        Log.d(TAG, "mMediaStreamId: " + streamId);
-        mMediaStreams.put(streamId, mediaStream);
+        if (constraints.hasKey("audio")) {
+            ReadableType type = constraints.getType("audio");
+            switch (type) {
+            case Boolean:
+                if (constraints.getBoolean("audio")) {
+                    requestPermissions.add(PERMISSION_AUDIO);
+                }
+                break;
+            case Map:
+                requestPermissions.add(PERMISSION_AUDIO);
+                break;
+            default:
+                break;
+            }
+        }
 
-        successCallback.invoke(streamId, tracks);
+        if (constraints.hasKey("video")) {
+            ReadableType type = constraints.getType("video");
+            switch (type) {
+            case Boolean:
+                if (constraints.getBoolean("video")) {
+                    requestPermissions.add(PERMISSION_VIDEO);
+                }
+                break;
+            case Map:
+                requestPermissions.add(PERMISSION_VIDEO);
+                break;
+            default:
+                break;
+            }
+        }
+
+        // According to step 2 of the getUserMedia() algorithm,
+        // requestedMediaTypes is the set of media types in constraints with
+        // either a dictionary value or a value of "true".
+        // According to step 3 of the getUserMedia() algorithm, if
+        // requestedMediaTypes is the empty set, the method invocation fails
+        // with a TypeError.
+        if (requestPermissions.isEmpty()) {
+            errorCallback.invoke(
+                "TypeError",
+                "constraints requests no media types");
+            return;
+        }
+
+        final PermissionUtils.Callback callback = new PermissionUtils.Callback() {
+            @Override
+            public void invoke(String permission, int grantResult) {
+                if (grantResult == PackageManager.PERMISSION_GRANTED) {
+                    grantedPermissions.add(permission);
+                } else {
+                    rejectedPermissions.add(permission);
+                }
+
+                // Check if we are done running callbacks
+                if (grantedPermissions.size() + rejectedPermissions.size()
+                    == requestPermissions.size()) {
+
+                    boolean useAudio = false;
+                    boolean useVideo = false;
+
+                    String audioTrackId = null;
+                    String videoTrackId = null;
+
+                    AudioTrack audioTrack = null;
+                    VideoTrack videoTrack = null;
+
+                    if (grantedPermissions.contains(PERMISSION_AUDIO)) {
+                        useAudio = true;
+                        audioTrackId = getNextTrackUUID();
+                        audioTrack = getUserMediaAudio(audioTrackId, constraints);
+                    }
+
+                    if (grantedPermissions.contains(PERMISSION_VIDEO)) {
+                        useVideo = true;
+                        videoTrackId = getNextTrackUUID();
+                        videoTrack = getUserMediaVideo(videoTrackId, constraints);
+                    }
+
+                    // If we fail to create either, destroy the other one and fail.
+                    if ((useAudio && audioTrack == null) || (useVideo && videoTrack == null)) {
+                        if (audioTrack != null) {
+                            audioTrack.dispose();
+                        }
+
+                        if (videoTrack != null) {
+                            videoTrack.dispose();
+                        }
+
+                        // XXX The following does not follow the getUserMedia() algorithm
+                        // specified by
+                        // https://www.w3.org/TR/mediacapture-streams/#dom-mediadevices-getusermedia
+                        // with respect to distinguishing the various causes of failure.
+                        errorCallback.invoke(
+                            /* type */ null,
+                            "Failed to create new track");
+                        return;
+                    }
+
+                    if (audioTrack != null) {
+                        mediaStream.addTrack(audioTrack);
+                        mMediaStreamTracks.put(audioTrackId, audioTrack);
+
+                        WritableMap trackInfo = Arguments.createMap();
+                        trackInfo.putString("id", audioTrackId);
+                        trackInfo.putString("label", "Audio");
+                        trackInfo.putString("kind", audioTrack.kind());
+                        trackInfo.putBoolean("enabled", audioTrack.enabled());
+                        trackInfo.putString("readyState", audioTrack.state().toString());
+                        trackInfo.putBoolean("remote", false);
+                        tracks.pushMap(trackInfo);
+                    }
+
+                    if (videoTrack != null) {
+                        mediaStream.addTrack(videoTrack);
+                        mMediaStreamTracks.put(videoTrackId, videoTrack);
+
+                        WritableMap trackInfo = Arguments.createMap();
+                        trackInfo.putString("id", videoTrackId);
+                        trackInfo.putString("label", "Video");
+                        trackInfo.putString("kind", videoTrack.kind());
+                        trackInfo.putBoolean("enabled", videoTrack.enabled());
+                        trackInfo.putString("readyState", videoTrack.state().toString());
+                        trackInfo.putBoolean("remote", false);
+                        tracks.pushMap(trackInfo);
+                    }
+
+                    Log.d(TAG, "mMediaStreamId: " + streamId);
+                    mMediaStreams.put(streamId, mediaStream);
+
+                    successCallback.invoke(streamId, tracks);
+                }
+            }
+        };
+
+        Context context = getReactApplicationContext();
+        for (String permission: requestPermissions) {
+            PermissionUtils.requestPermission(context, permission, callback);
+        }
     }
+
+    private AudioTrack getUserMediaAudio(String trackId, ReadableMap constraints) {
+        MediaConstraints audioConstraints;
+        if (constraints.getType("audio") == ReadableType.Boolean) {
+            audioConstraints = new MediaConstraints();
+            addDefaultAudioConstraints(audioConstraints);
+        } else {
+            audioConstraints
+                = parseMediaConstraints(constraints.getMap("audio"));
+        }
+
+        Log.i(TAG, "getUserMedia(audio): " + audioConstraints);
+
+        AudioSource audioSource = mFactory.createAudioSource(audioConstraints);
+
+        return mFactory.createAudioTrack(trackId, audioSource);
+    }
+
+    private VideoTrack getUserMediaVideo(String trackId, ReadableMap constraints) {
+        ReadableMap videoConstraintsMap = null;
+        ReadableMap videoConstraintsMandatory = null;
+        if (constraints.getType("video") == ReadableType.Map) {
+            videoConstraintsMap = constraints.getMap("video");
+
+            if (videoConstraintsMap.hasKey("mandatory")
+                && videoConstraintsMap.getType("mandatory") == ReadableType.Map) {
+
+                videoConstraintsMandatory = videoConstraintsMap.getMap("mandatory");
+            }
+        }
+
+        Log.i(TAG, "getUserMedia(video): " + videoConstraintsMap);
+
+        String sourceId = getSourceIdConstraint(videoConstraintsMap);
+        String facingMode = getFacingMode(videoConstraintsMap);
+
+        final boolean isFacing
+            = !(facingMode != null && facingMode.equals("environment"));
+
+        VideoCapturer videoCapturer;
+        VideoSource videoSource;
+
+        // NOTE: to support Camera2, the device should:
+        //   1. Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP
+        //   2. all camera support level should greater than LEGACY
+        //   see: https://developer.android.com/reference/android/hardware/camera2/CameraCharacteristics.html#INFO_SUPPORTED_HARDWARE_LEVEL
+        // TODO Enable camera2 enumerator
+        Context context = getReactApplicationContext();
+        CameraEnumerator cameraEnumerator;
+
+        if (false && Camera2Enumerator.isSupported(context)) {
+            Log.d(TAG, "Creating video capturer using Camera2 API.");
+            cameraEnumerator = new Camera2Enumerator(context);
+        } else {
+            Log.d(TAG, "Creating video capturer using Camera1 API.");
+            cameraEnumerator = new Camera1Enumerator(false);
+        }
+
+        videoCapturer = createVideoCapturer(cameraEnumerator, isFacing, sourceId);
+        if (videoCapturer == null) {
+            return null;
+        }
+
+        videoSource = mFactory.createVideoSource(videoCapturer);
+
+        // Fallback to defaults if keys are missing
+        final int videoWidth
+            = videoConstraintsMandatory.hasKey("minWidth") ?
+            videoConstraintsMandatory.getInt("minWidth") :
+            DEFAULT_WIDTH;
+        final int videoHeight
+            = videoConstraintsMandatory.hasKey("minHeight") ?
+            videoConstraintsMandatory.getInt("minHeight") :
+            DEFAULT_HEIGHT;
+        final int videoFps
+            = videoConstraintsMandatory.hasKey("minFrameRate") ?
+            videoConstraintsMandatory.getInt("minFrameRate") :
+            DEFAULT_FPS;
+
+        videoCapturer.startCapture(videoWidth, videoHeight, videoFps);
+
+        mVideoCapturers.put(trackId, videoCapturer);
+
+        return mFactory.createVideoTrack(trackId, videoSource);
+    }
+
     @ReactMethod
     public void mediaStreamTrackGetSources(Callback callback){
         WritableArray array = Arguments.createArray();
