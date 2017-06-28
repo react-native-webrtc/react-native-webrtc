@@ -213,7 +213,7 @@ RCT_EXPORT_METHOD(getUserMedia:(NSDictionary *)constraints
      successCallback:(NavigatorUserMediaSuccessCallback)successCallback
        errorCallback:(NavigatorUserMediaErrorCallback)errorCallback
          mediaStream:(RTCMediaStream *)mediaStream {
-  id videoConstraints = constraints[@"video"];
+  NSDictionary *videoConstraints = constraints[@"video"];
   AVCaptureDevice *videoDevice;
   if ([videoConstraints isKindOfClass:[NSDictionary class]]) {
     // constraints.video.optional
@@ -265,7 +265,7 @@ RCT_EXPORT_METHOD(getUserMedia:(NSDictionary *)constraints
   }
 
   if (videoDevice) {
-    NSMutableDictionary *mandatory = [self defaultMediaStreamConstraints];
+    NSMutableDictionary *mandatory = [[NSMutableDictionary alloc]init];
     if (videoConstraints != nil) {
       NSDictionary *mandatoryParameters = videoConstraints[@"mandatory"];
       if (mandatoryParameters != nil) {
@@ -294,6 +294,10 @@ RCT_EXPORT_METHOD(getUserMedia:(NSDictionary *)constraints
           [mandatory setObject:minWidth forKey:@"minWidth"];
         }
       }
+    }
+    NSArray * mandatoryKeys = [mandatoryParams allKeys];
+    if([mandatoryKeys count]==0){
+      mandatoryParams = [self defaultMediaStreamConstraints];
     }
     RTCMediaConstraints* customConstraints = [[RTCMediaConstraints alloc] initWithMandatoryConstraints:mandatory optionalConstraints:nil];
     RTCAVFoundationVideoSource *videoSource = [self.peerConnectionFactory avFoundationVideoSourceWithConstraints:customConstraints];
