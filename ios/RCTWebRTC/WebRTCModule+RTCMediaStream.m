@@ -260,7 +260,6 @@ RCT_EXPORT_METHOD(getUserMedia:(NSDictionary *)constraints
       videoDevice = [AVCaptureDevice defaultDeviceWithMediaType:AVMediaTypeVideo];
     }
   }
-
   if (videoDevice) {
     NSMutableDictionary *mandatory = [[NSMutableDictionary alloc]init];
     if (videoConstraints != nil) {
@@ -293,7 +292,7 @@ RCT_EXPORT_METHOD(getUserMedia:(NSDictionary *)constraints
       }
     }
     NSArray * mandatoryKeys = [mandatory allKeys];
-    if([mandatoryKeys count]==0){
+    if([mandatoryKeys count] == 0){
       mandatory = [self defaultMediaStreamConstraints];
     }
     RTCMediaConstraints* customConstraints = [[RTCMediaConstraints alloc] initWithMandatoryConstraints:mandatory optionalConstraints:nil];
