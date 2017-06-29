@@ -40,10 +40,7 @@ typedef void (^NavigatorUserMediaSuccessCallback)(RTCMediaStream *mediaStream);
 
 
 - (NSMutableDictionary *)defaultMediaStreamConstraints {
-    NSMutableDictionary *mandatory = [[NSMutableDictionary alloc]init];
-    [mandatory setObject:@"720" forKey:@"maxHeight"];
-    [mandatory setObject:@"1280" forKey:@"maxWidth"];
-    [mandatory setObject:@"30" forKey:@"maxFrameRate"];
+    NSMutableDictionary *mandatory = [[NSMutableDictionary alloc]initWithObjects:@[@"720",@"1280",@"30"] forKeys:@[@"maxHeight",@"maxWidth",@"maxFrameRate"]];
     return mandatory;
 }
 
