@@ -292,7 +292,7 @@ RCT_EXPORT_METHOD(getUserMedia:(NSDictionary *)constraints
       }
     }
     NSArray * mandatoryKeys = [mandatory allKeys];
-    if([mandatoryKeys count] == 0){
+    if ([mandatoryKeys count] == 0) {
       mandatory = [self defaultMediaStreamConstraints];
     }
     RTCMediaConstraints* customConstraints = [[RTCMediaConstraints alloc] initWithMandatoryConstraints:mandatory optionalConstraints:nil];
