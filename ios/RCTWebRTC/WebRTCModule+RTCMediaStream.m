@@ -271,23 +271,23 @@ RCT_EXPORT_METHOD(getUserMedia:(NSDictionary *)constraints
           [mandatory setObject:maxFrameRate forKey:@"maxFrameRate"];
         }
         if ([mandatoryParameters valueForKey:@"maxHeight"] != nil && [[mandatoryParameters valueForKey:@"maxHeight"] isKindOfClass:[NSNumber class]]) {
-          NSMutableString *maxHeight = [NSMutableString stringWithFormat:@"%@", mandatoryParameters[@"maxHeight"]];
+          NSMutableString *maxHeight = [NSMutableString stringWithFormat:@"%@", (NSInteger)mandatoryParameters[@"maxHeight"]];
           [mandatory setObject:maxHeight forKey:@"maxHeight"];
         }
         if ([mandatoryParameters valueForKey:@"maxWidth"] != nil && [[mandatoryParameters valueForKey:@"maxWidth"] isKindOfClass:[NSNumber class]]) {
-          NSMutableString *maxWidth = [NSMutableString stringWithFormat:@"%@", mandatoryParameters[@"maxWidth"]];
+          NSMutableString *maxWidth = [NSMutableString stringWithFormat:@"%@", (NSInteger)mandatoryParameters[@"maxWidth"]];
           [mandatory setObject:maxWidth forKey:@"maxWidth"];
         }
         if ([mandatoryParameters valueForKey:@"minFrameRate"] != nil && [[mandatoryParameters valueForKey:@"minFrameRate"] isKindOfClass:[NSNumber class]]) {
-          NSMutableString *minFrameRate = [NSMutableString stringWithFormat:@"%@", mandatoryParameters[@"minFrameRate"]];
+          NSMutableString *minFrameRate = [NSMutableString stringWithFormat:@"%@", (NSInteger)mandatoryParameters[@"minFrameRate"]];
           [mandatory setObject:minFrameRate forKey:@"minFrameRate"];
         }
         if ([mandatoryParameters valueForKey:@"minHeight"] != nil && [[mandatoryParameters valueForKey:@"minHeight"] isKindOfClass:[NSNumber class]]) {
-          NSMutableString *minHeight = [NSMutableString stringWithFormat:@"%@", mandatoryParameters[@"minHeight"]];
+          NSMutableString *minHeight = [NSMutableString stringWithFormat:@"%@", (NSInteger)mandatoryParameters[@"minHeight"]];
           [mandatory setObject:minHeight forKey:@"minHeight"];
         }
         if ([mandatoryParameters valueForKey:@"minWidth"] != nil && [[mandatoryParameters valueForKey:@"minWidth"] isKindOfClass:[NSNumber class]]) {
-          NSMutableString *minWidth = [NSMutableString stringWithFormat:@"%@", mandatoryParameters[@"minWidth"]];
+          NSMutableString *minWidth = [NSMutableString stringWithFormat:@"%@", (NSInteger)mandatoryParameters[@"minWidth"]];
           [mandatory setObject:minWidth forKey:@"minWidth"];
         }
       }
