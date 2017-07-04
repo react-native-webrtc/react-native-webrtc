@@ -19,7 +19,7 @@ ANDROID_CPU_ABI_MAP = {
 ANDROID_BUILD_CPUS = ['arm', 'x86']
 IOS_BUILD_ARCHS = ['arm', 'arm64','x64','x86']
 
-GN_IOS_ARGS = """--args='ios_enable_code_signing=false is_component_build=false is_debug=%s rtc_libvpx_build_vp9=true enable_ios_bitcode=false ios_deployment_target="9.0" target_cpu="%s" target_os="ios"'"""
+GN_IOS_ARGS = """--args='ios_enable_code_signing=false is_component_build=false is_debug=%s rtc_libvpx_build_vp9=true enable_ios_bitcode=false enable_dsyms=true ios_deployment_target="9.0" target_cpu="%s" target_os="ios"'"""
 GN_ANDROID_ARGS = """--args='is_component_build=false is_debug=%s rtc_libvpx_build_vp9=true target_cpu="%s" target_os="android"'"""
 
 
@@ -144,12 +144,19 @@ def build(target_dir, platform, debug):
 
     # Copy build artifacts to build directory
     if platform == 'ios':
+        # Framework
         gn_out_dir = 'out/%s-%s' % (build_type, IOS_BUILD_ARCHS[0])
         shutil.copytree(os.path.join(gn_out_dir, 'WebRTC.framework'), os.path.join(build_dir, 'WebRTC.framework'))
         out_lib_path = os.path.join(build_dir, 'WebRTC.framework', 'WebRTC')
         os.unlink(out_lib_path)
         slice_paths = [os.path.join('out/%s-%s' % (build_type, arch), 'WebRTC.framework', 'WebRTC') for arch in IOS_BUILD_ARCHS]
         sh('lipo %s -create -output %s' % (' '.join(slice_paths), out_lib_path))
+        # dSYM
+        shutil.copytree(os.path.join(gn_out_dir, 'WebRTC.dSYM'), os.path.join(build_dir, 'WebRTC.dSYM'))
+        out_dsym_path = os.path.join(build_dir, 'WebRTC.dSYM', 'Contents', 'Resources', 'DWARF', 'WebRTC')
+        os.unlink(out_dsym_path)
+        dsym_slice_paths = [os.path.join('out/%s-%s' % (build_type, arch), 'WebRTC.dSYM', 'Contents', 'Resources', 'DWARF', 'WebRTC') for arch in IOS_BUILD_ARCHS]
+        sh('lipo %s -create -output %s' % (' '.join(dsym_slice_paths), out_dsym_path))
     else:
         gn_out_dir = 'out/%s-%s' % (build_type, ANDROID_BUILD_CPUS[0])
         shutil.copy(os.path.join(gn_out_dir, 'lib.java/webrtc/sdk/android/libwebrtc.jar'), build_dir)
