@@ -81,56 +81,21 @@ try the cleaning steps below, and do it again carefully with every steps.
     * iOS: in xocde project, click `Product` -> `clean`    
 4. `npm install react-native-webrtc`  
   
-## Appendix B - App Store Submission
+## Appendix B - Apple Store Submission
 
-according to [#141](https://github.com/oney/react-native-webrtc/issues/141)
-you should strip i386/x86_64 arch from framework before submit to app store.
+(ios only)
 
-the script below is provided by [@besarthoxhaj](https://github.com/besarthoxhaj)  
-all credit goes to [@besarthoxhaj](https://github.com/besarthoxhaj), thanks!
+You should strip simulator (i386/x86_64) archs from WebRTC binary before submit to Apple Store.  
+We provide a handy script to do it easily. see below sections.
 
-see [#141](https://github.com/oney/react-native-webrtc/issues/141) for more details
+credit: The script is originally provided by [@besarthoxhaj](https://github.com/besarthoxhaj) in [#141](https://github.com/oney/react-native-webrtc/issues/141), thanks!
 
-#### Strip Simulator Arch Usage
+#### Strip Simulator Archs Usage
 
-1. copy below code into your project root as a js file. ex: `strip_arch.js`
-2. execute command in your root dirctory like: `node strip_arch.js --extract`
-3. execute command in your root dirctory like: `node strip_arch.js --device`
+The script and example are here: https://github.com/oney/react-native-webrtc/blob/master/tools/ios_arch.js
+
+1. go to `react-native-webrtc/tools` folder
+2. extract all archs first: `node ios_arch.js --extract`
+3. re-package device related archs only: `node ios_arch.js --device`
 4. delete files generated from `step 2`
 5. you can check current arch use this command: `file node_modules/react-native-webrtc/ios/WebRTC.framework/WebRTC`
-
-
-
-```javascript
-'use strict';
-
-const fs = require('fs');
-const exec = require('child_process').execSync;
-
-const WEBRTC_BIN_PATH = `${__dirname}/node_modules/react-native-webrtc/ios/WebRTC.framework`;
-const ARCH_TYPES = ['i386','x86_64','armv7','arm64'];
-
-if(process.argv[2] === '--extract' || process.argv[2] === '-e'){
-  console.log(`Extracting...`);
-  ARCH_TYPES.forEach(elm => {
-    exec(`lipo -extract ${elm} WebRTC -o WebRTC-${elm}`,{cwd:WEBRTC_BIN_PATH});
-  });
-  exec('cp WebRTC WebRTC-all',{cwd:WEBRTC_BIN_PATH});
-  console.log(exec('ls -ahl | grep WebRTC-',{cwd:WEBRTC_BIN_PATH}).toString().trim());
-  console.log('Done!');
-}
-
-if(process.argv[2] === '--simulator' || process.argv[2] === '-s'){
-  console.log(`Compiling simulator...`);
-  exec(`lipo -o WebRTC -create WebRTC-x86_64 WebRTC-i386`,{cwd:WEBRTC_BIN_PATH});
-  console.log(exec('ls -ahl | grep WebRTC',{cwd:WEBRTC_BIN_PATH}).toString().trim());
-  console.log('Done!');
-}
-
-if(process.argv[2] === '--device' || process.argv[2] === '-d'){
-  console.log(`Compiling device...`);
-  exec(`lipo -o WebRTC -create WebRTC-armv7 WebRTC-arm64`,{cwd:WEBRTC_BIN_PATH});
-  console.log(exec('ls -ahl | grep WebRTC',{cwd:WEBRTC_BIN_PATH}).toString().trim());
-  console.log('Done!');
-}
-```
