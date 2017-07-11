@@ -53,7 +53,14 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
         mMediaStreamTracks = new HashMap<String, MediaStreamTrack>();
 
         PeerConnectionFactory.initializeAndroidGlobals(reactContext, true, true, true);
-        mFactory = new PeerConnectionFactory();
+
+        mFactory = new PeerConnectionFactory(null);
+        // Initialize EGL contexts required for HW acceleration
+        EglBase eglBase = EglUtils.getRootEglBase();
+        if (eglBase != null) {
+            EglBase.Context eglContext = eglBase.getEglBaseContext();
+            mFactory.setVideoHwAccelerationOptions(eglContext, eglContext);
+        }
 
         getUserMediaImpl = new GetUserMediaImpl(this, reactContext);
     }
