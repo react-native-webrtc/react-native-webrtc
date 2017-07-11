@@ -367,7 +367,7 @@ class GetUserMediaImpl {
         Context context = getReactApplicationContext();
         CameraEnumerator cameraEnumerator;
 
-        if (false && Camera2Enumerator.isSupported(context)) {
+        if (Camera2Enumerator.isSupported(context)) {
             Log.d(TAG, "Creating video capturer using Camera2 API.");
             cameraEnumerator = new Camera2Enumerator(context);
         } else {
