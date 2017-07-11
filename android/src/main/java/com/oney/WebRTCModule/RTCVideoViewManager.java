@@ -8,10 +8,8 @@ import com.facebook.react.uimanager.ViewProps;
 import org.webrtc.MediaStream;
 
 public class RTCVideoViewManager extends SimpleViewManager<WebRTCView> {
-  private final static String TAG = RTCVideoViewManager.class.getCanonicalName();
-
-  public static final String REACT_CLASS = "RTCVideoView";
-  public ThemedReactContext mContext;
+  private static final String REACT_CLASS = "RTCVideoView";
+  private ThemedReactContext mContext;
 
   @Override
   public String getName() {
@@ -21,10 +19,7 @@ public class RTCVideoViewManager extends SimpleViewManager<WebRTCView> {
   @Override
   public WebRTCView createViewInstance(ThemedReactContext context) {
     mContext = context;
-    WebRTCView view = new WebRTCView(context);
-    // view.setPreserveEGLContextOnPause(true);
-    // view.setKeepScreenOn(true);
-    return view;
+    return new WebRTCView(context);
   }
 
   /**
