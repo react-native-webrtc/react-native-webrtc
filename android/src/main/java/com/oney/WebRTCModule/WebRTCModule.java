@@ -1,20 +1,22 @@
 package com.oney.WebRTCModule;
 
-import android.Manifest;
-import android.content.pm.PackageManager;
+import android.hardware.Camera;
+import android.hardware.Camera.CameraInfo;
 import android.support.annotation.Nullable;
+import android.util.Log;
+import android.util.SparseArray;
 
 import com.facebook.react.bridge.Arguments;
-import com.facebook.react.bridge.ReactApplicationContext;
 import com.facebook.react.bridge.Callback;
+import com.facebook.react.bridge.ReactApplicationContext;
 import com.facebook.react.bridge.ReactContextBaseJavaModule;
 import com.facebook.react.bridge.ReactMethod;
-import com.facebook.react.bridge.WritableArray;
-import com.facebook.react.bridge.WritableMap;
+import com.facebook.react.bridge.ReadableArray;
 import com.facebook.react.bridge.ReadableMap;
 import com.facebook.react.bridge.ReadableMapKeySetIterator;
-import com.facebook.react.bridge.ReadableArray;
 import com.facebook.react.bridge.ReadableType;
+import com.facebook.react.bridge.WritableArray;
+import com.facebook.react.bridge.WritableMap;
 import com.facebook.react.modules.core.DeviceEventManagerModule;
 
 import java.util.ArrayList;
@@ -25,32 +27,23 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
 
-import android.util.SparseArray;
-import android.hardware.Camera;
-import android.content.Context;
-
-import android.util.Log;
-import android.hardware.Camera.CameraInfo;
-
 import org.webrtc.*;
 
 public class WebRTCModule extends ReactContextBaseJavaModule {
-    final static String TAG = WebRTCModule.class.getCanonicalName();
+    static final String TAG = WebRTCModule.class.getCanonicalName();
 
     private static final String LANGUAGE =  "language";
 
-    private static final String PERMISSION_AUDIO = Manifest.permission.RECORD_AUDIO;
-    private static final String PERMISSION_VIDEO = Manifest.permission.CAMERA;
-
-    private static final int DEFAULT_WIDTH  = 1280;
-    private static final int DEFAULT_HEIGHT = 720;
-    private static final int DEFAULT_FPS    = 30;
-
-    private final PeerConnectionFactory mFactory;
+    final PeerConnectionFactory mFactory;
     private final SparseArray<PeerConnectionObserver> mPeerConnectionObservers;
-    public final Map<String, MediaStream> mMediaStreams;
-    public final Map<String, MediaStreamTrack> mMediaStreamTracks;
-    private final Map<String, VideoCapturer> mVideoCapturers;
+    final Map<String, MediaStream> mMediaStreams;
+    final Map<String, MediaStreamTrack> mMediaStreamTracks;
+
+    /**
+     * The implementation of {@code getUserMedia} extracted into a separate file
+     * in order to reduce complexity and to (somewhat) separate concerns.
+     */
+    private final GetUserMediaImpl getUserMediaImpl;
 
     public WebRTCModule(ReactApplicationContext reactContext) {
         super(reactContext);
@@ -58,10 +51,11 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
         mPeerConnectionObservers = new SparseArray<PeerConnectionObserver>();
         mMediaStreams = new HashMap<String, MediaStream>();
         mMediaStreamTracks = new HashMap<String, MediaStreamTrack>();
-        mVideoCapturers = new HashMap<String, VideoCapturer>();
 
         PeerConnectionFactory.initializeAndroidGlobals(reactContext, true, true, true);
         mFactory = new PeerConnectionFactory();
+
+        getUserMediaImpl = new GetUserMediaImpl(this, reactContext);
     }
 
     @Override
@@ -356,7 +350,7 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
         return uuid;
     }
 
-    private String getNextTrackUUID() {
+    String getNextTrackUUID() {
         String uuid;
 
         do {
@@ -364,25 +358,6 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
         } while (mMediaStreamTracks.containsKey(uuid));
 
         return uuid;
-    }
-
-    /**
-     * Includes default constraints set for the audio media type.
-     * @param audioConstraints <tt>MediaConstraints</tt> instance to be filled
-     * with the default constraints for audio media type.
-     */
-    private void addDefaultAudioConstraints(MediaConstraints audioConstraints) {
-        audioConstraints.optional.add(
-            new MediaConstraints.KeyValuePair("googNoiseSuppression", "true"));
-        audioConstraints.optional.add(
-            new MediaConstraints.KeyValuePair("googEchoCancellation", "true"));
-        audioConstraints.optional.add(
-            new MediaConstraints.KeyValuePair("echoCancellation", "true"));
-        audioConstraints.optional.add(
-            new MediaConstraints.KeyValuePair("googEchoCancellation2", "true"));
-        audioConstraints.optional.add(
-            new MediaConstraints.KeyValuePair(
-                    "googDAEchoCancellation", "true"));
     }
 
     /**
@@ -418,7 +393,7 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
      * mandatory and optional constraint keys and values specified by
      * <tt>constraints</tt>.
      */
-    private MediaConstraints parseMediaConstraints(ReadableMap constraints) {
+    MediaConstraints parseMediaConstraints(ReadableMap constraints) {
         MediaConstraints mediaConstraints = new MediaConstraints();
 
         if (constraints.hasKey("mandatory")
@@ -448,59 +423,13 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
         return mediaConstraints;
     }
 
-    /**
-     * Retrieves "facingMode" constraint value.
-     * @param mediaConstraints a <tt>ReadableMap</tt> which represents "GUM" constraints argument.
-     * @return String value of "facingMode" constraints in "GUM" or <tt>null</tt> if not specified.
-     */
-    private String getFacingMode(ReadableMap mediaConstraints) {
-        if (mediaConstraints != null) {
-            return ReactBridgeUtil.getMapStrValue(mediaConstraints, "facingMode");
-        }
-        return null;
-    }
-
-    /**
-     * Retreives "sourceId" constraint value.
-     * @param mediaConstraints a <tt>ReadableMap</tt> which represents "GUM"
-     * constraints argument
-     * @return String value of "sourceId" optional "GUM" constraint or
-     * <tt>null</tt> if not specified in the given map.
-     */
-    private String getSourceIdConstraint(ReadableMap mediaConstraints) {
-        if (mediaConstraints != null
-            && mediaConstraints.hasKey("optional")
-            && mediaConstraints.getType("optional") == ReadableType.Array) {
-
-            ReadableArray optional = mediaConstraints.getArray("optional");
-            for (int i = 0, size = optional.size(); i < size; i++) {
-                if (optional.getType(i) == ReadableType.Map) {
-                    ReadableMap option = optional.getMap(i);
-
-                    if (option.hasKey("sourceId")
-                        && option.getType("sourceId") == ReadableType.String) {
-
-                        return option.getString("sourceId");
-                    }
-                }
-            }
-        }
-
-        return null;
-    }
-
     @ReactMethod
-    public void getUserMedia(final ReadableMap constraints,
-                             final Callback    successCallback,
-                             final Callback    errorCallback) {
-        final WritableArray tracks = Arguments.createArray();
+    public void getUserMedia(ReadableMap constraints,
+                             Callback    successCallback,
+                             Callback    errorCallback) {
+        String streamId = getNextStreamUUID();
+        MediaStream mediaStream = mFactory.createLocalMediaStream(streamId);
 
-        final ArrayList<String> requestPermissions = new ArrayList<>();
-        final ArrayList<String> grantedPermissions = new ArrayList<>();
-        final ArrayList<String> rejectedPermissions = new ArrayList<>();
-
-        final String streamId = getNextStreamUUID();
-        final MediaStream mediaStream = mFactory.createLocalMediaStream(streamId);
         if (mediaStream == null) {
             // XXX The following does not follow the getUserMedia() algorithm
             // specified by
@@ -512,236 +441,9 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
             return;
         }
 
-        // TODO: change getUserMedia constraints format to support new syntax
-        //   constraint format seems changed, and there is no mandatory any more.
-        //   and has a new syntax/attrs to specify resolution
-        //   should change `parseConstraints()` according
-        //   see: https://www.w3.org/TR/mediacapture-streams/#idl-def-MediaTrackConstraints
-
-        if (constraints.hasKey("audio")) {
-            ReadableType type = constraints.getType("audio");
-            switch (type) {
-            case Boolean:
-                if (constraints.getBoolean("audio")) {
-                    requestPermissions.add(PERMISSION_AUDIO);
-                }
-                break;
-            case Map:
-                requestPermissions.add(PERMISSION_AUDIO);
-                break;
-            default:
-                break;
-            }
-        }
-
-        if (constraints.hasKey("video")) {
-            ReadableType type = constraints.getType("video");
-            switch (type) {
-            case Boolean:
-                if (constraints.getBoolean("video")) {
-                    requestPermissions.add(PERMISSION_VIDEO);
-                }
-                break;
-            case Map:
-                requestPermissions.add(PERMISSION_VIDEO);
-                break;
-            default:
-                break;
-            }
-        }
-
-        // According to step 2 of the getUserMedia() algorithm,
-        // requestedMediaTypes is the set of media types in constraints with
-        // either a dictionary value or a value of "true".
-        // According to step 3 of the getUserMedia() algorithm, if
-        // requestedMediaTypes is the empty set, the method invocation fails
-        // with a TypeError.
-        if (requestPermissions.isEmpty()) {
-            errorCallback.invoke(
-                "TypeError",
-                "constraints requests no media types");
-            return;
-        }
-
-        final PermissionUtils.Callback callback = new PermissionUtils.Callback() {
-            @Override
-            public void invoke(String permission, int grantResult) {
-                if (grantResult == PackageManager.PERMISSION_GRANTED) {
-                    grantedPermissions.add(permission);
-                } else {
-                    rejectedPermissions.add(permission);
-                }
-
-                // Check if we are done running callbacks
-                if (grantedPermissions.size() + rejectedPermissions.size()
-                    == requestPermissions.size()) {
-
-                    boolean useAudio = false;
-                    boolean useVideo = false;
-
-                    String audioTrackId = null;
-                    String videoTrackId = null;
-
-                    AudioTrack audioTrack = null;
-                    VideoTrack videoTrack = null;
-
-                    if (grantedPermissions.contains(PERMISSION_AUDIO)) {
-                        useAudio = true;
-                        audioTrackId = getNextTrackUUID();
-                        audioTrack = getUserMediaAudio(audioTrackId, constraints);
-                    }
-
-                    if (grantedPermissions.contains(PERMISSION_VIDEO)) {
-                        useVideo = true;
-                        videoTrackId = getNextTrackUUID();
-                        videoTrack = getUserMediaVideo(videoTrackId, constraints);
-                    }
-
-                    // If we fail to create either, destroy the other one and fail.
-                    if ((useAudio && audioTrack == null) || (useVideo && videoTrack == null)) {
-                        if (audioTrack != null) {
-                            audioTrack.dispose();
-                        }
-
-                        if (videoTrack != null) {
-                            videoTrack.dispose();
-                        }
-
-                        // XXX The following does not follow the getUserMedia() algorithm
-                        // specified by
-                        // https://www.w3.org/TR/mediacapture-streams/#dom-mediadevices-getusermedia
-                        // with respect to distinguishing the various causes of failure.
-                        errorCallback.invoke(
-                            /* type */ null,
-                            "Failed to create new track");
-                        return;
-                    }
-
-                    if (audioTrack != null) {
-                        mediaStream.addTrack(audioTrack);
-                        mMediaStreamTracks.put(audioTrackId, audioTrack);
-
-                        WritableMap trackInfo = Arguments.createMap();
-                        trackInfo.putString("id", audioTrackId);
-                        trackInfo.putString("label", "Audio");
-                        trackInfo.putString("kind", audioTrack.kind());
-                        trackInfo.putBoolean("enabled", audioTrack.enabled());
-                        trackInfo.putString("readyState", audioTrack.state().toString());
-                        trackInfo.putBoolean("remote", false);
-                        tracks.pushMap(trackInfo);
-                    }
-
-                    if (videoTrack != null) {
-                        mediaStream.addTrack(videoTrack);
-                        mMediaStreamTracks.put(videoTrackId, videoTrack);
-
-                        WritableMap trackInfo = Arguments.createMap();
-                        trackInfo.putString("id", videoTrackId);
-                        trackInfo.putString("label", "Video");
-                        trackInfo.putString("kind", videoTrack.kind());
-                        trackInfo.putBoolean("enabled", videoTrack.enabled());
-                        trackInfo.putString("readyState", videoTrack.state().toString());
-                        trackInfo.putBoolean("remote", false);
-                        tracks.pushMap(trackInfo);
-                    }
-
-                    Log.d(TAG, "mMediaStreamId: " + streamId);
-                    mMediaStreams.put(streamId, mediaStream);
-
-                    successCallback.invoke(streamId, tracks);
-                }
-            }
-        };
-
-        Context context = getReactApplicationContext();
-        for (String permission: requestPermissions) {
-            PermissionUtils.requestPermission(context, permission, callback);
-        }
-    }
-
-    private AudioTrack getUserMediaAudio(String trackId, ReadableMap constraints) {
-        MediaConstraints audioConstraints;
-        if (constraints.getType("audio") == ReadableType.Boolean) {
-            audioConstraints = new MediaConstraints();
-            addDefaultAudioConstraints(audioConstraints);
-        } else {
-            audioConstraints
-                = parseMediaConstraints(constraints.getMap("audio"));
-        }
-
-        Log.i(TAG, "getUserMedia(audio): " + audioConstraints);
-
-        AudioSource audioSource = mFactory.createAudioSource(audioConstraints);
-
-        return mFactory.createAudioTrack(trackId, audioSource);
-    }
-
-    private VideoTrack getUserMediaVideo(String trackId, ReadableMap constraints) {
-        ReadableMap videoConstraintsMap = null;
-        ReadableMap videoConstraintsMandatory = null;
-        if (constraints.getType("video") == ReadableType.Map) {
-            videoConstraintsMap = constraints.getMap("video");
-
-            if (videoConstraintsMap.hasKey("mandatory")
-                && videoConstraintsMap.getType("mandatory") == ReadableType.Map) {
-
-                videoConstraintsMandatory = videoConstraintsMap.getMap("mandatory");
-            }
-        }
-
-        Log.i(TAG, "getUserMedia(video): " + videoConstraintsMap);
-
-        String sourceId = getSourceIdConstraint(videoConstraintsMap);
-        String facingMode = getFacingMode(videoConstraintsMap);
-
-        final boolean isFacing
-            = !(facingMode != null && facingMode.equals("environment"));
-
-        VideoCapturer videoCapturer;
-        VideoSource videoSource;
-
-        // NOTE: to support Camera2, the device should:
-        //   1. Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP
-        //   2. all camera support level should greater than LEGACY
-        //   see: https://developer.android.com/reference/android/hardware/camera2/CameraCharacteristics.html#INFO_SUPPORTED_HARDWARE_LEVEL
-        // TODO Enable camera2 enumerator
-        Context context = getReactApplicationContext();
-        CameraEnumerator cameraEnumerator;
-
-        if (false && Camera2Enumerator.isSupported(context)) {
-            Log.d(TAG, "Creating video capturer using Camera2 API.");
-            cameraEnumerator = new Camera2Enumerator(context);
-        } else {
-            Log.d(TAG, "Creating video capturer using Camera1 API.");
-            cameraEnumerator = new Camera1Enumerator(false);
-        }
-
-        videoCapturer = createVideoCapturer(cameraEnumerator, isFacing, sourceId);
-        if (videoCapturer == null) {
-            return null;
-        }
-
-        videoSource = mFactory.createVideoSource(videoCapturer);
-
-        // Fallback to defaults if keys are missing
-        final int videoWidth
-            = videoConstraintsMandatory.hasKey("minWidth") ?
-            videoConstraintsMandatory.getInt("minWidth") :
-            DEFAULT_WIDTH;
-        final int videoHeight
-            = videoConstraintsMandatory.hasKey("minHeight") ?
-            videoConstraintsMandatory.getInt("minHeight") :
-            DEFAULT_HEIGHT;
-        final int videoFps
-            = videoConstraintsMandatory.hasKey("minFrameRate") ?
-            videoConstraintsMandatory.getInt("minFrameRate") :
-            DEFAULT_FPS;
-
-        videoCapturer.startCapture(videoWidth, videoHeight, videoFps);
-
-        mVideoCapturers.put(trackId, videoCapturer);
-
-        return mFactory.createVideoTrack(trackId, videoSource);
+        getUserMediaImpl.getUserMedia(
+            constraints, successCallback, errorCallback,
+            mediaStream);
     }
 
     @ReactMethod
@@ -777,7 +479,7 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
         }
         track.setEnabled(false);
         if (track.kind().equals("video")) {
-            removeVideoCapturer(id);
+            getUserMediaImpl.removeVideoCapturer(id);
         }
         mMediaStreamTracks.remove(id);
         // What exactly does `detached` mean in doc?
@@ -800,12 +502,7 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
     public void mediaStreamTrackSwitchCamera(final String id) {
         MediaStreamTrack track = mMediaStreamTracks.get(id);
         if (track != null) {
-            VideoCapturer videoCapturer = mVideoCapturers.get(id);
-            if (videoCapturer != null) {
-                CameraVideoCapturer cameraVideoCapturer
-                    = (CameraVideoCapturer) videoCapturer;
-                cameraVideoCapturer.switchCamera(null);
-            }
+            getUserMediaImpl.switchCamera(id);
         }
     }
 
@@ -827,7 +524,7 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
             stream.removeTrack((AudioTrack)track);
         } else if (track.kind().equals("video")) {
             stream.removeTrack((VideoTrack)track);
-            removeVideoCapturer(_trackId);
+            getUserMediaImpl.removeVideoCapturer(_trackId);
         }
     }
 
@@ -850,55 +547,6 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
         return params;
     }
 
-    /**
-     * Create video capturer via given facing mode
-     * @param enumerator a <tt>CameraEnumerator</tt> provided by webrtc
-     *        it can be Camera1Enumerator or Camera2Enumerator
-     * @param isFacing 'user' mapped with 'front' is true (default)
-     *                 'environment' mapped with 'back' is false
-     * @param sourceId (String) use this sourceId and ignore facing mode if specified.
-     * @return VideoCapturer can invoke with <tt>startCapture</tt>/<tt>stopCapture</tt>
-     *         <tt>null</tt> if not matched camera with specified facing mode.
-     */
-    private VideoCapturer createVideoCapturer(CameraEnumerator enumerator, boolean isFacing,
-            String sourceId) {
-        VideoCapturer videoCapturer = null;
-
-        // if sourceId given, use specified sourceId first
-        final String[] deviceNames = enumerator.getDeviceNames();
-        if (sourceId != null) {
-            for (String name : deviceNames) {
-                if (name.equals(sourceId)) {
-                    videoCapturer = enumerator.createCapturer(name, new CameraEventsHandler());
-                    if (videoCapturer != null) {
-                        Log.d(TAG, "create user specified camera " + name + " succeeded");
-                        return videoCapturer;
-                    } else {
-                        Log.d(TAG, "create user specified camera " + name + " failed");
-                        break; // fallback to facing mode
-                    }
-                }
-            }
-        }
-
-        // otherwise, use facing mode
-        String facingStr = isFacing ? "front" : "back";
-        for (String name : deviceNames) {
-            if (enumerator.isFrontFacing(name) == isFacing) {
-                videoCapturer = enumerator.createCapturer(name, new CameraEventsHandler());
-                if (videoCapturer != null) {
-                    Log.d(TAG, "Create " + facingStr + " camera " + name + " succeeded");
-                    return videoCapturer;
-                } else {
-                    Log.d(TAG, "Create " + facingStr + " camera " + name + " failed");
-                }
-            }
-        }
-
-        // should we fallback to available camera automatically?
-        return null;
-    }
-
     private MediaConstraints defaultConstraints() {
         MediaConstraints constraints = new MediaConstraints();
         // TODO video media
@@ -906,18 +554,6 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
         constraints.mandatory.add(new MediaConstraints.KeyValuePair("OfferToReceiveVideo", "true"));
         constraints.optional.add(new MediaConstraints.KeyValuePair("DtlsSrtpKeyAgreement", "true"));
         return constraints;
-    }
-
-    private void removeVideoCapturer(String id) {
-        VideoCapturer videoCapturer = mVideoCapturers.get(id);
-        if (videoCapturer != null) {
-            try {
-                videoCapturer.stopCapture();
-            } catch (InterruptedException e) {
-                Log.e(TAG, "removeVideoCapturer() Failed to stop video capturer");
-            }
-            mVideoCapturers.remove(id);
-        }
     }
 
     @ReactMethod
@@ -975,7 +611,7 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
         }
         for (VideoTrack track : mediaStream.videoTracks) {
             mMediaStreamTracks.remove(track.id());
-            removeVideoCapturer(track.id());
+            getUserMediaImpl.removeVideoCapturer(track.id());
         }
         for (AudioTrack track : mediaStream.audioTracks) {
             mMediaStreamTracks.remove(track.id());
@@ -1196,7 +832,7 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
         if (mediaStream != null) {
             for (VideoTrack track : mediaStream.videoTracks) {
                 mMediaStreamTracks.remove(track.id());
-                removeVideoCapturer(track.id());
+                getUserMediaImpl.removeVideoCapturer(track.id());
             }
             for (AudioTrack track : mediaStream.audioTracks) {
                 mMediaStreamTracks.remove(track.id());
