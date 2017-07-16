@@ -507,9 +507,9 @@ public class WebRTCView extends ViewGroup {
         if (videoRenderer == null
                 && videoTrack != null
                 && ViewCompat.isAttachedToWindow(this)) {
-            EglBase eglBase = EglUtils.getRootEglBase();
+            EglBase.Context sharedContext = EglUtils.getRootEglBaseContext();
 
-            if (eglBase == null) {
+            if (sharedContext == null) {
                 // If SurfaceViewRenderer#init() is invoked, it will throw a
                 // RuntimeException which will very likely kill the application.
                 Log.e(TAG, "Failed to render a VideoTrack!");
@@ -517,7 +517,7 @@ public class WebRTCView extends ViewGroup {
             }
 
             SurfaceViewRenderer surfaceViewRenderer = getSurfaceViewRenderer();
-            surfaceViewRenderer.init(eglBase.getEglBaseContext(), rendererEvents);
+            surfaceViewRenderer.init(sharedContext, rendererEvents);
 
             videoRenderer = new VideoRenderer(surfaceViewRenderer);
             videoTrack.addRenderer(videoRenderer);

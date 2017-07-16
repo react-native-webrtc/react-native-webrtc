@@ -8,15 +8,16 @@ import org.webrtc.EglBase14;
 
 public class EglUtils {
     /**
-     * The root {@link EglBase} instance shared by the entire application, for the sake of
-     * reducing utilization of system resources (such as EGL contexts). This instance selects
-     * between {@link EglBase10} and {@link EglBase14} performing a runtime check.
+     * The root {@link EglBase} instance shared by the entire application for
+     * the sake of reducing the utilization of system resources (such as EGL
+     * contexts). It selects between {@link EglBase10} and {@link EglBase14}
+     * by performing a runtime check.
      */
     private static EglBase rootEglBase;
 
     /**
-     * Lazily creates and returns the one and only {@link EglBase} which will serve as the root
-     * for all contexts that are needed.
+     * Lazily creates and returns the one and only {@link EglBase} which will
+     * serve as the root for all contexts that are needed.
      */
     public static synchronized EglBase getRootEglBase() {
         if (rootEglBase == null) {
@@ -33,7 +34,7 @@ public class EglUtils {
                     eglBase
                         = new EglBase14(
                                 /* sharedContext */ null,
-                        configAttributes);
+                                configAttributes);
                 }
             } catch (RuntimeException ex) {
                 // Fall back to EglBase10.
@@ -45,7 +46,7 @@ public class EglUtils {
                     eglBase
                         = new EglBase10(
                                 /* sharedContext */ null,
-                        configAttributes);
+                                configAttributes);
                 } catch (RuntimeException ex) {
                     // Neither EglBase14, nor EglBase10 succeeded to initialize.
                     cause = ex;
@@ -60,5 +61,11 @@ public class EglUtils {
         }
 
         return rootEglBase;
+    }
+
+    public static EglBase.Context getRootEglBaseContext() {
+        EglBase eglBase = getRootEglBase();
+
+        return eglBase == null ? null : eglBase.getEglBaseContext();
     }
 }

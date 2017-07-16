@@ -55,10 +55,9 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
         PeerConnectionFactory.initializeAndroidGlobals(reactContext, true, true, true);
 
         mFactory = new PeerConnectionFactory(null);
-        // Initialize EGL contexts required for HW acceleration
-        EglBase eglBase = EglUtils.getRootEglBase();
-        if (eglBase != null) {
-            EglBase.Context eglContext = eglBase.getEglBaseContext();
+        // Initialize EGL contexts required for HW acceleration.
+        EglBase.Context eglContext = EglUtils.getRootEglBaseContext();
+        if (eglContext != null) {
             mFactory.setVideoHwAccelerationOptions(eglContext, eglContext);
         }
 
