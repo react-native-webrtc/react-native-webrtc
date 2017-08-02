@@ -38,16 +38,10 @@ typedef void (^NavigatorUserMediaErrorCallback)(NSString *errorType, NSString *e
  */
 typedef void (^NavigatorUserMediaSuccessCallback)(RTCMediaStream *mediaStream);
 
-- (RTCMediaConstraints *)defaultMediaStreamConstraints {
-  NSDictionary *mandatoryConstraints
-      = @{ kRTCMediaConstraintsMinWidth     : @"1280",
-           kRTCMediaConstraintsMinHeight    : @"720",
-           kRTCMediaConstraintsMinFrameRate : @"30" };
-  RTCMediaConstraints* constraints =
-  [[RTCMediaConstraints alloc]
-   initWithMandatoryConstraints:mandatoryConstraints
-   optionalConstraints:nil];
-  return constraints;
+
+- (NSMutableDictionary *)defaultMediaStreamConstraints {
+    NSMutableDictionary *mandatory = [[NSMutableDictionary alloc]initWithObjects:@[@"720", @"1280", @"30"] forKeys:@[@"maxHeight", @"maxWidth", @"maxFrameRate"]];
+    return mandatory;
 }
 
 /**
@@ -216,7 +210,7 @@ RCT_EXPORT_METHOD(getUserMedia:(NSDictionary *)constraints
      successCallback:(NavigatorUserMediaSuccessCallback)successCallback
        errorCallback:(NavigatorUserMediaErrorCallback)errorCallback
          mediaStream:(RTCMediaStream *)mediaStream {
-  id videoConstraints = constraints[@"video"];
+  NSDictionary *videoConstraints = constraints[@"video"];
   AVCaptureDevice *videoDevice;
   if ([videoConstraints isKindOfClass:[NSDictionary class]]) {
     // constraints.video.optional
@@ -266,14 +260,44 @@ RCT_EXPORT_METHOD(getUserMedia:(NSDictionary *)constraints
       videoDevice = [AVCaptureDevice defaultDeviceWithMediaType:AVMediaTypeVideo];
     }
   }
-
   if (videoDevice) {
-    // TODO: Actually use constraints...
-    RTCAVFoundationVideoSource *videoSource = [self.peerConnectionFactory avFoundationVideoSourceWithConstraints:[self defaultMediaStreamConstraints]];
-    // FIXME The effort above to find a videoDevice value which satisfies the
-    // specified constraints was pretty much wasted. Salvage facingMode for
-    // starters because it is kind of a common and hence important feature on
-    // a mobile device.
+    NSMutableDictionary *mandatory = [[NSMutableDictionary alloc]init];
+    if (videoConstraints != nil) {
+      NSDictionary *mandatoryParameters = videoConstraints[@"mandatory"];
+      if (mandatoryParameters != nil) {
+        if ([mandatoryParameters valueForKey:@"maxFrameRate"] != nil && [[mandatoryParameters valueForKey:@"maxFrameRate"] isKindOfClass:[NSNumber class]]) {
+          NSMutableString* maxFrameRate = [NSMutableString stringWithFormat:@"%@", (NSInteger)mandatoryParameters[@"maxFrameRate"]];
+          [mandatory setObject:maxFrameRate forKey:@"maxFrameRate"];
+        }
+        if ([mandatoryParameters valueForKey:@"maxHeight"] != nil && [[mandatoryParameters valueForKey:@"maxHeight"] isKindOfClass:[NSNumber class]]) {
+          NSMutableString *maxHeight = [NSMutableString stringWithFormat:@"%@", (NSInteger)mandatoryParameters[@"maxHeight"]];
+          [mandatory setObject:maxHeight forKey:@"maxHeight"];
+        }
+        if ([mandatoryParameters valueForKey:@"maxWidth"] != nil && [[mandatoryParameters valueForKey:@"maxWidth"] isKindOfClass:[NSNumber class]]) {
+          NSMutableString *maxWidth = [NSMutableString stringWithFormat:@"%@", (NSInteger)mandatoryParameters[@"maxWidth"]];
+          [mandatory setObject:maxWidth forKey:@"maxWidth"];
+        }
+        if ([mandatoryParameters valueForKey:@"minFrameRate"] != nil && [[mandatoryParameters valueForKey:@"minFrameRate"] isKindOfClass:[NSNumber class]]) {
+          NSMutableString *minFrameRate = [NSMutableString stringWithFormat:@"%@", (NSInteger)mandatoryParameters[@"minFrameRate"]];
+          [mandatory setObject:minFrameRate forKey:@"minFrameRate"];
+        }
+        if ([mandatoryParameters valueForKey:@"minHeight"] != nil && [[mandatoryParameters valueForKey:@"minHeight"] isKindOfClass:[NSNumber class]]) {
+          NSMutableString *minHeight = [NSMutableString stringWithFormat:@"%@", (NSInteger)mandatoryParameters[@"minHeight"]];
+          [mandatory setObject:minHeight forKey:@"minHeight"];
+        }
+        if ([mandatoryParameters valueForKey:@"minWidth"] != nil && [[mandatoryParameters valueForKey:@"minWidth"] isKindOfClass:[NSNumber class]]) {
+          NSMutableString *minWidth = [NSMutableString stringWithFormat:@"%@", (NSInteger)mandatoryParameters[@"minWidth"]];
+          [mandatory setObject:minWidth forKey:@"minWidth"];
+        }
+      }
+    }
+    NSArray *mandatoryKeys = [mandatory allKeys];
+    if ([mandatoryKeys count] == 0) {
+      mandatory = [self defaultMediaStreamConstraints];
+    }
+    RTCMediaConstraints* customConstraints = [[RTCMediaConstraints alloc] initWithMandatoryConstraints:mandatory optionalConstraints:nil];
+    RTCAVFoundationVideoSource *videoSource = [self.peerConnectionFactory avFoundationVideoSourceWithConstraints:customConstraints];
+
     switch (videoDevice.position) {
     case AVCaptureDevicePositionBack:
       if (videoSource.canUseBackCamera) {
