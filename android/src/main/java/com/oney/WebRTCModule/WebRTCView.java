@@ -1,5 +1,6 @@
 package com.oney.WebRTCModule;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.graphics.Point;
 import android.support.v4.view.ViewCompat;
@@ -362,6 +363,7 @@ public class WebRTCView extends ViewGroup {
      * possible) because layout-related state either of this instance or of
      * {@code surfaceViewRenderer} has changed.
      */
+    @SuppressLint("WrongCall")
     private void requestSurfaceViewRendererLayout() {
         // Google/WebRTC just call requestLayout() on surfaceViewRenderer when
         // they change the value of its mirror or surfaceType property.
@@ -369,7 +371,9 @@ public class WebRTCView extends ViewGroup {
         // The above is not enough though when the video frame's dimensions or
         // rotation change. The following will suffice.
         if (!invokeIsInLayout()) {
-            layout(getLeft(), getTop(), getRight(), getBottom());
+            onLayout(
+                /* changed */ false,
+                getLeft(), getTop(), getRight(), getBottom());
         }
     }
 
