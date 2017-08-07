@@ -13,6 +13,7 @@ import com.facebook.react.bridge.ReadableMap;
 import com.facebook.react.bridge.ReadableType;
 import com.facebook.react.bridge.WritableArray;
 import com.facebook.react.bridge.WritableMap;
+import com.facebook.react.bridge.Promise;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -340,7 +341,7 @@ class GetUserMediaImpl {
         webRTCModule.mMediaStreams.put(streamId, mediaStream);
 
         successResult.pushString(streamId);
-        successResult.pushArray(tracks);
+        successResult.pushArray(tracks_);
         promise.resolve(successResult);
     }
 
