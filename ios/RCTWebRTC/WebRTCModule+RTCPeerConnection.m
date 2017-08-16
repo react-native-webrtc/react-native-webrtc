@@ -120,10 +120,10 @@ RCT_EXPORT_METHOD(peerConnectionCreateOffer:(nonnull NSNumber *)objectID
     offerForConstraints:[self parseMediaConstraints:constraints]
       completionHandler:^(RTCSessionDescription *sdp, NSError *error) {
         if (error) {
-            reject(@"CreateOfferFailed", error.userInfo[@"error"], error);
+          reject(@"CreateOfferFailed", error.userInfo[@"error"], error);
         } else {
-            NSString *type = [RTCSessionDescription stringForType:sdp.type];
-            resolve(@{@"sdp": sdp.sdp, @"type": type});
+          NSString *type = [RTCSessionDescription stringForType:sdp.type];
+          resolve(@{@"sdp": sdp.sdp, @"type": type});
         }
       }];
 }
@@ -140,14 +140,14 @@ RCT_EXPORT_METHOD(peerConnectionCreateAnswer:(nonnull NSNumber *)objectID
 
   [peerConnection
     answerForConstraints:[self parseMediaConstraints:constraints]
-       completionHandler:^(RTCSessionDescription *sdp, NSError *error) {
+      completionHandler:^(RTCSessionDescription *sdp, NSError *error) {
         if (error) {
-            reject(@"CreateAnswerFailed", error.userInfo[@"error"], error);
-         } else {
-           NSString *type = [RTCSessionDescription stringForType:sdp.type];
-           resolve(@{@"sdp": sdp.sdp, @"type": type});
-         }
-       }];
+          reject(@"CreateAnswerFailed", error.userInfo[@"error"], error);
+        } else {
+          NSString *type = [RTCSessionDescription stringForType:sdp.type];
+          resolve(@{@"sdp": sdp.sdp, @"type": type});
+        }
+      }];
 }
 
 RCT_EXPORT_METHOD(peerConnectionSetLocalDescription:(RTCSessionDescription *)sdp objectID:(nonnull NSNumber *)objectID resolver:(RCTPromiseResolveBlock)resolve rejecter:(RCTPromiseRejectBlock)reject)
@@ -175,9 +175,9 @@ RCT_EXPORT_METHOD(peerConnectionSetRemoteDescription:(RTCSessionDescription *)sd
 
   [peerConnection setRemoteDescription: sdp completionHandler: ^(NSError *error) {
     if (error) {
-        reject(@"SetRemoteDescriptionFailed", error.localizedDescription, error);
+      reject(@"SetRemoteDescriptionFailed", error.localizedDescription, error);
     } else {
-        resolve(nil);
+      resolve(nil);
     }
   }];
 }

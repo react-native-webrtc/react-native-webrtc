@@ -270,7 +270,8 @@ class GetUserMediaImpl {
                     // name attribute has the value NotAllowedError."
                     promise.reject("DOMException", "NotAllowedError");
                 }
-            });
+            }
+        );
     }
 
     /**

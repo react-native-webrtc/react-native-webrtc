@@ -173,8 +173,8 @@ export default class RTCPeerConnection extends EventTarget(PEER_CONNECTION_EVENT
       sessionDescription.toJSON(),
       this._peerConnectionId
     ).then(() => {
-        this.localDescription = sessionDescription;
-        return;
+      this.localDescription = sessionDescription;
+      return;
     });
   }
 
@@ -183,8 +183,8 @@ export default class RTCPeerConnection extends EventTarget(PEER_CONNECTION_EVENT
       sessionDescription.toJSON(),
       this._peerConnectionId
     ).then(() => {
-        this.remoteDescription = sessionDescription;
-        return;
+      this.remoteDescription = sessionDescription;
+      return;
     });
   }
 
