@@ -615,12 +615,6 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
         if (mediaStream == null) {
             return null;
         }
-        for (VideoTrack track : mediaStream.videoTracks) {
-            mMediaStreamTracks.remove(track.id());
-        }
-        for (AudioTrack track : mediaStream.audioTracks) {
-            mMediaStreamTracks.remove(track.id());
-        }
         String reactTag = null;
         for (Iterator<Map.Entry<String, MediaStream>> i
                     = mMediaStreams.entrySet().iterator();
