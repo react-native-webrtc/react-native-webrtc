@@ -617,7 +617,6 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
         }
         for (VideoTrack track : mediaStream.videoTracks) {
             mMediaStreamTracks.remove(track.id());
-            getUserMediaImpl.removeVideoCapturer(track.id());
         }
         for (AudioTrack track : mediaStream.audioTracks) {
             mMediaStreamTracks.remove(track.id());
