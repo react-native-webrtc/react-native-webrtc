@@ -322,7 +322,7 @@ class GetUserMediaImpl {
             } else {
                 mediaStream.addTrack((VideoTrack) track);
             }
-            webRTCModule.mMediaStreamTracks.put(id, track);
+            webRTCModule.localMediaStreamTracks.put(id, track);
 
             WritableMap track_ = Arguments.createMap();
             String kind = track.kind();
@@ -339,7 +339,7 @@ class GetUserMediaImpl {
         String streamId = mediaStream.label();
 
         Log.d(TAG, "MediaStream id: " + streamId);
-        webRTCModule.mMediaStreams.put(streamId, mediaStream);
+        webRTCModule.localMediaStreams.put(streamId, mediaStream);
 
         successCallback.invoke(streamId, tracks_);
     }

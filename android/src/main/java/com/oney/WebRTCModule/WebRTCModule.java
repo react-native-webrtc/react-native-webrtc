@@ -21,7 +21,6 @@ import com.facebook.react.modules.core.DeviceEventManagerModule;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -36,8 +35,8 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
 
     final PeerConnectionFactory mFactory;
     private final SparseArray<PeerConnectionObserver> mPeerConnectionObservers;
-    final Map<String, MediaStream> mMediaStreams;
-    final Map<String, MediaStreamTrack> mMediaStreamTracks;
+    final Map<String, MediaStream> localMediaStreams;
+    final Map<String, MediaStreamTrack> localMediaStreamTracks;
 
     /**
      * The implementation of {@code getUserMedia} extracted into a separate file
@@ -49,8 +48,8 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
         super(reactContext);
 
         mPeerConnectionObservers = new SparseArray<PeerConnectionObserver>();
-        mMediaStreams = new HashMap<String, MediaStream>();
-        mMediaStreamTracks = new HashMap<String, MediaStreamTrack>();
+        localMediaStreams = new HashMap<String, MediaStream>();
+        localMediaStreamTracks = new HashMap<String, MediaStreamTrack>();
 
         PeerConnectionFactory.initializeAndroidGlobals(reactContext, true, true, true);
 
@@ -346,12 +345,12 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
         mPeerConnectionObservers.put(id, observer);
     }
 
-    private String getNextStreamUUID() {
+    String getNextStreamUUID() {
         String uuid;
 
         do {
             uuid = UUID.randomUUID().toString();
-        } while (mMediaStreams.containsKey(uuid));
+        } while (getStreamForReactTag(uuid) != null);
 
         return uuid;
     }
@@ -361,9 +360,47 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
 
         do {
             uuid = UUID.randomUUID().toString();
-        } while (mMediaStreamTracks.containsKey(uuid));
+        } while (getTrackForId(uuid) != null);
 
         return uuid;
+    }
+
+    MediaStream getStreamForReactTag(String streamReactTag) {
+        MediaStream stream = localMediaStreams.get(streamReactTag);
+
+        if (stream != null) {
+            return stream;
+        }
+
+        for (int idx = 0; idx < mPeerConnectionObservers.size(); idx++) {
+            PeerConnectionObserver pco
+                = mPeerConnectionObservers.valueAt(idx);
+            stream = pco.remoteMediaStreams.get(streamReactTag);
+            if (stream != null) {
+                return stream;
+            }
+        }
+
+        return null;
+    }
+
+    MediaStreamTrack getTrackForId(String trackId) {
+        MediaStreamTrack track = localMediaStreamTracks.get(trackId);
+
+        if (track != null) {
+            return track;
+        }
+
+        for (int idx = 0; idx < mPeerConnectionObservers.size(); idx++) {
+            PeerConnectionObserver pco
+                = mPeerConnectionObservers.valueAt(idx);
+            track = pco.remoteMediaStreamTracks.get(trackId);
+            if (track != null) {
+                return track;
+            }
+        }
+
+        return null;
     }
 
     /**
@@ -478,7 +515,7 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
     public void mediaStreamTrackStop(final String id) {
         // Is this functionality equivalent to `mediaStreamTrackRelease()` ?
         // if so, we should merge this two and remove track from stream as well.
-        MediaStreamTrack track = mMediaStreamTracks.get(id);
+        MediaStreamTrack track = localMediaStreamTracks.get(id);
         if (track == null) {
             Log.d(TAG, "mediaStreamTrackStop() track is null");
             return;
@@ -487,14 +524,14 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
         if (track.kind().equals("video")) {
             getUserMediaImpl.removeVideoCapturer(id);
         }
-        mMediaStreamTracks.remove(id);
+        localMediaStreamTracks.remove(id);
         // What exactly does `detached` mean in doc?
         // see: https://www.w3.org/TR/mediacapture-streams/#track-detached
     }
 
     @ReactMethod
     public void mediaStreamTrackSetEnabled(final String id, final boolean enabled) {
-        MediaStreamTrack track = mMediaStreamTracks.get(id);
+        MediaStreamTrack track = localMediaStreamTracks.get(id);
         if (track == null) {
             Log.d(TAG, "mediaStreamTrackSetEnabled() track is null");
             return;
@@ -506,7 +543,7 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
 
     @ReactMethod
     public void mediaStreamTrackSwitchCamera(final String id) {
-        MediaStreamTrack track = mMediaStreamTracks.get(id);
+        MediaStreamTrack track = localMediaStreamTracks.get(id);
         if (track != null) {
             getUserMediaImpl.switchCamera(id);
         }
@@ -514,18 +551,18 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
 
     @ReactMethod
     public void mediaStreamTrackRelease(final String streamId, final String _trackId) {
-        MediaStream stream = mMediaStreams.get(streamId);
+        MediaStream stream = localMediaStreams.get(streamId);
         if (stream == null) {
             Log.d(TAG, "mediaStreamTrackRelease() stream is null");
             return;
         }
-        MediaStreamTrack track = mMediaStreamTracks.get(_trackId);
+        MediaStreamTrack track = localMediaStreamTracks.get(_trackId);
         if (track == null) {
             Log.d(TAG, "mediaStreamTrackRelease() track is null");
             return;
         }
         track.setEnabled(false); // should we do this?
-        mMediaStreamTracks.remove(_trackId);
+        localMediaStreamTracks.remove(_trackId);
         if (track.kind().equals("audio")) {
             stream.removeTrack((AudioTrack)track);
         } else if (track.kind().equals("video")) {
@@ -572,32 +609,9 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
         peerConnection.setConfiguration(parseRTCConfiguration(configuration));
     }
 
-    String onAddStream(MediaStream mediaStream) {
-        String id = mediaStream.label();
-        String reactTag = null;
-        // The native WebRTC implementation has a special concept of a default
-        // MediaStream instance with the label default that the implementation
-        // reuses.
-        if ("default".equals(id)) {
-            for (Map.Entry<String, MediaStream> e : mMediaStreams.entrySet()) {
-                if (e.getValue().equals(mediaStream)) {
-                    reactTag = e.getKey();
-                    break;
-                }
-            }
-        }
-        if (reactTag == null) {
-            reactTag = getNextStreamUUID();
-        }
-        if (!mMediaStreams.containsKey(reactTag)) {
-            mMediaStreams.put(reactTag, mediaStream);
-        }
-        return reactTag;
-    }
-
     @ReactMethod
     public void peerConnectionAddStream(final String streamId, final int id){
-        MediaStream mediaStream = mMediaStreams.get(streamId);
+        MediaStream mediaStream = localMediaStreams.get(streamId);
         if (mediaStream == null) {
             Log.d(TAG, "peerConnectionAddStream() mediaStream is null");
             return;
@@ -611,27 +625,9 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
         }
     }
 
-    String onRemoveStream(MediaStream mediaStream) {
-        if (mediaStream == null) {
-            return null;
-        }
-        String reactTag = null;
-        for (Iterator<Map.Entry<String, MediaStream>> i
-                    = mMediaStreams.entrySet().iterator();
-                i.hasNext();) {
-            Map.Entry<String, MediaStream> e = i.next();
-            if (e.getValue().equals(mediaStream)) {
-                reactTag = e.getKey();
-                i.remove();
-                break;
-            }
-        }
-        return reactTag;
-    }
-
     @ReactMethod
     public void peerConnectionRemoveStream(final String streamId, final int id){
-        MediaStream mediaStream = mMediaStreams.get(streamId);
+        MediaStream mediaStream = localMediaStreams.get(streamId);
         if (mediaStream == null) {
             Log.d(TAG, "peerConnectionRemoveStream() mediaStream is null");
             return;
@@ -827,17 +823,17 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
 
     @ReactMethod
     public void mediaStreamRelease(final String id) {
-        MediaStream mediaStream = mMediaStreams.get(id);
+        MediaStream mediaStream = localMediaStreams.get(id);
         if (mediaStream != null) {
             for (VideoTrack track : mediaStream.videoTracks) {
-                mMediaStreamTracks.remove(track.id());
+                localMediaStreamTracks.remove(track.id());
                 getUserMediaImpl.removeVideoCapturer(track.id());
             }
             for (AudioTrack track : mediaStream.audioTracks) {
-                mMediaStreamTracks.remove(track.id());
+                localMediaStreamTracks.remove(track.id());
             }
 
-            mMediaStreams.remove(id);
+            localMediaStreams.remove(id);
         } else {
             Log.d(TAG, "mediaStreamRelease() mediaStream is null");
         }
