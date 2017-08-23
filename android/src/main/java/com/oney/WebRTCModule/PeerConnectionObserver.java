@@ -41,6 +41,7 @@ class PeerConnectionObserver implements PeerConnection.Observer {
     final List<MediaStream> localStreams;
     final Map<String, MediaStream> remoteStreams;
     final Map<String, MediaStreamTrack> remoteTracks;
+    private final VideoTrackAdapter videoTrackAdapters;
     private final WebRTCModule webRTCModule;
 
     /**
@@ -58,6 +59,7 @@ class PeerConnectionObserver implements PeerConnection.Observer {
         this.localStreams = new ArrayList<MediaStream>();
         this.remoteStreams = new HashMap<String, MediaStream>();
         this.remoteTracks = new HashMap<String, MediaStreamTrack>();
+        this.videoTrackAdapters = new VideoTrackAdapter(webRTCModule, id);
     }
 
     /**
@@ -117,6 +119,14 @@ class PeerConnectionObserver implements PeerConnection.Observer {
         for (MediaStream localStream : new ArrayList<>(localStreams)) {
             removeStream(localStream);
         }
+
+        // Remove video track adapters
+        for (MediaStreamTrack track : remoteTracks.values()) {
+            if (track.kind().equals("video")) {
+                videoTrackAdapters.removeAdapter((VideoTrack) track);
+            }
+        }
+
         // At this point there should be no local MediaStreams in the associated
         // PeerConnection. Call dispose() to free all remaining resources held
         // by the PeerConnection instance (RtpReceivers, RtpSenders, etc.)
@@ -372,6 +382,8 @@ class PeerConnectionObserver implements PeerConnection.Observer {
             trackInfo.putString("readyState", track.state().toString());
             trackInfo.putBoolean("remote", true);
             tracks.pushMap(trackInfo);
+
+            videoTrackAdapters.addAdapter(streamReactTag, track);
         }
         for (int i = 0; i < mediaStream.audioTracks.size(); i++) {
             AudioTrack track = mediaStream.audioTracks.get(i);
@@ -404,6 +416,7 @@ class PeerConnectionObserver implements PeerConnection.Observer {
         }
 
         for (VideoTrack track : mediaStream.videoTracks) {
+            this.videoTrackAdapters.removeAdapter(track);
             this.remoteTracks.remove(track.id());
         }
         for (AudioTrack track : mediaStream.audioTracks) {

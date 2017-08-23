@@ -6,6 +6,7 @@ import {DeviceEventEmitter, NativeModules} from 'react-native';
 import MediaStream from './MediaStream';
 import MediaStreamEvent from './MediaStreamEvent';
 import MediaStreamTrack from './MediaStreamTrack';
+import MediaStreamTrackEvent from './MediaStreamTrackEvent';
 import RTCDataChannel from './RTCDataChannel';
 import RTCDataChannelEvent from './RTCDataChannelEvent';
 import RTCSessionDescription from './RTCSessionDescription';
@@ -242,6 +243,14 @@ export default class RTCPeerConnection extends EventTarget(PEER_CONNECTION_EVENT
     WebRTCModule.peerConnectionClose(this._peerConnectionId);
   }
 
+  _getTrack(streamReactTag, trackId): MediaStreamTrack {
+    const stream
+      = this._remoteStreams.find(
+          stream => stream.reactTag === streamReactTag);
+
+    return stream && stream._tracks.find(track => track.id === trackId);
+  }
+
   _unregisterEvents(): void {
     this._subscriptions.forEach(e => e.remove());
     this._subscriptions = [];
@@ -297,6 +306,17 @@ export default class RTCPeerConnection extends EventTarget(PEER_CONNECTION_EVENT
           }
         }
         this.dispatchEvent(new MediaStreamEvent('removestream', {stream}));
+      }),
+      DeviceEventEmitter.addListener('mediaStreamTrackMuteChanged', ev => {
+        if (ev.peerConnectionId !== this._peerConnectionId) {
+          return;
+        }
+        const track = this._getTrack(ev.streamReactTag, ev.trackId);
+        if (track) {
+          track.muted = ev.muted;
+          const eventName = ev.muted ? 'mute' : 'unmute';
+          track.dispatchEvent(new MediaStreamTrackEvent(eventName, {track}));
+        }
       }),
       DeviceEventEmitter.addListener('peerConnectionGotICECandidate', ev => {
         if (ev.id !== this._peerConnectionId) {
