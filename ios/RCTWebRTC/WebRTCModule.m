@@ -12,6 +12,7 @@
 #import <React/RCTUtils.h>
 
 #import "WebRTCModule.h"
+#import "WebRTCModule+RTCPeerConnection.h"
 
 @interface WebRTCModule ()
 
@@ -29,20 +30,29 @@
 //    [RTCPeerConnectionFactory initializeSSL];
 
     _peerConnections = [NSMutableDictionary new];
-    _remoteStreams = [NSMutableDictionary new];
-    _remoteTracks = [NSMutableDictionary new];
     _localStreams = [NSMutableDictionary new];
     _localTracks = [NSMutableDictionary new];
   }
   return self;
 }
 
+- (RTCMediaStream*)streamForTag:(NSString*)reactTag
+{
+    RTCMediaStream *stream = _localStreams[reactTag];
+    if (!stream) {
+        for (NSNumber *peerConnectionId in _peerConnections) {
+            RTCPeerConnection *peerConnection = _peerConnections[peerConnectionId];
+            stream = peerConnection.remoteStreams[reactTag];
+            if (stream) {
+                break;
+            }
+        }
+    }
+    return stream;
+}
+
 - (void)dealloc
 {
-  [_remoteTracks removeAllObjects];
-  _remoteTracks = nil;
-  [_remoteStreams removeAllObjects];
-  _remoteStreams = nil;
   [_localTracks removeAllObjects];
   _localTracks = nil;
   [_localStreams removeAllObjects];
