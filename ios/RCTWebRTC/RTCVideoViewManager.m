@@ -375,7 +375,7 @@ RCT_CUSTOM_VIEW_PROPERTY(streamURL, NSString, RTCVideoView) {
     NSString *streamReactTag = (NSString *)json;
 
     WebRTCModule *module = [self.bridge moduleForName:@"WebRTCModule"];
-    RTCMediaStream *stream = [module streamForTag:streamReactTag];
+    RTCMediaStream *stream = [module streamForReactTag:streamReactTag];
     NSArray *videoTracks = stream ? stream.videoTracks : nil;
 
     videoTrack = videoTracks && videoTracks.count ? videoTracks[0] : nil;

@@ -36,8 +36,8 @@ class PeerConnectionObserver implements PeerConnection.Observer {
         = new SparseArray<DataChannel>();
     private final int id;
     private PeerConnection peerConnection;
-    final Map<String, MediaStream> remoteMediaStreams;
-    final Map<String, MediaStreamTrack> remoteMediaStreamTracks;
+    final Map<String, MediaStream> remoteStreams;
+    final Map<String, MediaStreamTrack> remoteTracks;
     private final WebRTCModule webRTCModule;
 
     /**
@@ -52,8 +52,8 @@ class PeerConnectionObserver implements PeerConnection.Observer {
     PeerConnectionObserver(WebRTCModule webRTCModule, int id) {
         this.webRTCModule = webRTCModule;
         this.id = id;
-        this.remoteMediaStreams = new HashMap<String, MediaStream>();
-        this.remoteMediaStreamTracks = new HashMap<String, MediaStreamTrack>();
+        this.remoteStreams = new HashMap<String, MediaStream>();
+        this.remoteTracks = new HashMap<String, MediaStreamTrack>();
     }
 
     PeerConnection getPeerConnection() {
@@ -67,9 +67,8 @@ class PeerConnectionObserver implements PeerConnection.Observer {
     void close() {
          peerConnection.close();
 
-         remoteMediaStreams.clear();
-
-         remoteMediaStreamTracks.clear();
+         remoteStreams.clear();
+         remoteTracks.clear();
 
          // Unlike on iOS, we cannot unregister the DataChannel.Observer
          // instance on Android. At least do whatever else we do on iOS.
@@ -197,9 +196,8 @@ class PeerConnectionObserver implements PeerConnection.Observer {
         MediaStreamTrack track = null;
         if (trackId == null
                 || trackId.isEmpty()
-                || (track = webRTCModule.localMediaStreamTracks.get(trackId))
-                    != null
-                || (track = remoteMediaStreamTracks.get(trackId)) != null) {
+                || (track = webRTCModule.localTracks.get(trackId)) != null
+                || (track = remoteTracks.get(trackId)) != null) {
             peerConnection.getStats(
                     new StatsObserver() {
                         @Override
@@ -254,10 +252,10 @@ class PeerConnectionObserver implements PeerConnection.Observer {
         webRTCModule.sendEvent("peerConnectionIceGatheringChanged", params);
     }
 
-    public String getReactTagForStream(MediaStream mediaStream) {
+    private String getReactTagForStream(MediaStream mediaStream) {
         for (Iterator<Map.Entry<String, MediaStream>> i
-             = remoteMediaStreams.entrySet().iterator();
-             i.hasNext();) {
+                    = remoteStreams.entrySet().iterator();
+                i.hasNext();) {
             Map.Entry<String, MediaStream> e = i.next();
             if (e.getValue().equals(mediaStream)) {
                 return e.getKey();
@@ -275,7 +273,7 @@ class PeerConnectionObserver implements PeerConnection.Observer {
         // reuses.
         if ("default".equals(streamId)) {
             for (Map.Entry<String, MediaStream> e
-                : remoteMediaStreams.entrySet()) {
+                    : remoteStreams.entrySet()) {
                 if (e.getValue().equals(mediaStream)) {
                     streamReactTag = e.getKey();
                     break;
@@ -285,7 +283,7 @@ class PeerConnectionObserver implements PeerConnection.Observer {
 
         if (streamReactTag == null){
             streamReactTag = webRTCModule.getNextStreamUUID();
-            remoteMediaStreams.put(streamReactTag, mediaStream);
+            remoteStreams.put(streamReactTag, mediaStream);
         }
 
         WritableMap params = Arguments.createMap();
@@ -299,7 +297,7 @@ class PeerConnectionObserver implements PeerConnection.Observer {
             VideoTrack track = mediaStream.videoTracks.get(i);
             String trackId = track.id();
 
-            remoteMediaStreamTracks.put(trackId, track);
+            remoteTracks.put(trackId, track);
 
             WritableMap trackInfo = Arguments.createMap();
             trackInfo.putString("id", trackId);
@@ -314,7 +312,7 @@ class PeerConnectionObserver implements PeerConnection.Observer {
             AudioTrack track = mediaStream.audioTracks.get(i);
             String trackId = track.id();
 
-            remoteMediaStreamTracks.put(trackId, track);
+            remoteTracks.put(trackId, track);
 
             WritableMap trackInfo = Arguments.createMap();
             trackInfo.putString("id", trackId);
@@ -341,14 +339,13 @@ class PeerConnectionObserver implements PeerConnection.Observer {
         }
 
         for (VideoTrack track : mediaStream.videoTracks) {
-            this.remoteMediaStreamTracks.remove(track.id());
+            this.remoteTracks.remove(track.id());
         }
-
         for (AudioTrack track : mediaStream.audioTracks) {
-            this.remoteMediaStreamTracks.remove(track.id());
+            this.remoteTracks.remove(track.id());
         }
 
-        this.remoteMediaStreams.remove(streamReactTag);
+        this.remoteStreams.remove(streamReactTag);
 
         WritableMap params = Arguments.createMap();
         params.putInt("id", id);

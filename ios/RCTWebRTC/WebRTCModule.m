@@ -22,35 +22,6 @@
 
 @synthesize bridge = _bridge;
 
-- (instancetype)init
-{
-  self = [super init];
-  if (self) {
-    _peerConnectionFactory = [RTCPeerConnectionFactory new];
-//    [RTCPeerConnectionFactory initializeSSL];
-
-    _peerConnections = [NSMutableDictionary new];
-    _localStreams = [NSMutableDictionary new];
-    _localTracks = [NSMutableDictionary new];
-  }
-  return self;
-}
-
-- (RTCMediaStream*)streamForTag:(NSString*)reactTag
-{
-    RTCMediaStream *stream = _localStreams[reactTag];
-    if (!stream) {
-        for (NSNumber *peerConnectionId in _peerConnections) {
-            RTCPeerConnection *peerConnection = _peerConnections[peerConnectionId];
-            stream = peerConnection.remoteStreams[reactTag];
-            if (stream) {
-                break;
-            }
-        }
-    }
-    return stream;
-}
-
 - (void)dealloc
 {
   [_localTracks removeAllObjects];
@@ -66,6 +37,35 @@
   [_peerConnections removeAllObjects];
 
   _peerConnectionFactory = nil;
+}
+
+- (instancetype)init
+{
+  self = [super init];
+  if (self) {
+    _peerConnectionFactory = [RTCPeerConnectionFactory new];
+//    [RTCPeerConnectionFactory initializeSSL];
+
+    _peerConnections = [NSMutableDictionary new];
+    _localStreams = [NSMutableDictionary new];
+    _localTracks = [NSMutableDictionary new];
+  }
+  return self;
+}
+
+- (RTCMediaStream*)streamForReactTag:(NSString*)reactTag
+{
+  RTCMediaStream *stream = _localStreams[reactTag];
+  if (!stream) {
+    for (NSNumber *peerConnectionId in _peerConnections) {
+      RTCPeerConnection *peerConnection = _peerConnections[peerConnectionId];
+      stream = peerConnection.remoteStreams[reactTag];
+      if (stream) {
+        break;
+      }
+    }
+  }
+  return stream;
 }
 
 RCT_EXPORT_MODULE();

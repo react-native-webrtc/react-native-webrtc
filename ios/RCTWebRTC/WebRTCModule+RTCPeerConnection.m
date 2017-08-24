@@ -343,7 +343,7 @@ RCT_EXPORT_METHOD(peerConnectionGetStats:(nonnull NSString *)trackID objectID:(n
   // Make sure ID does not exist across local and remote streams (for any peerConnection)
   do {
     streamReactTag = [[NSUUID UUID] UUIDString];
-  } while ([self streamForTag:streamReactTag]);
+  } while ([self streamForReactTag:streamReactTag]);
 
   peerConnection.remoteStreams[streamReactTag] = stream;
   [self.bridge.eventDispatcher sendDeviceEventWithName:@"peerConnectionAddedStream"
