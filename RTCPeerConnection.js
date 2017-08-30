@@ -211,10 +211,13 @@ export default class RTCPeerConnection extends EventTarget(PEER_CONNECTION_EVENT
         this._peerConnectionId,
         stats => {
           if (success) {
-            // It turns out that on Android it is faster to construct a single
+            // On both Android and iOS it is faster to construct a single
             // JSON string representing the array of StatsReports and have it
             // pass through the React Native bridge rather than the array of
-            // StatsReports.
+            // StatsReports. While the implementations do try to be faster in
+            // general, the stress is on being faster to pass through the React
+            // Native bridge which is a bottleneck that tends to be visible in
+            // the UI when there is congestion involving UI-related passing.
             if (typeof stats === 'string') {
               try {
                 stats = JSON.parse(stats);
