@@ -41,12 +41,12 @@ class PeerConnectionObserver implements PeerConnection.Observer {
     private final WebRTCModule webRTCModule;
 
     /**
-     * The <tt>StringBuilder</tt> cache utilized by {@link #convertWebRTCStats}
-     * in order to minimize the number of allocations of <tt>StringBuilder</tt>
+     * The <tt>StringBuilder</tt> cache utilized by {@link #statsToJSON} in
+     * order to minimize the number of allocations of <tt>StringBuilder</tt>
      * instances and, more importantly, the allocations of its <tt>char</tt>
      * buffer in an attempt to improve performance.
      */
-    private SoftReference<StringBuilder> convertWebRTCStatsStringBuilder
+    private SoftReference<StringBuilder> statsToJSONStringBuilder
         = new SoftReference(null);
 
     PeerConnectionObserver(WebRTCModule webRTCModule, int id) {
@@ -73,54 +73,6 @@ class PeerConnectionObserver implements PeerConnection.Observer {
          // Unlike on iOS, we cannot unregister the DataChannel.Observer
          // instance on Android. At least do whatever else we do on iOS.
          dataChannels.clear();
-    }
-
-    private String convertWebRTCStats(StatsReport[] reports) {
-        // It turns out that on Android it is faster to construct a single JSON
-        // string representing the array of StatsReports and have it pass
-        // through the React Native bridge rather than the array of
-        // StatsReports.
-
-        // If possible, reuse a single StringBuilder instance across multiple
-        // getStats method calls in order to reduce the total number of
-        // allocations.
-        StringBuilder s = convertWebRTCStatsStringBuilder.get();
-        if (s == null) {
-            s = new StringBuilder();
-            convertWebRTCStatsStringBuilder = new SoftReference(s);
-        }
-
-        s.append('[');
-        final int reportCount = reports.length;
-        for (int i = 0; i < reportCount; ++i) {
-            StatsReport report = reports[i];
-            if (i != 0) {
-                s.append(',');
-            }
-            s.append("{\"id\":\"").append(report.id)
-                .append("\",\"type\":\"").append(report.type)
-                .append("\",\"timestamp\":").append(report.timestamp)
-                .append(",\"values\":[");
-            StatsReport.Value[] values = report.values;
-            final int valueCount = values.length;
-            for (int j = 0; j < valueCount; ++j) {
-                StatsReport.Value v = values[j];
-                if (j != 0) {
-                    s.append(',');
-                }
-                s.append("{\"").append(v.name).append("\":\"").append(v.value)
-                    .append("\"}");
-            }
-            s.append("]}");
-        }
-        s.append("]");
-
-        String r = s.toString();
-        // Prepare the StringBuilder instance for reuse (in order to reduce the
-        // total number of allocations performed during multiple getStats method
-        // calls).
-        s.setLength(0);
-        return r;
     }
 
     void createDataChannel(String label, ReadableMap config) {
@@ -202,13 +154,71 @@ class PeerConnectionObserver implements PeerConnection.Observer {
                     new StatsObserver() {
                         @Override
                         public void onComplete(StatsReport[] reports) {
-                            cb.invoke(convertWebRTCStats(reports));
+                            cb.invoke(statsToJSON(reports));
                         }
                     },
                     track);
         } else {
             Log.e(TAG, "peerConnectionGetStats() MediaStreamTrack not found for id: " + trackId);
         }
+    }
+
+    /**
+     * Constructs a JSON <tt>String</tt> representation of a specific array of
+     * <tt>StatsReport</tt>s (produced by {@link PeerConnection#getStats}).
+     * <p>
+     * On Android it is faster to (1) construct a single JSON <tt>String</tt>
+     * representation of an array of <tt>StatsReport</tt>s and (2) have it pass
+     * through the React Native bridge rather than the array of
+     * <tt>StatsReport</tt>s.
+     *
+     * @param reports the array of <tt>StatsReport</tt>s to represent in JSON
+     * format
+     * @return a <tt>String</tt> which represents the specified <tt>reports</tt>
+     * in JSON format
+     */
+    private String statsToJSON(StatsReport[] reports) {
+        // If possible, reuse a single StringBuilder instance across multiple
+        // getStats method calls in order to reduce the total number of
+        // allocations.
+        StringBuilder s = statsToJSONStringBuilder.get();
+        if (s == null) {
+            s = new StringBuilder();
+            statsToJSONStringBuilder = new SoftReference(s);
+        }
+
+        s.append('[');
+        final int reportCount = reports.length;
+        for (int i = 0; i < reportCount; ++i) {
+            StatsReport report = reports[i];
+            if (i != 0) {
+                s.append(',');
+            }
+            s.append("{\"id\":\"").append(report.id)
+                .append("\",\"type\":\"").append(report.type)
+                .append("\",\"timestamp\":").append(report.timestamp)
+                .append(",\"values\":[");
+            StatsReport.Value[] values = report.values;
+            final int valueCount = values.length;
+            for (int j = 0; j < valueCount; ++j) {
+                StatsReport.Value v = values[j];
+                if (j != 0) {
+                    s.append(',');
+                }
+                s.append("{\"").append(v.name).append("\":\"").append(v.value)
+                    .append("\"}");
+            }
+            s.append("]}");
+        }
+        s.append("]");
+
+        String r = s.toString();
+        // Prepare the StringBuilder instance for reuse (in order to reduce the
+        // total number of allocations performed during multiple getStats method
+        // calls).
+        s.setLength(0);
+
+        return r;
     }
 
     @Override
