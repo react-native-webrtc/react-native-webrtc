@@ -195,24 +195,31 @@ export default class RTCPeerConnection extends EventTarget(PEER_CONNECTION_EVENT
     );
   }
 
-  getStats(track) {
-    return WebRTCModule.peerConnectionGetStats(
-      (track && track.id) || '',
-      this._peerConnectionId
-    ).then(stats => {
-      // It turns out that on Android it is faster to construct a single
-      // JSON string representing the array of StatsReports and have it
-      // pass through the React Native bridge rather than the array of
-      // StatsReports.
-      if (typeof stats === 'string') {
-        try {
-          stats = JSON.parse(stats);
-        } catch (e) {
-          throw e;
+  getStats(track, success, failure) {
+    if (WebRTCModule.peerConnectionGetStats) {
+      return WebRTCModule.peerConnectionGetStats(
+        (track && track.id) || '',
+        this._peerConnectionId
+      ).then(stats => {
+        // On both Android and iOS it is faster to construct a single
+        // JSON string representing the array of StatsReports and have it
+        // pass through the React Native bridge rather than the array of
+        // StatsReports. While the implementations do try to be faster in
+        // general, the stress is on being faster to pass through the React
+        // Native bridge which is a bottleneck that tends to be visible in
+        // the UI when there is congestion involving UI-related passing.
+        if (typeof stats === 'string') {
+          try {
+            stats = JSON.parse(stats);
+          } catch (e) {
+            throw e;
+          }
         }
-      }
-      return stats;
-    });
+        return stats;
+      });
+    } else {
+      console.warn('RTCPeerConnection getStats not supported');
+    }
   }
 
   getRemoteStreams() {

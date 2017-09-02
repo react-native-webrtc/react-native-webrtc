@@ -3,6 +3,9 @@ package com.oney.WebRTCModule;
 import java.io.UnsupportedEncodingException;
 import java.lang.ref.SoftReference;
 import java.nio.ByteBuffer;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
 
 import android.support.annotation.Nullable;
 import android.util.Base64;
@@ -34,20 +37,24 @@ class PeerConnectionObserver implements PeerConnection.Observer {
         = new SparseArray<DataChannel>();
     private final int id;
     private PeerConnection peerConnection;
+    final Map<String, MediaStream> remoteStreams;
+    final Map<String, MediaStreamTrack> remoteTracks;
     private final WebRTCModule webRTCModule;
 
     /**
-     * The <tt>StringBuilder</tt> cache utilized by {@link #convertWebRTCStats}
-     * in order to minimize the number of allocations of <tt>StringBuilder</tt>
+     * The <tt>StringBuilder</tt> cache utilized by {@link #statsToJSON} in
+     * order to minimize the number of allocations of <tt>StringBuilder</tt>
      * instances and, more importantly, the allocations of its <tt>char</tt>
      * buffer in an attempt to improve performance.
      */
-    private SoftReference<StringBuilder> convertWebRTCStatsStringBuilder
+    private SoftReference<StringBuilder> statsToJSONStringBuilder
         = new SoftReference(null);
 
     PeerConnectionObserver(WebRTCModule webRTCModule, int id) {
         this.webRTCModule = webRTCModule;
         this.id = id;
+        this.remoteStreams = new HashMap<String, MediaStream>();
+        this.remoteTracks = new HashMap<String, MediaStreamTrack>();
     }
 
     PeerConnection getPeerConnection() {
@@ -61,57 +68,12 @@ class PeerConnectionObserver implements PeerConnection.Observer {
     void close() {
          peerConnection.close();
 
+         remoteStreams.clear();
+         remoteTracks.clear();
+
          // Unlike on iOS, we cannot unregister the DataChannel.Observer
          // instance on Android. At least do whatever else we do on iOS.
          dataChannels.clear();
-    }
-
-    private String convertWebRTCStats(StatsReport[] reports) {
-        // It turns out that on Android it is faster to construct a single JSON
-        // string representing the array of StatsReports and have it pass
-        // through the React Native bridge rather than the array of
-        // StatsReports.
-
-        // If possible, reuse a single StringBuilder instance across multiple
-        // getStats method calls in order to reduce the total number of
-        // allocations.
-        StringBuilder s = convertWebRTCStatsStringBuilder.get();
-        if (s == null) {
-            s = new StringBuilder();
-            convertWebRTCStatsStringBuilder = new SoftReference(s);
-        }
-
-        s.append('[');
-        final int reportCount = reports.length;
-        for (int i = 0; i < reportCount; ++i) {
-            StatsReport report = reports[i];
-            if (i != 0) {
-                s.append(',');
-            }
-            s.append("{\"id\":\"").append(report.id)
-                .append("\",\"type\":\"").append(report.type)
-                .append("\",\"timestamp\":").append(report.timestamp)
-                .append(",\"values\":[");
-            StatsReport.Value[] values = report.values;
-            final int valueCount = values.length;
-            for (int j = 0; j < valueCount; ++j) {
-                StatsReport.Value v = values[j];
-                if (j != 0) {
-                    s.append(',');
-                }
-                s.append("{\"").append(v.name).append("\":\"").append(v.value)
-                    .append("\"}");
-            }
-            s.append("]}");
-        }
-        s.append("]");
-
-        String r = s.toString();
-        // Prepare the StringBuilder instance for reuse (in order to reduce the
-        // total number of allocations performed during multiple getStats method
-        // calls).
-        s.setLength(0);
-        return r;
     }
 
     void createDataChannel(String label, ReadableMap config) {
@@ -187,19 +149,77 @@ class PeerConnectionObserver implements PeerConnection.Observer {
         MediaStreamTrack track = null;
         if (trackId == null
                 || trackId.isEmpty()
-                || (track = webRTCModule.mMediaStreamTracks.get(trackId))
-                    != null) {
+                || (track = webRTCModule.localTracks.get(trackId)) != null
+                || (track = remoteTracks.get(trackId)) != null) {
             peerConnection.getStats(
                     new StatsObserver() {
                         @Override
                         public void onComplete(StatsReport[] reports) {
-                            promise.resolve(convertWebRTCStats(reports));
+                            promise.resolve(statsToJSON(reports));
                         }
                     },
                     track);
         } else {
             Log.e(TAG, "peerConnectionGetStats() MediaStreamTrack not found for id: " + trackId);
         }
+    }
+
+    /**
+     * Constructs a JSON <tt>String</tt> representation of a specific array of
+     * <tt>StatsReport</tt>s (produced by {@link PeerConnection#getStats}).
+     * <p>
+     * On Android it is faster to (1) construct a single JSON <tt>String</tt>
+     * representation of an array of <tt>StatsReport</tt>s and (2) have it pass
+     * through the React Native bridge rather than the array of
+     * <tt>StatsReport</tt>s.
+     *
+     * @param reports the array of <tt>StatsReport</tt>s to represent in JSON
+     * format
+     * @return a <tt>String</tt> which represents the specified <tt>reports</tt>
+     * in JSON format
+     */
+    private String statsToJSON(StatsReport[] reports) {
+        // If possible, reuse a single StringBuilder instance across multiple
+        // getStats method calls in order to reduce the total number of
+        // allocations.
+        StringBuilder s = statsToJSONStringBuilder.get();
+        if (s == null) {
+            s = new StringBuilder();
+            statsToJSONStringBuilder = new SoftReference(s);
+        }
+
+        s.append('[');
+        final int reportCount = reports.length;
+        for (int i = 0; i < reportCount; ++i) {
+            StatsReport report = reports[i];
+            if (i != 0) {
+                s.append(',');
+            }
+            s.append("{\"id\":\"").append(report.id)
+                .append("\",\"type\":\"").append(report.type)
+                .append("\",\"timestamp\":").append(report.timestamp)
+                .append(",\"values\":[");
+            StatsReport.Value[] values = report.values;
+            final int valueCount = values.length;
+            for (int j = 0; j < valueCount; ++j) {
+                StatsReport.Value v = values[j];
+                if (j != 0) {
+                    s.append(',');
+                }
+                s.append("{\"").append(v.name).append("\":\"").append(v.value)
+                    .append("\"}");
+            }
+            s.append("]}");
+        }
+        s.append("]");
+
+        String r = s.toString();
+        // Prepare the StringBuilder instance for reuse (in order to reduce the
+        // total number of allocations performed during multiple getStats method
+        // calls).
+        s.setLength(0);
+
+        return r;
     }
 
     @Override
@@ -243,22 +263,55 @@ class PeerConnectionObserver implements PeerConnection.Observer {
         webRTCModule.sendEvent("peerConnectionIceGatheringChanged", params);
     }
 
+    private String getReactTagForStream(MediaStream mediaStream) {
+        for (Iterator<Map.Entry<String, MediaStream>> i
+                    = remoteStreams.entrySet().iterator();
+                i.hasNext();) {
+            Map.Entry<String, MediaStream> e = i.next();
+            if (e.getValue().equals(mediaStream)) {
+                return e.getKey();
+            }
+        }
+        return null;
+    }
+
     @Override
     public void onAddStream(MediaStream mediaStream) {
-        String streamReactTag = webRTCModule.onAddStream(mediaStream);
+        String streamReactTag = null;
+        String streamId = mediaStream.label();
+        // The native WebRTC implementation has a special concept of a default
+        // MediaStream instance with the label default that the implementation
+        // reuses.
+        if ("default".equals(streamId)) {
+            for (Map.Entry<String, MediaStream> e
+                    : remoteStreams.entrySet()) {
+                if (e.getValue().equals(mediaStream)) {
+                    streamReactTag = e.getKey();
+                    break;
+                }
+            }
+        }
+
+        if (streamReactTag == null){
+            streamReactTag = webRTCModule.getNextStreamUUID();
+            remoteStreams.put(streamReactTag, mediaStream);
+        }
 
         WritableMap params = Arguments.createMap();
         params.putInt("id", id);
-        params.putString("streamId", mediaStream.label());
+        params.putString("streamId", streamId);
         params.putString("streamReactTag", streamReactTag);
 
         WritableArray tracks = Arguments.createArray();
 
         for (int i = 0; i < mediaStream.videoTracks.size(); i++) {
             VideoTrack track = mediaStream.videoTracks.get(i);
+            String trackId = track.id();
+
+            remoteTracks.put(trackId, track);
 
             WritableMap trackInfo = Arguments.createMap();
-            trackInfo.putString("id", track.id());
+            trackInfo.putString("id", trackId);
             trackInfo.putString("label", "Video");
             trackInfo.putString("kind", track.kind());
             trackInfo.putBoolean("enabled", track.enabled());
@@ -268,9 +321,12 @@ class PeerConnectionObserver implements PeerConnection.Observer {
         }
         for (int i = 0; i < mediaStream.audioTracks.size(); i++) {
             AudioTrack track = mediaStream.audioTracks.get(i);
+            String trackId = track.id();
+
+            remoteTracks.put(trackId, track);
 
             WritableMap trackInfo = Arguments.createMap();
-            trackInfo.putString("id", track.id());
+            trackInfo.putString("id", trackId);
             trackInfo.putString("label", "Audio");
             trackInfo.putString("kind", track.kind());
             trackInfo.putBoolean("enabled", track.enabled());
@@ -285,10 +341,23 @@ class PeerConnectionObserver implements PeerConnection.Observer {
 
     @Override
     public void onRemoveStream(MediaStream mediaStream) {
-        String streamReactTag = webRTCModule.onRemoveStream(mediaStream);
+        String streamReactTag = getReactTagForStream(mediaStream);
         if (streamReactTag == null) {
+            Log.w(TAG,
+                "onRemoveStream - no remote stream for id: "
+                    + mediaStream.label());
             return;
         }
+
+        for (VideoTrack track : mediaStream.videoTracks) {
+            this.remoteTracks.remove(track.id());
+        }
+        for (AudioTrack track : mediaStream.audioTracks) {
+            this.remoteTracks.remove(track.id());
+        }
+
+        this.remoteStreams.remove(streamReactTag);
+
         WritableMap params = Arguments.createMap();
         params.putInt("id", id);
         params.putString("streamId", streamReactTag);

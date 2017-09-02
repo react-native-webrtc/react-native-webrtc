@@ -63,7 +63,7 @@ public class RTCVideoViewManager extends SimpleViewManager<WebRTCView> {
       mediaStream = null;
     } else {
       WebRTCModule module = mContext.getNativeModule(WebRTCModule.class);
-      mediaStream = module.mMediaStreams.get(streamURL);
+      mediaStream = module.getStreamForReactTag(streamURL);
     }
     view.setStream(mediaStream);
   }
