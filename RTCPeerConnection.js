@@ -195,7 +195,7 @@ export default class RTCPeerConnection extends EventTarget(PEER_CONNECTION_EVENT
     );
   }
 
-  getStats(track, success, failure) {
+  getStats(track) {
     if (WebRTCModule.peerConnectionGetStats) {
       return WebRTCModule.peerConnectionGetStats(
         (track && track.id) || '',
