@@ -13,6 +13,7 @@ import com.facebook.react.bridge.ReadableMap;
 import com.facebook.react.bridge.ReadableType;
 import com.facebook.react.bridge.WritableArray;
 import com.facebook.react.bridge.WritableMap;
+import com.facebook.react.bridge.Promise;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -194,15 +195,14 @@ class GetUserMediaImpl {
      */
     void getUserMedia(
             final ReadableMap constraints,
-            final Callback successCallback,
-            final Callback errorCallback,
+            final Promise promise,
             final MediaStream mediaStream) {
         // TODO: change getUserMedia constraints format to support new syntax
         //   constraint format seems changed, and there is no mandatory any more.
         //   and has a new syntax/attrs to specify resolution
         //   should change `parseConstraints()` according
         //   see: https://www.w3.org/TR/mediacapture-streams/#idl-def-MediaTrackConstraints
- 
+
         final ArrayList<String> requestPermissions = new ArrayList<>();
 
         if (constraints.hasKey("audio")) {
@@ -241,7 +241,7 @@ class GetUserMediaImpl {
         // requestedMediaTypes is the empty set, the method invocation fails
         // with a TypeError.
         if (requestPermissions.isEmpty()) {
-            errorCallback.invoke(
+            promise.reject(
                 "TypeError",
                 "constraints requests no media types");
             return;
@@ -256,8 +256,7 @@ class GetUserMediaImpl {
 
                     getUserMedia(
                         constraints,
-                        successCallback,
-                        errorCallback,
+                        promise,
                         mediaStream,
                         grantedPermissions);
                 }
@@ -269,9 +268,10 @@ class GetUserMediaImpl {
                     // getUserMedia() algorithm, if the user has denied
                     // permission, fail "with a new DOMException object whose
                     // name attribute has the value NotAllowedError."
-                    errorCallback.invoke("DOMException", "NotAllowedError");
+                    promise.reject("DOMException", "NotAllowedError");
                 }
-            });
+            }
+        );
     }
 
     /**
@@ -281,8 +281,7 @@ class GetUserMediaImpl {
      */
     private void getUserMedia(
             ReadableMap constraints,
-            Callback successCallback,
-            Callback errorCallback,
+            Promise promise,
             MediaStream mediaStream,
             List<String> grantedPermissions) {
         MediaStreamTrack[] tracks = new MediaStreamTrack[2];
@@ -302,13 +301,14 @@ class GetUserMediaImpl {
              // specified by
              // https://www.w3.org/TR/mediacapture-streams/#dom-mediadevices-getusermedia
              // with respect to distinguishing the various causes of failure.
-             errorCallback.invoke(
+             promise.reject(
                  /* type */ null,
                  "Failed to create new track");
              return;
         }
 
         WritableArray tracks_ = Arguments.createArray();
+        WritableArray successResult = Arguments.createArray();
 
         for (MediaStreamTrack track : tracks) {
             if (track == null) {
@@ -326,7 +326,7 @@ class GetUserMediaImpl {
 
             WritableMap track_ = Arguments.createMap();
             String kind = track.kind();
- 
+
             track_.putBoolean("enabled", track.enabled());
             track_.putString("id", id);
             track_.putString("kind", kind);
@@ -341,7 +341,9 @@ class GetUserMediaImpl {
         Log.d(TAG, "MediaStream id: " + streamId);
         webRTCModule.localStreams.put(streamId, mediaStream);
 
-        successCallback.invoke(streamId, tracks_);
+        successResult.pushString(streamId);
+        successResult.pushArray(tracks_);
+        promise.resolve(successResult);
     }
 
     private VideoTrack getUserVideo(ReadableMap constraints) {
@@ -403,7 +405,7 @@ class GetUserMediaImpl {
                 : DEFAULT_FPS;
 
         videoCapturer.startCapture(width, height, fps);
-  
+
         String trackId = webRTCModule.getNextTrackUUID();
         mVideoCapturers.put(trackId, videoCapturer);
 

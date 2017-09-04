@@ -5,19 +5,11 @@ import {NativeModules} from 'react-native';
 import MediaStream from './MediaStream';
 import MediaStreamError from './MediaStreamError';
 import MediaStreamTrack from './MediaStreamTrack';
+import withLegacyCallbacks from './withLegacyCallbacks';
 
 const {WebRTCModule} = NativeModules;
 
-export default function getUserMedia(
-    constraints,
-    successCallback,
-    errorCallback) {
-  if (typeof successCallback !== 'function') {
-    throw new TypeError('successCallback is non-nullable and required');
-  }
-  if (typeof errorCallback !== 'function') {
-    throw new TypeError('errorCallback is non-nullable and required');
-  }
+export default withLegacyCallbacks(constraints => {
   // According to
   // https://www.w3.org/TR/mediacapture-streams/#dom-mediadevices-getusermedia,
   // the constraints argument is a dictionary of type MediaStreamConstraints.
@@ -38,11 +30,7 @@ export default function getUserMedia(
         } else if (typeofMediaTypeConstraints == 'object') {
           ++requestedMediaTypes;
         } else {
-          errorCallback(
-            new TypeError(
-              'constraints.' + mediaType
-                + ' is neither a boolean nor a dictionary'));
-          return;
+          throw new TypeError('constraints.' + mediaType + ' is neither a boolean nor a dictionary');
         }
       }
     }
@@ -50,27 +38,23 @@ export default function getUserMedia(
     // requestedMediaTypes is the empty set, the method invocation fails with
     // a TypeError.
     if (requestedMediaTypes === 0) {
-      errorCallback(new TypeError('constraints requests no media types'));
-      return;
+      throw new TypeError('constraints requests no media types');
     }
   } else {
-    errorCallback(new TypeError('constraints is not a dictionary'));
-    return;
+    throw new TypeError('constraints is not a dictionary');
   }
 
-  WebRTCModule.getUserMedia(
-    constraints,
-    /* successCallback */ (id, tracks) => {
+  return WebRTCModule.getUserMedia(constraints)
+    .then(([id, tracks]) => {
       const stream = new MediaStream(id);
       for (const track of tracks) {
         stream.addTrack(new MediaStreamTrack(track));
       }
-
-      successCallback(stream);
-    },
-    /* errorCallback */ (type, message) => {
+      return stream;
+    })
+    .catch(({ message, code }) => {
       let error;
-      switch (type) {
+      switch (code) {
       case 'DOMException':
         // According to
         // https://www.w3.org/TR/mediacapture-streams/#idl-def-MediaStreamError,
@@ -93,9 +77,9 @@ export default function getUserMedia(
         break;
       }
       if (!error) {
-        error = new MediaStreamError({ message, name: type });
+        error = new MediaStreamError({ message, name: code });
       }
 
-      errorCallback(error);
+      throw error;
     });
-}
+});

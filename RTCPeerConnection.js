@@ -12,6 +12,7 @@ import RTCSessionDescription from './RTCSessionDescription';
 import RTCIceCandidate from './RTCIceCandidate';
 import RTCIceCandidateEvent from './RTCIceCandidateEvent';
 import RTCEvent from './RTCEvent';
+import withLegacyCallbacks from './withLegacyCallbacks';
 
 const {WebRTCModule} = NativeModules;
 
@@ -112,6 +113,13 @@ export default class RTCPeerConnection extends EventTarget(PEER_CONNECTION_EVENT
         DEFAULT_PC_CONSTRAINTS,
         this._peerConnectionId);
     this._registerEvents();
+    // Allow for legacy callback usage
+    this.createOffer = withLegacyCallbacks(this.createOffer.bind(this), true);
+    this.createAnswer = withLegacyCallbacks(this.createAnswer.bind(this), true);
+    this.setLocalDescription = withLegacyCallbacks(this.setLocalDescription.bind(this), false, 1, 2);
+    this.setRemoteDescription = withLegacyCallbacks(this.setRemoteDescription.bind(this));
+    this.addIceCandidate = withLegacyCallbacks(this.addIceCandidate.bind(this));
+    this.getStats = withLegacyCallbacks(this.getStats.bind(this));
   }
 
   addStream(stream: MediaStream) {
@@ -142,93 +150,73 @@ export default class RTCPeerConnection extends EventTarget(PEER_CONNECTION_EVENT
     return constraints;
   }
 
-  createOffer(successCallback: ?Function, failureCallback: ?Function, options) {
-    WebRTCModule.peerConnectionCreateOffer(
-        this._peerConnectionId,
-        this._mergeMediaConstraints(options),
-        (successful, data) => {
-          if (successful) {
-            successCallback(new RTCSessionDescription(data));
-          } else {
-            failureCallback(data); // TODO: convert to NavigatorUserMediaError
-          }
-        });
+  createOffer(options) {
+    return WebRTCModule.peerConnectionCreateOffer(
+      this._peerConnectionId,
+      this._mergeMediaConstraints(options)
+    ).then(data => new RTCSessionDescription(data));
   }
 
-  createAnswer(successCallback: ?Function, failureCallback: ?Function, options) {
-    WebRTCModule.peerConnectionCreateAnswer(
-        this._peerConnectionId,
-        this._mergeMediaConstraints(options),
-        (successful, data) => {
-          if (successful) {
-            successCallback(new RTCSessionDescription(data));
-          } else {
-            failureCallback(data);
-          }
-        });
+  createAnswer(options) {
+    return WebRTCModule.peerConnectionCreateAnswer(
+      this._peerConnectionId,
+      this._mergeMediaConstraints(options)
+    ).then(data => new RTCSessionDescription(data));
   }
 
   setConfiguration(configuration) {
     WebRTCModule.peerConnectionSetConfiguration(configuration, this._peerConnectionId);
   }
 
-  setLocalDescription(sessionDescription: RTCSessionDescription, success: ?Function, failure: ?Function, constraints) {
-    WebRTCModule.peerConnectionSetLocalDescription(sessionDescription.toJSON(), this._peerConnectionId, (successful, data) => {
-      if (successful) {
-        this.localDescription = sessionDescription;
-        success();
-      } else {
-        failure(data);
-      }
+  setLocalDescription(sessionDescription: RTCSessionDescription, constraints) {
+    return WebRTCModule.peerConnectionSetLocalDescription(
+      sessionDescription.toJSON(),
+      this._peerConnectionId
+    ).then(() => {
+      this.localDescription = sessionDescription;
+      return;
     });
   }
 
-  setRemoteDescription(sessionDescription: RTCSessionDescription, success: ?Function, failure: ?Function) {
-    WebRTCModule.peerConnectionSetRemoteDescription(sessionDescription.toJSON(), this._peerConnectionId, (successful, data) => {
-      if (successful) {
-        this.remoteDescription = sessionDescription;
-        success();
-      } else {
-        failure(data);
-      }
+  setRemoteDescription(sessionDescription: RTCSessionDescription) {
+    return WebRTCModule.peerConnectionSetRemoteDescription(
+      sessionDescription.toJSON(),
+      this._peerConnectionId
+    ).then(() => {
+      this.remoteDescription = sessionDescription;
+      return;
     });
   }
 
-  addIceCandidate(candidate, success, failure) { // TODO: success, failure
-    WebRTCModule.peerConnectionAddICECandidate(candidate.toJSON(), this._peerConnectionId, (successful) => {
-      if (successful) {
-        success && success();
-      } else {
-        failure && failure();
-      }
-    });
+  addIceCandidate(candidate) { // TODO: success, failure
+    return WebRTCModule.peerConnectionAddICECandidate(
+      candidate.toJSON(),
+      this._peerConnectionId
+    );
   }
 
-  getStats(track, success, failure) {
+  getStats(track) {
     if (WebRTCModule.peerConnectionGetStats) {
-      WebRTCModule.peerConnectionGetStats(
+      return WebRTCModule.peerConnectionGetStats(
         (track && track.id) || '',
-        this._peerConnectionId,
-        stats => {
-          if (success) {
-            // On both Android and iOS it is faster to construct a single
-            // JSON string representing the array of StatsReports and have it
-            // pass through the React Native bridge rather than the array of
-            // StatsReports. While the implementations do try to be faster in
-            // general, the stress is on being faster to pass through the React
-            // Native bridge which is a bottleneck that tends to be visible in
-            // the UI when there is congestion involving UI-related passing.
-            if (typeof stats === 'string') {
-              try {
-                stats = JSON.parse(stats);
-              } catch (e) {
-                failure(e);
-                return;
-              }
-            }
-            success(stats);
+        this._peerConnectionId
+      ).then(stats => {
+        // On both Android and iOS it is faster to construct a single
+        // JSON string representing the array of StatsReports and have it
+        // pass through the React Native bridge rather than the array of
+        // StatsReports. While the implementations do try to be faster in
+        // general, the stress is on being faster to pass through the React
+        // Native bridge which is a bottleneck that tends to be visible in
+        // the UI when there is congestion involving UI-related passing.
+        if (typeof stats === 'string') {
+          try {
+            stats = JSON.parse(stats);
+          } catch (e) {
+            throw e;
           }
-        });
+        }
+        return stats;
+      });
     } else {
       console.warn('RTCPeerConnection getStats not supported');
     }
