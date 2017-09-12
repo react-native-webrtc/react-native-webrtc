@@ -90,13 +90,15 @@ export default class RTCDataChannel extends EventTarget(DATA_CHANNEL_EVENTS) {
       return;
     }
 
+    // Safely convert the buffer object to an Uint8Array for base64-encoding
     if (ArrayBuffer.isView(data)) {
-      data = data.buffer;
-    }
-    if (!(data instanceof ArrayBuffer)) {
+      data = new Uint8Array(data.buffer, data.byteOffset, data.byteLength);
+    } else if (data instanceof ArrayBuffer) {
+      data = new Uint8Array(data);
+    } else {
       throw new TypeError('Data must be either string, ArrayBuffer, or ArrayBufferView');
     }
-    WebRTCModule.dataChannelSend(this._peerConnectionId, this.id, base64.fromByteArray(new Uint8Array(data)), 'binary');
+    WebRTCModule.dataChannelSend(this._peerConnectionId, this.id, base64.fromByteArray(data), 'binary');
   }
 
   close() {
