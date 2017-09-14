@@ -5,7 +5,7 @@ import {
   NativeModules,
   requireNativeComponent,
 } from 'react-native';
-import {PropTypes} from 'react';
+import PropTypes from 'prop-types';
 
 const {WebRTCModule} = NativeModules;
 
