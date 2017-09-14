@@ -21,7 +21,8 @@
   ],
   "dependencies": {
     "base64-js": "^1.1.2",
-    "event-target-shim": "^1.0.5"
+    "event-target-shim": "^1.0.5",
+    "prop-types": "^15.5.10"
   },
   "peerDependencies": {
     "react-native": ">=0.40.0"
