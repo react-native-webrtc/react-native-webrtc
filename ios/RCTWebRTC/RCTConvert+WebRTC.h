@@ -1,4 +1,4 @@
-#import "RCTConvert.h"
+#import <React/RCTConvert.h>
 #import <WebRTC/RTCDataChannelConfiguration.h>
 #import <WebRTC/RTCConfiguration.h>
 #import <WebRTC/RTCIceServer.h>

@@ -46,6 +46,13 @@ typedef NS_ENUM(NSInteger, RTCVideoViewObjectFit) {
 @interface RTCVideoView : UIView <RTCVideoRenderer, RTCEAGLVideoViewDelegate>
 
 /**
+ * The indicator which determines whether this {@code RTCVideoView} is to mirror
+ * the video specified by {@link #videoTrack} during its rendering. Typically,
+ * applications choose to mirror the front/user-facing camera.
+ */
+@property (nonatomic) BOOL mirror;
+
+/**
  * In the fashion of
  * https://www.w3.org/TR/html5/embedded-content-0.html#dom-video-videowidth
  * and https://www.w3.org/TR/html5/rendering.html#video-object-fit, resembles
@@ -195,6 +202,25 @@ typedef NS_ENUM(NSInteger, RTCVideoViewObjectFit) {
       || newValue.size.height != oldValue.size.height) {
     subview.frame = newValue;
   }
+
+  subview.transform
+    = self.mirror
+        ? CGAffineTransformMakeScale(-1.0, 1.0)
+        : CGAffineTransformIdentity;
+}
+
+/**
+ * Implements the setter of the {@link #mirror} property of this
+ * {@code RTCVideoView}.
+ *
+ * @param mirror The value to set on the {@code mirror} property of this
+ * {@code RTCVideoView}.
+ */
+- (void)setMirror:(BOOL)mirror {
+  if (_mirror != mirror) {
+      _mirror = mirror;
+      [self dispatchAsyncSetNeedsLayout];
+  }
 }
 
 /**
@@ -215,7 +241,7 @@ typedef NS_ENUM(NSInteger, RTCVideoViewObjectFit) {
  * Implements the setter of the {@link #videoTrack} property of this
  * {@code RTCVideoView}.
  *
- * @param objectFit The value to set on the {@code videoTrack} property of this
+ * @param videoTrack The value to set on the {@code videoTrack} property of this
  * {@code RTCVideoView}.
  */
 - (void)setVideoTrack:(RTCVideoTrack *)videoTrack {
@@ -324,6 +350,8 @@ RCT_EXPORT_MODULE()
   return dispatch_get_main_queue();
 }
 
+RCT_EXPORT_VIEW_PROPERTY(mirror, BOOL)
+
 /**
  * In the fashion of
  * https://www.w3.org/TR/html5/embedded-content-0.html#dom-video-videowidth
@@ -340,17 +368,20 @@ RCT_CUSTOM_VIEW_PROPERTY(objectFit, NSString *, RTCVideoView) {
   view.objectFit = e;
 }
 
-RCT_CUSTOM_VIEW_PROPERTY(streamURL, NSNumber, RTCVideoView) {
+RCT_CUSTOM_VIEW_PROPERTY(streamURL, NSString, RTCVideoView) {
   RTCVideoTrack *videoTrack;
 
   if (json) {
-    NSString *streamId = (NSString *)json;
+    NSString *streamReactTag = (NSString *)json;
 
     WebRTCModule *module = [self.bridge moduleForName:@"WebRTCModule"];
-    RTCMediaStream *stream = module.mediaStreams[streamId];
-    NSArray *videoTracks = stream.videoTracks;
+    RTCMediaStream *stream = [module streamForReactTag:streamReactTag];
+    NSArray *videoTracks = stream ? stream.videoTracks : nil;
 
-    videoTrack = videoTracks.count ? videoTracks[0] : nil;
+    videoTrack = videoTracks && videoTracks.count ? videoTracks[0] : nil;
+    if (!videoTrack) {
+      NSLog(@"No video stream for react tag: %@", streamReactTag);
+    }
   } else {
     videoTrack = nil;
   }

@@ -8,10 +8,9 @@
 #import <Foundation/Foundation.h>
 #import <AVFoundation/AVFoundation.h>
 
-#import "RCTBridgeModule.h"
-#import "RCTConvert.h"
+#import <React/RCTBridgeModule.h>
+#import <React/RCTConvert.h>
 
-#import <WebRTC/RTCDataChannel.h>
 #import <WebRTC/RTCMediaStream.h>
 #import <WebRTC/RTCPeerConnectionFactory.h>
 #import <WebRTC/RTCPeerConnection.h>
@@ -23,8 +22,9 @@
 @property (nonatomic, strong) RTCPeerConnectionFactory *peerConnectionFactory;
 
 @property (nonatomic, strong) NSMutableDictionary<NSNumber *, RTCPeerConnection *> *peerConnections;
-@property (nonatomic, strong) NSMutableDictionary<NSString *, RTCMediaStream *> *mediaStreams;
-@property (nonatomic, strong) NSMutableDictionary<NSString *, RTCMediaStreamTrack *> *tracks;
-@property (nonatomic, strong) NSMutableDictionary<NSNumber *, RTCDataChannel *> *dataChannels;
+@property (nonatomic, strong) NSMutableDictionary<NSString *, RTCMediaStream *> *localStreams;
+@property (nonatomic, strong) NSMutableDictionary<NSString *, RTCMediaStreamTrack *> *localTracks;
+
+- (RTCMediaStream*)streamForReactTag:(NSString*)reactTag;
 
 @end

@@ -6,11 +6,15 @@
 //
 
 #import "WebRTCModule.h"
+#import <WebRTC/RTCDataChannel.h>
 #import <WebRTC/RTCPeerConnection.h>
 
 @interface RTCPeerConnection (React)
 
+@property (nonatomic, strong) NSMutableDictionary<NSNumber *, RTCDataChannel *> *dataChannels;
 @property (nonatomic, strong) NSNumber *reactTag;
+@property (nonatomic, strong) NSMutableDictionary<NSString *, RTCMediaStream *> *remoteStreams;
+@property (nonatomic, strong) NSMutableDictionary<NSString *, RTCMediaStreamTrack *> *remoteTracks;
 
 @end
 

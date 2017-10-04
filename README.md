@@ -5,33 +5,40 @@
 
 A WebRTC module for React Native.
 
+# BREAKING FOR RN 40:
+
+`master` branch needs RN >= 40 for now.
+if your RN version is under 40, use branch [rn-less-40](https://github.com/oney/react-native-webrtc/tree/rn-less-40) (npm version `0.54.7`)
+
+see [#190](https://github.com/oney/react-native-webrtc/pull/190) for detials
+
 ## Support
 - Currently support for iOS and Android.  
 - Support video and audio communication.  
 - Supports data channels.  
 - You can use it to build an iOS/Android app that can communicate with web browser.  
-- The WebRTC Library is based on [webrtc-build-scripts](https://github.com/pristineio/webrtc-build-scripts)
 
 ## WebRTC Revision
 
-please see [#79](https://github.com/oney/react-native-webrtc/issues/79) for discussions.  
-and [wiki page](https://github.com/oney/react-native-webrtc/wiki) to see revisions 
+Since `0.53`, we use same branch version number like in webrtc native.
+please see [wiki page](https://github.com/oney/react-native-webrtc/wiki) about revision history
+
+### format:
+
+`${branch_name} stable (${branched_from_revision})(+${Cherry-Picks-Num}-${Last-Cherry-Picks-Revision})`
 
 * the webrtc revision in brackets is extracting frrom `Cr-Branched-From` instead `Cr-Commit-Position`  
-* the number follows with `#` is the additional amount of cherry-picks since `Branched-From` revision.
+* the number follows with `+` is the additional amount of cherry-picks since `Branched-From` revision.
 
-format: `${branch_name} stable (${branched_from_revision})(#${Cherry-Picks-Num}-${Last-Cherry-Picks-Revision})`
+### note:
+the order of commit revision is nothing to do with the order of cherry-picks, for example, the earlier committed `cherry-pick-#2` may have higher revision than `cherry-pick-#3` and vice versa.
 
-note: the order of commit revision is nothing to do with the order of cherry-picks, for example, the esarlier committed `cherry-pick-#2` may have higher revision than `cherry-pick-#3` and vice versa.
-
-| react-native-webrtc | WebRTC(ios) | WebRTC(android)  | npm published | note |
-| :-------------: | :-------------:| :-----: | :-----: | :-----: | :-----: |
-| <= 0.9.0 | revision 11177 ~47               | revision 11139 ~47                    | :heavy_check_mark: | |
-| 0.10.0 | 52 stable<br>(12798)<br>(#10-13039)<br>32/64 | 52 stable<br>(12798)<br>(#10-13039)<br>32/64 | :heavy_check_mark: | git-lfs |
-| 0.11.0 | 52 stable<br>(12798)<br>(#10-13039)<br>32/64 | 52 stable<br>(12798)<br>(#10-13039)<br>32/64 | :heavy_check_mark: | git-lfs |
-| 0.12.0 | 53 stable<br>(13317)<br>(#6-13855)<br>32/64 | 53 stable<br>(13317)<br>(#6-13855)<br>32/64 | :heavy_check_mark: | git-lfs |
-| 0.13.0 | 53 stable<br>(13317)<br>(#6-13855)<br>32/64 | 53 stable<br>(13317)<br>(#6-13855)<br>32 | :heavy_check_mark: | |
-| master | 53 stable<br>(13317)<br>(#6-13855)<br>32/64 | 53 stable<br>(13317)<br>(#6-13855)<br>32 | :warning:          | |
+| react-native-webrtc | WebRTC Version | arch(ios) | arch(android)  | npm published | note | additional picks |
+| :-------------: | :-------------:| :-----: | :-----: | :-----: | :-----: | :-----: |
+| 0.54.7 | [M54](https://chromium.googlesource.com/external/webrtc/+/branch-heads/54)<br>(13869)<br>(+6-14091) | x86_64<br>i386<br>armv7<br>arm64 | armeabi-v7a<br>x86 | :heavy_check_mark: | RN < 40 | |
+| 1.57.1 | [M57](https://chromium.googlesource.com/external/webrtc/+/branch-heads/57)<br>(16123)<br>(+7-16178) | x86_64<br>i386<br>armv7<br>arm64 | armeabi-v7a<br>x86 | :heavy_check_mark: | |* [16805](https://chromium.googlesource.com/external/webrtc/+/0e22a4cfd3790d80ad1ae699891341fe322cb418)<br>* [16462](https://chromium.googlesource.com/external/webrtc.git/+/1634e160426df926e14cf9f1e5346d2a1dc9c909)  |
+| 1.58.2| [M58](https://chromium.googlesource.com/external/webrtc/+/branch-heads/58)<br>[commit](https://chromium.googlesource.com/external/webrtc/+/6504196a312da382d75c5ff577d10207793f2907)<br>(16937)<br>(+21-18206) | x86_64<br>i386<br>armv7<br>arm64 | armeabi-v7a<br>x86 | :heavy_check_mark: |  | * [17065](https://chromium.googlesource.com/external/webrtc/+/d1587ad244af3388c1282a715cdf05032ba0c2fc)<br>* [17925](https://chromium.googlesource.com/external/webrtc/+/f68426954154918ec5bf7e6b3096fa3d7acb0944)<br>* [18140](https://chromium.googlesource.com/external/webrtc/+/7daab660ce0e35fecad717fefab4cf935d3c253e)<br>* [18277](https://chromium.googlesource.com/external/webrtc/+/eae4564cb7dea3ad9f5963814e82fd823267ff89) |
+| master| [M58](https://chromium.googlesource.com/external/webrtc/+/branch-heads/58)<br>[commit](https://chromium.googlesource.com/external/webrtc/+/6504196a312da382d75c5ff577d10207793f2907)<br>(16937)<br>(+21-18206) | x86_64<br>i386<br>armv7<br>arm64 | armeabi-v7a<br>x86 | :warning: | test me plz | * [17065](https://chromium.googlesource.com/external/webrtc/+/d1587ad244af3388c1282a715cdf05032ba0c2fc)<br>* [17925](https://chromium.googlesource.com/external/webrtc/+/f68426954154918ec5bf7e6b3096fa3d7acb0944)<br>* [18140](https://chromium.googlesource.com/external/webrtc/+/7daab660ce0e35fecad717fefab4cf935d3c253e)<br>* [18277](https://chromium.googlesource.com/external/webrtc/+/eae4564cb7dea3ad9f5963814e82fd823267ff89) |
 
 ## Installation
 
@@ -40,7 +47,7 @@ note: the order of commit revision is nothing to do with the order of cherry-pic
 - [iOS](https://github.com/oney/react-native-webrtc/blob/master/Documentation/iOSInstallation.md)
 - [Android](https://github.com/oney/react-native-webrtc/blob/master/Documentation/AndroidInstallation.md)
 
-note: 0.10.0~0.12.0 required `git-lfs`, see: [git-lfs-installation](https://github.com/oney/react-native-webrtc/blob/master/Documentation/git-lfs-installation.md) 
+note: 0.10.0~0.12.0 required `git-lfs`, see: [git-lfs-installation](https://github.com/oney/react-native-webrtc/blob/master/Documentation/git-lfs-installation.md)
 
 ## Usage
 Now, you can use WebRTC like in browser.
@@ -49,45 +56,62 @@ In your `index.ios.js`/`index.android.js`, you can require WebRTC to import RTCP
 var WebRTC = require('react-native-webrtc');
 var {
   RTCPeerConnection,
-  RTCMediaStream,
   RTCIceCandidate,
   RTCSessionDescription,
   RTCView,
+  MediaStream,
   MediaStreamTrack,
   getUserMedia,
 } = WebRTC;
 ```
 Anything about using RTCPeerConnection, RTCSessionDescription and RTCIceCandidate is like browser.  
-Support most WebRTC APIs, please see the [Document](https://developer.mozilla.org/zh-TW/docs/Web/API/RTCPeerConnection).
+Support most WebRTC APIs, please see the [Document](https://developer.mozilla.org/en-US/docs/Web/API/RTCPeerConnection).
 ```javascript
 var configuration = {"iceServers": [{"url": "stun:stun.l.google.com:19302"}]};
 var pc = new RTCPeerConnection(configuration);
-MediaStreamTrack.getSources(sourceInfos => {
-  var videoSourceId;
-  for (var i = 0; i < sourceInfos.length; i++) {
-    var sourceInfo = sourceInfos[i];
-    if(sourceInfo.kind == "video" && sourceInfo.facing == "front") {
-      videoSourceId = sourceInfo.id;
-    }
-  }
-  getUserMedia({
-    "audio": true,
-    "video": {
-      optional: [{sourceId: videoSourceId}]
-    }
-  }, function (stream) {
-    pc.addStream(stream);
-  }, logError);
-});
 
-pc.createOffer(function(desc) {
-  pc.setLocalDescription(desc, function () {
+let isFront = true;
+MediaStreamTrack
+  .getSources()
+  .then(sourceInfos => {
+    console.log(sourceInfos);
+    let videoSourceId;
+    for (const i = 0; i < sourceInfos.length; i++) {
+      const sourceInfo = sourceInfos[i];
+      if(sourceInfo.kind == "video" && sourceInfo.facing == (isFront ? "front" : "back")) {
+        videoSourceId = sourceInfo.id;
+      }
+    }
+    return getUserMedia({
+      audio: true,
+      video: {
+        mandatory: {
+          minWidth: 500, // Provide your own width, height and frame rate here
+          minHeight: 300,
+          minFrameRate: 30
+        },
+        facingMode: (isFront ? "user" : "environment"),
+        optional: (videoSourceId ? [{sourceId: videoSourceId}] : [])
+      }
+    });
+  })
+  .then(stream => {
+    console.log('dddd', stream);
+    return stream
+  })
+  .catch(logError);
+
+pc.createOffer()
+  .then(pc.setLocalDescription)
+  .then(() => {
     // Send pc.localDescription to peer
-  }, function(e) {});
-}, function(e) {});
+  })
+  .catch(logError);
+
 pc.onicecandidate = function (event) {
   // send event.candidate to peer
 };
+
 // also support setRemoteDescription, createAnswer, addIceCandidate, onnegotiationneeded, oniceconnectionstatechange, onsignalingstatechange, onaddstream
 
 ```
@@ -116,14 +140,32 @@ And set stream to RTCView
 ```javascript
 container.setState({videoURL: stream.toURL()});
 ```
-## Demo
+
+### Custom APIs
+
+#### MediaStreamTrack.prototype._switchCamera()
+
+This function allows to switch the front / back cameras in a video track
+on the fly, without the need for adding / removing tracks or renegotiating.
+
+## Demos
+
+**Official Demo**
+
+author: [@oney](https://github.com/oney)
+
 The demo project is https://github.com/oney/RCTWebRTCDemo   
 And you will need a signaling server. I have written a signaling server https://react-native-webrtc.herokuapp.com/ (the repository is https://github.com/oney/react-native-webrtc-server).   
 You can open this website in browser, and then set it as signaling server in the app, and run the app. After you enter the same room ID, the video stream will be connected.
+
+**Demo by Folks**
+
+author: [@thoqbk](https://github.com/thoqbk)
+- Signaling server and web app: https://rewebrtc.herokuapp.com/ (the repository is https://github.com/thoqbk/rewebrtc-server)
+- React native app repository: https://github.com/thoqbk/rewebrtc
 
 ## Native control
 Use [react-native-incall-manager](https://github.com/zxcpoiu/react-native-incall-manager) to keep screen on, mute microphone, etc.
 
 ## Sponsorship
 This repository doesn't have a plan to get sponsorship.(This can be discussed afterwards by collaborators). If you would like to pay bounty to fix some bugs or get some features, be free to open a issue that adds `[BOUNTY]` category in title. Add other bounty website link like [this](https://www.bountysource.com) will be better.
-

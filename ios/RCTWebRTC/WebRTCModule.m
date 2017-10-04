@@ -7,11 +7,12 @@
 
 #import <UIKit/UIKit.h>
 
-#import "RCTBridge.h"
-#import "RCTEventDispatcher.h"
-#import "RCTUtils.h"
+#import <React/RCTBridge.h>
+#import <React/RCTEventDispatcher.h>
+#import <React/RCTUtils.h>
 
 #import "WebRTCModule.h"
+#import "WebRTCModule+RTCPeerConnection.h"
 
 @interface WebRTCModule ()
 
@@ -21,33 +22,12 @@
 
 @synthesize bridge = _bridge;
 
-- (instancetype)init
-{
-  self = [super init];
-  if (self) {
-    _peerConnectionFactory = [RTCPeerConnectionFactory new];
-//    [RTCPeerConnectionFactory initializeSSL];
-
-    _peerConnections = [NSMutableDictionary new];
-    _mediaStreams = [NSMutableDictionary new];
-    _tracks = [NSMutableDictionary new];
-    _dataChannels = [NSMutableDictionary new];
-  }
-  return self;
-}
-
 - (void)dealloc
 {
-  [_tracks removeAllObjects];
-  _tracks = nil;
-  [_mediaStreams removeAllObjects];
-  _mediaStreams = nil;
-  for (NSNumber *dataChannelId in _dataChannels) {
-    RTCDataChannel *dataChannel = _dataChannels[dataChannelId];
-    dataChannel.delegate = nil;
-    [dataChannel close];
-  }
-  [_dataChannels removeAllObjects];
+  [_localTracks removeAllObjects];
+  _localTracks = nil;
+  [_localStreams removeAllObjects];
+  _localStreams = nil;
 
   for (NSNumber *peerConnectionId in _peerConnections) {
     RTCPeerConnection *peerConnection = _peerConnections[peerConnectionId];
@@ -57,6 +37,35 @@
   [_peerConnections removeAllObjects];
 
   _peerConnectionFactory = nil;
+}
+
+- (instancetype)init
+{
+  self = [super init];
+  if (self) {
+    _peerConnectionFactory = [RTCPeerConnectionFactory new];
+//    [RTCPeerConnectionFactory initializeSSL];
+
+    _peerConnections = [NSMutableDictionary new];
+    _localStreams = [NSMutableDictionary new];
+    _localTracks = [NSMutableDictionary new];
+  }
+  return self;
+}
+
+- (RTCMediaStream*)streamForReactTag:(NSString*)reactTag
+{
+  RTCMediaStream *stream = _localStreams[reactTag];
+  if (!stream) {
+    for (NSNumber *peerConnectionId in _peerConnections) {
+      RTCPeerConnection *peerConnection = _peerConnections[peerConnectionId];
+      stream = peerConnection.remoteStreams[reactTag];
+      if (stream) {
+        break;
+      }
+    }
+  }
+  return stream;
 }
 
 RCT_EXPORT_MODULE();

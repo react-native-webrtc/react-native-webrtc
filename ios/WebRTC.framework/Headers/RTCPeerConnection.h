@@ -23,7 +23,7 @@
 @class RTCRtpReceiver;
 @class RTCRtpSender;
 @class RTCSessionDescription;
-@class RTCStatsReport;
+@class RTCLegacyStatsReport;
 
 NS_ASSUME_NONNULL_BEGIN
 
@@ -115,7 +115,7 @@ RTC_EXPORT
  *  streams being added or removed.
  */
 @property(nonatomic, weak, nullable) id<RTCPeerConnectionDelegate> delegate;
-@property(nonatomic, readonly) NSArray *localStreams;
+@property(nonatomic, readonly) NSArray<RTCMediaStream *> *localStreams;
 @property(nonatomic, readonly, nullable)
     RTCSessionDescription *localDescription;
 @property(nonatomic, readonly, nullable)
@@ -183,6 +183,11 @@ RTC_EXPORT
            completionHandler:
     (nullable void (^)(NSError * _Nullable error))completionHandler;
 
+/** Start or stop recording an Rtc EventLog. */
+- (BOOL)startRtcEventLogWithFilePath:(NSString *)filePath
+                      maxSizeInBytes:(int64_t)maxSizeInBytes;
+- (void)stopRtcEventLog;
+
 @end
 
 @interface RTCPeerConnection (Media)
@@ -212,7 +217,7 @@ RTC_EXPORT
     (nullable RTCMediaStreamTrack *)mediaStreamTrack
      statsOutputLevel:(RTCStatsOutputLevel)statsOutputLevel
     completionHandler:
-    (nullable void (^)(NSArray<RTCStatsReport *> *stats))completionHandler;
+    (nullable void (^)(NSArray<RTCLegacyStatsReport *> *stats))completionHandler;
 
 @end
 

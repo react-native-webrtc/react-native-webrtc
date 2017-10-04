@@ -4,3 +4,4 @@ node_modules
 ios/RCTWebRTC.xcodeproj/xcuserdata
 ios/RCTWebRTC.xcodeproj/project.xcworkspace
 .DS_Store
+.idea

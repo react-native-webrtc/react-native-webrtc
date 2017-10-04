@@ -1,17 +1,14 @@
 package com.oney.WebRTCModule;
 
+import com.facebook.react.bridge.ReactContext;
 import com.facebook.react.uimanager.annotations.ReactProp;
 import com.facebook.react.uimanager.SimpleViewManager;
 import com.facebook.react.uimanager.ThemedReactContext;
-import com.facebook.react.uimanager.ViewProps;
 
 import org.webrtc.MediaStream;
 
 public class RTCVideoViewManager extends SimpleViewManager<WebRTCView> {
-  private final static String TAG = RTCVideoViewManager.class.getCanonicalName();
-
-  public static final String REACT_CLASS = "RTCVideoView";
-  public ThemedReactContext mContext;
+  private static final String REACT_CLASS = "RTCVideoView";
 
   @Override
   public String getName() {
@@ -20,11 +17,7 @@ public class RTCVideoViewManager extends SimpleViewManager<WebRTCView> {
 
   @Override
   public WebRTCView createViewInstance(ThemedReactContext context) {
-    mContext = context;
-    WebRTCView view = new WebRTCView(context);
-    // view.setPreserveEGLContextOnPause(true);
-    // view.setKeepScreenOn(true);
-    return view;
+    return new WebRTCView(context);
   }
 
   /**
@@ -67,8 +60,9 @@ public class RTCVideoViewManager extends SimpleViewManager<WebRTCView> {
     if (streamURL == null) {
       mediaStream = null;
     } else {
-      WebRTCModule module = mContext.getNativeModule(WebRTCModule.class);
-      mediaStream = module.mMediaStreams.get(streamURL);
+      ReactContext reactContext = (ReactContext) view.getContext();
+      WebRTCModule module = reactContext.getNativeModule(WebRTCModule.class);
+      mediaStream = module.getStreamForReactTag(streamURL);
     }
     view.setStream(mediaStream);
   }

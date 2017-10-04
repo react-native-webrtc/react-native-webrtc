@@ -25,9 +25,13 @@ type SourceInfo = {
   kind: string;
 };
 
-export default class MediaStreamTrack {
+export default class MediaStreamTrack extends EventTarget(MEDIA_STREAM_TRACK_EVENTS) {
   static getSources(success: (sources: Array<SourceInfo>) => void) {
-    WebRTCModule.mediaStreamTrackGetSources(success);
+    const promise = WebRTCModule.mediaStreamTrackGetSources();
+    if (success) {
+      return promise.then(success);
+    }
+    return promise;
   }
 
   _enabled: boolean;
@@ -46,6 +50,8 @@ export default class MediaStreamTrack {
   overconstrained: ?Function;
 
   constructor(info) {
+    super();
+
     let _readyState = info.readyState.toLowerCase();
     this._enabled = info.enabled;
     this.id = info.id;
@@ -79,6 +85,23 @@ export default class MediaStreamTrack {
     this._enabled = false;
     this.readyState = 'ended';
     this.muted = !this._enabled;
+  }
+
+  /**
+   * Private / custom API for switching the cameras on the fly, without the
+   * need for adding / removing tracks or doing any SDP renegotiation.
+   *
+   * This is how the reference application (AppRTCMobile) implements camera
+   * switching.
+   */
+  _switchCamera() {
+    if (this.remote) {
+      throw new Error('Not implemented for remote tracks');
+    }
+    if (this.kind !== 'video') {
+      throw new Error('Only implemented for video tracks');
+    }
+    WebRTCModule.mediaStreamTrackSwitchCamera(this.id);
   }
 
   applyConstraints() {

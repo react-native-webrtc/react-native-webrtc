@@ -1,6 +1,6 @@
 {
   "name": "react-native-webrtc",
-  "version": "0.13.0",
+  "version": "1.58.2",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/oney/react-native-webrtc.git"
@@ -21,10 +21,11 @@
   ],
   "dependencies": {
     "base64-js": "^1.1.2",
-    "event-target-shim": "^1.0.5"
+    "event-target-shim": "^1.0.5",
+    "prop-types": "^15.5.10"
   },
   "peerDependencies": {
-    "react-native": ">=0.19.0"
+    "react-native": ">=0.40.0"
   },
   "bugs": {
     "url": "https://github.com/oney/react-native-webrtc/issues"

@@ -155,8 +155,9 @@ public class SurfaceViewRenderer extends SurfaceView
    * |drawer|. It is allowed to call init() to reinitialize the renderer after a previous
    * init()/release() cycle.
    */
-  public void init(EglBase.Context sharedContext, RendererCommon.RendererEvents rendererEvents,
-      int[] configAttributes, RendererCommon.GlDrawer drawer) {
+  public void init(
+      final EglBase.Context sharedContext, RendererCommon.RendererEvents rendererEvents,
+      final int[] configAttributes, RendererCommon.GlDrawer drawer) {
     synchronized (handlerLock) {
       if (renderThreadHandler != null) {
         throw new IllegalStateException(getResourceName() + "Already initialized");
@@ -166,8 +167,16 @@ public class SurfaceViewRenderer extends SurfaceView
       this.drawer = drawer;
       renderThread = new HandlerThread(TAG);
       renderThread.start();
-      eglBase = EglBase.create(sharedContext, configAttributes);
       renderThreadHandler = new Handler(renderThread.getLooper());
+      // Create EGL context on the newly created render thread. It should be possibly to create the
+      // context on this thread and make it current on the render thread, but this causes failure on
+      // some Marvel based JB devices. https://bugs.chromium.org/p/webrtc/issues/detail?id=6350.
+      ThreadUtils.invokeAtFrontUninterruptibly(renderThreadHandler, new Runnable() {
+        @Override
+        public void run() {
+          eglBase = EglBase.create(sharedContext, configAttributes);
+        }
+      });
     }
     tryCreateEglSurface();
   }
@@ -189,6 +198,11 @@ public class SurfaceViewRenderer extends SurfaceView
             GLES20.glPixelStorei(GLES20.GL_UNPACK_ALIGNMENT, 1);
           }
         }
+
+        // XXX by Saúl Ibarra Corretgé <saghul@gmail.com>: Until an actual frame
+        // is available to render, draw black; otherwise, this SurfaceView will
+        // appear transparent.
+        makeBlack();
       }
     });
   }

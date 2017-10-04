@@ -39,9 +39,13 @@ typedef void (^NavigatorUserMediaErrorCallback)(NSString *errorType, NSString *e
 typedef void (^NavigatorUserMediaSuccessCallback)(RTCMediaStream *mediaStream);
 
 - (RTCMediaConstraints *)defaultMediaStreamConstraints {
+  NSDictionary *mandatoryConstraints
+      = @{ kRTCMediaConstraintsMinWidth     : @"1280",
+           kRTCMediaConstraintsMinHeight    : @"720",
+           kRTCMediaConstraintsMinFrameRate : @"30" };
   RTCMediaConstraints* constraints =
   [[RTCMediaConstraints alloc]
-   initWithMandatoryConstraints:nil
+   initWithMandatoryConstraints:mandatoryConstraints
    optionalConstraints:nil];
   return constraints;
 }
@@ -78,8 +82,8 @@ typedef void (^NavigatorUserMediaSuccessCallback)(RTCMediaStream *mediaStream);
 
 // TODO: Use RCTConvert for constraints ...
 RCT_EXPORT_METHOD(getUserMedia:(NSDictionary *)constraints
-               successCallback:(RCTResponseSenderBlock)successCallback
-                 errorCallback:(RCTResponseSenderBlock)errorCallback) {
+               resolver:(RCTPromiseResolveBlock)resolve
+                 rejecter:(RCTPromiseRejectBlock)reject) {
   // Initialize RTCMediaStream with a unique label in order to allow multiple
   // RTCMediaStream instances initialized by multiple getUserMedia calls to be
   // added to 1 RTCPeerConnection instance. As suggested by
@@ -100,7 +104,7 @@ RCT_EXPORT_METHOD(getUserMedia:(NSDictionary *)constraints
         for (RTCMediaStreamTrack *track in [mediaStream performSelector:sel]) {
           NSString *trackId = track.trackId;
 
-          self.tracks[trackId] = track;
+          self.localTracks[trackId] = track;
           [tracks addObject:@{
                               @"enabled": @(track.isEnabled),
                               @"id": trackId,
@@ -111,11 +115,11 @@ RCT_EXPORT_METHOD(getUserMedia:(NSDictionary *)constraints
                               }];
         }
       }
-      self.mediaStreams[mediaStreamId] = mediaStream;
-      successCallback(@[ mediaStreamId, tracks ]);
+      self.localStreams[mediaStreamId] = mediaStream;
+      resolve(@[ mediaStreamId, tracks ]);
     }
     errorCallback:^ (NSString *errorType, NSString *errorMessage) {
-      errorCallback(@[ errorType, errorMessage ]);
+      reject(errorType, errorMessage, nil);
     }
     mediaStream:mediaStream];
 }
@@ -149,7 +153,7 @@ RCT_EXPORT_METHOD(getUserMedia:(NSDictionary *)constraints
          mediaStream:(RTCMediaStream *)mediaStream {
   // If mediaStream contains no audioTracks and the constraints request such a
   // track, then run an iteration of the getUserMedia() algorithm to obtain
-  // local audio content. 
+  // local audio content.
   if (mediaStream.audioTracks.count == 0) {
     // constraints.audio
     id audioConstraints = constraints[@"audio"];
@@ -165,15 +169,15 @@ RCT_EXPORT_METHOD(getUserMedia:(NSDictionary *)constraints
 
   // If mediaStream contains no videoTracks and the constraints request such a
   // track, then run an iteration of the getUserMedia() algorithm to obtain
-  // local video content. 
+  // local video content.
   if (mediaStream.videoTracks.count == 0) {
     // constraints.video
     id videoConstraints = constraints[@"video"];
     if (videoConstraints) {
       BOOL requestAccessForVideo
-	= [videoConstraints isKindOfClass:[NSNumber class]]
-	  ? [videoConstraints boolValue]
-	  : [videoConstraints isKindOfClass:[NSDictionary class]];
+        = [videoConstraints isKindOfClass:[NSNumber class]]
+          ? [videoConstraints boolValue]
+          : [videoConstraints isKindOfClass:[NSDictionary class]];
 
       if (requestAccessForVideo) {
         [self requestAccessForMediaType:AVMediaTypeVideo
@@ -247,7 +251,7 @@ RCT_EXPORT_METHOD(getUserMedia:(NSDictionary *)constraints
           if (sourceId && !videoDevice) {
             videoDevice = [AVCaptureDevice deviceWithUniqueID:sourceId];
           }
-          
+
           NSDictionary *itemDict = (NSDictionary *)item;
           for(id key in itemDict) {
             id value = [itemDict objectForKey:key];
@@ -295,9 +299,24 @@ RCT_EXPORT_METHOD(getUserMedia:(NSDictionary *)constraints
     RTCMediaConstraints* mediaConstraints = [[RTCMediaConstraints alloc]
       initWithMandatoryConstraints:mandatoryConstraints
       optionalConstraints:optionalConstraints];
-    
-    // TODO: Actually use constraints...
+
     RTCAVFoundationVideoSource *videoSource = [self.peerConnectionFactory avFoundationVideoSourceWithConstraints:mediaConstraints];
+
+    // FIXME The effort above to find a videoDevice value which satisfies the
+    // specified constraints was pretty much wasted. Salvage facingMode for
+    // starters because it is kind of a common and hence important feature on
+    // a mobile device.
+    switch (videoDevice.position) {
+    case AVCaptureDevicePositionBack:
+      if (videoSource.canUseBackCamera) {
+        videoSource.useBackCamera = YES;
+      }
+      break;
+    case AVCaptureDevicePositionFront:
+      videoSource.useBackCamera = NO;
+      break;
+    }
+
     NSString *trackUUID = [[NSUUID UUID] UUIDString];
     RTCVideoTrack *videoTrack = [self.peerConnectionFactory videoTrackWithSource:videoSource trackId:trackUUID];
     [mediaStream addVideoTrack:videoTrack];
@@ -312,19 +331,20 @@ RCT_EXPORT_METHOD(getUserMedia:(NSDictionary *)constraints
 
 RCT_EXPORT_METHOD(mediaStreamRelease:(nonnull NSString *)streamID)
 {
-  RTCMediaStream *mediaStream = self.mediaStreams[streamID];
-  if (mediaStream) {
-    for (RTCVideoTrack *track in mediaStream.videoTracks) {
-      [self.tracks removeObjectForKey:track.trackId];
+  RTCMediaStream *stream = self.localStreams[streamID];
+  if (stream) {
+    for (RTCVideoTrack *track in stream.videoTracks) {
+      [self.localTracks removeObjectForKey:track.trackId];
     }
-    for (RTCAudioTrack *track in mediaStream.audioTracks) {
-      [self.tracks removeObjectForKey:track.trackId];
+    for (RTCAudioTrack *track in stream.audioTracks) {
+      [self.localTracks removeObjectForKey:track.trackId];
     }
-    [self.mediaStreams removeObjectForKey:streamID];
+    [self.localStreams removeObjectForKey:streamID];
   }
 }
 
-RCT_EXPORT_METHOD(mediaStreamTrackGetSources:(RCTResponseSenderBlock)callback) {
+RCT_EXPORT_METHOD(mediaStreamTrackGetSources:(RCTPromiseResolveBlock)resolve
+                  rejecter:(RCTPromiseRejectBlock)reject) {
   NSMutableArray *sources = [NSMutableArray array];
   NSArray *videoDevices = [AVCaptureDevice devicesWithMediaType:AVMediaTypeVideo];
   for (AVCaptureDevice *device in videoDevices) {
@@ -344,21 +364,22 @@ RCT_EXPORT_METHOD(mediaStreamTrackGetSources:(RCTResponseSenderBlock)callback) {
                          @"kind": @"audio",
                          }];
   }
-  callback(@[sources]);
+  resolve(@[sources]);
 }
 
 RCT_EXPORT_METHOD(mediaStreamTrackRelease:(nonnull NSString *)streamID : (nonnull NSString *)trackID)
 {
   // what's different to mediaStreamTrackStop? only call mediaStream explicitly?
-  RTCMediaStream *mediaStream = self.mediaStreams[streamID];
-  RTCMediaStreamTrack *track;
-  if (mediaStream && (track = self.tracks[trackID])) {
+  RTCMediaStream *mediaStream = self.localStreams[streamID];
+  RTCMediaStreamTrack *track = self.localTracks[trackID];
+  if (mediaStream && track) {
     track.isEnabled = NO;
+    // FIXME this is called when track is removed from the MediaStream,
+    // but it doesn't mean it can not be added back using MediaStream.addTrack
+    [self.localTracks removeObjectForKey:trackID];
     if ([track.kind isEqualToString:@"audio"]) {
-      [self.tracks removeObjectForKey:trackID];
       [mediaStream removeAudioTrack:(RTCAudioTrack *)track];
     } else if([track.kind isEqualToString:@"video"]) {
-      [self.tracks removeObjectForKey:trackID];
       [mediaStream removeVideoTrack:(RTCVideoTrack *)track];
     }
   }
@@ -366,18 +387,31 @@ RCT_EXPORT_METHOD(mediaStreamTrackRelease:(nonnull NSString *)streamID : (nonnul
 
 RCT_EXPORT_METHOD(mediaStreamTrackSetEnabled:(nonnull NSString *)trackID : (BOOL)enabled)
 {
-  RTCMediaStreamTrack *track = self.tracks[trackID];
+  RTCMediaStreamTrack *track = self.localTracks[trackID];
   if (track && track.isEnabled != enabled) {
     track.isEnabled = enabled;
   }
 }
 
+RCT_EXPORT_METHOD(mediaStreamTrackSwitchCamera:(nonnull NSString *)trackID)
+{
+  RTCMediaStreamTrack *track = self.localTracks[trackID];
+  if (track) {
+    RTCVideoTrack *videoTrack = (RTCVideoTrack *)track;
+    RTCVideoSource *source = videoTrack.source;
+    if ([source isKindOfClass:[RTCAVFoundationVideoSource class]]) {
+      RTCAVFoundationVideoSource *avSource = (RTCAVFoundationVideoSource *)source;
+      avSource.useBackCamera = !avSource.useBackCamera;
+    }
+  }
+}
+
 RCT_EXPORT_METHOD(mediaStreamTrackStop:(nonnull NSString *)trackID)
 {
-  RTCMediaStreamTrack *track = self.tracks[trackID];
+  RTCMediaStreamTrack *track = self.localTracks[trackID];
   if (track) {
     track.isEnabled = NO;
-    [self.tracks removeObjectForKey:trackID];
+    [self.localTracks removeObjectForKey:trackID];
   }
 }
 
@@ -424,32 +458,32 @@ RCT_EXPORT_METHOD(mediaStreamTrackStop:(nonnull NSString *)trackID)
     completionHandler:^ (BOOL granted) {
       dispatch_async(dispatch_get_main_queue(), ^ {
         if (granted) {
-	  NavigatorUserMediaSuccessCallback scb
-	    = ^ (RTCMediaStream *mediaStream) {
-	      [self getUserMedia:constraints
-	         successCallback:successCallback
-	           errorCallback:errorCallback
-		     mediaStream:mediaStream];
-	    };
+          NavigatorUserMediaSuccessCallback scb
+            = ^ (RTCMediaStream *mediaStream) {
+              [self getUserMedia:constraints
+                 successCallback:successCallback
+                   errorCallback:errorCallback
+                     mediaStream:mediaStream];
+            };
 
-	  if (mediaType == AVMediaTypeAudio) {
-	    [self getUserAudio:constraints
-	       successCallback:scb
-	         errorCallback:errorCallback
-	           mediaStream:mediaStream];
-	  } else if (mediaType == AVMediaTypeVideo) {
-	    [self getUserVideo:constraints
-	       successCallback:scb
-	         errorCallback:errorCallback
-	           mediaStream:mediaStream];
-	  }
-	} else {
-	  // According to step 10 Permission Failure of the getUserMedia()
-	  // algorithm, if the user has denied permission, fail "with a new
-	  // DOMException object whose name attribute has the value
-	  // NotAllowedError."
-	  errorCallback(@"DOMException", @"NotAllowedError");
-	}
+          if (mediaType == AVMediaTypeAudio) {
+            [self getUserAudio:constraints
+               successCallback:scb
+                 errorCallback:errorCallback
+                   mediaStream:mediaStream];
+          } else if (mediaType == AVMediaTypeVideo) {
+            [self getUserVideo:constraints
+               successCallback:scb
+                 errorCallback:errorCallback
+                   mediaStream:mediaStream];
+          }
+        } else {
+          // According to step 10 Permission Failure of the getUserMedia()
+          // algorithm, if the user has denied permission, fail "with a new
+          // DOMException object whose name attribute has the value
+          // NotAllowedError."
+          errorCallback(@"DOMException", @"NotAllowedError");
+        }
       });
     }];
 }
