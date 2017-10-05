@@ -481,12 +481,11 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
             errorCallback.invoke(
                 /* type */ null,
                 "Failed to create new media stream");
-            return;
+        } else {
+            getUserMediaImpl.getUserMedia(
+                constraints, successCallback, errorCallback,
+                mediaStream);
         }
-
-        getUserMediaImpl.getUserMedia(
-            constraints, successCallback, errorCallback,
-            mediaStream);
     }
 
     @ReactMethod
