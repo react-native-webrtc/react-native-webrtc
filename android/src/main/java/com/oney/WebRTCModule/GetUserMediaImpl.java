@@ -33,7 +33,10 @@ class GetUserMediaImpl {
     private static final String PERMISSION_AUDIO = Manifest.permission.RECORD_AUDIO;
     private static final String PERMISSION_VIDEO = Manifest.permission.CAMERA;
 
-    static final String TAG = WebRTCModule.TAG;
+    /**
+     * The {@link Log} tag with which {@code GetUserMediaImpl} is to log.
+     */
+    private static final String TAG = WebRTCModule.TAG;
 
     /**
      * The {@link CamearEventsHandler} used with
@@ -81,6 +84,36 @@ class GetUserMediaImpl {
         audioConstraints.optional.add(
             new MediaConstraints.KeyValuePair(
                     "googDAEchoCancellation", "true"));
+    }
+
+    /**
+     * Converts the value of a specific {@code MediaStreamConstraints} key to
+     * the respective {@link Manifest#permission} value.
+     *
+     * @param constraints the {@code MediaStreamConstraints} within which the
+     * specified {@code key} may be associated with the value to convert
+     * @param key the key within the specified {@code constraints} which may be
+     * associated with the value to convert
+     * @param permissions the {@code List} of {@code Manifest.permission} values
+     * to collect the result of the conversion
+     */
+    private void constraint2permission(
+            ReadableMap constraints,
+            String key,
+            List<String> permissions) {
+        if (constraints.hasKey(key)) {
+            ReadableType type = constraints.getType(key);
+
+            if (type == ReadableType.Boolean
+                    ? constraints.getBoolean(key)
+                    : type == ReadableType.Map) {
+                if ("audio".equals(key)) {
+                    permissions.add(PERMISSION_AUDIO);
+                } else if ("video".equals(key)) {
+                    permissions.add(PERMISSION_VIDEO);
+                }
+            }
+        }
     }
 
     /**
@@ -236,34 +269,8 @@ class GetUserMediaImpl {
 
         final ArrayList<String> requestPermissions = new ArrayList<>();
 
-        if (constraints.hasKey("audio")) {
-            switch (constraints.getType("audio")) {
-            case Boolean:
-                if (constraints.getBoolean("audio")) {
-                    requestPermissions.add(PERMISSION_AUDIO);
-                }
-                break;
-            case Map:
-                requestPermissions.add(PERMISSION_AUDIO);
-                break;
-            default:
-                break;
-            }
-        }
-        if (constraints.hasKey("video")) {
-            switch (constraints.getType("video")) {
-            case Boolean:
-                if (constraints.getBoolean("video")) {
-                    requestPermissions.add(PERMISSION_VIDEO);
-                }
-                break;
-            case Map:
-                requestPermissions.add(PERMISSION_VIDEO);
-                break;
-            default:
-                break;
-            }
-        }
+        constraint2permission(constraints, "audio", requestPermissions);
+        constraint2permission(constraints, "video", requestPermissions);
 
         // According to step 2 of the getUserMedia() algorithm,
         // requestedMediaTypes is the set of media types in constraints with
@@ -283,14 +290,12 @@ class GetUserMediaImpl {
             /* successCallback */ new Callback() {
                 @Override
                 public void invoke(Object... args) {
-                    List<String> grantedPermissions = (List<String>) args[0];
-
                     getUserMedia(
                         constraints,
                         successCallback,
                         errorCallback,
                         mediaStream,
-                        grantedPermissions);
+                        /* grantedPermissions */ (List<String>) args[0]);
                 }
             },
             /* errorCallback */ new Callback() {

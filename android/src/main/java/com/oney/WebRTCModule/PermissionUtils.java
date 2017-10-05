@@ -137,7 +137,6 @@ public class PermissionUtils {
             return;
         }
 
-
         Bundle args = new Bundle();
         args.putInt(REQUEST_CODE, requestCode);
         args.putParcelable(RESULT_RECEIVER, resultReceiver);
