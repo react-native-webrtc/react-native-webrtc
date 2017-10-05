@@ -11,6 +11,7 @@ import android.os.Handler;
 import android.os.Looper;
 import android.os.ResultReceiver;
 import android.support.v4.content.ContextCompat;
+import android.util.Log;
 
 import com.facebook.react.bridge.LifecycleEventListener;
 import com.facebook.react.bridge.ReactContext;
@@ -31,6 +32,11 @@ public class PermissionUtils {
     private static final String PERMISSIONS = "PERMISSION";
     private static final String REQUEST_CODE = "REQUEST_CODE";
     private static final String RESULT_RECEIVER = "RESULT_RECEIVER";
+
+    /**
+     * The {@link Log} tag with which {@code PermissionUtils} is to log.
+     */
+    private static final String TAG = WebRTCModule.TAG;
 
     /**
      * Incrementing counter for permission requests. Each request must have a
@@ -181,13 +187,36 @@ public class PermissionUtils {
             context,
             permissions,
             new ResultReceiver(new Handler(Looper.getMainLooper())) {
+                /**
+                 * The indicator which determines whether this
+                 * {@code ResultReceiver} has already had its
+                 * {@link #onReceiveResult} invoked. Introduced in order to
+                 * prevent multiple invocations of one and the same instance of
+                 * a react-native callback from native code which is illegal and
+                 * raises a fatal {@link RuntimeException}. The rationale behind
+                 * the introduction of the indicator is that asking multiple
+                 * times for one and the same permission is not as severe an
+                 * issue as killing the app's process. I don't see how it can
+                 * happen at all but Crashlytics says it has happened on at
+                 * least four different phone brands.
+                 */
+                private boolean resultReceived = false;
+
                 @Override
                 protected void onReceiveResult(
                         int resultCode,
                         Bundle resultData) {
-                    callback.invoke(
-                        resultData.getStringArray(PERMISSIONS),
-                        resultData.getIntArray(GRANT_RESULTS));
+                    if (resultReceived) {
+                        Log.w(
+                            TAG,
+                            "PermissionUtils.ResultReceiver.onReceiveResult "
+                                + "invoked more than once!");
+                    } else {
+                        resultReceived = true;
+                        callback.invoke(
+                            resultData.getStringArray(PERMISSIONS),
+                            resultData.getIntArray(GRANT_RESULTS));
+                    }
                 }
             });
     }
