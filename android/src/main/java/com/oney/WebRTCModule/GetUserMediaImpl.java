@@ -477,8 +477,31 @@ class GetUserMediaImpl {
             final Callback successCallback,
             final Callback errorCallback) {
         PermissionUtils.Callback callback = new PermissionUtils.Callback() {
+            /**
+             * The indicator which determines whether this
+             * {@code PermissionUtils.Callback} has already been invoked.
+             * Introduced in order to prevent multiple invocations of one and
+             * the same instance of a react-native callback from native code
+             * which is illegal and raises a fatal {@link RuntimeException}. The
+             * rationale behind the introduction of the indicator is that asking
+             * multiple times for one and the same permission is not as severe
+             * an issue as killing the app's process. I don't see how it can
+             * happen at all but Crashlytics says it has happened on at least
+             * four different phone brands.
+             */
+            private boolean invoked = false;
+
             @Override
             public void invoke(String[] permissions_, int[] grantResults) {
+                if (invoked) {
+                    Log.w(
+                        TAG,
+                        "GetUserMediaImpl.PermissionUtils.Callback "
+                            + "invoked more than once!");
+                    return;
+                }
+                invoked = true;
+
                 List<String> grantedPermissions = new ArrayList<>();
                 List<String> deniedPermissions = new ArrayList<>();
 
