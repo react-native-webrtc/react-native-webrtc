@@ -51,11 +51,10 @@ class GetUserMediaImpl {
 
     /**
      * The application/library-specific private members of local
-     * {@link VideoTrack}s created by {@code GetUserMediaImpl} mapped by track
-     * ID.
+     * {@link MediaStreamTrack}s created by {@code GetUserMediaImpl} mapped by
+     * track ID.
      */
-    private final Map<String, LocalVideoTrackPrivate> videoTracks
-        = new HashMap<>();
+    private final Map<String, TrackPrivate> tracks = new HashMap<>();
 
     private final WebRTCModule webRTCModule;
 
@@ -231,6 +230,12 @@ class GetUserMediaImpl {
         return null;
     }
 
+    MediaStreamTrack getTrack(String id) {
+        TrackPrivate private_ = tracks.get(id);
+
+        return private_ == null ? null : private_.track;
+    }
+
     private AudioTrack getUserAudio(ReadableMap constraints) {
         MediaConstraints audioConstraints;
         if (constraints.getType("audio") == ReadableType.Boolean) {
@@ -244,11 +249,15 @@ class GetUserMediaImpl {
 
         Log.i(TAG, "getUserMedia(audio): " + audioConstraints);
 
-        String trackId = webRTCModule.getNextTrackUUID();
+        String id = webRTCModule.getNextTrackUUID();
         PeerConnectionFactory pcFactory = webRTCModule.mFactory;
         AudioSource audioSource = pcFactory.createAudioSource(audioConstraints);
+        AudioTrack track = pcFactory.createAudioTrack(id, audioSource);
+        tracks.put(
+            id,
+            new TrackPrivate(track, audioSource, /* videoCapturer */ null));
 
-        return pcFactory.createAudioTrack(trackId, audioSource);
+        return track;
     }
 
     /**
@@ -330,6 +339,7 @@ class GetUserMediaImpl {
                     && (tracks[1] = getUserVideo(constraints)) == null)) {
              for (MediaStreamTrack track : tracks) {
                  if (track != null) {
+                     removeTrack(track.id());
                      track.dispose();
                  }
              }
@@ -358,7 +368,6 @@ class GetUserMediaImpl {
             } else {
                 mediaStream.addTrack((VideoTrack) track);
             }
-            webRTCModule.localTracks.put(id, track);
 
             WritableMap track_ = Arguments.createMap();
             String kind = track.kind();
@@ -447,27 +456,49 @@ class GetUserMediaImpl {
             return null;
         }
 
-        String trackId = webRTCModule.getNextTrackUUID();
-        videoTracks.put(
-            trackId,
-            new LocalVideoTrackPrivate(videoCapturer, videoSource));
+        String id = webRTCModule.getNextTrackUUID();
+        VideoTrack track = pcFactory.createVideoTrack(id, videoSource);
+        tracks.put(id, new TrackPrivate(track, videoSource, videoCapturer));
 
-        return pcFactory.createVideoTrack(trackId, videoSource);
+        return track;
     }
 
-    void removeVideoCapturer(String trackId) {
-        LocalVideoTrackPrivate videoTrack = videoTracks.remove(trackId);
-        if (videoTrack != null) {
-            boolean captureStopped = false;
-            try {
-                videoTrack.videoCapturer.stopCapture();
+    void mediaStreamTrackStop(String id) {
+        MediaStreamTrack track = getTrack(id);
+        if (track == null) {
+            Log.d(
+                TAG,
+                "mediaStreamTrackStop() No local MediaStreamTrack with id "
+                    + id);
+            return;
+        }
+        track.setEnabled(false);
+        removeTrack(id);
+    }
+
+    private void removeTrack(String id) {
+        TrackPrivate track = tracks.remove(id);
+        if (track != null) {
+            VideoCapturer videoCapturer = track.videoCapturer;
+            boolean captureStopped;
+            if (videoCapturer == null) {
                 captureStopped = true;
-            } catch (InterruptedException e) {
-                Log.e(TAG, "removeVideoCapturer() Failed to stop video capturer");
+            } else {
+                captureStopped = false;
+                try {
+                    videoCapturer.stopCapture();
+                    captureStopped = true;
+                } catch (InterruptedException e) {
+                    Log.e(
+                        TAG,
+                        "removeTrack() Failed to stop video capturer");
+                }
             }
             if (captureStopped) {
-                videoTrack.videoSource.dispose();
-                videoTrack.videoCapturer.dispose();
+                track.mediaSource.dispose();
+                if (videoCapturer != null) {
+                    videoCapturer.dispose();
+                }
             }
         }
     }
@@ -537,36 +568,47 @@ class GetUserMediaImpl {
     }
 
     void switchCamera(String trackId) {
-        LocalVideoTrackPrivate videoTrack = videoTracks.get(trackId);
-        if (videoTrack != null) {
-            ((CameraVideoCapturer) videoTrack.videoCapturer).switchCamera(null);
+        TrackPrivate track = tracks.get(trackId);
+        if (track != null && track.videoCapturer != null) {
+            ((CameraVideoCapturer) track.videoCapturer).switchCamera(null);
         }
     }
 
     /**
-     * Application/library-specific private members of local {@code VideoTrack}s
-     * created by {@code GetUserMediaImpl}.
+     * Application/library-specific private members of local
+     * {@code MediaStreamTrack}s created by {@code GetUserMediaImpl}.
      */
-    private static class LocalVideoTrackPrivate {
+    private static class TrackPrivate {
+        /**
+         * The {@code MediaSource} from which {@link #track} was created.
+         */
+        public final MediaSource mediaSource;
+
+        public final MediaStreamTrack track;
+
+        /**
+         * The {@code VideoCapturer} from which {@link #mediaSource} was created
+         * if {@link #track} is a {@link VideoTrack}.
+         */
         public final VideoCapturer videoCapturer;
 
         /**
-         * The {@code VideoSource} created from {@link #videoCapturer}.
-         */
-        public final VideoSource videoSource;
-
-        /**
-         * Initializes a new {@code LocalVideoTrackPrivate} instance.
+         * Initializes a new {@code TrackPrivate} instance.
          *
-         * @param videoCapturer
-         * @param videoSource the {@code VideoSource} created from the specified
-         * {@code videoCapturer}
+         * @param track
+         * @param mediaSource the {@code MediaSource} from which the specified
+         * {@code code} was created
+         * @param videoCapturer the {@code VideoCapturer} from which the
+         * specified {@code mediaSource} was created if the specified
+         * {@code track} is a {@link VideoTrack}
          */
-        public LocalVideoTrackPrivate(
-                VideoCapturer videoCapturer,
-                VideoSource videoSource) {
+        public TrackPrivate(
+                MediaStreamTrack track,
+                MediaSource mediaSource,
+                VideoCapturer videoCapturer) {
+            this.track = track;
+            this.mediaSource = mediaSource;
             this.videoCapturer = videoCapturer;
-            this.videoSource = videoSource;
         }
     }
 }
