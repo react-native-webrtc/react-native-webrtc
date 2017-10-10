@@ -148,7 +148,7 @@ class PeerConnectionObserver implements PeerConnection.Observer {
         MediaStreamTrack track = null;
         if (trackId == null
                 || trackId.isEmpty()
-                || (track = webRTCModule.localTracks.get(trackId)) != null
+                || (track = webRTCModule.getLocalTrack(trackId)) != null
                 || (track = remoteTracks.get(trackId)) != null) {
             peerConnection.getStats(
                     new StatsObserver() {
