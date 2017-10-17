@@ -3,8 +3,10 @@ package com.oney.WebRTCModule;
 import java.io.UnsupportedEncodingException;
 import java.lang.ref.SoftReference;
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 
 import android.support.annotation.Nullable;
@@ -36,6 +38,7 @@ class PeerConnectionObserver implements PeerConnection.Observer {
         = new SparseArray<DataChannel>();
     private final int id;
     private PeerConnection peerConnection;
+    final List<MediaStream> localStreams;
     final Map<String, MediaStream> remoteStreams;
     final Map<String, MediaStreamTrack> remoteTracks;
     private final WebRTCModule webRTCModule;
@@ -52,8 +55,46 @@ class PeerConnectionObserver implements PeerConnection.Observer {
     PeerConnectionObserver(WebRTCModule webRTCModule, int id) {
         this.webRTCModule = webRTCModule;
         this.id = id;
+        this.localStreams = new ArrayList<MediaStream>();
         this.remoteStreams = new HashMap<String, MediaStream>();
         this.remoteTracks = new HashMap<String, MediaStreamTrack>();
+    }
+
+    /**
+     * Adds a specific local <tt>MediaStream</tt> to the associated
+     * <tt>PeerConnection</tt>.
+     *
+     * @param localStream the local <tt>MediaStream</tt> to add to the
+     * associated <tt>PeerConnection</tt>
+     * @return <tt>true</tt> if the specified <tt>localStream</tt> was added to
+     * the associated <tt>PeerConnection</tt>; otherwise, <tt>false</tt>
+     */
+    boolean addStream(MediaStream localStream) {
+        if (peerConnection != null && peerConnection.addStream(localStream)) {
+            localStreams.add(localStream);
+
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * Removes a specific local <tt>MediaStream</tt> from the associated
+     * <tt>PeerConnection</tt>.
+     *
+     * @param localStream the local <tt>MediaStream</tt> from the associated
+     * <tt>PeerConnection</tt>
+     * @return <tt>true</tt> if removing the specified <tt>mediaStream</tt> from
+     * this instance resulted in a modification of its internal list of local
+     * <tt>MediaStream</tt>s; otherwise, <tt>false</tt>
+     */
+    boolean removeStream(MediaStream localStream) {
+        if (peerConnection != null) {
+            peerConnection.removeStream(localStream);
+        }
+
+        return localStreams.remove(localStream);
     }
 
     PeerConnection getPeerConnection() {
@@ -65,14 +106,28 @@ class PeerConnectionObserver implements PeerConnection.Observer {
     }
 
     void close() {
-         peerConnection.close();
+        // Close the PeerConnection first to stop any events.
+        peerConnection.close();
 
-         remoteStreams.clear();
-         remoteTracks.clear();
+        // PeerConnection.dispose() calls MediaStream.dispose() on all local
+        // MediaStreams added to it and the app may crash if a local MediaStream
+        // is added to multiple PeerConnections. In order to reduce the risks of
+        // an app crash, remove all local MediaStreams from the associated
+        // PeerConnection so that it doesn't attempt to dispose of them.
+        for (MediaStream localStream : new ArrayList<>(localStreams)) {
+            removeStream(localStream);
+        }
+        // At this point there should be no local MediaStreams in the associated
+        // PeerConnection. Call dispose() to free all remaining resources held
+        // by the PeerConnection instance (RtpReceivers, RtpSenders, etc.)
+        peerConnection.dispose();
 
-         // Unlike on iOS, we cannot unregister the DataChannel.Observer
-         // instance on Android. At least do whatever else we do on iOS.
-         dataChannels.clear();
+        remoteStreams.clear();
+        remoteTracks.clear();
+
+        // Unlike on iOS, we cannot unregister the DataChannel.Observer
+        // instance on Android. At least do whatever else we do on iOS.
+        dataChannels.clear();
     }
 
     void createDataChannel(String label, ReadableMap config) {
