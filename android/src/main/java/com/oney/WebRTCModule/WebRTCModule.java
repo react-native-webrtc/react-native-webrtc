@@ -531,14 +531,15 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
 
             localStreams.remove(id);
 
-            // XXX MediaStream.dispose() cannot be invoked (on stream) because
-            // we do not know whether stream is still added to a PeerConnection.
-            // If it is, then MediaStream.dispose() will assert because it will
-            // expect zero references to stream but stream will have a positive
-            // number of references. Generally, PeerConnection.dispose() will
-            // dispose of the MediaStreams added to the PeerConnection but,
-            // unfortunately, we do not dispose of the PeerConnection at the
-            // time of this writing.
+            // MediaStream.dispose() may be called without an exception only if
+            // it's no longer added to any PeerConnection.
+            for (int i = 0, size = mPeerConnectionObservers.size();
+                    i < size;
+                    i++) {
+                mPeerConnectionObservers.valueAt(i).removeStream(stream);
+            }
+
+            stream.dispose();
         }
     }
 
@@ -666,12 +667,9 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
             Log.d(TAG, "peerConnectionAddStream() mediaStream is null");
             return;
         }
-        PeerConnection peerConnection = getPeerConnection(id);
-        if (peerConnection != null) {
-            boolean result = peerConnection.addStream(mediaStream);
-            Log.d(TAG, "addStream" + result);
-        } else {
-            Log.d(TAG, "peerConnectionAddStream() peerConnection is null");
+        PeerConnectionObserver pco = mPeerConnectionObservers.get(id);
+        if (pco == null || !pco.addStream(mediaStream)) {
+            Log.e(TAG, "peerConnectionAddStream() failed");
         }
     }
 
@@ -682,11 +680,9 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
             Log.d(TAG, "peerConnectionRemoveStream() mediaStream is null");
             return;
         }
-        PeerConnection peerConnection = getPeerConnection(id);
-        if (peerConnection != null) {
-            peerConnection.removeStream(mediaStream);
-        } else {
-            Log.d(TAG, "peerConnectionRemoveStream() peerConnection is null");
+        PeerConnectionObserver pco = mPeerConnectionObservers.get(id);
+        if (pco == null) {
+            Log.e(TAG, "peerConnectionRemoveStream() failed");
         }
     }
 
