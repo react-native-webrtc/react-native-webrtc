@@ -13,6 +13,7 @@
 
 #import "WebRTCModule.h"
 #import "WebRTCModule+RTCPeerConnection.h"
+#import "WebRTC/RTCMacros.h"
 
 @interface WebRTCModule ()
 
@@ -44,7 +45,7 @@
   self = [super init];
   if (self) {
     _peerConnectionFactory = [RTCPeerConnectionFactory new];
-//    [RTCPeerConnectionFactory initializeSSL];
+    RTCInitializeSSL();
 
     _peerConnections = [NSMutableDictionary new];
     _localStreams = [NSMutableDictionary new];
