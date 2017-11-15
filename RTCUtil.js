@@ -17,6 +17,9 @@ export function mergeMediaConstraints(custom, def) {
       // `optional` is an array, webrtc only finds first and ignore the rest if duplicate.
       constraints.optional = custom.optional.concat(constraints.optional);
     }
+    if (custom.facingMode) {
+      constraints.facingMode = custom.facingMode.toString(); // string, 'user' or the default 'environment'
+    }
   }
   return constraints;
 }
