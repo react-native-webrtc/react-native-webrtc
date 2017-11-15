@@ -17,6 +17,7 @@ const DEFAULT_VIDEO_CONSTRAINTS = {
     minHeight: '720',
     minFrameRate: '30',
   },
+  facingMode: "environment",
   optional: [],
 };
 
