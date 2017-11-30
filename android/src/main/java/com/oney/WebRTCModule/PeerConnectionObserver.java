@@ -39,6 +39,7 @@ class PeerConnectionObserver implements PeerConnection.Observer {
     private PeerConnection peerConnection;
     final Map<String, MediaStream> remoteStreams;
     final Map<String, MediaStreamTrack> remoteTracks;
+    private final VideoTrackAdapter videoTrackAdapters;
     private final WebRTCModule webRTCModule;
 
     /**
@@ -55,6 +56,7 @@ class PeerConnectionObserver implements PeerConnection.Observer {
         this.id = id;
         this.remoteStreams = new HashMap<String, MediaStream>();
         this.remoteTracks = new HashMap<String, MediaStreamTrack>();
+        this.videoTrackAdapters = new VideoTrackAdapter(webRTCModule, id);
     }
 
     PeerConnection getPeerConnection() {
@@ -69,6 +71,12 @@ class PeerConnectionObserver implements PeerConnection.Observer {
          peerConnection.close();
 
          remoteStreams.clear();
+
+         for (MediaStreamTrack track : remoteTracks.values()) {
+             if (track.kind().equals("video")) {
+                 videoTrackAdapters.removeAdapter((VideoTrack) track);
+             }
+         }
          remoteTracks.clear();
 
          // Unlike on iOS, we cannot unregister the DataChannel.Observer
@@ -318,6 +326,8 @@ class PeerConnectionObserver implements PeerConnection.Observer {
             trackInfo.putString("readyState", track.state().toString());
             trackInfo.putBoolean("remote", true);
             tracks.pushMap(trackInfo);
+
+            videoTrackAdapters.addAdapter(streamReactTag, track);
         }
         for (int i = 0; i < mediaStream.audioTracks.size(); i++) {
             AudioTrack track = mediaStream.audioTracks.get(i);
@@ -350,6 +360,7 @@ class PeerConnectionObserver implements PeerConnection.Observer {
         }
 
         for (VideoTrack track : mediaStream.videoTracks) {
+            this.videoTrackAdapters.removeAdapter(track);
             this.remoteTracks.remove(track.id());
         }
         for (AudioTrack track : mediaStream.audioTracks) {
