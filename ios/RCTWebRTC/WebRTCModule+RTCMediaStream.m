@@ -38,18 +38,6 @@ typedef void (^NavigatorUserMediaErrorCallback)(NSString *errorType, NSString *e
  */
 typedef void (^NavigatorUserMediaSuccessCallback)(RTCMediaStream *mediaStream);
 
-- (RTCMediaConstraints *)defaultMediaStreamConstraints {
-  NSDictionary *mandatoryConstraints
-      = @{ kRTCMediaConstraintsMinWidth     : @"1280",
-           kRTCMediaConstraintsMinHeight    : @"720",
-           kRTCMediaConstraintsMinFrameRate : @"30" };
-  RTCMediaConstraints* constraints =
-  [[RTCMediaConstraints alloc]
-   initWithMandatoryConstraints:mandatoryConstraints
-   optionalConstraints:nil];
-  return constraints;
-}
-
 /**
  * Initializes a new {@link RTCAudioTrack} which satisfies specific constraints,
  * adds it to a specific {@link RTCMediaStream}, and reports success to a
@@ -268,8 +256,10 @@ RCT_EXPORT_METHOD(getUserMedia:(NSDictionary *)constraints
   }
 
   if (videoDevice) {
-    // TODO: Actually use constraints...
-    RTCAVFoundationVideoSource *videoSource = [self.peerConnectionFactory avFoundationVideoSourceWithConstraints:[self defaultMediaStreamConstraints]];
+    // we handle all the constraints parsing in js side. just consume it.
+    // TODO: support optional constraints
+    RTCMediaConstraints* finalConstraints = [[RTCMediaConstraints alloc] initWithMandatoryConstraints:videoConstraints[@"mandatory"] optionalConstraints:nil];
+    RTCAVFoundationVideoSource *videoSource = [self.peerConnectionFactory avFoundationVideoSourceWithConstraints:finalConstraints];
     // FIXME The effort above to find a videoDevice value which satisfies the
     // specified constraints was pretty much wasted. Salvage facingMode for
     // starters because it is kind of a common and hence important feature on

@@ -2,6 +2,7 @@
 
 import EventTarget from 'event-target-shim';
 import {DeviceEventEmitter, NativeModules} from 'react-native';
+import * as RTCUtil from './RTCUtil';
 
 import MediaStream from './MediaStream';
 import MediaStreamEvent from './MediaStreamEvent';
@@ -130,37 +131,17 @@ export default class RTCPeerConnection extends EventTarget(PEER_CONNECTION_EVENT
     WebRTCModule.peerConnectionRemoveStream(stream.reactTag, this._peerConnectionId);
   }
 
-  /**
-   * Merge custom constraints with the default one. The custom one take precedence.
-   *
-   * @param {Object} options - webrtc constraints
-   * @return {Object} constraints - merged webrtc constraints
-   */
-  _mergeMediaConstraints(options) {
-    const constraints = Object.assign({}, DEFAULT_SDP_CONSTRAINTS);
-    if (options) {
-      if (options.mandatory) {
-        constraints.mandatory = {...constraints.mandatory, ...options.mandatory};
-      }
-      if (options.optional && Array.isArray(options.optional)) {
-        // `optional` is an array, webrtc only finds first and ignore the rest if duplicate.
-        constraints.optional = options.optional.concat(constraints.optional);
-      }
-    }
-    return constraints;
-  }
-
   createOffer(options) {
     return WebRTCModule.peerConnectionCreateOffer(
       this._peerConnectionId,
-      this._mergeMediaConstraints(options)
+      RTCUtil.mergeMediaConstraints(options, DEFAULT_SDP_CONSTRAINTS)
     ).then(data => new RTCSessionDescription(data));
   }
 
   createAnswer(options) {
     return WebRTCModule.peerConnectionCreateAnswer(
       this._peerConnectionId,
-      this._mergeMediaConstraints(options)
+      RTCUtil.mergeMediaConstraints(options, DEFAULT_SDP_CONSTRAINTS)
     ).then(data => new RTCSessionDescription(data));
   }
 
