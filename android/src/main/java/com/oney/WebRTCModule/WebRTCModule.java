@@ -681,7 +681,7 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
             return;
         }
         PeerConnectionObserver pco = mPeerConnectionObservers.get(id);
-        if (pco == null) {
+        if (pco == null || !pco.removeStream(mediaStream)) {
             Log.e(TAG, "peerConnectionRemoveStream() failed");
         }
     }
