@@ -19,6 +19,7 @@ import com.facebook.react.bridge.WritableArray;
 import com.facebook.react.bridge.WritableMap;
 import com.facebook.react.modules.core.DeviceEventManagerModule;
 import com.facebook.react.bridge.Promise;
+import com.oney.WebRTCModule.transcoding.TranscodersFactory;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -30,7 +31,7 @@ import java.util.UUID;
 import org.webrtc.*;
 
 public class WebRTCModule extends ReactContextBaseJavaModule {
-    static final String TAG = WebRTCModule.class.getCanonicalName();
+    static final String TAG = WebRTCModule.class.getSimpleName();
 
     private static final String LANGUAGE =  "language";
 
@@ -45,6 +46,7 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
     private final SparseArray<PeerConnectionObserver> mPeerConnectionObservers;
     final Map<String, MediaStream> localStreams;
     final Map<String, MediaStreamTrack> localTracks;
+    private final TranscodersFactory transcodersFactory;
 
     /**
      * The implementation of {@code getUserMedia} extracted into a separate file
@@ -55,9 +57,10 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
     public WebRTCModule(ReactApplicationContext reactContext) {
         super(reactContext);
 
-        mPeerConnectionObservers = new SparseArray<PeerConnectionObserver>();
-        localStreams = new HashMap<String, MediaStream>();
-        localTracks = new HashMap<String, MediaStreamTrack>();
+        transcodersFactory = new TranscodersFactory();
+        mPeerConnectionObservers = new SparseArray<>();
+        localStreams = new HashMap<>();
+        localTracks = new HashMap<>();
 
         PeerConnectionFactory.initializeAndroidGlobals(reactContext, true, true, true);
 
@@ -601,6 +604,10 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
         constraints.mandatory.add(new MediaConstraints.KeyValuePair("OfferToReceiveVideo", "true"));
         constraints.optional.add(new MediaConstraints.KeyValuePair("DtlsSrtpKeyAgreement", "true"));
         return constraints;
+    }
+
+    public TranscodersFactory getTranscodersFactory() {
+        return transcodersFactory;
     }
 
     @ReactMethod
