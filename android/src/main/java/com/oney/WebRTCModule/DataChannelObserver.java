@@ -1,14 +1,17 @@
 package com.oney.WebRTCModule;
 
-import java.nio.charset.Charset;
-
-import android.support.annotation.Nullable;
-import android.util.Base64;
+import android.util.Log;
 
 import com.facebook.react.bridge.Arguments;
 import com.facebook.react.bridge.WritableMap;
+import com.oney.WebRTCModule.transcoding.DataType;
+import com.oney.WebRTCModule.transcoding.InboundDecoder;
 
 import org.webrtc.DataChannel;
+
+import java.nio.ByteBuffer;
+
+import static com.oney.WebRTCModule.WebRTCModule.TAG;
 
 class DataChannelObserver implements DataChannel.Observer {
 
@@ -24,21 +27,6 @@ class DataChannelObserver implements DataChannel.Observer {
         this.webRTCModule = webRTCModule;
     }
 
-    @Nullable
-    private String dataChannelStateString(DataChannel.State dataChannelState) {
-        switch (dataChannelState) {
-            case CONNECTING:
-                return "connecting";
-            case OPEN:
-                return "open";
-            case CLOSING:
-                return "closing";
-            case CLOSED:
-                return "closed";
-        }
-        return null;
-    }
-
     @Override
     public void onBufferedAmountChange(long amount) {
     }
@@ -46,34 +34,41 @@ class DataChannelObserver implements DataChannel.Observer {
     @Override
     public void onStateChange() {
         WritableMap params = Arguments.createMap();
+        String state = mDataChannel.state() == null ? null : mDataChannel.state().toString().toLowerCase();
+
+        Log.d(TAG,"DataChanel " + mId + " state change to " + state);
+
         params.putInt("id", mId);
         params.putInt("peerConnectionId", peerConnectionId);
-        params.putString("state", dataChannelStateString(mDataChannel.state()));
+        params.putString("state", state);
         webRTCModule.sendEvent("dataChannelStateChanged", params);
     }
 
     @Override
     public void onMessage(DataChannel.Buffer buffer) {
+
+        byte[] bytes = extractBytes(buffer.data);
+
+        InboundDecoder decoder = webRTCModule.getTranscodersFactory().getDecoder(buffer.binary ? DataType.BINARY : DataType.TEXT);
+        InboundDecoder.Decoded decoded = decoder.decode(bytes);
+
         WritableMap params = Arguments.createMap();
         params.putInt("id", mId);
         params.putInt("peerConnectionId", peerConnectionId);
-
-        byte[] bytes;
-        if (buffer.data.hasArray()) {
-            bytes = buffer.data.array();
-        } else {
-            bytes = new byte[buffer.data.remaining()];
-            buffer.data.get(bytes);
-        }
-
-        if (buffer.binary) {
-            params.putString("type", "binary");
-            params.putString("data", Base64.encodeToString(bytes, Base64.NO_WRAP));
-        } else {
-            params.putString("type", "text");
-            params.putString("data", new String(bytes, Charset.forName("UTF-8")));
-        }
+        params.putString("type", decoded.getDataType().toString().toLowerCase());
+        params.putString("data", decoded.getData());
 
         webRTCModule.sendEvent("dataChannelReceiveMessage", params);
+    }
+
+    private static byte[] extractBytes(ByteBuffer buffer) {
+        byte[] bytes;
+        if (buffer.hasArray()) {
+            bytes = buffer.array();
+        } else {
+            bytes = new byte[buffer.remaining()];
+            buffer.get(bytes);
+        }
+        return bytes;
     }
 }

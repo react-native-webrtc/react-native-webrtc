@@ -1,23 +1,22 @@
 package com.oney.WebRTCModule;
 
-import java.io.UnsupportedEncodingException;
 import java.lang.ref.SoftReference;
-import java.nio.ByteBuffer;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
 import android.support.annotation.Nullable;
-import android.util.Base64;
 import android.util.Log;
 import android.util.SparseArray;
 
 import com.facebook.react.bridge.Arguments;
-import com.facebook.react.bridge.Callback;
 import com.facebook.react.bridge.Promise;
 import com.facebook.react.bridge.ReadableMap;
 import com.facebook.react.bridge.WritableArray;
 import com.facebook.react.bridge.WritableMap;
+import com.oney.WebRTCModule.transcoding.DataType;
+import com.oney.WebRTCModule.transcoding.OutboundEncoder;
 
 import org.webrtc.AudioTrack;
 import org.webrtc.DataChannel;
@@ -31,10 +30,10 @@ import org.webrtc.StatsReport;
 import org.webrtc.VideoTrack;
 
 class PeerConnectionObserver implements PeerConnection.Observer {
+
     private final static String TAG = WebRTCModule.TAG;
 
-    private final SparseArray<DataChannel> dataChannels
-        = new SparseArray<DataChannel>();
+    private final SparseArray<DataChannel> dataChannels = new SparseArray<>();
     private final int id;
     private PeerConnection peerConnection;
     final Map<String, MediaStream> remoteStreams;
@@ -53,8 +52,8 @@ class PeerConnectionObserver implements PeerConnection.Observer {
     PeerConnectionObserver(WebRTCModule webRTCModule, int id) {
         this.webRTCModule = webRTCModule;
         this.id = id;
-        this.remoteStreams = new HashMap<String, MediaStream>();
-        this.remoteTracks = new HashMap<String, MediaStreamTrack>();
+        this.remoteStreams = new HashMap<>();
+        this.remoteTracks = new HashMap<>();
     }
 
     PeerConnection getPeerConnection() {
@@ -77,6 +76,9 @@ class PeerConnectionObserver implements PeerConnection.Observer {
     }
 
     void createDataChannel(String label, ReadableMap config) {
+
+        Log.d(TAG, "Creating dataChannel: " + label);
+
         DataChannel.Init init = new DataChannel.Init();
         if (config != null) {
             if (config.hasKey("id")) {
@@ -122,23 +124,10 @@ class PeerConnectionObserver implements PeerConnection.Observer {
 
     void dataChannelSend(int dataChannelId, String data, String type) {
         DataChannel dataChannel = dataChannels.get(dataChannelId);
+        OutboundEncoder encoder = webRTCModule.getTranscodersFactory().getEncoder(DataType.valueOf(type.toUpperCase()));
+
         if (dataChannel != null) {
-            byte[] byteArray;
-            if (type.equals("text")) {
-                try {
-                    byteArray = data.getBytes("UTF-8");
-                } catch (UnsupportedEncodingException e) {
-                    Log.d(TAG, "Could not encode text string as UTF-8.");
-                    return;
-                }
-            } else if (type.equals("binary")) {
-                byteArray = Base64.decode(data, Base64.NO_WRAP);
-            } else {
-                Log.e(TAG, "Unsupported data type: " + type);
-                return;
-            }
-            ByteBuffer byteBuffer = ByteBuffer.wrap(byteArray);
-            DataChannel.Buffer buffer = new DataChannel.Buffer(byteBuffer, type.equals("binary"));
+            DataChannel.Buffer buffer = encoder.encode(data);
             dataChannel.send(buffer);
         } else {
             Log.d(TAG, "dataChannelSend() dataChannel is null");
@@ -224,7 +213,8 @@ class PeerConnectionObserver implements PeerConnection.Observer {
 
     @Override
     public void onIceCandidate(final IceCandidate candidate) {
-        Log.d(TAG, "onIceCandidate");
+        Log.d(TAG, "Got ICE candidate: " + candidate.toString());
+
         WritableMap params = Arguments.createMap();
         params.putInt("id", id);
         WritableMap candidateParams = Arguments.createMap();
@@ -238,7 +228,7 @@ class PeerConnectionObserver implements PeerConnection.Observer {
 
     @Override
     public void onIceCandidatesRemoved(final IceCandidate[] candidates) {
-        Log.d(TAG, "onIceCandidatesRemoved");
+        Log.d(TAG, "Removed ICE candidates: " + Arrays.toString(candidates));
     }
 
     @Override
@@ -256,7 +246,8 @@ class PeerConnectionObserver implements PeerConnection.Observer {
 
     @Override
     public void onIceGatheringChange(PeerConnection.IceGatheringState iceGatheringState) {
-        Log.d(TAG, "onIceGatheringChange" + iceGatheringState.name());
+        Log.d(TAG, "ICE gathering changed state to: " + iceGatheringState);
+
         WritableMap params = Arguments.createMap();
         params.putInt("id", id);
         params.putString("iceGatheringState", iceGatheringStateString(iceGatheringState));
@@ -366,6 +357,9 @@ class PeerConnectionObserver implements PeerConnection.Observer {
 
     @Override
     public void onDataChannel(DataChannel dataChannel) {
+
+        Log.d(TAG, "onDataChannel: " + dataChannel.label() + ": " + dataChannel.id());
+
         // XXX Unfortunately, the Java WebRTC API doesn't expose the id
         // of the underlying C++/native DataChannel (even though the
         // WebRTC standard defines the DataChannel.id property). As a
@@ -428,7 +422,7 @@ class PeerConnectionObserver implements PeerConnection.Observer {
 
     @Override
     public void onAddTrack(final RtpReceiver receiver, final MediaStream[] mediaStreams) {
-        Log.d(TAG, "onAddTrack");
+        Log.d(TAG, "onAddTrack:" + Arrays.toString(mediaStreams));
     }
 
     @Nullable
