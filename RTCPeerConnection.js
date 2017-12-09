@@ -95,6 +95,7 @@ export default class RTCPeerConnection extends EventTarget(PEER_CONNECTION_EVENT
 
   onaddstream: ?Function;
   onremovestream: ?Function;
+  ondatachannel: ?Function;
 
   _peerConnectionId: number;
   _remoteStreams: Array<MediaStream> = [];
