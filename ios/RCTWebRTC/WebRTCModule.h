@@ -11,6 +11,7 @@
 #import <React/RCTBridgeModule.h>
 #import <React/RCTConvert.h>
 
+#import <WebRTC/RTCSSLAdapter.h>
 #import <WebRTC/RTCMediaStream.h>
 #import <WebRTC/RTCPeerConnectionFactory.h>
 #import <WebRTC/RTCPeerConnection.h>
