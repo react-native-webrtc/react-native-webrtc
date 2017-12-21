@@ -130,7 +130,7 @@ def build(target_dir, platform, debug):
     if platform == 'ios':
         for arch in IOS_BUILD_ARCHS:
             gn_out_dir = 'out/%s-%s' % (build_type, arch)
-            ninja_cmd = 'ninja -C %s rtc_sdk_framework_objc' % gn_out_dir
+            ninja_cmd = 'ninja -C %s framework_objc' % gn_out_dir
             sh(ninja_cmd, env)
     else:
         for cpu in ANDROID_BUILD_CPUS:
