@@ -1,10 +1,9 @@
 package com.oney.WebRTCModule;
 
 import android.util.Log;
+import android.os.Build.VERSION;
 
 import org.webrtc.EglBase;
-import org.webrtc.EglBase10;
-import org.webrtc.EglBase14;
 
 public class EglUtils {
     /**
@@ -30,11 +29,10 @@ public class EglUtils {
             RuntimeException cause = null;
 
             try {
-                if (EglBase14.isEGL14Supported()) {
-                    eglBase
-                        = new EglBase14(
-                                /* sharedContext */ null,
-                                configAttributes);
+                // WebRTC internally does this check in isEGL14Supported, but it's no longer exposed
+                // in the public API
+                if (VERSION.SDK_INT >= 18) {
+                    eglBase = EglBase.createEgl14(configAttributes);
                 }
             } catch (RuntimeException ex) {
                 // Fall back to EglBase10.
@@ -43,10 +41,7 @@ public class EglUtils {
 
             if (eglBase == null) {
                 try {
-                    eglBase
-                        = new EglBase10(
-                                /* sharedContext */ null,
-                                configAttributes);
+                    eglBase = EglBase.createEgl10(configAttributes);
                 } catch (RuntimeException ex) {
                     // Neither EglBase14, nor EglBase10 succeeded to initialize.
                     cause = ex;
