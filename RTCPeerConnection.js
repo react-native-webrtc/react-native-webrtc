@@ -189,6 +189,9 @@ export default class RTCPeerConnection extends EventTarget(PEER_CONNECTION_EVENT
         // general, the stress is on being faster to pass through the React
         // Native bridge which is a bottleneck that tends to be visible in
         // the UI when there is congestion involving UI-related passing.
+        if (Array.isArray(stats) && stats.length === 1 && typeof stats[0] === 'string') {
+          stats = stats[0]
+        }
         if (typeof stats === 'string') {
           try {
             stats = JSON.parse(stats);
