@@ -3,7 +3,7 @@
   "version": "1.58.3",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/monolithlabs/react-native-webrtc.git"
+    "url": "git+https://github.com/oney/react-native-webrtc.git"
   },
   "nativePackage": true,
   "description": "WebRTC for React Native",
