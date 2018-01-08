@@ -2,6 +2,7 @@ package com.oney.WebRTCModule;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
+import android.graphics.Color;
 import android.graphics.Point;
 import android.support.v4.view.ViewCompat;
 import android.view.View;
@@ -108,6 +109,7 @@ public class WebRTCView extends ViewGroup {
         = new RendererEvents() {
             @Override
             public void onFirstFrameRendered() {
+                WebRTCView.this.onFirstFrameRendered();
             }
 
             @Override
@@ -175,6 +177,17 @@ public class WebRTCView extends ViewGroup {
     }
 
     /**
+     * "Cleans" the {@code SurfaceViewRenderer} by setting the view part to
+     * opaque black and the surface part to transparent.
+     */
+    private void cleanSurfaceViewRenderer() {
+        SurfaceViewRenderer surfaceViewRenderer
+            = getSurfaceViewRenderer();
+        surfaceViewRenderer.setBackgroundColor(Color.BLACK);
+        surfaceViewRenderer.clearImage();
+    }
+
+    /**
      * Gets the {@code SurfaceViewRenderer} which renders {@link #videoTrack}.
      * Explicitly defined and used in order to facilitate switching the instance
      * at compile time. For example, reduces the number of modifications
@@ -184,7 +197,7 @@ public class WebRTCView extends ViewGroup {
      *
      * @return The {@code SurfaceViewRenderer} which renders {@code videoTrack}.
      */
-    private final SurfaceViewRenderer getSurfaceViewRenderer() {
+    private SurfaceViewRenderer getSurfaceViewRenderer() {
         return surfaceViewRenderer;
     }
 
@@ -281,6 +294,22 @@ public class WebRTCView extends ViewGroup {
     }
 
     /**
+     * Callback fired by {@link #surfaceViewRenderer} when the first frame is
+     * rendered. Here we will set the background of the view part of the
+     * SurfaceView to transparent, so the surface (where video is actually
+     * rendered) shines through.
+     */
+    private void onFirstFrameRendered() {
+        post(new Runnable() {
+            @Override
+            public void run() {
+                Log.d(TAG, "First frame rendered.");
+                getSurfaceViewRenderer().setBackgroundColor(Color.TRANSPARENT);
+            }
+        });
+    }
+
+    /**
      * Callback fired by {@link #surfaceViewRenderer} when the resolution or
      * rotation of the frame it renders has changed.
      *
@@ -334,8 +363,6 @@ public class WebRTCView extends ViewGroup {
                 scalingType = this.scalingType;
             }
 
-            SurfaceViewRenderer surfaceViewRenderer = getSurfaceViewRenderer();
-
             switch (scalingType) {
             case SCALE_ASPECT_FILL:
                 // Fill this ViewGroup with surfaceViewRenderer and the latter
@@ -374,7 +401,7 @@ public class WebRTCView extends ViewGroup {
                 break;
             }
         }
-        surfaceViewRenderer.layout(l, t, r, b);
+        getSurfaceViewRenderer().layout(l, t, r, b);
     }
 
     /**
@@ -532,8 +559,15 @@ public class WebRTCView extends ViewGroup {
      * {@code WebRTCView} or {@code null}.
      */
     private void setVideoTrack(VideoTrack videoTrack) {
-        if (this.videoTrack != videoTrack) {
-            if (this.videoTrack != null) {
+        VideoTrack oldVideoTrack = this.videoTrack;
+
+        if (oldVideoTrack != videoTrack) {
+            if (oldVideoTrack != null) {
+                if (videoTrack == null) {
+                    // If we are not going to render any stream, clean the
+                    // surface.
+                    cleanSurfaceViewRenderer();
+                }
                 removeRendererFromVideoTrack();
             }
 
@@ -541,6 +575,11 @@ public class WebRTCView extends ViewGroup {
 
             if (videoTrack != null) {
                 tryAddRendererToVideoTrack();
+                if (oldVideoTrack == null) {
+                    // If there was no old track, clean the surface so we start
+                    // with black.
+                    cleanSurfaceViewRenderer();
+                }
             }
         }
     }
