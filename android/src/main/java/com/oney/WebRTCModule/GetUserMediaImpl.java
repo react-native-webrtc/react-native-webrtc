@@ -390,19 +390,26 @@ class GetUserMediaImpl {
         PeerConnectionFactory pcFactory = webRTCModule.mFactory;
         VideoSource videoSource = pcFactory.createVideoSource(videoCapturer);
 
+        int width, height, fps;
         // Fall back to defaults if keys are missing.
-        int width
-            = videoConstraintsMandatory.hasKey("minWidth")
-                ? videoConstraintsMandatory.getInt("minWidth")
-                : DEFAULT_WIDTH;
-        int height
-            = videoConstraintsMandatory.hasKey("minHeight")
-                ? videoConstraintsMandatory.getInt("minHeight")
-                : DEFAULT_HEIGHT;
-        int fps
-            = videoConstraintsMandatory.hasKey("minFrameRate")
-                ? videoConstraintsMandatory.getInt("minFrameRate")
-                : DEFAULT_FPS;
+        if (videoConstraintsMandatory != null) {
+            width
+                = videoConstraintsMandatory.hasKey("minWidth")
+                    ? videoConstraintsMandatory.getInt("minWidth")
+                    : DEFAULT_WIDTH;
+            height
+                = videoConstraintsMandatory.hasKey("minHeight")
+                    ? videoConstraintsMandatory.getInt("minHeight")
+                    : DEFAULT_HEIGHT;
+            fps
+                = videoConstraintsMandatory.hasKey("minFrameRate")
+                    ? videoConstraintsMandatory.getInt("minFrameRate")
+                    : DEFAULT_FPS;
+        } else {
+            width = DEFAULT_WIDTH;
+            height = DEFAULT_HEIGHT;
+            fps = DEFAULT_FPS;
+        }
 
         videoCapturer.startCapture(width, height, fps);
 
