@@ -205,7 +205,23 @@ export default class RTCPeerConnection extends EventTarget(PEER_CONNECTION_EVENT
             throw e;
           }
         }
-        return stats;
+        // Should be RTCStatsReport, but as RTCStatsReport is Map-like and
+        // is not available for constructing directly, we can use regular
+        // Map instead
+        var specStats = new Map;
+        for (let item of stats) {
+          // Replicates RTCStats dictionary from the spec
+          let specItem = {
+            id: item.id,
+            type: item.type,
+            timestamp: item.timestamp
+          };
+          // Destructure weirds `values` array; each value is an object
+          // with single key, lets assign all of those keys
+          Object.assign(specItem, ...item.values);
+          specStats.set(specItem.id, specItem)
+        }
+        return specStats;
       });
     } else {
       console.warn('RTCPeerConnection getStats not supported');
