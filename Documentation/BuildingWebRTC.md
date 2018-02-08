@@ -51,7 +51,7 @@ Now the code is ready for building!
 ### iOS
 
 ```
-python build-webrtc.py --build --android ~/src/
+python build-webrtc.py --build --ios ~/src/
 ```
 
 The build artifacts will be located in `~/src/build_webrtc/build/ios/`.
