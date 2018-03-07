@@ -141,7 +141,8 @@ RCT_EXPORT_METHOD(peerConnectionCreateOffer:(nonnull NSNumber *)objectID
             @(NO),
             @{
               @"type": @"CreateOfferFailed",
-              @"message": error.userInfo[@"error"]}
+              @"message": error.localizedDescription ?: [NSNull null]
+            }
           ]);
         } else {
           NSString *type = [RTCSessionDescription stringForType:sdp.type];
@@ -167,7 +168,8 @@ RCT_EXPORT_METHOD(peerConnectionCreateAnswer:(nonnull NSNumber *)objectID
              @(NO),
              @{
                @"type": @"CreateAnswerFailed",
-               @"message": error.userInfo[@"error"]}
+               @"message": error.localizedDescription ?: [NSNull null]
+             }
            ]);
          } else {
            NSString *type = [RTCSessionDescription stringForType:sdp.type];
@@ -185,8 +187,10 @@ RCT_EXPORT_METHOD(peerConnectionSetLocalDescription:(RTCSessionDescription *)sdp
 
   [peerConnection setLocalDescription:sdp completionHandler: ^(NSError *error) {
     if (error) {
-      id errorResponse = @{@"name": @"SetLocalDescriptionFailed",
-                           @"message": error.localizedDescription};
+      id errorResponse = @{
+        @"name": @"SetLocalDescriptionFailed",
+        @"message": error.localizedDescription ?: [NSNull null]
+      };
       callback(@[@(NO), errorResponse]);
     } else {
       callback(@[@(YES)]);
@@ -203,8 +207,10 @@ RCT_EXPORT_METHOD(peerConnectionSetRemoteDescription:(RTCSessionDescription *)sd
 
   [peerConnection setRemoteDescription: sdp completionHandler: ^(NSError *error) {
     if (error) {
-      id errorResponse = @{@"name": @"SetRemoteDescriptionFailed",
-                           @"message": error.localizedDescription};
+      id errorResponse = @{
+        @"name": @"SetRemoteDescriptionFailed",
+        @"message": error.localizedDescription ?: [NSNull null]
+      };
       callback(@[@(NO), errorResponse]);
     } else {
       callback(@[@(YES)]);
@@ -233,7 +239,7 @@ RCT_EXPORT_METHOD(peerConnectionClose:(nonnull NSNumber *)objectID)
 
   [peerConnection close];
   [self.peerConnections removeObjectForKey:objectID];
-    
+
   // Clean up peerConnection's streams and tracks
   [peerConnection.remoteStreams removeAllObjects];
   [peerConnection.remoteTracks removeAllObjects];
