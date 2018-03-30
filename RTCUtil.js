@@ -7,8 +7,13 @@
  * @param {Object} def - default webrtc constraints
  * @return {Object} constraints - merged webrtc constraints
  */
+
+ function _deepClone(obj) {
+  return JSON.parse(JSON.stringify(obj))
+}
+
 export function mergeMediaConstraints(custom, def) {
-  const constraints = (def ? Object.assign({}, def) : {});
+  let constraints = _deepClone(def)
   if (custom) {
     if (custom.mandatory) {
       constraints.mandatory = {...constraints.mandatory, ...custom.mandatory};
