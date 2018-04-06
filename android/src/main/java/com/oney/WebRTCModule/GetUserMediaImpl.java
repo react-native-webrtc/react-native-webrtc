@@ -116,8 +116,8 @@ class GetUserMediaImpl {
     }
 
     /**
-     * Constructs a new {@code VideoCapturer} instance satisfying specific
-     * constraints.
+     * Constructs a new {@code VideoCapturer} instance attempting to satisfy
+     * specific constraints.
      *
      * @param enumerator a {@code CameraEnumerator} provided by WebRTC. It can
      * be {@code Camera1Enumerator} or {@code Camera2Enumerator}.
@@ -154,7 +154,7 @@ class GetUserMediaImpl {
             }
         }
 
-        // Otherwise, use facingMode.
+        // Otherwise, use facingMode (defaulting to front/user facing).
         boolean isFrontFacing;
         if (facingMode == null) {
             facingMode = "user";
@@ -177,7 +177,21 @@ class GetUserMediaImpl {
             }
         }
 
-        // should we fallback to available camera automatically?
+        // Fallback to any available camera.
+        for (String name : deviceNames) {
+            VideoCapturer videoCapturer
+                    = enumerator.createCapturer(name, cameraEventsHandler);
+            String message = "Create fallback camera " + name;
+            if (videoCapturer != null) {
+                Log.d(TAG, message + " succeeded");
+                return videoCapturer;
+            } else {
+                Log.d(TAG, message + " failed");
+                // fallback to the next device.
+            }
+        }
+
+        Log.w(TAG, "Unable to identify a suitable camera.");
         return null;
     }
 
