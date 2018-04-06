@@ -135,6 +135,7 @@ class GetUserMediaImpl {
             String sourceId,
             String facingMode) {
         String[] deviceNames = enumerator.getDeviceNames();
+        List<String> failedDevices = new ArrayList<>();
 
         // If sourceId is specified, then it takes precedence over facingMode.
         if (sourceId != null) {
@@ -148,6 +149,7 @@ class GetUserMediaImpl {
                         return videoCapturer;
                     } else {
                         Log.d(TAG, message + " failed");
+                        failedDevices.add(name);
                         break; // fallback to facingMode
                     }
                 }
@@ -163,7 +165,8 @@ class GetUserMediaImpl {
             isFrontFacing = !facingMode.equals("environment");
         }
         for (String name : deviceNames) {
-            if (enumerator.isFrontFacing(name) == isFrontFacing) {
+            if (!failedDevices.contains(name)
+                    && enumerator.isFrontFacing(name) == isFrontFacing) {
                 VideoCapturer videoCapturer
                     = enumerator.createCapturer(name, cameraEventsHandler);
                 String message
@@ -173,21 +176,25 @@ class GetUserMediaImpl {
                     return videoCapturer;
                 } else {
                     Log.d(TAG, message + " failed");
+                    failedDevices.add(name);
                 }
             }
         }
 
         // Fallback to any available camera.
         for (String name : deviceNames) {
-            VideoCapturer videoCapturer
-                    = enumerator.createCapturer(name, cameraEventsHandler);
-            String message = "Create fallback camera " + name;
-            if (videoCapturer != null) {
-                Log.d(TAG, message + " succeeded");
-                return videoCapturer;
-            } else {
-                Log.d(TAG, message + " failed");
-                // fallback to the next device.
+            if (!failedDevices.contains(name)) {
+                VideoCapturer videoCapturer
+                        = enumerator.createCapturer(name, cameraEventsHandler);
+                String message = "Create fallback camera " + name;
+                if (videoCapturer != null) {
+                    Log.d(TAG, message + " succeeded");
+                    return videoCapturer;
+                } else {
+                    Log.d(TAG, message + " failed");
+                    failedDevices.add(name);
+                    // fallback to the next device.
+                }
             }
         }
 
