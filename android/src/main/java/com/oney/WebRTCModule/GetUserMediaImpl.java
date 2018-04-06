@@ -83,6 +83,7 @@ class GetUserMediaImpl {
             boolean isFacing,
             String sourceId) {
         VideoCapturer videoCapturer = null;
+        List<String> failedDevices = new ArrayList<>();
 
         // if sourceId given, use specified sourceId first
         final String[] deviceNames = enumerator.getDeviceNames();
@@ -95,6 +96,7 @@ class GetUserMediaImpl {
                         return videoCapturer;
                     } else {
                         Log.d(TAG, "create user specified camera " + name + " failed");
+                        failedDevices.add(name);
                         break; // fallback to facing mode
                     }
                 }
@@ -104,18 +106,34 @@ class GetUserMediaImpl {
         // otherwise, use facing mode
         String facingStr = isFacing ? "front" : "back";
         for (String name : deviceNames) {
-            if (enumerator.isFrontFacing(name) == isFacing) {
+            if (!failedDevices.contains(name) && enumerator.isFrontFacing(name) == isFacing) {
                 videoCapturer = enumerator.createCapturer(name, new CameraEventsHandler());
                 if (videoCapturer != null) {
                     Log.d(TAG, "Create " + facingStr + " camera " + name + " succeeded");
                     return videoCapturer;
                 } else {
                     Log.d(TAG, "Create " + facingStr + " camera " + name + " failed");
+                    failedDevices.add(name);
                 }
             }
         }
 
-        // should we fallback to available camera automatically?
+        // Fallback to any available camera.
+        for (String name : deviceNames) {
+            if (!failedDevices.contains(name)) {
+                videoCapturer = enumerator.createCapturer(name, cameraEventsHandler);
+                if (videoCapturer != null) {
+                    Log.d(TAG, "Create fallback camera " + name + " succeeded");
+                    return videoCapturer;
+                } else {
+                    Log.d(TAG, "Create fallback camera " + name + " failed");
+                    failedDevices.add(name);
+                    // fallback to the next device.
+                }
+            }
+        }
+
+        Log.w(TAG, "Unable to identify a suitable camera.");
         return null;
     }
 
