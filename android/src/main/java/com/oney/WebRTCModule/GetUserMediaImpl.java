@@ -39,7 +39,7 @@ class GetUserMediaImpl {
     private static final String TAG = WebRTCModule.TAG;
 
     /**
-     * The {@link CamearEventsHandler} used with
+     * The {@link CameraEventsHandler} used with
      * {@link CameraEnumerator#createCapturer}. Cached because the
      * implementation does not do anything but logging unspecific to the camera
      * device's name anyway.
@@ -87,7 +87,7 @@ class GetUserMediaImpl {
 
     /**
      * Converts the value of a specific {@code MediaStreamConstraints} key to
-     * the respective {@link Manifest#permission} value.
+     * the respective {@link Manifest.permission} value.
      *
      * @param constraints the {@code MediaStreamConstraints} within which the
      * specified {@code key} may be associated with the value to convert
@@ -116,8 +116,8 @@ class GetUserMediaImpl {
     }
 
     /**
-     * Constructs a new {@code VideoCapturer} instance satisfying specific
-     * constraints.
+     * Constructs a new {@code VideoCapturer} instance attempting to satisfy
+     * specific constraints.
      *
      * @param enumerator a {@code CameraEnumerator} provided by WebRTC. It can
      * be {@code Camera1Enumerator} or {@code Camera2Enumerator}.
@@ -127,7 +127,7 @@ class GetUserMediaImpl {
      * @param facingMode the facing of the requested video source such as
      * {@code user} and {@code environment}. If {@code null}, "user" is
      * presumed.
-     * @return a {@code VideoCapturer} satisfying th {@code facingMode} or
+     * @return a {@code VideoCapturer} satisfying the {@code facingMode} or
      * {@code sourceId} constraint
      */
     private VideoCapturer createVideoCapturer(
@@ -135,6 +135,7 @@ class GetUserMediaImpl {
             String sourceId,
             String facingMode) {
         String[] deviceNames = enumerator.getDeviceNames();
+        List<String> failedDevices = new ArrayList<>();
 
         // If sourceId is specified, then it takes precedence over facingMode.
         if (sourceId != null) {
@@ -148,13 +149,14 @@ class GetUserMediaImpl {
                         return videoCapturer;
                     } else {
                         Log.d(TAG, message + " failed");
+                        failedDevices.add(name);
                         break; // fallback to facingMode
                     }
                 }
             }
         }
 
-        // Otherwise, use facingMode.
+        // Otherwise, use facingMode (defaulting to front/user facing).
         boolean isFrontFacing;
         if (facingMode == null) {
             facingMode = "user";
@@ -163,7 +165,8 @@ class GetUserMediaImpl {
             isFrontFacing = !facingMode.equals("environment");
         }
         for (String name : deviceNames) {
-            if (enumerator.isFrontFacing(name) == isFrontFacing) {
+            if (!failedDevices.contains(name)
+                    && enumerator.isFrontFacing(name) == isFrontFacing) {
                 VideoCapturer videoCapturer
                     = enumerator.createCapturer(name, cameraEventsHandler);
                 String message
@@ -173,11 +176,29 @@ class GetUserMediaImpl {
                     return videoCapturer;
                 } else {
                     Log.d(TAG, message + " failed");
+                    failedDevices.add(name);
                 }
             }
         }
 
-        // should we fallback to available camera automatically?
+        // Fallback to any available camera.
+        for (String name : deviceNames) {
+            if (!failedDevices.contains(name)) {
+                VideoCapturer videoCapturer
+                        = enumerator.createCapturer(name, cameraEventsHandler);
+                String message = "Create fallback camera " + name;
+                if (videoCapturer != null) {
+                    Log.d(TAG, message + " succeeded");
+                    return videoCapturer;
+                } else {
+                    Log.d(TAG, message + " failed");
+                    failedDevices.add(name);
+                    // fallback to the next device.
+                }
+            }
+        }
+
+        Log.w(TAG, "Unable to identify a suitable camera.");
         return null;
     }
 
