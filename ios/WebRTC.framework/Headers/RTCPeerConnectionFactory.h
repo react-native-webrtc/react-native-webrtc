@@ -30,6 +30,9 @@ RTC_EXPORT
 
 - (instancetype)init NS_DESIGNATED_INITIALIZER;
 
+- (void)performBlockOnSignalingThread:(void (^)(void))block
+    NS_SWIFT_NAME(asyncOnSignalingThread(_:));
+
 /** Initialize an RTCAudioSource with constraints. */
 - (RTCAudioSource *)audioSourceWithConstraints:(nullable RTCMediaConstraints *)constraints;
 
