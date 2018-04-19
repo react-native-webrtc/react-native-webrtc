@@ -322,7 +322,7 @@ RCT_EXPORT_METHOD(mediaStreamTrackGetSources:(RCTPromiseResolveBlock)resolve
                          @"kind": @"audio",
                          }];
   }
-  resolve(@[sources]);
+  resolve(sources);
 }
 
 RCT_EXPORT_METHOD(mediaStreamTrackRelease:(nonnull NSString *)streamID : (nonnull NSString *)trackID)
