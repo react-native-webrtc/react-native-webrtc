@@ -98,6 +98,29 @@
     return config;
   }
 
+  if (json[@"audioJitterBufferMaxPackets"] != nil && [json[@"audioJitterBufferMaxPackets"] isKindOfClass:[NSNumber class]]) {
+    config.audioJitterBufferMaxPackets = [RCTConvert int:json[@"audioJitterBufferMaxPackets"]];
+  }
+
+  if (json[@"bundlePolicy"] != nil && [json[@"bundlePolicy"] isKindOfClass:[NSString class]]) {
+    NSString *bundlePolicy = json[@"bundlePolicy"];
+    if ([bundlePolicy isEqualToString:@"balanced"]) {
+      config.bundlePolicy = RTCBundlePolicyBalanced;
+    } else if ([bundlePolicy isEqualToString:@"max-compat"]) {
+      config.bundlePolicy = RTCBundlePolicyMaxCompat;
+    } else if ([bundlePolicy isEqualToString:@"max-bundle"]) {
+      config.bundlePolicy = RTCBundlePolicyMaxBundle;
+    }
+  }
+
+  if (json[@"iceBackupCandidatePairPingInterval"] != nil && [json[@"iceBackupCandidatePairPingInterval"] isKindOfClass:[NSNumber class]]) {
+    config.iceBackupCandidatePairPingInterval = [RCTConvert int:json[@"iceBackupCandidatePairPingInterval"]];
+  }
+
+  if (json[@"iceConnectionReceivingTimeout"] != nil && [json[@"iceConnectionReceivingTimeout"] isKindOfClass:[NSNumber class]]) {
+    config.iceConnectionReceivingTimeout = [RCTConvert int:json[@"iceConnectionReceivingTimeout"]];
+  }
+
   if (json[@"iceServers"] != nil && [json[@"iceServers"] isKindOfClass:[NSArray class]]) {
     NSMutableArray<RTCIceServer *> *iceServers = [NSMutableArray new];
     for (id server in json[@"iceServers"]) {
@@ -109,7 +132,36 @@
     config.iceServers = iceServers;
   }
 
-  // TODO: Implement the rest of the RTCConfigure options ...
+  if (json[@"iceTransportPolicy"] != nil && [json[@"iceTransportPolicy"] isKindOfClass:[NSString class]]) {
+    NSString *iceTransportPolicy = json[@"iceTransportPolicy"];
+    if ([iceTransportPolicy isEqualToString:@"all"]) {
+      config.iceTransportPolicy = RTCIceTransportPolicyAll;
+    } else if ([iceTransportPolicy isEqualToString:@"none"]) {
+      config.iceTransportPolicy = RTCIceTransportPolicyNone;
+    } else if ([iceTransportPolicy isEqualToString:@"nohost"]) {
+      config.iceTransportPolicy = RTCIceTransportPolicyNoHost;
+    } else if ([iceTransportPolicy isEqualToString:@"relay"]) {
+      config.iceTransportPolicy = RTCIceTransportPolicyRelay;
+    }
+  }
+
+  if (json[@"rtcpMuxPolicy"] != nil && [json[@"rtcpMuxPolicy"] isKindOfClass:[NSString class]]) {
+    NSString *rtcpMuxPolicy = json[@"rtcpMuxPolicy"];
+    if ([rtcpMuxPolicy isEqualToString:@"negotiate"]) {
+      config.rtcpMuxPolicy = RTCRtcpMuxPolicyNegotiate;
+    } else if ([rtcpMuxPolicy isEqualToString:@"require"]) {
+      config.rtcpMuxPolicy = RTCRtcpMuxPolicyRequire;
+    }
+  }
+
+  if (json[@"tcpCandidatePolicy"] != nil && [json[@"tcpCandidatePolicy"] isKindOfClass:[NSString class]]) {
+    NSString *tcpCandidatePolicy = json[@"tcpCandidatePolicy"];
+    if ([tcpCandidatePolicy isEqualToString:@"enabled"]) {
+      config.tcpCandidatePolicy = RTCTcpCandidatePolicyEnabled;
+    } else if ([tcpCandidatePolicy isEqualToString:@"disabled"]) {
+      config.tcpCandidatePolicy = RTCTcpCandidatePolicyDisabled;
+    }
+  }
 
   return config;
 }
