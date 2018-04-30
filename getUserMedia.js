@@ -56,7 +56,7 @@ function normalizeMediaConstraints(constraints, mediaType) {
   return constraints;
 }
 
-export default function getUserMedia(
+function getUserMedia(
     constraints,
     successCallback,
     errorCallback) {
@@ -157,3 +157,5 @@ export default function getUserMedia(
       errorCallback(error);
     });
 }
+
+export default RTCUtil.promisify(getUserMedia);

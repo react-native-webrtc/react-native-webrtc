@@ -114,6 +114,13 @@ export default class RTCPeerConnection extends EventTarget(PEER_CONNECTION_EVENT
         DEFAULT_PC_CONSTRAINTS,
         this._peerConnectionId);
     this._registerEvents();
+    // Allow for legacy callback usage
+    this.createOffer = RTCUtil.promisify(this.createOffer.bind(this), true);
+    this.createAnswer = RTCUtil.promisify(this.createAnswer.bind(this), true);
+    this.setLocalDescription = RTCUtil.promisify(this.setLocalDescription.bind(this));
+    this.setRemoteDescription = RTCUtil.promisify(this.setRemoteDescription.bind(this));
+    this.addIceCandidate = RTCUtil.promisify(this.addIceCandidate.bind(this));
+    this.getStats = RTCUtil.promisify(this.getStats.bind(this));
   }
 
   addStream(stream: MediaStream) {
@@ -159,7 +166,7 @@ export default class RTCPeerConnection extends EventTarget(PEER_CONNECTION_EVENT
     WebRTCModule.peerConnectionSetConfiguration(configuration, this._peerConnectionId);
   }
 
-  setLocalDescription(sessionDescription: RTCSessionDescription, success: ?Function, failure: ?Function, constraints) {
+  setLocalDescription(sessionDescription: RTCSessionDescription, success: ?Function, failure: ?Function) {
     WebRTCModule.peerConnectionSetLocalDescription(sessionDescription.toJSON(), this._peerConnectionId, (successful, data) => {
       if (successful) {
         this.localDescription = sessionDescription;
