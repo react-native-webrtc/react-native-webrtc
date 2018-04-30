@@ -18,7 +18,6 @@ import com.facebook.react.bridge.ReadableType;
 import com.facebook.react.bridge.WritableArray;
 import com.facebook.react.bridge.WritableMap;
 import com.facebook.react.modules.core.DeviceEventManagerModule;
-import com.facebook.react.bridge.Promise;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -35,13 +34,6 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
     private static final String LANGUAGE =  "language";
 
     final PeerConnectionFactory mFactory;
-
-    // Error codes
-    private static final String WEBRTC_CREATE_OFFER_ERROR = "WEBRTC_CREATE_OFFER_ERROR";
-    private static final String WEBRTC_CREATE_ANSWER_ERROR = "WEBRTC_CREATE_ANSWER_ERROR";
-    private static final String WEBRTC_SET_LOCAL_DESCRIPTION_ERROR = "WEBRTC_SET_LOCAL_DESCRIPTION_ERROR";
-    private static final String WEBRTC_SET_REMOTE_DESCRIPTION_ERROR = "WEBRTC_SET_REMOTE_DESCRIPTION_ERROR";
-
     private final SparseArray<PeerConnectionObserver> mPeerConnectionObservers;
     final Map<String, MediaStream> localStreams;
     final Map<String, MediaStreamTrack> localTracks;
@@ -475,7 +467,9 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
     }
 
     @ReactMethod
-    public void getUserMedia(ReadableMap constraints, Promise promise) {
+    public void getUserMedia(ReadableMap constraints,
+                             Callback    successCallback,
+                             Callback    errorCallback) {
         String streamId = getNextStreamUUID();
         MediaStream mediaStream = mFactory.createLocalMediaStream(streamId);
 
@@ -484,17 +478,19 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
             // specified by
             // https://www.w3.org/TR/mediacapture-streams/#dom-mediadevices-getusermedia
             // with respect to distinguishing the various causes of failure.
-            promise.reject(
+            errorCallback.invoke(
                 /* type */ null,
                 "Failed to create new media stream");
             return;
         }
 
-        getUserMediaImpl.getUserMedia(constraints, promise, mediaStream);
+        getUserMediaImpl.getUserMedia(
+            constraints, successCallback, errorCallback,
+            mediaStream);
     }
 
     @ReactMethod
-    public void mediaStreamTrackGetSources(Promise promise){
+    public void mediaStreamTrackGetSources(Callback callback){
         WritableArray array = Arguments.createArray();
         String[] names = new String[Camera.getNumberOfCameras()];
 
@@ -512,7 +508,7 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
         audio.putString("kind", "audio");
 
         array.pushMap(audio);
-        promise.resolve(array);
+        callback.invoke(array);
     }
 
     @ReactMethod
@@ -648,14 +644,14 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
     public void peerConnectionCreateOffer(
             int id,
             ReadableMap constraints,
-            final Promise promise) {
+            final Callback callback) {
         PeerConnection peerConnection = getPeerConnection(id);
 
         if (peerConnection != null) {
             peerConnection.createOffer(new SdpObserver() {
                 @Override
                 public void onCreateFailure(String s) {
-                    promise.reject(WEBRTC_CREATE_OFFER_ERROR, s);
+                    callback.invoke(false, s);
                 }
 
                 @Override
@@ -663,7 +659,7 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
                     WritableMap params = Arguments.createMap();
                     params.putString("sdp", sdp.description);
                     params.putString("type", sdp.type.canonicalForm());
-                    promise.resolve(params);
+                    callback.invoke(true, params);
                 }
 
                 @Override
@@ -674,7 +670,7 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
             }, parseMediaConstraints(constraints));
         } else {
             Log.d(TAG, "peerConnectionCreateOffer() peerConnection is null");
-            promise.reject(WEBRTC_CREATE_OFFER_ERROR, "peerConnection is null");
+            callback.invoke(false, "peerConnection is null");
         }
     }
 
@@ -682,14 +678,14 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
     public void peerConnectionCreateAnswer(
             int id,
             ReadableMap constraints,
-            final Promise promise) {
+            final Callback callback) {
         PeerConnection peerConnection = getPeerConnection(id);
 
         if (peerConnection != null) {
             peerConnection.createAnswer(new SdpObserver() {
                 @Override
                 public void onCreateFailure(String s) {
-                    promise.reject(WEBRTC_CREATE_ANSWER_ERROR, s);
+                    callback.invoke(false, s);
                 }
 
                 @Override
@@ -697,7 +693,7 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
                     WritableMap params = Arguments.createMap();
                     params.putString("sdp", sdp.description);
                     params.putString("type", sdp.type.canonicalForm());
-                    promise.resolve(params);
+                    callback.invoke(true, params);
                 }
 
                 @Override
@@ -708,12 +704,12 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
             }, parseMediaConstraints(constraints));
         } else {
             Log.d(TAG, "peerConnectionCreateAnswer() peerConnection is null");
-            promise.reject(WEBRTC_CREATE_ANSWER_ERROR, "peerConnection is null");
+            callback.invoke(false, "peerConnection is null");
         }
     }
 
     @ReactMethod
-    public void peerConnectionSetLocalDescription(ReadableMap sdpMap, final int id, final Promise promise) {
+    public void peerConnectionSetLocalDescription(ReadableMap sdpMap, final int id, final Callback callback) {
         PeerConnection peerConnection = getPeerConnection(id);
 
         Log.d(TAG, "peerConnectionSetLocalDescription() start");
@@ -730,7 +726,7 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
 
                 @Override
                 public void onSetSuccess() {
-                    promise.resolve(null);
+                    callback.invoke(true);
                 }
 
                 @Override
@@ -739,17 +735,17 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
 
                 @Override
                 public void onSetFailure(String s) {
-                    promise.reject(WEBRTC_SET_LOCAL_DESCRIPTION_ERROR, s);
+                    callback.invoke(false, s);
                 }
             }, sdp);
         } else {
             Log.d(TAG, "peerConnectionSetLocalDescription() peerConnection is null");
-            promise.reject(WEBRTC_SET_LOCAL_DESCRIPTION_ERROR, "peerConnection is null");
+            callback.invoke(false, "peerConnection is null");
         }
         Log.d(TAG, "peerConnectionSetLocalDescription() end");
     }
     @ReactMethod
-    public void peerConnectionSetRemoteDescription(final ReadableMap sdpMap, final int id, final Promise promise) {
+    public void peerConnectionSetRemoteDescription(final ReadableMap sdpMap, final int id, final Callback callback) {
         PeerConnection peerConnection = getPeerConnection(id);
         // final String d = sdpMap.getString("type");
 
@@ -767,7 +763,7 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
 
                 @Override
                 public void onSetSuccess() {
-                    promise.resolve(null);
+                    callback.invoke(true);
                 }
 
                 @Override
@@ -776,17 +772,17 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
 
                 @Override
                 public void onSetFailure(String s) {
-                    promise.reject(WEBRTC_SET_REMOTE_DESCRIPTION_ERROR, s);
+                    callback.invoke(false, s);
                 }
             }, sdp);
         } else {
             Log.d(TAG, "peerConnectionSetRemoteDescription() peerConnection is null");
-            promise.reject(WEBRTC_SET_REMOTE_DESCRIPTION_ERROR, "peerConnection is null");
+            callback.invoke(false, "peerConnection is null");
         }
         Log.d(TAG, "peerConnectionSetRemoteDescription() end");
     }
     @ReactMethod
-    public void peerConnectionAddICECandidate(ReadableMap candidateMap, final int id, final Promise promise) {
+    public void peerConnectionAddICECandidate(ReadableMap candidateMap, final int id, final Callback callback) {
         boolean result = false;
         PeerConnection peerConnection = getPeerConnection(id);
         Log.d(TAG, "peerConnectionAddICECandidate() start");
@@ -800,17 +796,17 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
         } else {
             Log.d(TAG, "peerConnectionAddICECandidate() peerConnection is null");
         }
-        promise.resolve(result);
+        callback.invoke(result);
         Log.d(TAG, "peerConnectionAddICECandidate() end");
     }
 
     @ReactMethod
-    public void peerConnectionGetStats(String trackId, int id, final Promise promise) {
+    public void peerConnectionGetStats(String trackId, int id, Callback cb) {
         PeerConnectionObserver pco = mPeerConnectionObservers.get(id);
         if (pco == null || pco.getPeerConnection() == null) {
             Log.d(TAG, "peerConnectionGetStats() peerConnection is null");
         } else {
-            pco.getStats(trackId, promise);
+            pco.getStats(trackId, cb);
         }
     }
 

@@ -14,7 +14,6 @@ import android.util.SparseArray;
 
 import com.facebook.react.bridge.Arguments;
 import com.facebook.react.bridge.Callback;
-import com.facebook.react.bridge.Promise;
 import com.facebook.react.bridge.ReadableMap;
 import com.facebook.react.bridge.WritableArray;
 import com.facebook.react.bridge.WritableMap;
@@ -145,7 +144,7 @@ class PeerConnectionObserver implements PeerConnection.Observer {
         }
     }
 
-    void getStats(String trackId, final Promise promise) {
+    void getStats(String trackId, final Callback cb) {
         MediaStreamTrack track = null;
         if (trackId == null
                 || trackId.isEmpty()
@@ -155,7 +154,7 @@ class PeerConnectionObserver implements PeerConnection.Observer {
                     new StatsObserver() {
                         @Override
                         public void onComplete(StatsReport[] reports) {
-                            promise.resolve(statsToJSON(reports));
+                            cb.invoke(statsToJSON(reports));
                         }
                     },
                     track);
