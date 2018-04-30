@@ -126,8 +126,7 @@ RCT_EXPORT_METHOD(peerConnectionRemoveStream:(nonnull NSString *)streamID object
 
 RCT_EXPORT_METHOD(peerConnectionCreateOffer:(nonnull NSNumber *)objectID
                                 constraints:(NSDictionary *)constraints
-                                   resolver:(RCTPromiseResolveBlock)resolve
-                                   rejecter:(RCTPromiseRejectBlock)reject)
+                                   callback:(RCTResponseSenderBlock)callback)
 {
   RTCPeerConnection *peerConnection = self.peerConnections[objectID];
   if (!peerConnection) {
@@ -138,18 +137,22 @@ RCT_EXPORT_METHOD(peerConnectionCreateOffer:(nonnull NSNumber *)objectID
     offerForConstraints:[self parseMediaConstraints:constraints]
       completionHandler:^(RTCSessionDescription *sdp, NSError *error) {
         if (error) {
-          reject(@"CreateOfferFailed", error.userInfo[@"error"], error);
+          callback(@[
+            @(NO),
+            @{
+              @"type": @"CreateOfferFailed",
+              @"message": error.userInfo[@"error"]}
+          ]);
         } else {
           NSString *type = [RTCSessionDescription stringForType:sdp.type];
-          resolve(@{@"sdp": sdp.sdp, @"type": type});
+          callback(@[@(YES), @{@"sdp": sdp.sdp, @"type": type}]);
         }
       }];
 }
 
 RCT_EXPORT_METHOD(peerConnectionCreateAnswer:(nonnull NSNumber *)objectID
                                  constraints:(NSDictionary *)constraints
-                                    resolver:(RCTPromiseResolveBlock)resolve
-                                    rejecter:(RCTPromiseRejectBlock)reject)
+                                    callback:(RCTResponseSenderBlock)callback)
 {
   RTCPeerConnection *peerConnection = self.peerConnections[objectID];
   if (!peerConnection) {
@@ -158,17 +161,22 @@ RCT_EXPORT_METHOD(peerConnectionCreateAnswer:(nonnull NSNumber *)objectID
 
   [peerConnection
     answerForConstraints:[self parseMediaConstraints:constraints]
-      completionHandler:^(RTCSessionDescription *sdp, NSError *error) {
-        if (error) {
-          reject(@"CreateAnswerFailed", error.userInfo[@"error"], error);
-        } else {
-          NSString *type = [RTCSessionDescription stringForType:sdp.type];
-          resolve(@{@"sdp": sdp.sdp, @"type": type});
-        }
-      }];
+       completionHandler:^(RTCSessionDescription *sdp, NSError *error) {
+         if (error) {
+           callback(@[
+             @(NO),
+             @{
+               @"type": @"CreateAnswerFailed",
+               @"message": error.userInfo[@"error"]}
+           ]);
+         } else {
+           NSString *type = [RTCSessionDescription stringForType:sdp.type];
+           callback(@[@(YES), @{@"sdp": sdp.sdp, @"type": type}]);
+         }
+       }];
 }
 
-RCT_EXPORT_METHOD(peerConnectionSetLocalDescription:(RTCSessionDescription *)sdp objectID:(nonnull NSNumber *)objectID resolver:(RCTPromiseResolveBlock)resolve rejecter:(RCTPromiseRejectBlock)reject)
+RCT_EXPORT_METHOD(peerConnectionSetLocalDescription:(RTCSessionDescription *)sdp objectID:(nonnull NSNumber *)objectID callback:(RCTResponseSenderBlock)callback)
 {
   RTCPeerConnection *peerConnection = self.peerConnections[objectID];
   if (!peerConnection) {
@@ -177,14 +185,16 @@ RCT_EXPORT_METHOD(peerConnectionSetLocalDescription:(RTCSessionDescription *)sdp
 
   [peerConnection setLocalDescription:sdp completionHandler: ^(NSError *error) {
     if (error) {
-      reject(@"SetLocalDescriptionFailed", error.localizedDescription, error);
+      id errorResponse = @{@"name": @"SetLocalDescriptionFailed",
+                           @"message": error.localizedDescription};
+      callback(@[@(NO), errorResponse]);
     } else {
-      resolve(nil);
+      callback(@[@(YES)]);
     }
   }];
 }
 
-RCT_EXPORT_METHOD(peerConnectionSetRemoteDescription:(RTCSessionDescription *)sdp objectID:(nonnull NSNumber *)objectID resolver:(RCTPromiseResolveBlock)resolve rejecter:(RCTPromiseRejectBlock)reject)
+RCT_EXPORT_METHOD(peerConnectionSetRemoteDescription:(RTCSessionDescription *)sdp objectID:(nonnull NSNumber *)objectID callback:(RCTResponseSenderBlock)callback)
 {
   RTCPeerConnection *peerConnection = self.peerConnections[objectID];
   if (!peerConnection) {
@@ -193,14 +203,16 @@ RCT_EXPORT_METHOD(peerConnectionSetRemoteDescription:(RTCSessionDescription *)sd
 
   [peerConnection setRemoteDescription: sdp completionHandler: ^(NSError *error) {
     if (error) {
-      reject(@"SetRemoteDescriptionFailed", error.localizedDescription, error);
+      id errorResponse = @{@"name": @"SetRemoteDescriptionFailed",
+                           @"message": error.localizedDescription};
+      callback(@[@(NO), errorResponse]);
     } else {
-      resolve(nil);
+      callback(@[@(YES)]);
     }
   }];
 }
 
-RCT_EXPORT_METHOD(peerConnectionAddICECandidate:(RTCIceCandidate*)candidate objectID:(nonnull NSNumber *)objectID resolver:(RCTPromiseResolveBlock)resolve rejecter:(RCTPromiseRejectBlock)reject)
+RCT_EXPORT_METHOD(peerConnectionAddICECandidate:(RTCIceCandidate*)candidate objectID:(nonnull NSNumber *)objectID callback:(RCTResponseSenderBlock)callback)
 {
   RTCPeerConnection *peerConnection = self.peerConnections[objectID];
   if (!peerConnection) {
@@ -209,7 +221,7 @@ RCT_EXPORT_METHOD(peerConnectionAddICECandidate:(RTCIceCandidate*)candidate obje
 
   [peerConnection addIceCandidate:candidate];
   NSLog(@"addICECandidateresult: %@", candidate);
-  resolve(nil);
+  callback(@[@true]);
 }
 
 RCT_EXPORT_METHOD(peerConnectionClose:(nonnull NSNumber *)objectID)
@@ -239,8 +251,7 @@ RCT_EXPORT_METHOD(peerConnectionClose:(nonnull NSNumber *)objectID)
 
 RCT_EXPORT_METHOD(peerConnectionGetStats:(nonnull NSString *)trackID
                                 objectID:(nonnull NSNumber *)objectID
-                                resolver:(RCTPromiseResolveBlock)resolve
-                                rejecter:(RCTPromiseRejectBlock)reject)
+                                callback:(RCTResponseSenderBlock)callback)
 {
   RTCPeerConnection *peerConnection = self.peerConnections[objectID];
   if (!peerConnection) {
@@ -255,7 +266,7 @@ RCT_EXPORT_METHOD(peerConnectionGetStats:(nonnull NSString *)trackID
     [peerConnection statsForTrack:track
                  statsOutputLevel:RTCStatsOutputLevelStandard
                 completionHandler:^(NSArray<RTCLegacyStatsReport *> *stats) {
-                  resolve(@[[self statsToJSON:stats]]);
+                  callback(@[[self statsToJSON:stats]]);
                 }];
   }
 }

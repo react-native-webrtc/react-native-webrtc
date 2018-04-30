@@ -6,7 +6,6 @@ import * as RTCUtil from './RTCUtil';
 import MediaStream from './MediaStream';
 import MediaStreamError from './MediaStreamError';
 import MediaStreamTrack from './MediaStreamTrack';
-import withLegacyCallbacks from './withLegacyCallbacks';
 
 const {WebRTCModule} = NativeModules;
 
@@ -57,7 +56,16 @@ function normalizeMediaConstraints(constraints, mediaType) {
   return constraints;
 }
 
-export default withLegacyCallbacks(constraints => {
+export default function getUserMedia(
+    constraints,
+    successCallback,
+    errorCallback) {
+  if (typeof successCallback !== 'function') {
+    throw new TypeError('successCallback is non-nullable and required');
+  }
+  if (typeof errorCallback !== 'function') {
+    throw new TypeError('errorCallback is non-nullable and required');
+  }
   // According to
   // https://www.w3.org/TR/mediacapture-streams/#dom-mediadevices-getusermedia,
   // the constraints argument is a dictionary of type MediaStreamConstraints.
@@ -83,7 +91,11 @@ export default withLegacyCallbacks(constraints => {
           ++requestedMediaTypes;
           constraints[mediaType] = parseMediaConstraints(constraints[mediaType], mediaType);
         } else {
-          throw new TypeError('constraints.' + mediaType + ' is neither a boolean nor a dictionary');
+          errorCallback(
+            new TypeError(
+              'constraints.' + mediaType
+                + ' is neither a boolean nor a dictionary'));
+          return;
         }
 
         // final check constraints and convert value to native accepted type
@@ -96,23 +108,27 @@ export default withLegacyCallbacks(constraints => {
     // requestedMediaTypes is the empty set, the method invocation fails with
     // a TypeError.
     if (requestedMediaTypes === 0) {
-      throw new TypeError('constraints requests no media types');
+      errorCallback(new TypeError('constraints requests no media types'));
+      return;
     }
   } else {
-    throw new TypeError('constraints is not a dictionary');
+    errorCallback(new TypeError('constraints is not a dictionary'));
+    return;
   }
 
-  return WebRTCModule.getUserMedia(constraints)
-    .then(([id, tracks]) => {
+  WebRTCModule.getUserMedia(
+    constraints,
+    /* successCallback */ (id, tracks) => {
       const stream = new MediaStream(id);
       for (const track of tracks) {
         stream.addTrack(new MediaStreamTrack(track));
       }
-      return stream;
-    })
-    .catch(({ message, code }) => {
+
+      successCallback(stream);
+    },
+    /* errorCallback */ (type, message) => {
       let error;
-      switch (code) {
+      switch (type) {
       case 'DOMException':
         // According to
         // https://www.w3.org/TR/mediacapture-streams/#idl-def-MediaStreamError,
@@ -135,9 +151,9 @@ export default withLegacyCallbacks(constraints => {
         break;
       }
       if (!error) {
-        error = new MediaStreamError({ message, name: code });
+        error = new MediaStreamError({ message, name: type });
       }
 
-      throw error;
+      errorCallback(error);
     });
-});
+}

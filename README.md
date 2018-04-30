@@ -21,7 +21,7 @@ see [#190](https://github.com/oney/react-native-webrtc/pull/190) for detials
 ## WebRTC Revision
 
 Since `0.53`, we use same branch version number like in webrtc native.
-please see [wiki page](https://github.com/oney/react-native-webrtc/wiki) about revision history
+please see [wiki page](https://github.com/oney/react-native-webrtc/wiki) about revision history 
 
 ### format:
 
@@ -47,7 +47,7 @@ the order of commit revision is nothing to do with the order of cherry-picks, fo
 - [iOS](https://github.com/oney/react-native-webrtc/blob/master/Documentation/iOSInstallation.md)
 - [Android](https://github.com/oney/react-native-webrtc/blob/master/Documentation/AndroidInstallation.md)
 
-note: 0.10.0~0.12.0 required `git-lfs`, see: [git-lfs-installation](https://github.com/oney/react-native-webrtc/blob/master/Documentation/git-lfs-installation.md)
+note: 0.10.0~0.12.0 required `git-lfs`, see: [git-lfs-installation](https://github.com/oney/react-native-webrtc/blob/master/Documentation/git-lfs-installation.md) 
 
 ## Usage
 Now, you can use WebRTC like in browser.
@@ -71,42 +71,37 @@ var configuration = {"iceServers": [{"url": "stun:stun.l.google.com:19302"}]};
 var pc = new RTCPeerConnection(configuration);
 
 let isFront = true;
-MediaStreamTrack
-  .getSources()
-  .then(sourceInfos => {
-    console.log(sourceInfos);
-    let videoSourceId;
-    for (let i = 0; i < sourceInfos.length; i++) {
-      const sourceInfo = sourceInfos[i];
-      if(sourceInfo.kind == "video" && sourceInfo.facing == (isFront ? "front" : "back")) {
-        videoSourceId = sourceInfo.id;
-      }
+MediaStreamTrack.getSources(sourceInfos => {
+  console.log(sourceInfos);
+  let videoSourceId;
+  for (const i = 0; i < sourceInfos.length; i++) {
+    const sourceInfo = sourceInfos[i];
+    if(sourceInfo.kind == "video" && sourceInfo.facing == (isFront ? "front" : "back")) {
+      videoSourceId = sourceInfo.id;
     }
-    return getUserMedia({
-      audio: true,
-      video: {
-        mandatory: {
-          minWidth: 500, // Provide your own width, height and frame rate here
-          minHeight: 300,
-          minFrameRate: 30
-        },
-        facingMode: (isFront ? "user" : "environment"),
-        optional: (videoSourceId ? [{sourceId: videoSourceId}] : [])
-      }
-    });
-  })
-  .then(stream => {
+  }
+  getUserMedia({
+    audio: true,
+    video: {
+      mandatory: {
+        minWidth: 500, // Provide your own width, height and frame rate here
+        minHeight: 300,
+        minFrameRate: 30
+      },
+      facingMode: (isFront ? "user" : "environment"),
+      optional: (videoSourceId ? [{sourceId: videoSourceId}] : [])
+    }
+  }, function (stream) {
     console.log('dddd', stream);
-    return stream
-  })
-  .catch(logError);
+    callback(stream);
+  }, logError);
+});
 
-pc.createOffer()
-  .then(pc.setLocalDescription)
-  .then(() => {
+pc.createOffer(function(desc) {
+  pc.setLocalDescription(desc, function () {
     // Send pc.localDescription to peer
-  })
-  .catch(logError);
+  }, function(e) {});
+}, function(e) {});
 
 pc.onicecandidate = function (event) {
   // send event.candidate to peer
@@ -169,3 +164,4 @@ Use [react-native-incall-manager](https://github.com/zxcpoiu/react-native-incall
 
 ## Sponsorship
 This repository doesn't have a plan to get sponsorship.(This can be discussed afterwards by collaborators). If you would like to pay bounty to fix some bugs or get some features, be free to open a issue that adds `[BOUNTY]` category in title. Add other bounty website link like [this](https://www.bountysource.com) will be better.
+
