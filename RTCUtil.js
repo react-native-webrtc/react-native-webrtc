@@ -35,16 +35,27 @@ export function promisify(method, callbackFirst) {
     let onSuccess = origArgs[(callbackFirst ? 0 : origArgs.length - 2)];
     let onFailure = origArgs[(callbackFirst ? 1 : origArgs.length - 1)];
     let args = origArgs;
-    if (typeof onSuccess === 'function' && typeof onFailure === 'function') {
-      args = origArgs.filter(item => item !== onSuccess && item !== onFailure);
+
+    // --- should promisify functions which has only one success callback.
+
+    if (typeof onSuccess === 'function') {
+      args = args.filter(item => item !== onSuccess);
     } else {
-      onSuccess = onFailure = function(res) { return res; };
+      onSuccess = function(res) { return res; };
+    }
+
+    if (typeof onFailure === 'function') {
+      args = args.filter(item => item !== onFailure);
+    } else {
+      onFailure = function(err) { throw err; };
     }
 
     // --- always pass resolve/reject as callback
     return new Promise(function(resolve, reject) {
       const newArgs = (callbackFirst ? [resolve, reject, ...args] : [...args, resolve, reject]);
       method(...newArgs);
-    }).then(onSuccess, onFailure);
+    })
+    .then(onSuccess)
+    .catch(onFailure);
   };
 }
