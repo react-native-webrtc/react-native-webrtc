@@ -141,7 +141,9 @@ export default function getUserMedia(constraints = {}) {
         /* successCallback */ (id, tracks) => {
           const stream = new MediaStream(id);
           for (const track of tracks) {
-            stream.addTrack(new MediaStreamTrack(track));
+            const mediaStreamTrack = new MediaStreamTrack(track);
+            mediaStreamTrack.streamReactTag = stream.reactTag;
+            stream.addTrack(mediaStreamTrack);
           }
     
           resolve(stream);

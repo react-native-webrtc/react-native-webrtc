@@ -47,6 +47,7 @@ export default class MediaStream extends EventTarget(MEDIA_STREAM_EVENTS) {
   }
 
   addTrack(track: MediaStreamTrack) {
+    if(track.kind==='video' && this.getVideoTracks().length===0 && track.streamReactTag) this.reactTag = track.streamReactTag;
     this._tracks.push(track);
     this.dispatchEvent(new MediaStreamTrackEvent('addtrack', {track}));
   }
@@ -59,6 +60,7 @@ export default class MediaStream extends EventTarget(MEDIA_STREAM_EVENTS) {
     WebRTCModule.mediaStreamTrackRelease(this.reactTag, track.id);
     this._tracks.splice(index, 1);
     this.dispatchEvent(new MediaStreamTrackEvent('removetrack', {track}));
+    if(this.getVideoTracks().length===0) this.reactTag = undefined;
   }
 
   getTracks(): Array<MediaStreamTrack> {
