@@ -47,9 +47,8 @@ pod 'react-native-webrtc', :path => '../node_modules/react-native-webrtc'
 
 
 4-1.) click `Build Phases` tab, open `Link Binary With Libraries`  
-4-2.) add `libRCTWebRTC.a`  
-4-3.) make sure WebRTC.framework linked  
-4-4.) add the following libraries:  
+4-2.) make sure WebRTC.framework linked  
+4-3.) add the following libraries:  
 
 ```
 AVFoundation.framework
@@ -64,7 +63,7 @@ libsqlite3.tbd
 libstdc++.tbd
 ```
 
-4-5.) Under `Build setting` set `Dead Code Stripping` to `No` also under `Build Options` set `Enable Bitcode` to `No` as well  
+4-4.) Under `Build setting` set `Dead Code Stripping` to `No` also under `Build Options` set `Enable Bitcode` to `No` as well  
 
 ![Picture 4](https://github.com/oney/react-native-webrtc/blob/master/Documentation/doc_install_xcode_link_libraries.png)
 
