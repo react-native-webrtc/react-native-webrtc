@@ -296,6 +296,17 @@ class GetUserMediaImpl {
         return track;
     }
 
+    void mediaStreamTrackSetEnabled(String trackId, final boolean enabled) {
+        TrackPrivate track = tracks.get(trackId);
+        if (track != null && track.videoCaptureController != null) {
+            if (enabled) {
+                track.videoCaptureController.startCapture();
+            } else {
+                track.videoCaptureController.stopCapture();
+            }
+        }
+    }
+
     void mediaStreamTrackStop(String id) {
         MediaStreamTrack track = getTrack(id);
         if (track == null) {
