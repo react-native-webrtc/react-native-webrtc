@@ -8,7 +8,6 @@ import android.util.Log;
 import com.facebook.react.bridge.Arguments;
 import com.facebook.react.bridge.Callback;
 import com.facebook.react.bridge.ReactApplicationContext;
-import com.facebook.react.bridge.ReadableArray;
 import com.facebook.react.bridge.ReadableMap;
 import com.facebook.react.bridge.ReadableType;
 import com.facebook.react.bridge.WritableArray;
@@ -26,10 +25,6 @@ import org.webrtc.*;
  * order to reduce complexity and to (somewhat) separate concerns.
  */
 class GetUserMediaImpl {
-    private static final int DEFAULT_WIDTH  = 1280;
-    private static final int DEFAULT_HEIGHT = 720;
-    private static final int DEFAULT_FPS    = 30;
-
     private static final String PERMISSION_AUDIO = Manifest.permission.RECORD_AUDIO;
     private static final String PERMISSION_VIDEO = Manifest.permission.CAMERA;
 
@@ -37,15 +32,6 @@ class GetUserMediaImpl {
      * The {@link Log} tag with which {@code GetUserMediaImpl} is to log.
      */
     private static final String TAG = WebRTCModule.TAG;
-
-    /**
-     * The {@link CameraEventsHandler} used with
-     * {@link CameraEnumerator#createCapturer}. Cached because the
-     * implementation does not do anything but logging unspecific to the camera
-     * device's name anyway.
-     */
-    private final CameraEventsHandler cameraEventsHandler
-        = new CameraEventsHandler();
 
     private final ReactApplicationContext reactContext;
 
@@ -115,140 +101,8 @@ class GetUserMediaImpl {
         }
     }
 
-    /**
-     * Constructs a new {@code VideoCapturer} instance attempting to satisfy
-     * specific constraints.
-     *
-     * @param enumerator a {@code CameraEnumerator} provided by WebRTC. It can
-     * be {@code Camera1Enumerator} or {@code Camera2Enumerator}.
-     * @param sourceId the ID of the requested video source. If not
-     * {@code null} and a {@code VideoCapturer} can be created for it, then
-     * {@code facingMode} is ignored.
-     * @param facingMode the facing of the requested video source such as
-     * {@code user} and {@code environment}. If {@code null}, "user" is
-     * presumed.
-     * @return a {@code VideoCapturer} satisfying the {@code facingMode} or
-     * {@code sourceId} constraint
-     */
-    private VideoCapturer createVideoCapturer(
-            CameraEnumerator enumerator,
-            String sourceId,
-            String facingMode) {
-        String[] deviceNames = enumerator.getDeviceNames();
-        List<String> failedDevices = new ArrayList<>();
-
-        // If sourceId is specified, then it takes precedence over facingMode.
-        if (sourceId != null) {
-            for (String name : deviceNames) {
-                if (name.equals(sourceId)) {
-                    VideoCapturer videoCapturer
-                        = enumerator.createCapturer(name, cameraEventsHandler);
-                    String message = "Create user-specified camera " + name;
-                    if (videoCapturer != null) {
-                        Log.d(TAG, message + " succeeded");
-                        return videoCapturer;
-                    } else {
-                        Log.d(TAG, message + " failed");
-                        failedDevices.add(name);
-                        break; // fallback to facingMode
-                    }
-                }
-            }
-        }
-
-        // Otherwise, use facingMode (defaulting to front/user facing).
-        boolean isFrontFacing;
-        if (facingMode == null) {
-            facingMode = "user";
-            isFrontFacing = true;
-        } else {
-            isFrontFacing = !facingMode.equals("environment");
-        }
-        for (String name : deviceNames) {
-            if (!failedDevices.contains(name)
-                    && enumerator.isFrontFacing(name) == isFrontFacing) {
-                VideoCapturer videoCapturer
-                    = enumerator.createCapturer(name, cameraEventsHandler);
-                String message
-                    = "Create " + facingMode + "-facing camera " + name;
-                if (videoCapturer != null) {
-                    Log.d(TAG, message + " succeeded");
-                    return videoCapturer;
-                } else {
-                    Log.d(TAG, message + " failed");
-                    failedDevices.add(name);
-                }
-            }
-        }
-
-        // Fallback to any available camera.
-        for (String name : deviceNames) {
-            if (!failedDevices.contains(name)) {
-                VideoCapturer videoCapturer
-                        = enumerator.createCapturer(name, cameraEventsHandler);
-                String message = "Create fallback camera " + name;
-                if (videoCapturer != null) {
-                    Log.d(TAG, message + " succeeded");
-                    return videoCapturer;
-                } else {
-                    Log.d(TAG, message + " failed");
-                    failedDevices.add(name);
-                    // fallback to the next device.
-                }
-            }
-        }
-
-        Log.w(TAG, "Unable to identify a suitable camera.");
-        return null;
-    }
-
-    /**
-     * Retrieves "facingMode" constraint value.
-     *
-     * @param mediaConstraints a {@code ReadableMap} which represents "GUM"
-     * constraints argument.
-     * @return String value of "facingMode" constraints in "GUM" or
-     * {@code null} if not specified.
-     */
-    private String getFacingMode(ReadableMap mediaConstraints) {
-        return
-            mediaConstraints == null
-                ? null
-                : ReactBridgeUtil.getMapStrValue(mediaConstraints, "facingMode");
-    }
-
     private ReactApplicationContext getReactApplicationContext() {
         return reactContext;
-    }
-
-    /**
-     * Retrieves "sourceId" constraint value.
-     *
-     * @param mediaConstraints a {@code ReadableMap} which represents "GUM"
-     * constraints argument
-     * @return String value of "sourceId" optional "GUM" constraint or
-     * {@code null} if not specified.
-     */
-    private String getSourceIdConstraint(ReadableMap mediaConstraints) {
-        if (mediaConstraints != null
-                && mediaConstraints.hasKey("optional")
-                && mediaConstraints.getType("optional") == ReadableType.Array) {
-            ReadableArray optional = mediaConstraints.getArray("optional");
-
-            for (int i = 0, size = optional.size(); i < size; i++) {
-                if (optional.getType(i) == ReadableType.Map) {
-                    ReadableMap option = optional.getMap(i);
-
-                    if (option.hasKey("sourceId")
-                            && option.getType("sourceId")
-                                == ReadableType.String) {
-                        return option.getString("sourceId");
-                    }
-                }
-            }
-        }
-
-        return null;
     }
 
     MediaStreamTrack getTrack(String id) {
@@ -412,39 +266,18 @@ class GetUserMediaImpl {
 
     private VideoTrack getUserVideo(ReadableMap constraints) {
         ReadableMap videoConstraintsMap = null;
-        ReadableMap videoConstraintsMandatory = null;
+
         if (constraints.getType("video") == ReadableType.Map) {
             videoConstraintsMap = constraints.getMap("video");
-            if (videoConstraintsMap.hasKey("mandatory")
-                    && videoConstraintsMap.getType("mandatory")
-                        == ReadableType.Map) {
-                videoConstraintsMandatory
-                    = videoConstraintsMap.getMap("mandatory");
-            }
         }
 
         Log.i(TAG, "getUserMedia(video): " + videoConstraintsMap);
 
-        // NOTE: to support Camera2, the device should:
-        //   1. Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP
-        //   2. all camera support level should greater than LEGACY
-        //   see: https://developer.android.com/reference/android/hardware/camera2/CameraCharacteristics.html#INFO_SUPPORTED_HARDWARE_LEVEL
-        // TODO Enable camera2 enumerator
         Context context = getReactApplicationContext();
-        CameraEnumerator cameraEnumerator;
 
-        if (Camera2Enumerator.isSupported(context)) {
-            Log.d(TAG, "Creating video capturer using Camera2 API.");
-            cameraEnumerator = new Camera2Enumerator(context);
-        } else {
-            Log.d(TAG, "Creating video capturer using Camera1 API.");
-            cameraEnumerator = new Camera1Enumerator(false);
-        }
-
-        String sourceId = getSourceIdConstraint(videoConstraintsMap);
-        String facingMode = getFacingMode(videoConstraintsMap);
-        VideoCapturer videoCapturer
-            = createVideoCapturer(cameraEnumerator, sourceId, facingMode);
+        VideoCaptureController videoCaptureController
+            = new VideoCaptureController(context, constraints);
+        VideoCapturer videoCapturer = videoCaptureController.getVideoCapturer();
         if (videoCapturer == null) {
             return null;
         }
@@ -452,34 +285,13 @@ class GetUserMediaImpl {
         PeerConnectionFactory pcFactory = webRTCModule.mFactory;
         VideoSource videoSource = pcFactory.createVideoSource(videoCapturer);
 
-        // Fall back to defaults if keys are missing.
-        int width
-            = videoConstraintsMandatory.hasKey("minWidth")
-                ? videoConstraintsMandatory.getInt("minWidth")
-                : DEFAULT_WIDTH;
-        int height
-            = videoConstraintsMandatory.hasKey("minHeight")
-                ? videoConstraintsMandatory.getInt("minHeight")
-                : DEFAULT_HEIGHT;
-        int fps
-            = videoConstraintsMandatory.hasKey("minFrameRate")
-                ? videoConstraintsMandatory.getInt("minFrameRate")
-                : DEFAULT_FPS;
-        try {
-            videoCapturer.startCapture(width, height, fps);
-        } catch (RuntimeException re) {
-            // XXX PeerConnectionFactory#createVideoSource(videoCapturer) will
-            // initialize videoCapturer. Unfortunately, the initialization may
-            // be unsuccessful and VideoCapturer#startCapture(int, int, int) may
-            // be able to unintentionally detect the failure.
-            videoSource.dispose();
-            videoCapturer.dispose();
-            return null;
-        }
-
         String id = webRTCModule.getNextTrackUUID();
         VideoTrack track = pcFactory.createVideoTrack(id, videoSource);
-        tracks.put(id, new TrackPrivate(track, videoSource, videoCapturer));
+
+        track.setEnabled(true);
+        videoCaptureController.startCapture();
+
+        tracks.put(id, new TrackPrivate(track, videoSource, videoCaptureController));
 
         return track;
     }
@@ -500,27 +312,14 @@ class GetUserMediaImpl {
     private void removeTrack(String id) {
         TrackPrivate track = tracks.remove(id);
         if (track != null) {
-            VideoCapturer videoCapturer = track.videoCapturer;
-            boolean captureStopped;
-            if (videoCapturer == null) {
-                captureStopped = true;
-            } else {
-                captureStopped = false;
-                try {
-                    videoCapturer.stopCapture();
-                    captureStopped = true;
-                } catch (InterruptedException e) {
-                    Log.e(
-                        TAG,
-                        "removeTrack() Failed to stop video capturer");
+            VideoCaptureController videoCaptureController
+                = track.videoCaptureController;
+            if (videoCaptureController != null) {
+                if (videoCaptureController.stopCapture()) {
+                    videoCaptureController.dispose();
                 }
             }
-            if (captureStopped) {
-                track.mediaSource.dispose();
-                if (videoCapturer != null) {
-                    videoCapturer.dispose();
-                }
-            }
+            track.mediaSource.dispose();
         }
     }
 
@@ -590,8 +389,8 @@ class GetUserMediaImpl {
 
     void switchCamera(String trackId) {
         TrackPrivate track = tracks.get(trackId);
-        if (track != null && track.videoCapturer != null) {
-            ((CameraVideoCapturer) track.videoCapturer).switchCamera(null);
+        if (track != null && track.videoCaptureController != null) {
+            track.videoCaptureController.switchCamera();
         }
     }
 
@@ -611,7 +410,7 @@ class GetUserMediaImpl {
          * The {@code VideoCapturer} from which {@link #mediaSource} was created
          * if {@link #track} is a {@link VideoTrack}.
          */
-        public final VideoCapturer videoCapturer;
+        public final VideoCaptureController videoCaptureController;
 
         /**
          * Initializes a new {@code TrackPrivate} instance.
@@ -626,10 +425,10 @@ class GetUserMediaImpl {
         public TrackPrivate(
                 MediaStreamTrack track,
                 MediaSource mediaSource,
-                VideoCapturer videoCapturer) {
+                VideoCaptureController videoCaptureController) {
             this.track = track;
             this.mediaSource = mediaSource;
-            this.videoCapturer = videoCapturer;
+            this.videoCaptureController = videoCaptureController;
         }
     }
 }
