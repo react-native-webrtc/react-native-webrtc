@@ -291,6 +291,11 @@ RCT_EXPORT_METHOD(mediaStreamTrackSetEnabled:(nonnull NSString *)trackID : (BOOL
   RTCMediaStreamTrack *track = self.localTracks[trackID];
   if (track && track.isEnabled != enabled) {
     track.isEnabled = enabled;
+    if (enabled) {
+      [track.videoCaptureController startCapture];
+    } else {
+      [track.videoCaptureController stopCapture];
+    }
   }
 }
 
