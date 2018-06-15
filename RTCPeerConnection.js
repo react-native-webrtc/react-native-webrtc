@@ -106,12 +106,12 @@ export default class RTCPeerConnection extends EventTarget(PEER_CONNECTION_EVENT
    */
   _dataChannelIds: Set = new Set();
 
-  constructor(configuration) {
+  constructor(configuration, constraints) {
     super();
     this._peerConnectionId = nextPeerConnectionId++;
     WebRTCModule.peerConnectionInit(
         configuration,
-        DEFAULT_PC_CONSTRAINTS,
+        constraints ? constraints : DEFAULT_PC_CONSTRAINTS,
         this._peerConnectionId);
     this._registerEvents();
     // Allow for legacy callback usage
