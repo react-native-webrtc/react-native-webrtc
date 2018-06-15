@@ -82,6 +82,8 @@ typedef NS_ENUM(NSInteger, RTCVideoViewObjectFit) {
   CGSize _videoSize;
 }
 
+@synthesize subview;
+
 /**
  * Tells this view that its window object changed.
  */
@@ -130,8 +132,7 @@ typedef NS_ENUM(NSInteger, RTCVideoViewObjectFit) {
  */
 - (instancetype)initWithFrame:(CGRect)frame {
   if (self = [super initWithFrame:frame]) {
-    RTCEAGLVideoView *subview = [[RTCEAGLVideoView alloc] init];
-
+    subview = [[RTCEAGLVideoView alloc] init];
     subview.delegate = self;
 
     _videoSize.height = 0;
@@ -264,28 +265,6 @@ typedef NS_ENUM(NSInteger, RTCVideoViewObjectFit) {
       [videoTrack addRenderer:self];
     }
   }
-}
-
-/**
- * Implements the getter of the {@code subview} property of this
- * {@code RTCVideoView}. Gets the {@link RTCEAGLVideoView} subview of this
- * {@code RTCVideoView} which implements the actual {@link RTCVideoRenderer} of
- * this instance and which actually renders {@link #videoTrack}.
- *
- * @returns The {@code RTCEAGLVideoView} subview of this {@code RTCVideoView}
- * which implements the actual {@code RTCVideoRenderer} of this instance and
- * which actually renders {@code videoTrack}.
- */
-- (RTCEAGLVideoView *)subview {
-  // In order to reduce the number of strong retainments of the RTCEAGLVideoView
-  // instance and, thus, the risk of memory leaks, retrieve the subview from the
-  // super's list of subviews of this view.
-  for (UIView *subview in self.subviews) {
-    if ([subview isKindOfClass:[RTCEAGLVideoView class]]) {
-      return (RTCEAGLVideoView *)subview;
-    }
-  }
-  return nil;
 }
 
 #pragma mark - RTCVideoRenderer methods
