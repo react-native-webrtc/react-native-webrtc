@@ -143,6 +143,12 @@ container.setState({videoURL: stream.toURL()});
 This function allows to switch the front / back cameras in a video track
 on the fly, without the need for adding / removing tracks or renegotiating.
 
+#### VideoTrack.enabled
+
+Starting with version 1.67, when setting a local video track's enabled state to
+`false`, the camera will be closed, but the track will remain alive. Setting
+it back to `true` will re-enable the camera.
+
 ## Demos
 
 **Official Demo**
