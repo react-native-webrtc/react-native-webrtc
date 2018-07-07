@@ -2,11 +2,14 @@ package com.oney.WebRTCModule;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
+import android.graphics.Color;
 import android.graphics.Point;
 import android.support.v4.view.ViewCompat;
 import android.view.View;
 import android.view.ViewGroup;
 import android.util.Log;
+
+import com.facebook.react.bridge.ReactContext;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -17,6 +20,7 @@ import org.webrtc.MediaStream;
 import org.webrtc.RendererCommon;
 import org.webrtc.RendererCommon.RendererEvents;
 import org.webrtc.RendererCommon.ScalingType;
+import org.webrtc.SurfaceViewRenderer;
 import org.webrtc.VideoRenderer;
 import org.webrtc.VideoTrack;
 
@@ -105,6 +109,7 @@ public class WebRTCView extends ViewGroup {
         = new RendererEvents() {
             @Override
             public void onFirstFrameRendered() {
+                WebRTCView.this.onFirstFrameRendered();
             }
 
             @Override
@@ -139,6 +144,12 @@ public class WebRTCView extends ViewGroup {
     private ScalingType scalingType;
 
     /**
+     * The URL, if any, of the {@link MediaStream} (to be) rendered by this
+     * {@code WebRTCView}. The value of {@link #videoTrack} is derived from it.
+     */
+    private String streamURL;
+
+    /**
      * The {@link View} and {@link VideoRenderer#Callbacks} implementation which
      * actually renders {@link #videoTrack} on behalf of this instance.
      */
@@ -166,6 +177,17 @@ public class WebRTCView extends ViewGroup {
     }
 
     /**
+     * "Cleans" the {@code SurfaceViewRenderer} by setting the view part to
+     * opaque black and the surface part to transparent.
+     */
+    private void cleanSurfaceViewRenderer() {
+        SurfaceViewRenderer surfaceViewRenderer
+            = getSurfaceViewRenderer();
+        surfaceViewRenderer.setBackgroundColor(Color.BLACK);
+        surfaceViewRenderer.clearImage();
+    }
+
+    /**
      * Gets the {@code SurfaceViewRenderer} which renders {@link #videoTrack}.
      * Explicitly defined and used in order to facilitate switching the instance
      * at compile time. For example, reduces the number of modifications
@@ -175,8 +197,50 @@ public class WebRTCView extends ViewGroup {
      *
      * @return The {@code SurfaceViewRenderer} which renders {@code videoTrack}.
      */
-    private final SurfaceViewRenderer getSurfaceViewRenderer() {
+    private SurfaceViewRenderer getSurfaceViewRenderer() {
         return surfaceViewRenderer;
+    }
+
+    /**
+     * Gets the {@link VideoTrack}, if any, (to be) rendered by this
+     * {@code WebRTCView}.
+     *
+     * @return The {@code VideoTrack} (to be) rendered by this
+     * {@code WebRTCView}.
+     */
+    private VideoTrack getVideoTrack() {
+        VideoTrack videoTrack = this.videoTrack;
+
+        // XXX If WebRTCModule#mediaStreamTrackRelease has already been invoked
+        // on videoTrack, then it is no longer safe to call methods (e.g.
+        // addRenderer, removeRenderer) on videoTrack.
+        if (videoTrack != null
+                && videoTrack != getVideoTrackForStreamURL(this.streamURL)) {
+            videoTrack = null;
+        }
+
+        return videoTrack;
+    }
+
+    private VideoTrack getVideoTrackForStreamURL(String streamURL) {
+        VideoTrack videoTrack = null;
+
+        if (streamURL != null) {
+            ReactContext reactContext = (ReactContext) getContext();
+            WebRTCModule module
+                = reactContext.getNativeModule(WebRTCModule.class);
+            MediaStream stream = module.getStreamForReactTag(streamURL);
+
+            if (stream != null) {
+                List<VideoTrack> videoTracks = stream.videoTracks;
+
+                if (!videoTracks.isEmpty()) {
+                    videoTrack = videoTracks.get(0);
+                }
+            }
+        }
+
+        return videoTrack;
     }
 
     /**
@@ -201,9 +265,6 @@ public class WebRTCView extends ViewGroup {
         return b;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     protected void onAttachedToWindow() {
         try {
@@ -218,9 +279,6 @@ public class WebRTCView extends ViewGroup {
         }
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     protected void onDetachedFromWindow() {
         try {
@@ -233,6 +291,22 @@ public class WebRTCView extends ViewGroup {
         } finally {
             super.onDetachedFromWindow();
         }
+    }
+
+    /**
+     * Callback fired by {@link #surfaceViewRenderer} when the first frame is
+     * rendered. Here we will set the background of the view part of the
+     * SurfaceView to transparent, so the surface (where video is actually
+     * rendered) shines through.
+     */
+    private void onFirstFrameRendered() {
+        post(new Runnable() {
+            @Override
+            public void run() {
+                Log.d(TAG, "First frame rendered.");
+                getSurfaceViewRenderer().setBackgroundColor(Color.TRANSPARENT);
+            }
+        });
     }
 
     /**
@@ -269,9 +343,6 @@ public class WebRTCView extends ViewGroup {
         }
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     protected void onLayout(boolean changed, int l, int t, int r, int b) {
         int height = b - t;
@@ -291,8 +362,6 @@ public class WebRTCView extends ViewGroup {
                 frameWidth = this.frameWidth;
                 scalingType = this.scalingType;
             }
-
-            SurfaceViewRenderer surfaceViewRenderer = getSurfaceViewRenderer();
 
             switch (scalingType) {
             case SCALE_ASPECT_FILL:
@@ -332,7 +401,7 @@ public class WebRTCView extends ViewGroup {
                 break;
             }
         }
-        surfaceViewRenderer.layout(l, t, r, b);
+        getSurfaceViewRenderer().layout(l, t, r, b);
     }
 
     /**
@@ -341,7 +410,18 @@ public class WebRTCView extends ViewGroup {
      */
     private void removeRendererFromVideoTrack() {
         if (videoRenderer != null) {
-            videoTrack.removeRenderer(videoRenderer);
+            // XXX If WebRTCModule#mediaStreamTrackRelease has already been
+            // invoked on videoTrack, then it is no longer safe to call methods
+            // (e.g. addRenderer, removeRenderer) on videoTrack. It is OK to
+            // skip the removeRenderer invocation in such a case because
+            // VideoTrack#dispose() has performed it already.
+            VideoTrack videoTrack = getVideoTrack();
+
+            if (videoTrack != null) {
+                videoTrack.removeRenderer(videoRenderer);
+            }
+
+            // XXX VideoRenderer#dispose() supports multiple invocations.
             videoRenderer.dispose();
             videoRenderer = null;
 
@@ -440,21 +520,36 @@ public class WebRTCView extends ViewGroup {
      * The implementation renders the first {@link VideoTrack}, if any, of the
      * specified {@code mediaStream}.
      *
-     * @param mediaStream The {@code MediaStream} to be rendered by this
-     * {@code WebRTCView} or {@code null}.
+     * @param streamURL The URL of the {@code MediaStream} to be rendered by
+     * this {@code WebRTCView} or {@code null}.
      */
-    public void setStream(MediaStream mediaStream) {
-        VideoTrack videoTrack;
+    void setStreamURL(String streamURL) {
+        // Is the value of this.streamURL really changing?
+        if (streamURL == null
+                ? this.streamURL != null
+                : !streamURL.equals(this.streamURL)) {
+            // XXX The value of this.streamURL is really changing. Before
+            // realizing/applying the change, let go of the old videoTrack. Of
+            // course, that is only necessary if the value of videoTrack will
+            // really change. Please note though that letting go of the old
+            // videoTrack before assigning to this.streamURL is vital;
+            // otherwise, removeRendererFromVideoTrack will fail to remove the
+            // old videoTrack from the associated videoRenderer, two
+            // VideoTracks (the old and the new) may start rendereding and, most
+            // importantly the videoRender may eventually crash when the old
+            // videoTrack is disposed.
+            VideoTrack videoTrack = getVideoTrackForStreamURL(streamURL);
 
-        if (mediaStream == null) {
-            videoTrack = null;
-        } else {
-            List<VideoTrack> videoTracks = mediaStream.videoTracks;
+            if (this.videoTrack != videoTrack) {
+                setVideoTrack(null);
+            }
 
-            videoTrack = videoTracks.isEmpty() ? null : videoTracks.get(0);
+            this.streamURL = streamURL;
+
+            // After realizing/applying the change in the value of
+            // this.streamURL, reflect it on the value of videoTrack.
+            setVideoTrack(videoTrack);
         }
-
-        setVideoTrack(videoTrack);
     }
 
     /**
@@ -464,10 +559,15 @@ public class WebRTCView extends ViewGroup {
      * {@code WebRTCView} or {@code null}.
      */
     private void setVideoTrack(VideoTrack videoTrack) {
-        VideoTrack oldValue = this.videoTrack;
+        VideoTrack oldVideoTrack = this.videoTrack;
 
-        if (oldValue != videoTrack) {
-            if (oldValue != null) {
+        if (oldVideoTrack != videoTrack) {
+            if (oldVideoTrack != null) {
+                if (videoTrack == null) {
+                    // If we are not going to render any stream, clean the
+                    // surface.
+                    cleanSurfaceViewRenderer();
+                }
                 removeRendererFromVideoTrack();
             }
 
@@ -475,6 +575,11 @@ public class WebRTCView extends ViewGroup {
 
             if (videoTrack != null) {
                 tryAddRendererToVideoTrack();
+                if (oldVideoTrack == null) {
+                    // If there was no old track, clean the surface so we start
+                    // with black.
+                    cleanSurfaceViewRenderer();
+                }
             }
         }
     }
@@ -508,8 +613,13 @@ public class WebRTCView extends ViewGroup {
      * all preconditions for the start of rendering are met.
      */
     private void tryAddRendererToVideoTrack() {
+        VideoTrack videoTrack;
+
         if (videoRenderer == null
-                && videoTrack != null
+                // XXX If WebRTCModule#mediaStreamTrackRelease has already been
+                // invoked on videoTrack, then it is no longer safe to call
+                // methods (e.g. addRenderer, removeRenderer) on videoTrack.
+                && (videoTrack = getVideoTrack()) != null
                 && ViewCompat.isAttachedToWindow(this)) {
             EglBase.Context sharedContext = EglUtils.getRootEglBaseContext();
 

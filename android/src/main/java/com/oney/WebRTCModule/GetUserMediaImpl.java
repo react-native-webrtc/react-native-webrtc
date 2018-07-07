@@ -13,7 +13,6 @@ import com.facebook.react.bridge.ReadableMap;
 import com.facebook.react.bridge.ReadableType;
 import com.facebook.react.bridge.WritableArray;
 import com.facebook.react.bridge.WritableMap;
-import com.facebook.react.bridge.Promise;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -34,12 +33,29 @@ class GetUserMediaImpl {
     private static final String PERMISSION_AUDIO = Manifest.permission.RECORD_AUDIO;
     private static final String PERMISSION_VIDEO = Manifest.permission.CAMERA;
 
-    static final String TAG = WebRTCModule.TAG;
+    /**
+     * The {@link Log} tag with which {@code GetUserMediaImpl} is to log.
+     */
+    private static final String TAG = WebRTCModule.TAG;
 
-    private final Map<String, VideoCapturer> mVideoCapturers
-        = new HashMap<String, VideoCapturer>();
+    /**
+     * The {@link CameraEventsHandler} used with
+     * {@link CameraEnumerator#createCapturer}. Cached because the
+     * implementation does not do anything but logging unspecific to the camera
+     * device's name anyway.
+     */
+    private final CameraEventsHandler cameraEventsHandler
+        = new CameraEventsHandler();
 
     private final ReactApplicationContext reactContext;
+
+    /**
+     * The application/library-specific private members of local
+     * {@link MediaStreamTrack}s created by {@code GetUserMediaImpl} mapped by
+     * track ID.
+     */
+    private final Map<String, TrackPrivate> tracks = new HashMap<>();
+
     private final WebRTCModule webRTCModule;
 
     GetUserMediaImpl(
@@ -51,7 +67,8 @@ class GetUserMediaImpl {
 
     /**
      * Includes default constraints set for the audio media type.
-     * @param audioConstraints <tt>MediaConstraints</tt> instance to be filled
+     *
+     * @param audioConstraints {@code MediaConstraints} instance to be filled
      * with the default constraints for audio media type.
      */
     private void addDefaultAudioConstraints(MediaConstraints audioConstraints) {
@@ -69,63 +86,129 @@ class GetUserMediaImpl {
     }
 
     /**
-     * Create video capturer via given facing mode
-     * @param enumerator a <tt>CameraEnumerator</tt> provided by webrtc
-     *        it can be Camera1Enumerator or Camera2Enumerator
-     * @param isFacing 'user' mapped with 'front' is true (default)
-     *                 'environment' mapped with 'back' is false
-     * @param sourceId (String) use this sourceId and ignore facing mode if specified.
-     * @return VideoCapturer can invoke with <tt>startCapture</tt>/<tt>stopCapture</tt>
-     *         <tt>null</tt> if not matched camera with specified facing mode.
+     * Converts the value of a specific {@code MediaStreamConstraints} key to
+     * the respective {@link Manifest.permission} value.
+     *
+     * @param constraints the {@code MediaStreamConstraints} within which the
+     * specified {@code key} may be associated with the value to convert
+     * @param key the key within the specified {@code constraints} which may be
+     * associated with the value to convert
+     * @param permissions the {@code List} of {@code Manifest.permission} values
+     * to collect the result of the conversion
+     */
+    private void constraint2permission(
+            ReadableMap constraints,
+            String key,
+            List<String> permissions) {
+        if (constraints.hasKey(key)) {
+            ReadableType type = constraints.getType(key);
+
+            if (type == ReadableType.Boolean
+                    ? constraints.getBoolean(key)
+                    : type == ReadableType.Map) {
+                if ("audio".equals(key)) {
+                    permissions.add(PERMISSION_AUDIO);
+                } else if ("video".equals(key)) {
+                    permissions.add(PERMISSION_VIDEO);
+                }
+            }
+        }
+    }
+
+    /**
+     * Constructs a new {@code VideoCapturer} instance attempting to satisfy
+     * specific constraints.
+     *
+     * @param enumerator a {@code CameraEnumerator} provided by WebRTC. It can
+     * be {@code Camera1Enumerator} or {@code Camera2Enumerator}.
+     * @param sourceId the ID of the requested video source. If not
+     * {@code null} and a {@code VideoCapturer} can be created for it, then
+     * {@code facingMode} is ignored.
+     * @param facingMode the facing of the requested video source such as
+     * {@code user} and {@code environment}. If {@code null}, "user" is
+     * presumed.
+     * @return a {@code VideoCapturer} satisfying the {@code facingMode} or
+     * {@code sourceId} constraint
      */
     private VideoCapturer createVideoCapturer(
             CameraEnumerator enumerator,
-            boolean isFacing,
-            String sourceId) {
-        VideoCapturer videoCapturer = null;
+            String sourceId,
+            String facingMode) {
+        String[] deviceNames = enumerator.getDeviceNames();
+        List<String> failedDevices = new ArrayList<>();
 
-        // if sourceId given, use specified sourceId first
-        final String[] deviceNames = enumerator.getDeviceNames();
+        // If sourceId is specified, then it takes precedence over facingMode.
         if (sourceId != null) {
             for (String name : deviceNames) {
                 if (name.equals(sourceId)) {
-                    videoCapturer = enumerator.createCapturer(name, new CameraEventsHandler());
+                    VideoCapturer videoCapturer
+                        = enumerator.createCapturer(name, cameraEventsHandler);
+                    String message = "Create user-specified camera " + name;
                     if (videoCapturer != null) {
-                        Log.d(TAG, "create user specified camera " + name + " succeeded");
+                        Log.d(TAG, message + " succeeded");
                         return videoCapturer;
                     } else {
-                        Log.d(TAG, "create user specified camera " + name + " failed");
-                        break; // fallback to facing mode
+                        Log.d(TAG, message + " failed");
+                        failedDevices.add(name);
+                        break; // fallback to facingMode
                     }
                 }
             }
         }
 
-        // otherwise, use facing mode
-        String facingStr = isFacing ? "front" : "back";
+        // Otherwise, use facingMode (defaulting to front/user facing).
+        boolean isFrontFacing;
+        if (facingMode == null) {
+            facingMode = "user";
+            isFrontFacing = true;
+        } else {
+            isFrontFacing = !facingMode.equals("environment");
+        }
         for (String name : deviceNames) {
-            if (enumerator.isFrontFacing(name) == isFacing) {
-                videoCapturer = enumerator.createCapturer(name, new CameraEventsHandler());
+            if (!failedDevices.contains(name)
+                    && enumerator.isFrontFacing(name) == isFrontFacing) {
+                VideoCapturer videoCapturer
+                    = enumerator.createCapturer(name, cameraEventsHandler);
+                String message
+                    = "Create " + facingMode + "-facing camera " + name;
                 if (videoCapturer != null) {
-                    Log.d(TAG, "Create " + facingStr + " camera " + name + " succeeded");
+                    Log.d(TAG, message + " succeeded");
                     return videoCapturer;
                 } else {
-                    Log.d(TAG, "Create " + facingStr + " camera " + name + " failed");
+                    Log.d(TAG, message + " failed");
+                    failedDevices.add(name);
                 }
             }
         }
 
-        // should we fallback to available camera automatically?
+        // Fallback to any available camera.
+        for (String name : deviceNames) {
+            if (!failedDevices.contains(name)) {
+                VideoCapturer videoCapturer
+                        = enumerator.createCapturer(name, cameraEventsHandler);
+                String message = "Create fallback camera " + name;
+                if (videoCapturer != null) {
+                    Log.d(TAG, message + " succeeded");
+                    return videoCapturer;
+                } else {
+                    Log.d(TAG, message + " failed");
+                    failedDevices.add(name);
+                    // fallback to the next device.
+                }
+            }
+        }
+
+        Log.w(TAG, "Unable to identify a suitable camera.");
         return null;
     }
 
     /**
      * Retrieves "facingMode" constraint value.
      *
-     * @param mediaConstraints a <tt>ReadableMap</tt> which represents "GUM"
+     * @param mediaConstraints a {@code ReadableMap} which represents "GUM"
      * constraints argument.
      * @return String value of "facingMode" constraints in "GUM" or
-     * <tt>null</tt> if not specified.
+     * {@code null} if not specified.
      */
     private String getFacingMode(ReadableMap mediaConstraints) {
         return
@@ -141,10 +224,10 @@ class GetUserMediaImpl {
     /**
      * Retrieves "sourceId" constraint value.
      *
-     * @param mediaConstraints a <tt>ReadableMap</tt> which represents "GUM"
+     * @param mediaConstraints a {@code ReadableMap} which represents "GUM"
      * constraints argument
      * @return String value of "sourceId" optional "GUM" constraint or
-     * <tt>null</tt> if not specified.
+     * {@code null} if not specified.
      */
     private String getSourceIdConstraint(ReadableMap mediaConstraints) {
         if (mediaConstraints != null
@@ -168,6 +251,12 @@ class GetUserMediaImpl {
         return null;
     }
 
+    MediaStreamTrack getTrack(String id) {
+        TrackPrivate private_ = tracks.get(id);
+
+        return private_ == null ? null : private_.track;
+    }
+
     private AudioTrack getUserAudio(ReadableMap constraints) {
         MediaConstraints audioConstraints;
         if (constraints.getType("audio") == ReadableType.Boolean) {
@@ -181,11 +270,15 @@ class GetUserMediaImpl {
 
         Log.i(TAG, "getUserMedia(audio): " + audioConstraints);
 
-        String trackId = webRTCModule.getNextTrackUUID();
+        String id = webRTCModule.getNextTrackUUID();
         PeerConnectionFactory pcFactory = webRTCModule.mFactory;
         AudioSource audioSource = pcFactory.createAudioSource(audioConstraints);
+        AudioTrack track = pcFactory.createAudioTrack(id, audioSource);
+        tracks.put(
+            id,
+            new TrackPrivate(track, audioSource, /* videoCapturer */ null));
 
-        return pcFactory.createAudioTrack(trackId, audioSource);
+        return track;
     }
 
     /**
@@ -195,7 +288,8 @@ class GetUserMediaImpl {
      */
     void getUserMedia(
             final ReadableMap constraints,
-            final Promise promise,
+            final Callback successCallback,
+            final Callback errorCallback,
             final MediaStream mediaStream) {
         // TODO: change getUserMedia constraints format to support new syntax
         //   constraint format seems changed, and there is no mandatory any more.
@@ -205,34 +299,8 @@ class GetUserMediaImpl {
 
         final ArrayList<String> requestPermissions = new ArrayList<>();
 
-        if (constraints.hasKey("audio")) {
-            switch (constraints.getType("audio")) {
-            case Boolean:
-                if (constraints.getBoolean("audio")) {
-                    requestPermissions.add(PERMISSION_AUDIO);
-                }
-                break;
-            case Map:
-                requestPermissions.add(PERMISSION_AUDIO);
-                break;
-            default:
-                break;
-            }
-        }
-        if (constraints.hasKey("video")) {
-            switch (constraints.getType("video")) {
-            case Boolean:
-                if (constraints.getBoolean("video")) {
-                    requestPermissions.add(PERMISSION_VIDEO);
-                }
-                break;
-            case Map:
-                requestPermissions.add(PERMISSION_VIDEO);
-                break;
-            default:
-                break;
-            }
-        }
+        constraint2permission(constraints, "audio", requestPermissions);
+        constraint2permission(constraints, "video", requestPermissions);
 
         // According to step 2 of the getUserMedia() algorithm,
         // requestedMediaTypes is the set of media types in constraints with
@@ -241,7 +309,7 @@ class GetUserMediaImpl {
         // requestedMediaTypes is the empty set, the method invocation fails
         // with a TypeError.
         if (requestPermissions.isEmpty()) {
-            promise.reject(
+            errorCallback.invoke(
                 "TypeError",
                 "constraints requests no media types");
             return;
@@ -252,13 +320,12 @@ class GetUserMediaImpl {
             /* successCallback */ new Callback() {
                 @Override
                 public void invoke(Object... args) {
-                    List<String> grantedPermissions = (List<String>) args[0];
-
                     getUserMedia(
                         constraints,
-                        promise,
+                        successCallback,
+                        errorCallback,
                         mediaStream,
-                        grantedPermissions);
+                        /* grantedPermissions */ (List<String>) args[0]);
                 }
             },
             /* errorCallback */ new Callback() {
@@ -268,10 +335,9 @@ class GetUserMediaImpl {
                     // getUserMedia() algorithm, if the user has denied
                     // permission, fail "with a new DOMException object whose
                     // name attribute has the value NotAllowedError."
-                    promise.reject("DOMException", "NotAllowedError");
+                    errorCallback.invoke("DOMException", "NotAllowedError");
                 }
-            }
-        );
+            });
     }
 
     /**
@@ -281,7 +347,8 @@ class GetUserMediaImpl {
      */
     private void getUserMedia(
             ReadableMap constraints,
-            Promise promise,
+            Callback successCallback,
+            Callback errorCallback,
             MediaStream mediaStream,
             List<String> grantedPermissions) {
         MediaStreamTrack[] tracks = new MediaStreamTrack[2];
@@ -293,6 +360,7 @@ class GetUserMediaImpl {
                     && (tracks[1] = getUserVideo(constraints)) == null)) {
              for (MediaStreamTrack track : tracks) {
                  if (track != null) {
+                     removeTrack(track.id());
                      track.dispose();
                  }
              }
@@ -301,14 +369,13 @@ class GetUserMediaImpl {
              // specified by
              // https://www.w3.org/TR/mediacapture-streams/#dom-mediadevices-getusermedia
              // with respect to distinguishing the various causes of failure.
-             promise.reject(
+             errorCallback.invoke(
                  /* type */ null,
                  "Failed to create new track");
              return;
         }
 
         WritableArray tracks_ = Arguments.createArray();
-        WritableArray successResult = Arguments.createArray();
 
         for (MediaStreamTrack track : tracks) {
             if (track == null) {
@@ -322,7 +389,6 @@ class GetUserMediaImpl {
             } else {
                 mediaStream.addTrack((VideoTrack) track);
             }
-            webRTCModule.localTracks.put(id, track);
 
             WritableMap track_ = Arguments.createMap();
             String kind = track.kind();
@@ -341,9 +407,7 @@ class GetUserMediaImpl {
         Log.d(TAG, "MediaStream id: " + streamId);
         webRTCModule.localStreams.put(streamId, mediaStream);
 
-        successResult.pushString(streamId);
-        successResult.pushArray(tracks_);
-        promise.resolve(successResult);
+        successCallback.invoke(streamId, tracks_);
     }
 
     private VideoTrack getUserVideo(ReadableMap constraints) {
@@ -377,12 +441,10 @@ class GetUserMediaImpl {
             cameraEnumerator = new Camera1Enumerator(false);
         }
 
-        String facingMode = getFacingMode(videoConstraintsMap);
-        boolean isFacing
-            = facingMode == null || !facingMode.equals("environment");
         String sourceId = getSourceIdConstraint(videoConstraintsMap);
+        String facingMode = getFacingMode(videoConstraintsMap);
         VideoCapturer videoCapturer
-            = createVideoCapturer(cameraEnumerator, isFacing, sourceId);
+            = createVideoCapturer(cameraEnumerator, sourceId, facingMode);
         if (videoCapturer == null) {
             return null;
         }
@@ -403,24 +465,62 @@ class GetUserMediaImpl {
             = videoConstraintsMandatory.hasKey("minFrameRate")
                 ? videoConstraintsMandatory.getInt("minFrameRate")
                 : DEFAULT_FPS;
+        try {
+            videoCapturer.startCapture(width, height, fps);
+        } catch (RuntimeException re) {
+            // XXX PeerConnectionFactory#createVideoSource(videoCapturer) will
+            // initialize videoCapturer. Unfortunately, the initialization may
+            // be unsuccessful and VideoCapturer#startCapture(int, int, int) may
+            // be able to unintentionally detect the failure.
+            videoSource.dispose();
+            videoCapturer.dispose();
+            return null;
+        }
 
-        videoCapturer.startCapture(width, height, fps);
+        String id = webRTCModule.getNextTrackUUID();
+        VideoTrack track = pcFactory.createVideoTrack(id, videoSource);
+        tracks.put(id, new TrackPrivate(track, videoSource, videoCapturer));
 
-        String trackId = webRTCModule.getNextTrackUUID();
-        mVideoCapturers.put(trackId, videoCapturer);
-
-        return pcFactory.createVideoTrack(trackId, videoSource);
+        return track;
     }
 
-    void removeVideoCapturer(String id) {
-        VideoCapturer videoCapturer = mVideoCapturers.get(id);
-        if (videoCapturer != null) {
-            try {
-                videoCapturer.stopCapture();
-            } catch (InterruptedException e) {
-                Log.e(TAG, "removeVideoCapturer() Failed to stop video capturer");
+    void mediaStreamTrackStop(String id) {
+        MediaStreamTrack track = getTrack(id);
+        if (track == null) {
+            Log.d(
+                TAG,
+                "mediaStreamTrackStop() No local MediaStreamTrack with id "
+                    + id);
+            return;
+        }
+        track.setEnabled(false);
+        removeTrack(id);
+    }
+
+    private void removeTrack(String id) {
+        TrackPrivate track = tracks.remove(id);
+        if (track != null) {
+            VideoCapturer videoCapturer = track.videoCapturer;
+            boolean captureStopped;
+            if (videoCapturer == null) {
+                captureStopped = true;
+            } else {
+                captureStopped = false;
+                try {
+                    videoCapturer.stopCapture();
+                    captureStopped = true;
+                } catch (InterruptedException e) {
+                    Log.e(
+                        TAG,
+                        "removeTrack() Failed to stop video capturer");
+                }
             }
-            mVideoCapturers.remove(id);
+            if (captureStopped) {
+                track.mediaSource.dispose();
+                if (videoCapturer != null) {
+                    videoCapturer.dispose();
+                }
+            }
         }
     }
 
@@ -429,8 +529,31 @@ class GetUserMediaImpl {
             final Callback successCallback,
             final Callback errorCallback) {
         PermissionUtils.Callback callback = new PermissionUtils.Callback() {
+            /**
+             * The indicator which determines whether this
+             * {@code PermissionUtils.Callback} has already been invoked.
+             * Introduced in order to prevent multiple invocations of one and
+             * the same instance of a react-native callback from native code
+             * which is illegal and raises a fatal {@link RuntimeException}. The
+             * rationale behind the introduction of the indicator is that asking
+             * multiple times for one and the same permission is not as severe
+             * an issue as killing the app's process. I don't see how it can
+             * happen at all but Crashlytics says it has happened on at least
+             * four different phone brands.
+             */
+            private boolean invoked = false;
+
             @Override
             public void invoke(String[] permissions_, int[] grantResults) {
+                if (invoked) {
+                    Log.w(
+                        TAG,
+                        "GetUserMediaImpl.PermissionUtils.Callback "
+                            + "invoked more than once!");
+                    return;
+                }
+                invoked = true;
+
                 List<String> grantedPermissions = new ArrayList<>();
                 List<String> deniedPermissions = new ArrayList<>();
 
@@ -465,12 +588,48 @@ class GetUserMediaImpl {
             callback);
     }
 
-    void switchCamera(String id) {
-        VideoCapturer videoCapturer = mVideoCapturers.get(id);
-        if (videoCapturer != null) {
-            CameraVideoCapturer cameraVideoCapturer
-                = (CameraVideoCapturer) videoCapturer;
-            cameraVideoCapturer.switchCamera(null);
+    void switchCamera(String trackId) {
+        TrackPrivate track = tracks.get(trackId);
+        if (track != null && track.videoCapturer != null) {
+            ((CameraVideoCapturer) track.videoCapturer).switchCamera(null);
+        }
+    }
+
+    /**
+     * Application/library-specific private members of local
+     * {@code MediaStreamTrack}s created by {@code GetUserMediaImpl}.
+     */
+    private static class TrackPrivate {
+        /**
+         * The {@code MediaSource} from which {@link #track} was created.
+         */
+        public final MediaSource mediaSource;
+
+        public final MediaStreamTrack track;
+
+        /**
+         * The {@code VideoCapturer} from which {@link #mediaSource} was created
+         * if {@link #track} is a {@link VideoTrack}.
+         */
+        public final VideoCapturer videoCapturer;
+
+        /**
+         * Initializes a new {@code TrackPrivate} instance.
+         *
+         * @param track
+         * @param mediaSource the {@code MediaSource} from which the specified
+         * {@code code} was created
+         * @param videoCapturer the {@code VideoCapturer} from which the
+         * specified {@code mediaSource} was created if the specified
+         * {@code track} is a {@link VideoTrack}
+         */
+        public TrackPrivate(
+                MediaStreamTrack track,
+                MediaSource mediaSource,
+                VideoCapturer videoCapturer) {
+            this.track = track;
+            this.mediaSource = mediaSource;
+            this.videoCapturer = videoCapturer;
         }
     }
 }

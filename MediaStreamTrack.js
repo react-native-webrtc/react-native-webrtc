@@ -3,6 +3,7 @@
 import {NativeModules} from 'react-native';
 import EventTarget from 'event-target-shim';
 import MediaStreamErrorEvent from './MediaStreamErrorEvent';
+import * as RTCUtil from './RTCUtil';
 
 import type MediaStreamError from './MediaStreamError';
 
@@ -25,13 +26,9 @@ type SourceInfo = {
   kind: string;
 };
 
-export default class MediaStreamTrack extends EventTarget(MEDIA_STREAM_TRACK_EVENTS) {
+class MediaStreamTrack extends EventTarget(MEDIA_STREAM_TRACK_EVENTS) {
   static getSources(success: (sources: Array<SourceInfo>) => void) {
-    const promise = WebRTCModule.mediaStreamTrackGetSources();
-    if (success) {
-      return promise.then(success);
-    }
-    return promise;
+    WebRTCModule.mediaStreamTrackGetSources(success);
   }
 
   _enabled: boolean;
@@ -124,3 +121,8 @@ export default class MediaStreamTrack extends EventTarget(MEDIA_STREAM_TRACK_EVE
     throw new Error('Not implemented.');
   }
 }
+
+// --- promisify getSources static func
+MediaStreamTrack.getSources = RTCUtil.promisify(MediaStreamTrack.getSources.bind(MediaStreamTrack), true);
+
+export default MediaStreamTrack;

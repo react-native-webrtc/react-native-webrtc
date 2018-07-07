@@ -21,7 +21,7 @@ see [#190](https://github.com/oney/react-native-webrtc/pull/190) for detials
 ## WebRTC Revision
 
 Since `0.53`, we use same branch version number like in webrtc native.
-please see [wiki page](https://github.com/oney/react-native-webrtc/wiki) about revision history
+please see [wiki page](https://github.com/oney/react-native-webrtc/wiki) about revision history 
 
 ### format:
 
@@ -37,8 +37,9 @@ the order of commit revision is nothing to do with the order of cherry-picks, fo
 | :-------------: | :-------------:| :-----: | :-----: | :-----: | :-----: | :-----: |
 | 0.54.7 | [M54](https://chromium.googlesource.com/external/webrtc/+/branch-heads/54)<br>(13869)<br>(+6-14091) | x86_64<br>i386<br>armv7<br>arm64 | armeabi-v7a<br>x86 | :heavy_check_mark: | RN < 40 | |
 | 1.57.1 | [M57](https://chromium.googlesource.com/external/webrtc/+/branch-heads/57)<br>(16123)<br>(+7-16178) | x86_64<br>i386<br>armv7<br>arm64 | armeabi-v7a<br>x86 | :heavy_check_mark: | |* [16805](https://chromium.googlesource.com/external/webrtc/+/0e22a4cfd3790d80ad1ae699891341fe322cb418)<br>* [16462](https://chromium.googlesource.com/external/webrtc.git/+/1634e160426df926e14cf9f1e5346d2a1dc9c909)  |
-| 1.58.3| [M58](https://chromium.googlesource.com/external/webrtc/+/branch-heads/58)<br>[commit](https://chromium.googlesource.com/external/webrtc/+/6504196a312da382d75c5ff577d10207793f2907)<br>(16937)<br>(+21-18206) | x86_64<br>i386<br>armv7<br>arm64 | armeabi-v7a<br>x86 | :heavy_check_mark: | :sparkles: Promise Support :sparkles: | * [17065](https://chromium.googlesource.com/external/webrtc/+/d1587ad244af3388c1282a715cdf05032ba0c2fc)<br>* [17925](https://chromium.googlesource.com/external/webrtc/+/f68426954154918ec5bf7e6b3096fa3d7acb0944)<br>* [18140](https://chromium.googlesource.com/external/webrtc/+/7daab660ce0e35fecad717fefab4cf935d3c253e)<br>* [18277](https://chromium.googlesource.com/external/webrtc/+/eae4564cb7dea3ad9f5963814e82fd823267ff89) |
-| master| [M58](https://chromium.googlesource.com/external/webrtc/+/branch-heads/58)<br>[commit](https://chromium.googlesource.com/external/webrtc/+/6504196a312da382d75c5ff577d10207793f2907)<br>(16937)<br>(+21-18206) | x86_64<br>i386<br>armv7<br>arm64 | armeabi-v7a<br>x86 | :warning: | test me plz | * [17065](https://chromium.googlesource.com/external/webrtc/+/d1587ad244af3388c1282a715cdf05032ba0c2fc)<br>* [17925](https://chromium.googlesource.com/external/webrtc/+/f68426954154918ec5bf7e6b3096fa3d7acb0944)<br>* [18140](https://chromium.googlesource.com/external/webrtc/+/7daab660ce0e35fecad717fefab4cf935d3c253e)<br>* [18277](https://chromium.googlesource.com/external/webrtc/+/eae4564cb7dea3ad9f5963814e82fd823267ff89) |
+| 1.58.3 | [M58](https://chromium.googlesource.com/external/webrtc/+/branch-heads/58)<br>[commit](https://chromium.googlesource.com/external/webrtc/+/6504196a312da382d75c5ff577d10207793f2907)<br>(16937)<br>(+21-18206) | x86_64<br>i386<br>armv7<br>arm64 | armeabi-v7a<br>x86 | :heavy_check_mark: | :sparkles: Promise Support :sparkles: | * [17065](https://chromium.googlesource.com/external/webrtc/+/d1587ad244af3388c1282a715cdf05032ba0c2fc)<br>* [17925](https://chromium.googlesource.com/external/webrtc/+/f68426954154918ec5bf7e6b3096fa3d7acb0944)<br>* [18140](https://chromium.googlesource.com/external/webrtc/+/7daab660ce0e35fecad717fefab4cf935d3c253e)<br>* [18277](https://chromium.googlesource.com/external/webrtc/+/eae4564cb7dea3ad9f5963814e82fd823267ff89) |
+| 1.63.0 | [M63](https://chromium.googlesource.com/external/webrtc/+/branch-heads/63)<br>[commit](https://chromium.googlesource.com/external/webrtc/+/dc5904661c4c8b357e19595d80b2881db3f4a71b)<br>(20237)<br>(+14-21432) | x86_64<br>i386<br>armv7<br>arm64 | armeabi-v7a<br>x86 | :heavy_check_mark: |  | * [20611](https://chromium.googlesource.com/external/webrtc/+/7281f92e7210fb48f8b34c1bbb8f037808a73868)<br>* [21519](https://chromium.googlesource.com/external/webrtc/+/730add8e2c8b033eae0cf3589be14d0afc4acdd3) |
+| master | [M63](https://chromium.googlesource.com/external/webrtc/+/branch-heads/63)<br>[commit](https://chromium.googlesource.com/external/webrtc/+/dc5904661c4c8b357e19595d80b2881db3f4a71b)<br>(20237)<br>(+14-21432) | x86_64<br>i386<br>armv7<br>arm64 | armeabi-v7a<br>x86 | :warning: | test me plz | * [20611](https://chromium.googlesource.com/external/webrtc/+/7281f92e7210fb48f8b34c1bbb8f037808a73868)<br>* [21519](https://chromium.googlesource.com/external/webrtc/+/730add8e2c8b033eae0cf3589be14d0afc4acdd3) |
 
 ## Installation
 
@@ -47,7 +48,7 @@ the order of commit revision is nothing to do with the order of cherry-picks, fo
 - [iOS](https://github.com/oney/react-native-webrtc/blob/master/Documentation/iOSInstallation.md)
 - [Android](https://github.com/oney/react-native-webrtc/blob/master/Documentation/AndroidInstallation.md)
 
-note: 0.10.0~0.12.0 required `git-lfs`, see: [git-lfs-installation](https://github.com/oney/react-native-webrtc/blob/master/Documentation/git-lfs-installation.md)
+note: 0.10.0~0.12.0 required `git-lfs`, see: [git-lfs-installation](https://github.com/oney/react-native-webrtc/blob/master/Documentation/git-lfs-installation.md) 
 
 ## Usage
 Now, you can use WebRTC like in browser.
@@ -71,42 +72,37 @@ var configuration = {"iceServers": [{"url": "stun:stun.l.google.com:19302"}]};
 var pc = new RTCPeerConnection(configuration);
 
 let isFront = true;
-MediaStreamTrack
-  .getSources()
-  .then(sourceInfos => {
-    console.log(sourceInfos);
-    let videoSourceId;
-    for (let i = 0; i < sourceInfos.length; i++) {
-      const sourceInfo = sourceInfos[i];
-      if(sourceInfo.kind == "video" && sourceInfo.facing == (isFront ? "front" : "back")) {
-        videoSourceId = sourceInfo.id;
-      }
+MediaStreamTrack.getSources(sourceInfos => {
+  console.log(sourceInfos);
+  let videoSourceId;
+  for (const i = 0; i < sourceInfos.length; i++) {
+    const sourceInfo = sourceInfos[i];
+    if(sourceInfo.kind == "video" && sourceInfo.facing == (isFront ? "front" : "back")) {
+      videoSourceId = sourceInfo.id;
     }
-    return getUserMedia({
-      audio: true,
-      video: {
-        mandatory: {
-          minWidth: 500, // Provide your own width, height and frame rate here
-          minHeight: 300,
-          minFrameRate: 30
-        },
-        facingMode: (isFront ? "user" : "environment"),
-        optional: (videoSourceId ? [{sourceId: videoSourceId}] : [])
-      }
-    });
-  })
-  .then(stream => {
+  }
+  getUserMedia({
+    audio: true,
+    video: {
+      mandatory: {
+        minWidth: 500, // Provide your own width, height and frame rate here
+        minHeight: 300,
+        minFrameRate: 30
+      },
+      facingMode: (isFront ? "user" : "environment"),
+      optional: (videoSourceId ? [{sourceId: videoSourceId}] : [])
+    }
+  }, function (stream) {
     console.log('dddd', stream);
-    return stream
-  })
-  .catch(logError);
+    callback(stream);
+  }, logError);
+});
 
-pc.createOffer()
-  .then(pc.setLocalDescription)
-  .then(() => {
+pc.createOffer(function(desc) {
+  pc.setLocalDescription(desc, function () {
     // Send pc.localDescription to peer
-  })
-  .catch(logError);
+  }, function(e) {});
+}, function(e) {});
 
 pc.onicecandidate = function (event) {
   // send event.candidate to peer
@@ -169,3 +165,4 @@ Use [react-native-incall-manager](https://github.com/zxcpoiu/react-native-incall
 
 ## Sponsorship
 This repository doesn't have a plan to get sponsorship.(This can be discussed afterwards by collaborators). If you would like to pay bounty to fix some bugs or get some features, be free to open a issue that adds `[BOUNTY]` category in title. Add other bounty website link like [this](https://www.bountysource.com) will be better.
+
