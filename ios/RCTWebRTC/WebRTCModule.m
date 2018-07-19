@@ -50,8 +50,13 @@
 {
   self = [super init];
   if (self) {
-    _peerConnectionFactory = [RTCPeerConnectionFactory new];
-//    [RTCPeerConnectionFactory initializeSSL];
+    RTCDefaultVideoDecoderFactory *decoderFactory
+      = [[RTCDefaultVideoDecoderFactory alloc] init];
+    RTCDefaultVideoEncoderFactory *encoderFactory
+      = [[RTCDefaultVideoEncoderFactory alloc] init];
+    _peerConnectionFactory
+      = [[RTCPeerConnectionFactory alloc] initWithEncoderFactory:encoderFactory
+                                                  decoderFactory:decoderFactory];
 
     _peerConnections = [NSMutableDictionary new];
     _localStreams = [NSMutableDictionary new];
