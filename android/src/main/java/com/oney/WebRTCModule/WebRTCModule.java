@@ -22,7 +22,6 @@ import com.facebook.react.modules.core.DeviceEventManagerModule;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
 
@@ -30,8 +29,6 @@ import org.webrtc.*;
 
 public class WebRTCModule extends ReactContextBaseJavaModule {
     static final String TAG = WebRTCModule.class.getCanonicalName();
-
-    private static final String LANGUAGE =  "language";
 
     final PeerConnectionFactory mFactory;
     private final SparseArray<PeerConnectionObserver> mPeerConnectionObservers;
@@ -83,25 +80,6 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
     @Override
     public String getName() {
         return "WebRTCModule";
-    }
-
-    private String getCurrentLanguage(){
-        Locale current = getReactApplicationContext().getResources().getConfiguration().locale;
-        return current.getLanguage();
-    }
-
-    @Override
-    public Map<String, Object> getConstants() {
-        final Map<String, Object> constants = new HashMap<>();
-        constants.put(LANGUAGE, getCurrentLanguage());
-        return constants;
-    }
-
-    @ReactMethod
-    public void getLanguage(Callback callback){
-        String language = getCurrentLanguage();
-        System.out.println("The current language is "+language);
-        callback.invoke(null, language);
     }
 
     private PeerConnection getPeerConnection(int id) {
