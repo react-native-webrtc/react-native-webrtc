@@ -336,16 +336,11 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
     }
 
     @ReactMethod
-    public void peerConnectionInit(
-            ReadableMap configuration,
-            ReadableMap constraints,
-            int id) {
+    public void peerConnectionInit(ReadableMap configuration, int id) {
         PeerConnectionObserver observer = new PeerConnectionObserver(this, id);
         PeerConnection peerConnection
             = mFactory.createPeerConnection(
-                     parseRTCConfiguration(configuration),
-                     parseMediaConstraints(constraints),
-                     observer);
+                parseRTCConfiguration(configuration), observer);
 
         observer.setPeerConnection(peerConnection);
         mPeerConnectionObservers.put(id, observer);

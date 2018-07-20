@@ -82,14 +82,18 @@
 @implementation WebRTCModule (RTCPeerConnection)
 
 RCT_EXPORT_METHOD(peerConnectionInit:(RTCConfiguration*)configuration
-                         constraints:(NSDictionary *)constraints
                             objectID:(nonnull NSNumber *)objectID)
 {
+  NSDictionary *optionalConstraints = @{ @"DtlsSrtpKeyAgreement" : @"true" };
+  RTCMediaConstraints* constraints =
+      [[RTCMediaConstraints alloc] initWithMandatoryConstraints:nil
+                                            optionalConstraints:optionalConstraints];
   RTCPeerConnection *peerConnection
     = [self.peerConnectionFactory
       peerConnectionWithConfiguration:configuration
-			  constraints:[self parseMediaConstraints:constraints]
+			  constraints:constraints
                              delegate:self];
+
   peerConnection.dataChannels = [NSMutableDictionary new];
   peerConnection.reactTag = objectID;
   peerConnection.remoteStreams = [NSMutableDictionary new];
