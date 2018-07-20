@@ -543,7 +543,6 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
     @ReactMethod
     public void mediaStreamTrackGetSources(Callback callback){
         WritableArray array = Arguments.createArray();
-        String[] names = new String[Camera.getNumberOfCameras()];
 
         for(int i = 0; i < Camera.getNumberOfCameras(); ++i) {
             WritableMap info = getCameraInfo(i);
@@ -637,15 +636,6 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
         params.putString("kind", "video");
 
         return params;
-    }
-
-    private MediaConstraints defaultConstraints() {
-        MediaConstraints constraints = new MediaConstraints();
-        // TODO video media
-        constraints.mandatory.add(new MediaConstraints.KeyValuePair("OfferToReceiveAudio", "true"));
-        constraints.mandatory.add(new MediaConstraints.KeyValuePair("OfferToReceiveVideo", "true"));
-        constraints.optional.add(new MediaConstraints.KeyValuePair("DtlsSrtpKeyAgreement", "true"));
-        return constraints;
     }
 
     @ReactMethod
