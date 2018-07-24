@@ -346,26 +346,6 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
         mPeerConnectionObservers.put(id, observer);
     }
 
-    String getNextStreamUUID() {
-        String uuid;
-
-        do {
-            uuid = UUID.randomUUID().toString();
-        } while (getStreamForReactTag(uuid) != null);
-
-        return uuid;
-    }
-
-    String getNextTrackUUID() {
-        String uuid;
-
-        do {
-            uuid = UUID.randomUUID().toString();
-        } while (getTrack(uuid) != null);
-
-        return uuid;
-    }
-
     MediaStream getStreamForReactTag(String streamReactTag) {
         MediaStream stream = localStreams.get(streamReactTag);
 
@@ -383,25 +363,6 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
         }
 
         return stream;
-    }
-
-    private MediaStreamTrack getTrack(String trackId) {
-        MediaStreamTrack track = getLocalTrack(trackId);
-
-        if (track == null) {
-            for (int i = 0, size = mPeerConnectionObservers.size();
-                    i < size;
-                    i++) {
-                PeerConnectionObserver pco
-                    = mPeerConnectionObservers.valueAt(i);
-                track = pco.remoteTracks.get(trackId);
-                if (track != null) {
-                    break;
-                }
-            }
-        }
-
-        return track;
     }
 
     MediaStreamTrack getLocalTrack(String trackId) {
@@ -491,7 +452,7 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
     public void getUserMedia(ReadableMap constraints,
                              Callback    successCallback,
                              Callback    errorCallback) {
-        String streamId = getNextStreamUUID();
+        String streamId = UUID.randomUUID().toString();
         MediaStream mediaStream = mFactory.createLocalMediaStream(streamId);
 
         if (mediaStream == null) {

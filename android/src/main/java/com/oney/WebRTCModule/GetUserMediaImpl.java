@@ -17,6 +17,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 import org.webrtc.*;
 
@@ -124,7 +125,7 @@ class GetUserMediaImpl {
 
         Log.i(TAG, "getUserMedia(audio): " + audioConstraints);
 
-        String id = webRTCModule.getNextTrackUUID();
+        String id = UUID.randomUUID().toString();
         PeerConnectionFactory pcFactory = webRTCModule.mFactory;
         AudioSource audioSource = pcFactory.createAudioSource(audioConstraints);
         AudioTrack track = pcFactory.createAudioTrack(id, audioSource);
@@ -285,7 +286,7 @@ class GetUserMediaImpl {
         PeerConnectionFactory pcFactory = webRTCModule.mFactory;
         VideoSource videoSource = pcFactory.createVideoSource(videoCapturer);
 
-        String id = webRTCModule.getNextTrackUUID();
+        String id = UUID.randomUUID().toString();
         VideoTrack track = pcFactory.createVideoTrack(id, videoSource);
 
         track.setEnabled(true);
