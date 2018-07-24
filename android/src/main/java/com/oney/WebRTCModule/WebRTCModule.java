@@ -93,6 +93,17 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
             .emit(eventName, params);
     }
 
+    private PeerConnection.IceServer createIceServer(String url) {
+        return PeerConnection.IceServer.builder(url).createIceServer();
+    }
+
+    private PeerConnection.IceServer createIceServer(String url, String username, String credential) {
+        return PeerConnection.IceServer.builder(url)
+            .setUsername(username)
+            .setPassword(credential)
+            .createIceServer();
+    }
+
     private List<PeerConnection.IceServer> createIceServers(ReadableArray iceServersArray) {
         final int size = (iceServersArray == null) ? 0 : iceServersArray.size();
         List<PeerConnection.IceServer> iceServers = new ArrayList<>(size);
@@ -101,17 +112,17 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
             boolean hasUsernameAndCredential = iceServerMap.hasKey("username") && iceServerMap.hasKey("credential");
             if (iceServerMap.hasKey("url")) {
                 if (hasUsernameAndCredential) {
-                    iceServers.add(new PeerConnection.IceServer(iceServerMap.getString("url"), iceServerMap.getString("username"), iceServerMap.getString("credential")));
+                    iceServers.add(createIceServer(iceServerMap.getString("url"), iceServerMap.getString("username"), iceServerMap.getString("credential")));
                 } else {
-                    iceServers.add(new PeerConnection.IceServer(iceServerMap.getString("url")));
+                    iceServers.add(createIceServer(iceServerMap.getString("url")));
                 }
             } else if (iceServerMap.hasKey("urls")) {
                 switch (iceServerMap.getType("urls")) {
                     case String:
                         if (hasUsernameAndCredential) {
-                            iceServers.add(new PeerConnection.IceServer(iceServerMap.getString("urls"), iceServerMap.getString("username"), iceServerMap.getString("credential")));
+                            iceServers.add(createIceServer(iceServerMap.getString("urls"), iceServerMap.getString("username"), iceServerMap.getString("credential")));
                         } else {
-                            iceServers.add(new PeerConnection.IceServer(iceServerMap.getString("urls")));
+                            iceServers.add(createIceServer(iceServerMap.getString("urls")));
                         }
                         break;
                     case Array:
@@ -119,9 +130,9 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
                         for (int j = 0; j < urls.size(); j++) {
                             String url = urls.getString(j);
                             if (hasUsernameAndCredential) {
-                                iceServers.add(new PeerConnection.IceServer(url,iceServerMap.getString("username"), iceServerMap.getString("credential")));
+                                iceServers.add(createIceServer(url,iceServerMap.getString("username"), iceServerMap.getString("credential")));
                             } else {
-                                iceServers.add(new PeerConnection.IceServer(url));
+                                iceServers.add(createIceServer(url));
                             }
                         }
                         break;
