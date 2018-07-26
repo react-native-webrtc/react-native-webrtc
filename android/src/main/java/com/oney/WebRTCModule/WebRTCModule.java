@@ -528,7 +528,7 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
             // out of sync with MediaStream's lists which raises the risk of
             // entering infinite loops.
             List<MediaStreamTrack> tracks
-                = new ArrayList(
+                = new ArrayList<>(
                     stream.audioTracks.size() + stream.videoTracks.size());
 
             tracks.addAll(stream.audioTracks);
