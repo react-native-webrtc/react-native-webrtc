@@ -1,14 +1,11 @@
 package com.oney.WebRTCModule;
 
-import android.content.Context;
 import android.util.Log;
 
 import com.facebook.react.bridge.ReadableArray;
 import com.facebook.react.bridge.ReadableMap;
 import com.facebook.react.bridge.ReadableType;
 
-import org.webrtc.Camera1Enumerator;
-import org.webrtc.Camera2Enumerator;
 import org.webrtc.CameraEnumerator;
 import org.webrtc.CameraVideoCapturer;
 import org.webrtc.VideoCapturer;
@@ -53,26 +50,13 @@ public class VideoCaptureController {
      */
     private VideoCapturer videoCapturer;
 
-    public VideoCaptureController(Context context, ReadableMap constraints) {
+    public VideoCaptureController(CameraEnumerator cameraEnumerator,
+                                  ReadableMap constraints) {
         ReadableMap videoConstraintsMandatory = null;
 
         if (constraints.hasKey("mandatory")
                 && constraints.getType("mandatory") == ReadableType.Map) {
             videoConstraintsMandatory = constraints.getMap("mandatory");
-        }
-
-        // NOTE: to support Camera2, the device should:
-        //   1. Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP
-        //   2. all camera support level should greater than LEGACY
-        //   see: https://developer.android.com/reference/android/hardware/camera2/CameraCharacteristics.html#INFO_SUPPORTED_HARDWARE_LEVEL
-        CameraEnumerator cameraEnumerator;
-
-        if (Camera2Enumerator.isSupported(context)) {
-            Log.d(TAG, "Creating video capturer using Camera2 API.");
-            cameraEnumerator = new Camera2Enumerator(context);
-        } else {
-            Log.d(TAG, "Creating video capturer using Camera1 API.");
-            cameraEnumerator = new Camera1Enumerator(false);
         }
 
         String sourceId = getSourceIdConstraint(constraints);

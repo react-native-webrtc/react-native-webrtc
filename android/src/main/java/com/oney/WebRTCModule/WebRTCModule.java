@@ -1,7 +1,5 @@
 package com.oney.WebRTCModule;
 
-import android.hardware.Camera;
-import android.hardware.Camera.CameraInfo;
 import android.support.annotation.Nullable;
 import android.util.Log;
 import android.util.SparseArray;
@@ -15,7 +13,6 @@ import com.facebook.react.bridge.ReadableArray;
 import com.facebook.react.bridge.ReadableMap;
 import com.facebook.react.bridge.ReadableMapKeySetIterator;
 import com.facebook.react.bridge.ReadableType;
-import com.facebook.react.bridge.WritableArray;
 import com.facebook.react.bridge.WritableMap;
 import com.facebook.react.modules.core.DeviceEventManagerModule;
 
@@ -544,28 +541,7 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
     @ReactMethod
     public void mediaStreamTrackGetSources(Callback callback) {
         ThreadUtils.runOnExecutor(() ->
-            mediaStreamTrackGetSourcesAsync(callback));
-    }
-
-    private void mediaStreamTrackGetSourcesAsync(Callback callback) {
-        // TODO: don't use the camera1 API.
-        WritableArray array = Arguments.createArray();
-
-        for(int i = 0; i < Camera.getNumberOfCameras(); ++i) {
-            WritableMap info = getCameraInfo(i);
-            if (info != null) {
-                array.pushMap(info);
-            }
-        }
-
-        WritableMap audio = Arguments.createMap();
-        audio.putString("label", "Audio");
-        audio.putString("id", "audio-1");
-        audio.putString("facing", "");
-        audio.putString("kind", "audio");
-
-        array.pushMap(audio);
-        callback.invoke(array);
+            callback.invoke(getUserMediaImpl.mediaStreamTrackGetSources()));
     }
 
     @ReactMethod
@@ -634,26 +610,6 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
         if (track != null) {
             getUserMediaImpl.switchCamera(id);
         }
-    }
-
-    private WritableMap getCameraInfo(int index) {
-        // TODO: stop using camera1 API
-        CameraInfo info = new CameraInfo();
-
-        try {
-            Camera.getCameraInfo(index, info);
-        } catch (Exception e) {
-            Logging.e("CameraEnumerationAndroid", "getCameraInfo failed on index " + index, e);
-            return null;
-        }
-        WritableMap params = Arguments.createMap();
-        String facing = info.facing == 1 ? "front" : "back";
-        params.putString("label", "Camera " + index + ", Facing " + facing + ", Orientation " + info.orientation);
-        params.putString("id", "" + index);
-        params.putString("facing", facing);
-        params.putString("kind", "video");
-
-        return params;
     }
 
     @ReactMethod

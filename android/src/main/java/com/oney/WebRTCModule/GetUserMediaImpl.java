@@ -1,13 +1,13 @@
 package com.oney.WebRTCModule;
 
 import android.Manifest;
-import android.content.Context;
 import android.content.pm.PackageManager;
 import android.util.Log;
 
 import com.facebook.react.bridge.Arguments;
 import com.facebook.react.bridge.Callback;
 import com.facebook.react.bridge.ReactApplicationContext;
+import com.facebook.react.bridge.ReadableArray;
 import com.facebook.react.bridge.ReadableMap;
 import com.facebook.react.bridge.ReadableType;
 import com.facebook.react.bridge.WritableArray;
@@ -34,6 +34,7 @@ class GetUserMediaImpl {
      */
     private static final String TAG = WebRTCModule.TAG;
 
+    private final CameraEnumerator cameraEnumerator;
     private final ReactApplicationContext reactContext;
 
     /**
@@ -50,6 +51,18 @@ class GetUserMediaImpl {
             ReactApplicationContext reactContext) {
         this.webRTCModule = webRTCModule;
         this.reactContext = reactContext;
+
+        // NOTE: to support Camera2, the device should:
+        //   1. Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP
+        //   2. all camera support level should greater than LEGACY
+        //   see: https://developer.android.com/reference/android/hardware/camera2/CameraCharacteristics.html#INFO_SUPPORTED_HARDWARE_LEVEL
+        if (Camera2Enumerator.isSupported(reactContext)) {
+            Log.d(TAG, "Creating video capturer using Camera2 API.");
+            cameraEnumerator = new Camera2Enumerator(reactContext);
+        } else {
+            Log.d(TAG, "Creating video capturer using Camera1 API.");
+            cameraEnumerator = new Camera1Enumerator(false);
+        }
     }
 
     /**
@@ -274,10 +287,8 @@ class GetUserMediaImpl {
 
         Log.i(TAG, "getUserMedia(video): " + videoConstraintsMap);
 
-        Context context = getReactApplicationContext();
-
         VideoCaptureController videoCaptureController
-            = new VideoCaptureController(context, constraints);
+            = new VideoCaptureController(cameraEnumerator, constraints);
         VideoCapturer videoCapturer = videoCaptureController.getVideoCapturer();
         if (videoCapturer == null) {
             return null;
@@ -295,6 +306,31 @@ class GetUserMediaImpl {
         tracks.put(id, new TrackPrivate(track, videoSource, videoCaptureController));
 
         return track;
+    }
+
+    ReadableArray mediaStreamTrackGetSources() {
+        WritableArray array = Arguments.createArray();
+        String[] devices = cameraEnumerator.getDeviceNames();
+
+        for(int i = 0; i < devices.length; ++i) {
+            WritableMap params = Arguments.createMap();
+            String facing
+                = cameraEnumerator.isFrontFacing(devices[i]) ? "front" : "back";
+            params.putString("label", devices[i]);
+            params.putString("id", "" + i);
+            params.putString("facing", facing);
+            params.putString("kind", "video");
+            array.pushMap(params);
+        }
+
+        WritableMap audio = Arguments.createMap();
+        audio.putString("label", "Audio");
+        audio.putString("id", "audio-1");
+        audio.putString("facing", "");
+        audio.putString("kind", "audio");
+        array.pushMap(audio);
+
+        return array;
     }
 
     void mediaStreamTrackSetEnabled(String trackId, final boolean enabled) {
