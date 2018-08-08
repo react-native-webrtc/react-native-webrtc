@@ -42,8 +42,7 @@ RTC_EXPORT
  */
 - (instancetype)initWithSdp:(NSString *)sdp
               sdpMLineIndex:(int)sdpMLineIndex
-                     sdpMid:(nullable NSString *)sdpMid
-    NS_DESIGNATED_INITIALIZER;
+                     sdpMid:(nullable NSString *)sdpMid NS_DESIGNATED_INITIALIZER;
 
 @end
 

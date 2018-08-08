@@ -30,4 +30,11 @@ RTC_EXPORT
 
 @end
 
+RTC_EXPORT
+@protocol RTCVideoViewDelegate
+
+- (void)videoView:(id<RTCVideoRenderer>)videoView didChangeVideoSize:(CGSize)size;
+
+@end
+
 NS_ASSUME_NONNULL_END

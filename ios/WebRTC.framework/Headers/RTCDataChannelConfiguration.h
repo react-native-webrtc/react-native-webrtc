@@ -45,7 +45,7 @@ RTC_EXPORT
 @property(nonatomic, assign) int channelId;
 
 /** Set by the application and opaque to the WebRTC implementation. */
-@property(nonatomic) NSString *protocol;
+@property(nonatomic) NSString* protocol;
 
 @end
 

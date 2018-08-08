@@ -25,6 +25,13 @@ RTC_EXPORT
  */
 @property(nonatomic, copy, nullable) NSNumber *maxBitrateBps;
 
+/** The minimum bitrate to use for the encoding, or nil if there is no
+ *  limit.
+ *
+ *  Not implemented.
+ */
+@property(nonatomic, copy, nullable) NSNumber *minBitrateBps;
+
 /** The SSRC being used by this encoding. */
 @property(nonatomic, readonly, nullable) NSNumber *ssrc;
 
