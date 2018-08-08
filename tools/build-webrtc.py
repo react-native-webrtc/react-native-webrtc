@@ -17,7 +17,7 @@ ANDROID_CPU_ABI_MAP = {
     'x64'   : 'x86_64'
 }
 ANDROID_BUILD_CPUS = ['arm', 'x86']
-IOS_BUILD_ARCHS = ['arm', 'arm64','x64','x86']
+IOS_BUILD_ARCHS = ['arm64', 'arm','x64','x86']
 
 def build_gn_args(platform_args):
     return "--args='" + ' '.join(GN_COMMON_ARGS + platform_args) + "'"
