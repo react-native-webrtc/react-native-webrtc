@@ -38,6 +38,11 @@ RTC_EXPORT
 @property(nonatomic, readonly) int strideU;
 @property(nonatomic, readonly) int strideV;
 
+- (instancetype)initWithWidth:(int)width
+                       height:(int)height
+                        dataY:(const uint8_t *)dataY
+                        dataU:(const uint8_t *)dataU
+                        dataV:(const uint8_t *)dataV;
 - (instancetype)initWithWidth:(int)width height:(int)height;
 - (instancetype)initWithWidth:(int)width
                        height:(int)height

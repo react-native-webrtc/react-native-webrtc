@@ -46,8 +46,7 @@ RTC_EXPORT
 - (RTCAudioTrack *)audioTrackWithTrackId:(NSString *)trackId;
 
 /** Initialize an RTCAudioTrack with a source and an id. */
-- (RTCAudioTrack *)audioTrackWithSource:(RTCAudioSource *)source
-                                trackId:(NSString *)trackId;
+- (RTCAudioTrack *)audioTrackWithSource:(RTCAudioSource *)source trackId:(NSString *)trackId;
 
 /** Initialize a generic RTCVideoSource. The RTCVideoSource should be passed to a RTCVideoCapturer
  *  implementation, e.g. RTCCameraVideoCapturer, in order to produce frames.
@@ -55,8 +54,7 @@ RTC_EXPORT
 - (RTCVideoSource *)videoSource;
 
 /** Initialize an RTCVideoTrack with a source and an id. */
-- (RTCVideoTrack *)videoTrackWithSource:(RTCVideoSource *)source
-                                trackId:(NSString *)trackId;
+- (RTCVideoTrack *)videoTrackWithSource:(RTCVideoSource *)source trackId:(NSString *)trackId;
 
 /** Initialize an RTCMediaStream with an id. */
 - (RTCMediaStream *)mediaStreamWithStreamId:(NSString *)streamId;
@@ -64,19 +62,16 @@ RTC_EXPORT
 /** Initialize an RTCPeerConnection with a configuration, constraints, and
  *  delegate.
  */
-- (RTCPeerConnection *)peerConnectionWithConfiguration:
-    (RTCConfiguration *)configuration
-                                           constraints:
-    (RTCMediaConstraints *)constraints
+- (RTCPeerConnection *)peerConnectionWithConfiguration:(RTCConfiguration *)configuration
+                                           constraints:(RTCMediaConstraints *)constraints
                                               delegate:
-    (nullable id<RTCPeerConnectionDelegate>)delegate;
+                                                  (nullable id<RTCPeerConnectionDelegate>)delegate;
 
 /** Set the options to be used for subsequently created RTCPeerConnections */
 - (void)setOptions:(nonnull RTCPeerConnectionFactoryOptions *)options;
 
 /** Start an AecDump recording. This API call will likely change in the future. */
-- (BOOL)startAecDumpWithFilePath:(NSString *)filePath
-                  maxSizeInBytes:(int64_t)maxSizeInBytes;
+- (BOOL)startAecDumpWithFilePath:(NSString *)filePath maxSizeInBytes:(int64_t)maxSizeInBytes;
 
 /* Stop an active AecDump recording */
 - (void)stopAecDump;
