@@ -10,6 +10,7 @@
 
 #import <WebRTC/RTCEAGLVideoView.h>
 #import <WebRTC/RTCMediaStream.h>
+#import <WebRTC/RTCMTLVideoView.h>
 #import <WebRTC/RTCVideoTrack.h>
 
 #import "RTCVideoViewManager.h"
@@ -42,7 +43,7 @@ typedef NS_ENUM(NSInteger, RTCVideoViewObjectFit) {
  * Implements an equivalent of {@code HTMLVideoElement} i.e. Web's video
  * element.
  */
-@interface RTCVideoView : UIView <RTCEAGLVideoViewDelegate>
+@interface RTCVideoView : UIView <RTCVideoViewDelegate>
 
 /**
  * The indicator which determines whether this {@code RTCVideoView} is to mirror
@@ -60,9 +61,8 @@ typedef NS_ENUM(NSInteger, RTCVideoViewObjectFit) {
 @property (nonatomic) RTCVideoViewObjectFit objectFit;
 
 /**
- * The {@link RTCEAGLVideoView} which implements the actual
- * {@link RTCVideoRenderer} of this instance and which this instance fits within
- * itself so that the rendered video preserves the aspect ratio of
+ * The {@link RRTCVideoRenderer} which implements the actual rendering and which
+ * fits within this view so that the rendered video preserves the aspect ratio of
  * {@link #_videoSize}.
  */
 @property (nonatomic, readonly) __kindof UIView<RTCVideoRenderer> *videoView;
@@ -116,9 +116,15 @@ typedef NS_ENUM(NSInteger, RTCVideoViewObjectFit) {
  */
 - (instancetype)initWithFrame:(CGRect)frame {
   if (self = [super initWithFrame:frame]) {
+#if defined(RTC_SUPPORTS_METAL)
+    RTCMTLVideoView *subview = [[RTCMTLVideoView alloc] init];
+    subview.delegate = self;
+    _videoView = subview;
+#else
     RTCEAGLVideoView *subview = [[RTCEAGLVideoView alloc] init];
     subview.delegate = self;
     _videoView = subview;
+#endif
 
     _videoSize.height = 0;
     _videoSize.width = 0;
@@ -250,11 +256,11 @@ typedef NS_ENUM(NSInteger, RTCVideoViewObjectFit) {
   }
 }
 
-#pragma mark - RTCEAGLVideoViewDelegate methods
+#pragma mark - RTCVideoViewDelegate methods
 
 /**
- * Notifies this {@link RTCEAGLVideoViewDelegate} that a specific
- * {@link RTCEAGLVideoView} had the size of the video (frames) it renders
+ * Notifies this {@link RTCVideoViewDelegate} that a specific
+ * {@link RTCVideoRenderer} had the size of the video (frames) it renders
  * changed.
  *
  * @param videoView The {@code RTCVideoRenderer} which had the size of the video
