@@ -270,7 +270,7 @@ class GetUserMediaImpl {
             tracks_.pushMap(track_);
         }
 
-        String streamId = mediaStream.label();
+        String streamId = mediaStream.getId();
 
         Log.d(TAG, "MediaStream id: " + streamId);
         webRTCModule.localStreams.put(streamId, mediaStream);

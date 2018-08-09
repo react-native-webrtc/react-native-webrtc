@@ -343,7 +343,7 @@ class PeerConnectionObserver implements PeerConnection.Observer {
     @Override
     public void onAddStream(MediaStream mediaStream) {
         String streamReactTag = null;
-        String streamId = mediaStream.label();
+        String streamId = mediaStream.getId();
         // The native WebRTC implementation has a special concept of a default
         // MediaStream instance with the label default that the implementation
         // reuses.
@@ -412,7 +412,7 @@ class PeerConnectionObserver implements PeerConnection.Observer {
         if (streamReactTag == null) {
             Log.w(TAG,
                 "onRemoveStream - no remote stream for id: "
-                    + mediaStream.label());
+                    + mediaStream.getId());
             return;
         }
 
