@@ -164,10 +164,6 @@ class PeerConnectionObserver implements PeerConnection.Observer {
             }
         }
         DataChannel dataChannel = peerConnection.createDataChannel(label, init);
-        // XXX RTP data channels are not defined by the WebRTC standard, have
-        // been deprecated in Chromium, and Google have decided (in 2015) to no
-        // longer support them (in the face of multiple reported issues of
-        // breakages).
         int dataChannelId = init.id;
         if (-1 != dataChannelId) {
             dataChannels.put(dataChannelId, dataChannel);
@@ -434,26 +430,7 @@ class PeerConnectionObserver implements PeerConnection.Observer {
 
     @Override
     public void onDataChannel(DataChannel dataChannel) {
-        // XXX Unfortunately, the Java WebRTC API doesn't expose the id
-        // of the underlying C++/native DataChannel (even though the
-        // WebRTC standard defines the DataChannel.id property). As a
-        // workaround, generated an id which will surely not clash with
-        // the ids of the remotely-opened (and standard-compliant
-        // locally-opened) DataChannels.
-        int dataChannelId = -1;
-        // The RTCDataChannel.id space is limited to unsigned short by
-        // the standard:
-        // https://www.w3.org/TR/webrtc/#dom-datachannel-id.
-        // Additionally, 65535 is reserved due to SCTP INIT and
-        // INIT-ACK chunks only allowing a maximum of 65535 streams to
-        // be negotiated (as defined by the WebRTC Data Channel
-        // Establishment Protocol).
-        for (int i = 65536; i <= Integer.MAX_VALUE; ++i) {
-            if (null == dataChannels.get(i, null)) {
-                dataChannelId = i;
-                break;
-            }
-        }
+        final int dataChannelId = dataChannel.id();
         if (-1 == dataChannelId) {
           return;
         }
