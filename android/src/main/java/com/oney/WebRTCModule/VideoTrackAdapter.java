@@ -2,9 +2,9 @@ package com.oney.WebRTCModule;
 
 import android.util.*;
 
+import org.webrtc.VideoFrame;
+import org.webrtc.VideoSink;
 import org.webrtc.VideoTrack;
-import org.webrtc.VideoRenderer;
-import org.webrtc.VideoRenderer.I420Frame;
 
 import com.facebook.react.bridge.Arguments;
 import com.facebook.react.bridge.WritableMap;
@@ -42,7 +42,7 @@ public class VideoTrackAdapter {
                 = new TrackMuteUnmuteImpl(streamReactTag, trackId);
             Log.d(TAG, "Created adapter for " + trackId);
             muteImplMap.put(trackId, onMuteImpl);
-            videoTrack.addRenderer(onMuteImpl.renderer);
+            videoTrack.addSink(onMuteImpl);
             onMuteImpl.start();
         } else {
             Log.w(
@@ -54,7 +54,7 @@ public class VideoTrackAdapter {
         String trackId = videoTrack.id();
         TrackMuteUnmuteImpl onMuteImpl = muteImplMap.remove(trackId);
         if (onMuteImpl != null) {
-            videoTrack.removeRenderer(onMuteImpl.renderer);
+            videoTrack.removeSink(onMuteImpl);
             onMuteImpl.dispose();
             Log.d(TAG, "Deleted adapter for " + trackId);
         } else {
@@ -64,29 +64,24 @@ public class VideoTrackAdapter {
 
     /**
      * Implements 'mute'/'unmute' events for remote video tracks through
-     * the {@link VideoRenderer#Callbacks} interface.
-     *
-     * TODO use VideoSink when becomes available in the used version
+     * the {@link VideoSink} interface.
      */
-    private class TrackMuteUnmuteImpl implements VideoRenderer.Callbacks {
+    private class TrackMuteUnmuteImpl implements VideoSink {
         private TimerTask emitMuteTask;
         private volatile boolean disposed;
         private AtomicInteger frameCounter;
         private boolean mutedState;
-        private VideoRenderer renderer;
         private final String streamReactTag;
         private final String trackId;
 
         TrackMuteUnmuteImpl(String streamReactTag, String trackId) {
             this.streamReactTag = streamReactTag;
             this.trackId = trackId;
-            this.renderer = new VideoRenderer(this);
             this.frameCounter = new AtomicInteger();
         }
 
         @Override
-        public void renderFrame(I420Frame frame) {
-            VideoRenderer.renderFrameDone(frame);
+        public void onFrame(VideoFrame frame) {
             frameCounter.addAndGet(1);
         }
 
