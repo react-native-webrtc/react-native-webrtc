@@ -288,7 +288,7 @@ class GetUserMediaImpl {
         Log.i(TAG, "getUserMedia(video): " + videoConstraintsMap);
 
         VideoCaptureController videoCaptureController
-            = new VideoCaptureController(cameraEnumerator, constraints);
+            = new VideoCaptureController(cameraEnumerator, videoConstraintsMap);
         VideoCapturer videoCapturer = videoCaptureController.getVideoCapturer();
         if (videoCapturer == null) {
             return null;
