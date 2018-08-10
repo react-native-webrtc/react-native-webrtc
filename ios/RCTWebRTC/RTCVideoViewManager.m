@@ -87,8 +87,6 @@ typedef NS_ENUM(NSInteger, RTCVideoViewObjectFit) {
  * Tells this view that its window object changed.
  */
 - (void)didMoveToWindow {
-  [super didMoveToWindow];
-
   // XXX This RTCVideoView strongly retains its videoTrack. The latter strongly
   // retains the former as well though because RTCVideoTrack strongly retains
   // the RTCVideoRenderers added to it. In other words, there is a cycle of
@@ -149,8 +147,6 @@ typedef NS_ENUM(NSInteger, RTCVideoViewObjectFit) {
  * the video it renders.
  */
 - (void)layoutSubviews {
-  [super layoutSubviews];
-
   UIView *subview = self.videoView;
   if (!subview) {
     return;
@@ -320,8 +316,8 @@ RCT_CUSTOM_VIEW_PROPERTY(objectFit, NSString *, RTCVideoView) {
   view.objectFit = e;
 }
 
-RCT_CUSTOM_VIEW_PROPERTY(streamURL, NSString, RTCVideoView) {
-  RTCVideoTrack *videoTrack;
+RCT_CUSTOM_VIEW_PROPERTY(streamURL, NSString *, RTCVideoView) {
+  RTCVideoTrack *videoTrack = nil;
 
   if (json) {
     NSString *streamReactTag = (NSString *)json;
@@ -334,8 +330,6 @@ RCT_CUSTOM_VIEW_PROPERTY(streamURL, NSString, RTCVideoView) {
     if (!videoTrack) {
       NSLog(@"No video stream for react tag: %@", streamReactTag);
     }
-  } else {
-    videoTrack = nil;
   }
 
   view.videoTrack = videoTrack;
