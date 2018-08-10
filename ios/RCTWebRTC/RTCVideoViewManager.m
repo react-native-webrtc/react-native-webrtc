@@ -116,11 +116,11 @@ typedef NS_ENUM(NSInteger, RTCVideoViewObjectFit) {
 - (instancetype)initWithFrame:(CGRect)frame {
   if (self = [super initWithFrame:frame]) {
 #if defined(RTC_SUPPORTS_METAL)
-    RTCMTLVideoView *subview = [[RTCMTLVideoView alloc] init];
+    RTCMTLVideoView *subview = [[RTCMTLVideoView alloc] initWithFrame:CGRectZero];
     subview.delegate = self;
     _videoView = subview;
 #else
-    RTCEAGLVideoView *subview = [[RTCEAGLVideoView alloc] init];
+    RTCEAGLVideoView *subview = [[RTCEAGLVideoView alloc] initWithFrame:CGRectZero];
     subview.delegate = self;
     _videoView = subview;
 #endif
@@ -147,10 +147,7 @@ typedef NS_ENUM(NSInteger, RTCVideoViewObjectFit) {
   CGFloat width = _videoSize.width, height = _videoSize.height;
   CGRect newValue;
   if (width <= 0 || height <= 0) {
-    newValue.origin.x = 0;
-    newValue.origin.y = 0;
-    newValue.size.width = 0;
-    newValue.size.height = 0;
+    newValue = self.bounds;
   } else if (RTCVideoViewObjectFitCover == self.objectFit) { // cover
     newValue = self.bounds;
     // Is there a real need to scale subview?
