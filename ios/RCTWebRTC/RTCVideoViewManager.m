@@ -97,13 +97,12 @@ typedef NS_ENUM(NSInteger, RTCVideoViewObjectFit) {
 
   if (videoTrack) {
     if (self.window) {
-      // TODO RTCVideoTrack's addRenderer implementation has an NSAssert1 that
-      // makes sure that the specified RTCVideoRenderer is not added multiple
-      // times (without intervening removals, of course). It may (or may not) be
-      // wise to explicitly make sure here that we will not hit that NSAssert1.
       [videoTrack addRenderer:self.videoView];
     } else {
       [videoTrack removeRenderer:self.videoView];
+      _videoSize.height = 0;
+      _videoSize.width = 0;
+      [self setNeedsLayout];
     }
   }
 }
@@ -240,6 +239,9 @@ typedef NS_ENUM(NSInteger, RTCVideoViewObjectFit) {
   if (oldValue != videoTrack) {
     if (oldValue) {
       [oldValue removeRenderer:self.videoView];
+      _videoSize.height = 0;
+      _videoSize.width = 0;
+      [self setNeedsLayout];
     }
 
     _videoTrack = videoTrack;
