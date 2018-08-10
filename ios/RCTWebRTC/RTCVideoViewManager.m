@@ -109,19 +109,6 @@ typedef NS_ENUM(NSInteger, RTCVideoViewObjectFit) {
 }
 
 /**
- * Invalidates the current layout of the receiver and triggers a layout update
- * during the next update cycle. Make sure that the method call is performed on
- * the application's main thread (as documented to be necessary by Apple).
- */
-- (void)dispatchAsyncSetNeedsLayout {
-  __weak UIView *weakSelf = self;
-  dispatch_async(dispatch_get_main_queue(), ^{
-    UIView *strongSelf = weakSelf;
-    [strongSelf setNeedsLayout];
-  });
-}
-
-/**
  * Initializes and returns a newly allocated view object with the specified
  * frame rectangle.
  *
@@ -216,7 +203,7 @@ typedef NS_ENUM(NSInteger, RTCVideoViewObjectFit) {
 - (void)setMirror:(BOOL)mirror {
   if (_mirror != mirror) {
       _mirror = mirror;
-      [self dispatchAsyncSetNeedsLayout];
+      [self setNeedsLayout];
   }
 }
 
@@ -230,7 +217,7 @@ typedef NS_ENUM(NSInteger, RTCVideoViewObjectFit) {
 - (void)setObjectFit:(RTCVideoViewObjectFit)objectFit {
   if (_objectFit != objectFit) {
       _objectFit = objectFit;
-      [self dispatchAsyncSetNeedsLayout];
+      [self setNeedsLayout];
   }
 }
 
@@ -278,7 +265,7 @@ typedef NS_ENUM(NSInteger, RTCVideoViewObjectFit) {
 - (void)videoView:(id<RTCVideoRenderer>)videoView didChangeVideoSize:(CGSize)size {
   if (videoView == self.videoView) {
     _videoSize = size;
-    [self dispatchAsyncSetNeedsLayout];
+    [self setNeedsLayout];
   }
 }
 
