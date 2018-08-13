@@ -22,6 +22,11 @@
 
 @synthesize bridge = _bridge;
 
++ (BOOL)requiresMainQueueSetup
+{
+    return YES;
+}
+
 - (void)dealloc
 {
   [_localTracks removeAllObjects];

@@ -74,6 +74,9 @@ RCT_EXPORT_METHOD(peerConnectionInit:(RTCConfiguration*)configuration
                          constraints:(NSDictionary *)constraints
                             objectID:(nonnull NSNumber *)objectID)
 {
+  // We hack this for GST
+  configuration.bundlePolicy = RTCBundlePolicyBalanced;
+
   RTCPeerConnection *peerConnection
     = [self.peerConnectionFactory
       peerConnectionWithConfiguration:configuration

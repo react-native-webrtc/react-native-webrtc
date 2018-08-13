@@ -3,5 +3,7 @@
 node_modules
 ios/RCTWebRTC.xcodeproj/xcuserdata
 ios/RCTWebRTC.xcodeproj/project.xcworkspace
+android/build/
+android/react-native-webrtc.iml
 .DS_Store
 .idea

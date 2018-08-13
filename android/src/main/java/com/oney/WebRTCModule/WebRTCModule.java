@@ -185,6 +185,7 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
                 }
             }
         }
+        conf.bundlePolicy = PeerConnection.BundlePolicy.BALANCED;
 
         // rtcpMuxPolicy (public api)
         if (map.hasKey("rtcpMuxPolicy")
@@ -835,8 +836,9 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
         PeerConnection peerConnection = getPeerConnection(id);
         Log.d(TAG, "peerConnectionAddICECandidate() start");
         if (peerConnection != null) {
+            String mid = candidateMap.hasKey("sdpMid") ? candidateMap.getString("sdpMid") : "";
             IceCandidate candidate = new IceCandidate(
-                candidateMap.getString("sdpMid"),
+                mid,
                 candidateMap.getInt("sdpMLineIndex"),
                 candidateMap.getString("candidate")
             );
