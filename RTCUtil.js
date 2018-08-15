@@ -50,6 +50,13 @@ export function promisify(method, callbackFirst) {
       onFailure = function(err) { throw err; };
     }
 
+    // If fewer args were given than the source function
+    // requires, pad out the argument list with undefined.
+    const arity = method.length;
+    while (args.length + 2 < arity) {
+      args.push(undefined);
+    }
+
     // --- always pass resolve/reject as callback
     return new Promise(function(resolve, reject) {
       const newArgs = (callbackFirst ? [resolve, reject, ...args] : [...args, resolve, reject]);
