@@ -30,7 +30,7 @@ pod 'react-native-webrtc', :path => '../node_modules/react-native-webrtc'
 
 2-1.) select `Build Settings`, find `Search Paths`  
 2-2.) edit BOTH `Framework Search Paths` and `Library Search Paths`  
-2-3.) add path on BOTH sections with: `$(SRCROOT)/../node_modules/react-native-webrtc` with `recursive`  
+2-3.) add path on BOTH sections with: `$(SRCROOT)/../node_modules/react-native-webrtc/ios` with `recursive`  
 
 ![Picture 4](https://github.com/oney/react-native-webrtc/blob/master/Documentation/doc_install_xcode_search_path.png)
 
@@ -68,6 +68,17 @@ libstdc++.tbd
 
 ![Picture 4](https://github.com/oney/react-native-webrtc/blob/master/Documentation/doc_install_xcode_link_libraries.png)
 
+## Step 5. Add Permissions
+
+5-1.) navigate to `<ProjectFolder>/ios/<ProjectName>/`  
+5-2.) edit `Info.plist` and add the following lines
+
+```
+<key>NSCameraUsageDescription</key>
+<string>Camera Permission</string>
+<key>NSMicrophoneUsageDescription</key>
+<string>Microphone Permission</string>
+```
 
 ## Appendix A - CLEAN PROCESS
 

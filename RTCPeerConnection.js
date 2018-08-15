@@ -2,6 +2,7 @@
 
 import EventTarget from 'event-target-shim';
 import {DeviceEventEmitter, NativeModules} from 'react-native';
+import * as RTCUtil from './RTCUtil';
 
 import MediaStream from './MediaStream';
 import MediaStreamEvent from './MediaStreamEvent';
@@ -87,6 +88,7 @@ export default class RTCPeerConnection extends EventTarget(PEER_CONNECTION_EVENT
   onremovestream: ?Function;
 
   _peerConnectionId: number;
+  _localStreams: Array<MediaStream> = [];
   _remoteStreams: Array<MediaStream> = [];
   _subscriptions: Array<any>;
 
@@ -100,40 +102,32 @@ export default class RTCPeerConnection extends EventTarget(PEER_CONNECTION_EVENT
     this._peerConnectionId = nextPeerConnectionId++;
     WebRTCModule.peerConnectionInit(configuration, this._peerConnectionId);
     this._registerEvents();
+    // Allow for legacy callback usage
+    this.createOffer = RTCUtil.promisify(this.createOffer.bind(this), true);
+    this.createAnswer = RTCUtil.promisify(this.createAnswer.bind(this), true);
+    this.setLocalDescription = RTCUtil.promisify(this.setLocalDescription.bind(this));
+    this.setRemoteDescription = RTCUtil.promisify(this.setRemoteDescription.bind(this));
+    this.addIceCandidate = RTCUtil.promisify(this.addIceCandidate.bind(this));
+    this.getStats = RTCUtil.promisify(this.getStats.bind(this));
   }
 
   addStream(stream: MediaStream) {
     WebRTCModule.peerConnectionAddStream(stream.reactTag, this._peerConnectionId);
+    this._localStreams.push(stream);
   }
 
   removeStream(stream: MediaStream) {
     WebRTCModule.peerConnectionRemoveStream(stream.reactTag, this._peerConnectionId);
-  }
-
-  /**
-   * Merge custom constraints with the default one. The custom one take precedence.
-   *
-   * @param {Object} options - webrtc constraints
-   * @return {Object} constraints - merged webrtc constraints
-   */
-  _mergeMediaConstraints(options) {
-    const constraints = Object.assign({}, DEFAULT_SDP_CONSTRAINTS);
-    if (options) {
-      if (options.mandatory) {
-        constraints.mandatory = {...constraints.mandatory, ...options.mandatory};
-      }
-      if (options.optional && Array.isArray(options.optional)) {
-        // `optional` is an array, webrtc only finds first and ignore the rest if duplicate.
-        constraints.optional = options.optional.concat(constraints.optional);
-      }
+    let index = this._localStreams.indexOf(stream);
+    if (index !== -1) {
+      this._localStreams.splice(index, 1);
     }
-    return constraints;
   }
 
   createOffer(successCallback: ?Function, failureCallback: ?Function, options) {
     WebRTCModule.peerConnectionCreateOffer(
         this._peerConnectionId,
-        this._mergeMediaConstraints(options),
+        RTCUtil.mergeMediaConstraints(options, DEFAULT_SDP_CONSTRAINTS),
         (successful, data) => {
           if (successful) {
             successCallback(new RTCSessionDescription(data));
@@ -146,7 +140,7 @@ export default class RTCPeerConnection extends EventTarget(PEER_CONNECTION_EVENT
   createAnswer(successCallback: ?Function, failureCallback: ?Function, options) {
     WebRTCModule.peerConnectionCreateAnswer(
         this._peerConnectionId,
-        this._mergeMediaConstraints(options),
+        RTCUtil.mergeMediaConstraints(options, DEFAULT_SDP_CONSTRAINTS),
         (successful, data) => {
           if (successful) {
             successCallback(new RTCSessionDescription(data));
@@ -160,7 +154,7 @@ export default class RTCPeerConnection extends EventTarget(PEER_CONNECTION_EVENT
     WebRTCModule.peerConnectionSetConfiguration(configuration, this._peerConnectionId);
   }
 
-  setLocalDescription(sessionDescription: RTCSessionDescription, success: ?Function, failure: ?Function, constraints) {
+  setLocalDescription(sessionDescription: RTCSessionDescription, success: ?Function, failure: ?Function) {
     WebRTCModule.peerConnectionSetLocalDescription(sessionDescription.toJSON(), this._peerConnectionId, (successful, data) => {
       if (successful) {
         this.localDescription = sessionDescription;
@@ -206,6 +200,9 @@ export default class RTCPeerConnection extends EventTarget(PEER_CONNECTION_EVENT
             // general, the stress is on being faster to pass through the React
             // Native bridge which is a bottleneck that tends to be visible in
             // the UI when there is congestion involving UI-related passing.
+            if (Array.isArray(stats) && stats.length === 1 && typeof stats[0] === 'string') {
+              stats = stats[0]
+            }
             if (typeof stats === 'string') {
               try {
                 stats = JSON.parse(stats);
@@ -220,6 +217,10 @@ export default class RTCPeerConnection extends EventTarget(PEER_CONNECTION_EVENT
     } else {
       console.warn('RTCPeerConnection getStats not supported');
     }
+  }
+
+  getLocalStreams() {
+    return this._localStreams.slice();
   }
 
   getRemoteStreams() {
