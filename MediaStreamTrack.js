@@ -3,7 +3,6 @@
 import {NativeModules} from 'react-native';
 import EventTarget from 'event-target-shim';
 import MediaStreamErrorEvent from './MediaStreamErrorEvent';
-import * as RTCUtil from './RTCUtil';
 
 import type MediaStreamError from './MediaStreamError';
 
@@ -121,8 +120,5 @@ class MediaStreamTrack extends EventTarget(MEDIA_STREAM_TRACK_EVENTS) {
     throw new Error('Not implemented.');
   }
 }
-
-// --- promisify getSources static func
-MediaStreamTrack.getSources = RTCUtil.promisify(MediaStreamTrack.getSources.bind(MediaStreamTrack), true);
 
 export default MediaStreamTrack;

@@ -877,6 +877,7 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
         PeerConnectionObserver pco = mPeerConnectionObservers.get(id);
         if (pco == null || pco.getPeerConnection() == null) {
             Log.d(TAG, "peerConnectionGetStats() peerConnection is null");
+            cb.invoke(false, "PeerConnection ID not found");
         } else {
             pco.getStats(trackId, cb);
         }
