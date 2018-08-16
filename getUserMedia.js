@@ -56,16 +56,7 @@ function normalizeMediaConstraints(constraints, mediaType) {
   return constraints;
 }
 
-function getUserMedia(
-    constraints,
-    successCallback,
-    errorCallback) {
-  if (typeof successCallback !== 'function') {
-    throw new TypeError('successCallback is non-nullable and required');
-  }
-  if (typeof errorCallback !== 'function') {
-    throw new TypeError('errorCallback is non-nullable and required');
-  }
+export default function getUserMedia(constraints) {
   // According to
   // https://www.w3.org/TR/mediacapture-streams/#dom-mediadevices-getusermedia,
   // the constraints argument is a dictionary of type MediaStreamConstraints.
@@ -91,11 +82,8 @@ function getUserMedia(
           ++requestedMediaTypes;
           constraints[mediaType] = parseMediaConstraints(constraints[mediaType], mediaType);
         } else {
-          errorCallback(
-            new TypeError(
-              'constraints.' + mediaType
-                + ' is neither a boolean nor a dictionary'));
-          return;
+          return Promise.reject(
+            new TypeError('constraints.' + mediaType + ' is neither a boolean nor a dictionary'));
         }
 
         // final check constraints and convert value to native accepted type
@@ -108,54 +96,52 @@ function getUserMedia(
     // requestedMediaTypes is the empty set, the method invocation fails with
     // a TypeError.
     if (requestedMediaTypes === 0) {
-      errorCallback(new TypeError('constraints requests no media types'));
-      return;
+      return Promise.reject(new TypeError('constraints requests no media types'));
     }
   } else {
-    errorCallback(new TypeError('constraints is not a dictionary'));
-    return;
+    return Promise.reject(new TypeError('constraints is not a dictionary'));
   }
 
-  WebRTCModule.getUserMedia(
-    constraints,
-    /* successCallback */ (id, tracks) => {
-      const stream = new MediaStream(id);
-      for (const track of tracks) {
-        stream.addTrack(new MediaStreamTrack(track));
-      }
-
-      successCallback(stream);
-    },
-    /* errorCallback */ (type, message) => {
-      let error;
-      switch (type) {
-      case 'DOMException':
-        // According to
-        // https://www.w3.org/TR/mediacapture-streams/#idl-def-MediaStreamError,
-        // MediaStreamError is either a DOMException object or an
-        // OverconstrainedError object. We are very likely to not have a
-        // definition of DOMException on React Native (unless the client has
-        // provided such a definition). If necessary, we will fall back to our
-        // definition of MediaStreamError.
-        if (typeof DOMException === 'function') {
-          error = new DOMException(/* message */ undefined, /* name */ message);
+  return new Promise((resolve, reject) => {
+    WebRTCModule.getUserMedia(
+      constraints,
+      /* successCallback */ (id, tracks) => {
+        const stream = new MediaStream(id);
+        for (const track of tracks) {
+          stream.addTrack(new MediaStreamTrack(track));
         }
-        break;
-      case 'OverconstrainedError':
-        if (typeof OverconstrainedError === 'function') {
-          error = new OverconstrainedError(/* constraint */ undefined, message);
+  
+        resolve(stream);
+      },
+      /* errorCallback */ (type, message) => {
+        let error;
+        switch (type) {
+        case 'DOMException':
+          // According to
+          // https://www.w3.org/TR/mediacapture-streams/#idl-def-MediaStreamError,
+          // MediaStreamError is either a DOMException object or an
+          // OverconstrainedError object. We are very likely to not have a
+          // definition of DOMException on React Native (unless the client has
+          // provided such a definition). If necessary, we will fall back to our
+          // definition of MediaStreamError.
+          if (typeof DOMException === 'function') {
+            error = new DOMException(/* message */ undefined, /* name */ message);
+          }
+          break;
+        case 'OverconstrainedError':
+          if (typeof OverconstrainedError === 'function') {
+            error = new OverconstrainedError(/* constraint */ undefined, message);
+          }
+          break;
+        case 'TypeError':
+          error = new TypeError(message);
+          break;
         }
-        break;
-      case 'TypeError':
-        error = new TypeError(message);
-        break;
-      }
-      if (!error) {
-        error = new MediaStreamError({ message, name: type });
-      }
+        if (!error) {
+          error = new MediaStreamError({ message, name: type });
+        }
 
-      errorCallback(error);
-    });
+        reject(error);
+      });
+  });
 }
-
-export default RTCUtil.promisify(getUserMedia);
