@@ -10,7 +10,6 @@
 
 #import <WebRTC/RTCEAGLVideoView.h>
 #import <WebRTC/RTCMediaStream.h>
-#import <WebRTC/RTCVideoFrame.h>
 #import <WebRTC/RTCVideoTrack.h>
 
 #import "RTCVideoViewManager.h"
@@ -43,7 +42,7 @@ typedef NS_ENUM(NSInteger, RTCVideoViewObjectFit) {
  * Implements an equivalent of {@code HTMLVideoElement} i.e. Web's video
  * element.
  */
-@interface RTCVideoView : UIView <RTCVideoRenderer, RTCEAGLVideoViewDelegate>
+@interface RTCVideoView : UIView <RTCEAGLVideoViewDelegate>
 
 /**
  * The indicator which determines whether this {@code RTCVideoView} is to mirror
@@ -66,7 +65,7 @@ typedef NS_ENUM(NSInteger, RTCVideoViewObjectFit) {
  * itself so that the rendered video preserves the aspect ratio of
  * {@link #_videoSize}.
  */
-@property (nonatomic, readonly) RTCEAGLVideoView *subview;
+@property (nonatomic, readonly) __kindof UIView<RTCVideoRenderer> *videoView;
 
 /**
  * The {@link RTCVideoTrack}, if any, which this instance renders.
@@ -82,12 +81,12 @@ typedef NS_ENUM(NSInteger, RTCVideoViewObjectFit) {
   CGSize _videoSize;
 }
 
+@synthesize videoView = _videoView;
+
 /**
  * Tells this view that its window object changed.
  */
 - (void)didMoveToWindow {
-  [super didMoveToWindow];
-
   // XXX This RTCVideoView strongly retains its videoTrack. The latter strongly
   // retains the former as well though because RTCVideoTrack strongly retains
   // the RTCVideoRenderers added to it. In other words, there is a cycle of
@@ -102,24 +101,11 @@ typedef NS_ENUM(NSInteger, RTCVideoViewObjectFit) {
       // makes sure that the specified RTCVideoRenderer is not added multiple
       // times (without intervening removals, of course). It may (or may not) be
       // wise to explicitly make sure here that we will not hit that NSAssert1.
-      [videoTrack addRenderer:self];
+      [videoTrack addRenderer:self.videoView];
     } else {
-      [videoTrack removeRenderer:self];
+      [videoTrack removeRenderer:self.videoView];
     }
   }
-}
-
-/**
- * Invalidates the current layout of the receiver and triggers a layout update
- * during the next update cycle. Make sure that the method call is performed on
- * the application's main thread (as documented to be necessary by Apple).
- */
-- (void)dispatchAsyncSetNeedsLayout {
-  __weak UIView *weakSelf = self;
-  dispatch_async(dispatch_get_main_queue(), ^{
-    UIView *strongSelf = weakSelf;
-    [strongSelf setNeedsLayout];
-  });
 }
 
 /**
@@ -131,14 +117,14 @@ typedef NS_ENUM(NSInteger, RTCVideoViewObjectFit) {
 - (instancetype)initWithFrame:(CGRect)frame {
   if (self = [super initWithFrame:frame]) {
     RTCEAGLVideoView *subview = [[RTCEAGLVideoView alloc] init];
-
     subview.delegate = self;
+    _videoView = subview;
 
     _videoSize.height = 0;
     _videoSize.width = 0;
 
     self.opaque = NO;
-    [self addSubview:subview];
+    [self addSubview:self.videoView];
   }
   return self;
 }
@@ -148,9 +134,7 @@ typedef NS_ENUM(NSInteger, RTCVideoViewObjectFit) {
  * the video it renders.
  */
 - (void)layoutSubviews {
-  [super layoutSubviews];
-
-  UIView *subview = self.subview;
+  UIView *subview = self.videoView;
   if (!subview) {
     return;
   }
@@ -219,7 +203,7 @@ typedef NS_ENUM(NSInteger, RTCVideoViewObjectFit) {
 - (void)setMirror:(BOOL)mirror {
   if (_mirror != mirror) {
       _mirror = mirror;
-      [self dispatchAsyncSetNeedsLayout];
+      [self setNeedsLayout];
   }
 }
 
@@ -233,7 +217,7 @@ typedef NS_ENUM(NSInteger, RTCVideoViewObjectFit) {
 - (void)setObjectFit:(RTCVideoViewObjectFit)objectFit {
   if (_objectFit != objectFit) {
       _objectFit = objectFit;
-      [self dispatchAsyncSetNeedsLayout];
+      [self setNeedsLayout];
   }
 }
 
@@ -249,7 +233,7 @@ typedef NS_ENUM(NSInteger, RTCVideoViewObjectFit) {
 
   if (oldValue != videoTrack) {
     if (oldValue) {
-      [oldValue removeRenderer:self];
+      [oldValue removeRenderer:self.videoView];
     }
 
     _videoTrack = videoTrack;
@@ -261,57 +245,8 @@ typedef NS_ENUM(NSInteger, RTCVideoViewObjectFit) {
     // order to break the cycle, have this RTCVideoView as the RTCVideoRenderer
     // of its videoTrack only while this view resides in a window.
     if (videoTrack && self.window) {
-      [videoTrack addRenderer:self];
+      [videoTrack addRenderer:self.videoView];
     }
-  }
-}
-
-/**
- * Implements the getter of the {@code subview} property of this
- * {@code RTCVideoView}. Gets the {@link RTCEAGLVideoView} subview of this
- * {@code RTCVideoView} which implements the actual {@link RTCVideoRenderer} of
- * this instance and which actually renders {@link #videoTrack}.
- *
- * @returns The {@code RTCEAGLVideoView} subview of this {@code RTCVideoView}
- * which implements the actual {@code RTCVideoRenderer} of this instance and
- * which actually renders {@code videoTrack}.
- */
-- (RTCEAGLVideoView *)subview {
-  // In order to reduce the number of strong retainments of the RTCEAGLVideoView
-  // instance and, thus, the risk of memory leaks, retrieve the subview from the
-  // super's list of subviews of this view.
-  for (UIView *subview in self.subviews) {
-    if ([subview isKindOfClass:[RTCEAGLVideoView class]]) {
-      return (RTCEAGLVideoView *)subview;
-    }
-  }
-  return nil;
-}
-
-#pragma mark - RTCVideoRenderer methods
-
-/**
- * Renders a specific video frame. Delegates to the subview of this instance
- * which implements the actual {@link RTCVideoRenderer}.
- *
- * @param frame The video frame to render.
- */
-- (void)renderFrame:(RTCVideoFrame *)frame {
-  id<RTCVideoRenderer> videoRenderer = self.subview;
-  if (videoRenderer) {
-    [videoRenderer renderFrame:frame];
-  }
-}
-
-/**
- * Sets the size of the video frame to render.
- *
- * @param size The size of the video frame to render.
- */
-- (void)setSize:(CGSize)size {
-  id<RTCVideoRenderer> videoRenderer = self.subview;
-  if (videoRenderer) {
-    [videoRenderer setSize:size];
   }
 }
 
@@ -322,15 +257,15 @@ typedef NS_ENUM(NSInteger, RTCVideoViewObjectFit) {
  * {@link RTCEAGLVideoView} had the size of the video (frames) it renders
  * changed.
  *
- * @param videoView The {@code RTCEAGLVideoView} which had the size of the video
+ * @param videoView The {@code RTCVideoRenderer} which had the size of the video
  * (frames) it renders changed to the specified size.
  * @param size The new size of the video (frames) to be rendered by the
  * specified {@code videoView}.
  */
-- (void)videoView:(RTCEAGLVideoView *)videoView didChangeVideoSize:(CGSize)size {
-  if (videoView == self.subview) {
+- (void)videoView:(id<RTCVideoRenderer>)videoView didChangeVideoSize:(CGSize)size {
+  if (videoView == self.videoView) {
     _videoSize = size;
-    [self dispatchAsyncSetNeedsLayout];
+    [self setNeedsLayout];
   }
 }
 
@@ -368,8 +303,8 @@ RCT_CUSTOM_VIEW_PROPERTY(objectFit, NSString *, RTCVideoView) {
   view.objectFit = e;
 }
 
-RCT_CUSTOM_VIEW_PROPERTY(streamURL, NSString, RTCVideoView) {
-  RTCVideoTrack *videoTrack;
+RCT_CUSTOM_VIEW_PROPERTY(streamURL, NSString *, RTCVideoView) {
+  RTCVideoTrack *videoTrack = nil;
 
   if (json) {
     NSString *streamReactTag = (NSString *)json;
@@ -382,8 +317,6 @@ RCT_CUSTOM_VIEW_PROPERTY(streamURL, NSString, RTCVideoView) {
     if (!videoTrack) {
       NSLog(@"No video stream for react tag: %@", streamReactTag);
     }
-  } else {
-    videoTrack = nil;
   }
 
   view.videoTrack = videoTrack;

@@ -7,10 +7,11 @@
 
 #import <objc/runtime.h>
 
-#import <WebRTC/RTCAVFoundationVideoSource.h>
+#import <WebRTC/RTCCameraVideoCapturer.h>
 #import <WebRTC/RTCVideoTrack.h>
 #import <WebRTC/RTCMediaConstraints.h>
 
+#import "RTCMediaStreamTrack+React.h"
 #import "WebRTCModule+RTCPeerConnection.h"
 
 @implementation AVCaptureDevice (React)
@@ -205,86 +206,27 @@ RCT_EXPORT_METHOD(getUserMedia:(NSDictionary *)constraints
        errorCallback:(NavigatorUserMediaErrorCallback)errorCallback
          mediaStream:(RTCMediaStream *)mediaStream {
   id videoConstraints = constraints[@"video"];
-  AVCaptureDevice *videoDevice;
-  if ([videoConstraints isKindOfClass:[NSDictionary class]]) {
-    // constraints.video.optional
-    id optionalVideoConstraints = videoConstraints[@"optional"];
-    if (optionalVideoConstraints
-        && [optionalVideoConstraints isKindOfClass:[NSArray class]]) {
-      NSArray *options = optionalVideoConstraints;
-      for (id item in options) {
-        if ([item isKindOfClass:[NSDictionary class]]) {
-          NSString *sourceId = ((NSDictionary *)item)[@"sourceId"];
-          if (sourceId) {
-            videoDevice = [AVCaptureDevice deviceWithUniqueID:sourceId];
-            if (videoDevice) {
-              break;
-            }
-          }
-        }
-      }
-    }
-    if (!videoDevice) {
-      // constraints.video.facingMode
-      //
-      // https://www.w3.org/TR/mediacapture-streams/#def-constraint-facingMode
-      id facingMode = videoConstraints[@"facingMode"];
-      if (facingMode && [facingMode isKindOfClass:[NSString class]]) {
-        AVCaptureDevicePosition position;
-        if ([facingMode isEqualToString:@"environment"]) {
-          position = AVCaptureDevicePositionBack;
-        } else if ([facingMode isEqualToString:@"user"]) {
-          position = AVCaptureDevicePositionFront;
-        } else {
-          // If the specified facingMode value is not supported, fall back to
-          // the default video device.
-          position = AVCaptureDevicePositionUnspecified;
-        }
-        if (AVCaptureDevicePositionUnspecified != position) {
-          for (AVCaptureDevice *aVideoDevice in [AVCaptureDevice devicesWithMediaType:AVMediaTypeVideo]) {
-            if (aVideoDevice.position == position) {
-              videoDevice = aVideoDevice;
-              break;
-            }
-          }
-        }
-      }
-    }
-    if (!videoDevice) {
-      videoDevice = [AVCaptureDevice defaultDeviceWithMediaType:AVMediaTypeVideo];
-    }
+  if (![videoConstraints isKindOfClass:[NSDictionary class]]) {
+      videoConstraints = @{};
   }
 
-  if (videoDevice) {
-    // we handle all the constraints parsing in js side. just consume it.
-    // TODO: support optional constraints
-    RTCMediaConstraints* finalConstraints = [[RTCMediaConstraints alloc] initWithMandatoryConstraints:videoConstraints[@"mandatory"] optionalConstraints:nil];
-    RTCAVFoundationVideoSource *videoSource = [self.peerConnectionFactory avFoundationVideoSourceWithConstraints:finalConstraints];
-    // FIXME The effort above to find a videoDevice value which satisfies the
-    // specified constraints was pretty much wasted. Salvage facingMode for
-    // starters because it is kind of a common and hence important feature on
-    // a mobile device.
-    switch (videoDevice.position) {
-    case AVCaptureDevicePositionBack:
-      if (videoSource.canUseBackCamera) {
-        videoSource.useBackCamera = YES;
-      }
-      break;
-    case AVCaptureDevicePositionFront:
-      videoSource.useBackCamera = NO;
-      break;
-    }
+  RTCVideoSource *videoSource = [self.peerConnectionFactory videoSource];
 
-    NSString *trackUUID = [[NSUUID UUID] UUIDString];
-    RTCVideoTrack *videoTrack = [self.peerConnectionFactory videoTrackWithSource:videoSource trackId:trackUUID];
-    [mediaStream addVideoTrack:videoTrack];
+  NSString *trackUUID = [[NSUUID UUID] UUIDString];
+  RTCVideoTrack *videoTrack = [self.peerConnectionFactory videoTrackWithSource:videoSource trackId:trackUUID];
 
-    successCallback(mediaStream);
-  } else {
-    // According to step 6.2.3 of the getUserMedia() algorithm, if there is no
-    // source, fail with a new OverconstrainedError.
-    errorCallback(@"OverconstrainedError", /* errorMessage */ nil);
-  }
+#if !TARGET_IPHONE_SIMULATOR
+  RTCCameraVideoCapturer *videoCapturer = [[RTCCameraVideoCapturer alloc] initWithDelegate:videoSource];
+  VideoCaptureController *videoCaptureController
+        = [[VideoCaptureController alloc] initWithCapturer:videoCapturer
+                                            andConstraints:videoConstraints];
+  videoTrack.videoCaptureController = videoCaptureController;
+  [videoCaptureController startCapture];
+#endif
+
+  [mediaStream addVideoTrack:videoTrack];
+
+  successCallback(mediaStream);
 }
 
 RCT_EXPORT_METHOD(mediaStreamRelease:(nonnull NSString *)streamID)
@@ -292,6 +234,7 @@ RCT_EXPORT_METHOD(mediaStreamRelease:(nonnull NSString *)streamID)
   RTCMediaStream *stream = self.localStreams[streamID];
   if (stream) {
     for (RTCVideoTrack *track in stream.videoTracks) {
+      [track.videoCaptureController stopCapture];
       [self.localTracks removeObjectForKey:track.trackId];
     }
     for (RTCAudioTrack *track in stream.audioTracks) {
@@ -331,6 +274,7 @@ RCT_EXPORT_METHOD(mediaStreamTrackRelease:(nonnull NSString *)streamID : (nonnul
   RTCMediaStreamTrack *track = self.localTracks[trackID];
   if (mediaStream && track) {
     track.isEnabled = NO;
+    [track.videoCaptureController stopCapture];
     // FIXME this is called when track is removed from the MediaStream,
     // but it doesn't mean it can not be added back using MediaStream.addTrack
     [self.localTracks removeObjectForKey:trackID];
@@ -347,6 +291,11 @@ RCT_EXPORT_METHOD(mediaStreamTrackSetEnabled:(nonnull NSString *)trackID : (BOOL
   RTCMediaStreamTrack *track = self.localTracks[trackID];
   if (track && track.isEnabled != enabled) {
     track.isEnabled = enabled;
+    if (enabled) {
+      [track.videoCaptureController startCapture];
+    } else {
+      [track.videoCaptureController stopCapture];
+    }
   }
 }
 
@@ -355,11 +304,7 @@ RCT_EXPORT_METHOD(mediaStreamTrackSwitchCamera:(nonnull NSString *)trackID)
   RTCMediaStreamTrack *track = self.localTracks[trackID];
   if (track) {
     RTCVideoTrack *videoTrack = (RTCVideoTrack *)track;
-    RTCVideoSource *source = videoTrack.source;
-    if ([source isKindOfClass:[RTCAVFoundationVideoSource class]]) {
-      RTCAVFoundationVideoSource *avSource = (RTCAVFoundationVideoSource *)source;
-      avSource.useBackCamera = !avSource.useBackCamera;
-    }
+    [videoTrack.videoCaptureController switchCamera];
   }
 }
 
@@ -368,6 +313,7 @@ RCT_EXPORT_METHOD(mediaStreamTrackStop:(nonnull NSString *)trackID)
   RTCMediaStreamTrack *track = self.localTracks[trackID];
   if (track) {
     track.isEnabled = NO;
+    [track.videoCaptureController stopCapture];
     [self.localTracks removeObjectForKey:trackID];
   }
 }
