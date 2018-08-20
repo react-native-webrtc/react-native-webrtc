@@ -52,6 +52,9 @@ typedef NS_ENUM(NSInteger, RTCVideoViewObjectFit) {
  */
 @property (nonatomic) BOOL mirror;
 
+@property (nonatomic, assign) NSTimeInterval log_addStreamURLTime;
+@property (nonatomic, assign) NSTimeInterval log_viewInitTime;
+
 /**
  * In the fashion of
  * https://www.w3.org/TR/html5/embedded-content-0.html#dom-video-videowidth
@@ -80,7 +83,10 @@ typedef NS_ENUM(NSInteger, RTCVideoViewObjectFit) {
    * The width and height of the video (frames) rendered by {@link #subview}.
    */
   CGSize _videoSize;
+  BOOL hasFrame;
 }
+
+@synthesize log_addStreamURLTime, log_viewInitTime;
 
 /**
  * Tells this view that its window object changed.
@@ -297,6 +303,12 @@ typedef NS_ENUM(NSInteger, RTCVideoViewObjectFit) {
  * @param frame The video frame to render.
  */
 - (void)renderFrame:(RTCVideoFrame *)frame {
+    if ( !hasFrame ) {
+        hasFrame = true;
+//        NSLog(@"renderFrameTime.init : %f", [[NSDate date] timeIntervalSince1970] - log_viewInitTime );
+        NSLog(@"renderFrameTime.render : %f", [[NSDate date] timeIntervalSince1970] - log_addStreamURLTime );
+        
+    }
   id<RTCVideoRenderer> videoRenderer = self.subview;
   if (videoRenderer) {
     [videoRenderer renderFrame:frame];
@@ -342,6 +354,7 @@ RCT_EXPORT_MODULE()
 
 - (UIView *)view {
   RTCVideoView *v = [[RTCVideoView alloc] init];
+    v.log_viewInitTime = [[NSDate date] timeIntervalSince1970];
   v.clipsToBounds = YES;
   return v;
 }
@@ -370,6 +383,7 @@ RCT_CUSTOM_VIEW_PROPERTY(objectFit, NSString *, RTCVideoView) {
 
 RCT_CUSTOM_VIEW_PROPERTY(streamURL, NSString, RTCVideoView) {
   RTCVideoTrack *videoTrack;
+    view.log_addStreamURLTime = [[NSDate date] timeIntervalSince1970];
 
   if (json) {
     NSString *streamReactTag = (NSString *)json;

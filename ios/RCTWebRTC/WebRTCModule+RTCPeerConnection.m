@@ -76,6 +76,7 @@ RCT_EXPORT_METHOD(peerConnectionInit:(RTCConfiguration*)configuration
 {
   // We hack this for GST
   configuration.bundlePolicy = RTCBundlePolicyBalanced;
+  configuration.iceTransportPolicy = RTCIceTransportPolicyRelay;
 
   RTCPeerConnection *peerConnection
     = [self.peerConnectionFactory
