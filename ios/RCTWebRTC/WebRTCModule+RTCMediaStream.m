@@ -229,6 +229,29 @@ RCT_EXPORT_METHOD(getUserMedia:(NSDictionary *)constraints
   successCallback(mediaStream);
 }
 
+RCT_EXPORT_METHOD(enumerateDevices:(RCTResponseSenderBlock)callback) {
+    NSMutableArray *devices = [NSMutableArray array];
+    NSArray *videoDevices = [AVCaptureDevice devicesWithMediaType:AVMediaTypeVideo];
+    for (AVCaptureDevice *device in videoDevices) {
+        [devices addObject:@{
+                             @"deviceId": device.uniqueID,
+                             @"groupId": @"",
+                             @"label": device.localizedName,
+                             @"kind": @"videoinput",
+                             }];
+    }
+    NSArray *audioDevices = [AVCaptureDevice devicesWithMediaType:AVMediaTypeAudio];
+    for (AVCaptureDevice *device in audioDevices) {
+        [devices addObject:@{
+                             @"deviceId": device.uniqueID,
+                             @"groupId": @"",
+                             @"label": device.localizedName,
+                             @"kind": @"audioinput",
+                             }];
+    }
+    callback(@[devices]);
+}
+
 RCT_EXPORT_METHOD(mediaStreamRelease:(nonnull NSString *)streamID)
 {
   RTCMediaStream *stream = self.localStreams[streamID];
@@ -242,29 +265,6 @@ RCT_EXPORT_METHOD(mediaStreamRelease:(nonnull NSString *)streamID)
     }
     [self.localStreams removeObjectForKey:streamID];
   }
-}
-
-RCT_EXPORT_METHOD(mediaStreamTrackGetSources:(RCTResponseSenderBlock)callback) {
-  NSMutableArray *sources = [NSMutableArray array];
-  NSArray *videoDevices = [AVCaptureDevice devicesWithMediaType:AVMediaTypeVideo];
-  for (AVCaptureDevice *device in videoDevices) {
-    [sources addObject:@{
-                         @"facing": device.positionString,
-                         @"id": device.uniqueID,
-                         @"label": device.localizedName,
-                         @"kind": @"video",
-                         }];
-  }
-  NSArray *audioDevices = [AVCaptureDevice devicesWithMediaType:AVMediaTypeAudio];
-  for (AVCaptureDevice *device in audioDevices) {
-    [sources addObject:@{
-                         @"facing": @"",
-                         @"id": device.uniqueID,
-                         @"label": device.localizedName,
-                         @"kind": @"audio",
-                         }];
-  }
-  callback(@[sources]);
 }
 
 RCT_EXPORT_METHOD(mediaStreamTrackRelease:(nonnull NSString *)streamID : (nonnull NSString *)trackID)
