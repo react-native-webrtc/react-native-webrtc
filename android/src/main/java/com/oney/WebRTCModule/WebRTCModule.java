@@ -539,9 +539,9 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
     }
 
     @ReactMethod
-    public void mediaStreamTrackGetSources(Callback callback) {
+    public void enumerateDevices(Callback callback) {
         ThreadUtils.runOnExecutor(() ->
-            callback.invoke(getUserMediaImpl.mediaStreamTrackGetSources()));
+            callback.invoke(getUserMediaImpl.enumerateDevices()));
     }
 
     @ReactMethod

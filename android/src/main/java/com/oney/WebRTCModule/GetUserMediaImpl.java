@@ -308,26 +308,24 @@ class GetUserMediaImpl {
         return track;
     }
 
-    ReadableArray mediaStreamTrackGetSources() {
+    ReadableArray enumerateDevices() {
         WritableArray array = Arguments.createArray();
         String[] devices = cameraEnumerator.getDeviceNames();
 
         for(int i = 0; i < devices.length; ++i) {
             WritableMap params = Arguments.createMap();
-            String facing
-                = cameraEnumerator.isFrontFacing(devices[i]) ? "front" : "back";
+            params.putString("deviceId", "" + i);
+            params.putString("groupId", "");
             params.putString("label", devices[i]);
-            params.putString("id", "" + i);
-            params.putString("facing", facing);
-            params.putString("kind", "video");
+            params.putString("kind", "videoinput");
             array.pushMap(params);
         }
 
         WritableMap audio = Arguments.createMap();
+        audio.putString("deviceId", "audio-1");
+        audio.putString("groupId", "");
         audio.putString("label", "Audio");
-        audio.putString("id", "audio-1");
-        audio.putString("facing", "");
-        audio.putString("kind", "audio");
+        audio.putString("kind", "audioinput");
         array.pushMap(audio);
 
         return array;
