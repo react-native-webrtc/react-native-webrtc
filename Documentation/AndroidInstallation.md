@@ -56,6 +56,14 @@ import com.oney.WebRTCModule.WebRTCModulePackage;  // <--- Add this line
      .setUseDeveloperSupport(BuildConfig.DEBUG)
 ```
 
+5.) Enable Java 8 support in your project. In `anroid/app/build.gradle` add:
+
+```gradle
+compileOptions {
+    sourceCompatibility JavaVersion.VERSION_1_8
+    targetCompatibility JavaVersion.VERSION_1_8
+}
+```
 
 ## CLEAN PROCESS
 
