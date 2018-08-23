@@ -2,6 +2,7 @@
 #import <WebRTC/RTCDataChannelConfiguration.h>
 #import <WebRTC/RTCIceServer.h>
 #import <WebRTC/RTCSessionDescription.h>
+#import <WebRTC/RTCConfiguration.h>
 
 @implementation RCTConvert (WebRTC)
 
@@ -85,6 +86,38 @@
   return [[RTCIceServer alloc] initWithURLStrings:urls];
 }
 
++ (RTCBundlePolicy *)RTCBundlePolicy:(id)json
+{
+  if(!json){
+    RCTLogConvertError(json, @"a valid bundle policy value");
+    return nil;
+  }
+
+  if(![json isKindOfClass:[NSString class]]) {
+    RCTLogConvertError(json, @"must be a string");
+    return nil;
+  }
+
+  NSString *maxBundle = @"max-bundle";
+  NSString *maxCompat = @"max-compat";
+  NSString *balanced = @"balanced";
+
+  RTCBundlePolicy value;
+  if([json isEqualToString:maxBundle]) {
+    value = RTCBundlePolicyMaxBundle;
+  } else if([json isEqualToString:maxCompat]) {
+    value = RTCBundlePolicyMaxCompat;
+  } else if([json isEqualToString:balanced]){
+    // default value in RFC
+    value = RTCBundlePolicyBalanced;
+  } else {
+      RCTLogConvertError(json, @"not a valid bundlePolicy value");
+      return nil;
+  }
+  RTCBundlePolicy *pointerValue = &value;
+  return pointerValue;
+}
+
 + (nonnull RTCConfiguration *)RTCConfiguration:(id)json
 {
   RTCConfiguration *config = [[RTCConfiguration alloc] init];
@@ -107,6 +140,13 @@
       }
     }
     config.iceServers = iceServers;
+  }
+
+  if(json[@"bundlePolicy"] != nil && [json[@"bundlePolicy"] isKindOfClass:[NSString class]]) {
+    NSInteger *bundlePolicy = [RCTConvert RTCBundlePolicy:json[@"bundlePolicy"]];
+    if(bundlePolicy != nil){
+      config.bundlePolicy = *bundlePolicy;
+    }
   }
 
   // TODO: Implement the rest of the RTCConfigure options ...
