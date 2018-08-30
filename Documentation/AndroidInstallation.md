@@ -56,14 +56,38 @@ import com.oney.WebRTCModule.WebRTCModulePackage;  // <--- Add this line
      .setUseDeveloperSupport(BuildConfig.DEBUG)
 ```
 
-5.) Enable Java 8 support in your project. In `anroid/app/build.gradle` add:
+5.) Enable Java 8 support in your project. You will probably need to have React Native 0.55+ for this.
 
+5.a.) In `anroid/app/build.gradle` add:
 ```gradle
 compileOptions {
     sourceCompatibility JavaVersion.VERSION_1_8
     targetCompatibility JavaVersion.VERSION_1_8
 }
 ```
+
+Replace to:
+
+```gradle
+    compileSdkVersion 27
+    buildToolsVersion '27.0.3'
+```
+
+Also inside of `dependencies` replace all the `compile` by `implementation` otherwise you'll get deprecation warnings.
+
+5.b.) In `android/build.gradle` replace to:
+
+```gradle
+dependencies {
+  classpath 'com.android.tools.build:gradle:3.1.3'
+}
+```
+
+5.c.) In `android/gradle/wrapper/gradle-wrapper.properties` set `distributionUrl` variable to
+```
+distributionUrl=https\://services.gradle.org/distributions/gradle-4.4-all.zip
+```
+
 
 ## CLEAN PROCESS
 
