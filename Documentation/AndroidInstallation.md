@@ -79,13 +79,13 @@ Also inside of `dependencies` replace all the `compile` by `implementation` othe
 
 ```gradle
 dependencies {
-  classpath 'com.android.tools.build:gradle:3.1.3'
+  classpath 'com.android.tools.build:gradle:3.0.1'
 }
 ```
 
 5.c.) In `android/gradle/wrapper/gradle-wrapper.properties` set `distributionUrl` variable to
 ```
-distributionUrl=https\://services.gradle.org/distributions/gradle-4.4-all.zip
+distributionUrl=https\://services.gradle.org/distributions/gradle-4.1-all.zip
 ```
 
 
