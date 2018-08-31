@@ -20,7 +20,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 
 import org.webrtc.*;
 
@@ -473,29 +472,7 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
                              Callback    successCallback,
                              Callback    errorCallback) {
         ThreadUtils.runOnExecutor(() ->
-            getUserMediaAsync(constraints, successCallback, errorCallback));
-    }
-
-    private void getUserMediaAsync(ReadableMap constraints,
-                                   Callback    successCallback,
-                                   Callback    errorCallback) {
-        String streamId = UUID.randomUUID().toString();
-        MediaStream mediaStream = mFactory.createLocalMediaStream(streamId);
-
-        if (mediaStream == null) {
-            // XXX The following does not follow the getUserMedia() algorithm
-            // specified by
-            // https://www.w3.org/TR/mediacapture-streams/#dom-mediadevices-getusermedia
-            // with respect to distinguishing the various causes of failure.
-            errorCallback.invoke(
-                /* type */ null,
-                "Failed to create new media stream");
-        } else {
-            // FIXME If getUserMedia fails, then mediaStream is not disposed!
-            getUserMediaImpl.getUserMedia(
-                constraints, successCallback, errorCallback,
-                mediaStream);
-        }
+            getUserMediaImpl.getUserMedia(constraints, successCallback, errorCallback));
     }
 
     @ReactMethod
