@@ -159,19 +159,31 @@ public class VideoCaptureController {
         final boolean isFrontFacing
             = facingMode == null || !facingMode.equals("environment");
         for (String name : deviceNames) {
-            if (!failedDevices.contains(name)
-                    && enumerator.isFrontFacing(name) == isFrontFacing) {
-                VideoCapturer videoCapturer
-                    = enumerator.createCapturer(name, cameraEventsHandler);
-                String message
-                    = "Create camera " + name;
-                if (videoCapturer != null) {
-                    Log.d(TAG, message + " succeeded");
-                    return videoCapturer;
-                } else {
-                    Log.d(TAG, message + " failed");
-                    failedDevices.add(name);
+            if (failedDevices.contains(name)) {
+                continue;
+            }
+            try {
+                // This can throw an exception when using the Camera 1 API.
+                if (enumerator.isFrontFacing(name) != isFrontFacing) {
+                    continue;
                 }
+            } catch (Exception e) {
+                Log.e(
+                    TAG,
+                    "Failed to check the facing mode of camera " + name,
+                    e);
+                failedDevices.add(name);
+                continue;
+            }
+            VideoCapturer videoCapturer
+                = enumerator.createCapturer(name, cameraEventsHandler);
+            String message = "Create camera " + name;
+            if (videoCapturer != null) {
+                Log.d(TAG, message + " succeeded");
+                return videoCapturer;
+            } else {
+                Log.d(TAG, message + " failed");
+                failedDevices.add(name);
             }
         }
 
