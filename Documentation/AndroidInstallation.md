@@ -58,7 +58,7 @@ import com.oney.WebRTCModule.WebRTCModulePackage;  // <--- Add this line
 
 5.) Enable Java 8 support in your project. You will probably need to have React Native 0.55+ for this.
 
-5.a.) In `anroid/app/build.gradle` add:
+5.a.) In `android/app/build.gradle` add:
 ```gradle
 compileOptions {
     sourceCompatibility JavaVersion.VERSION_1_8
