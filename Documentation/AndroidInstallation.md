@@ -66,8 +66,6 @@ compileOptions {
 }
 ```
 
-Inside of `dependencies` replace all the `compile` by `implementation` otherwise you'll get deprecation warnings.
-
 5.b.) In `android/build.gradle` replace to:
 
 ```gradle
