@@ -66,20 +66,22 @@ compileOptions {
 }
 ```
 
-Replace to:
-
-```gradle
-    compileSdkVersion 27
-    buildToolsVersion '27.0.3'
-```
-
-Also inside of `dependencies` replace all the `compile` by `implementation` otherwise you'll get deprecation warnings.
+Inside of `dependencies` replace all the `compile` by `implementation` otherwise you'll get deprecation warnings.
 
 5.b.) In `android/build.gradle` replace to:
 
 ```gradle
 dependencies {
   classpath 'com.android.tools.build:gradle:3.0.1'
+}
+
+//...
+
+ext {
+  //...
+  compileSdkVersion 27
+  buildToolsVersion '27.0.3'
+  //...
 }
 ```
 
