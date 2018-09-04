@@ -92,6 +92,8 @@ RCT_EXPORT_METHOD(peerConnectionInit:(RTCConfiguration*)configuration
   // We hack this for GST
   configuration.bundlePolicy = RTCBundlePolicyBalanced;
   configuration.iceTransportPolicy = RTCIceTransportPolicyRelay;
+  configuration.iceCandidatePoolSize = 16;
+  configuration.rtcpMuxPolicy = RTCRtcpMuxPolicyRequire;
 
   RTCPeerConnection *peerConnection
     = [self.peerConnectionFactory
