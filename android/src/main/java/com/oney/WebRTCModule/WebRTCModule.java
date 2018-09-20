@@ -204,7 +204,8 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
                 }
             }
         }
-        conf.bundlePolicy = PeerConnection.BundlePolicy.BALANCED;
+//        conf.bundlePolicy = PeerConnection.BundlePolicy.BALANCED;
+        conf.bundlePolicy = PeerConnection.BundlePolicy.MAXBUNDLE;
 
         // rtcpMuxPolicy (public api)
         if (map.hasKey("rtcpMuxPolicy")
