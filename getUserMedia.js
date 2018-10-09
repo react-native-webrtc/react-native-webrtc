@@ -34,7 +34,7 @@ function getDefaultMediaConstraints(mediaType) {
 // see mediaTrackConstraints: https://www.w3.org/TR/mediacapture-streams/#dom-mediatrackconstraints
 function parseMediaConstraints(customConstraints, mediaType) {
   return (mediaType === 'audio'
-      ? RTCUtil.mergeMediaConstraints(customConstraints, {}) // no audio default constraint currently
+      ? RTCUtil.mergeMediaConstraints(customConstraints) // no audio default constraint currently
       : RTCUtil.mergeMediaConstraints(customConstraints, DEFAULT_VIDEO_CONSTRAINTS));
 }
 

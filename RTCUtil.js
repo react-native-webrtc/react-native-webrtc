@@ -1,6 +1,16 @@
 'use strict';
 
 /**
+ * Internal util for deep clone object. Object.assign() only does a shallow copy
+ *
+ * @param {Object} obj - object to be cloned
+ * @return {Object} cloned obj
+ */
+function _deepClone(obj) {
+  return JSON.parse(JSON.stringify(obj));
+}
+
+/**
  * Merge custom constraints with the default one. The custom one take precedence.
  *
  * @param {Object} custom - custom webrtc constraints
@@ -8,7 +18,7 @@
  * @return {Object} constraints - merged webrtc constraints
  */
 export function mergeMediaConstraints(custom, def) {
-  const constraints = (def ? Object.assign({}, def) : {});
+  const constraints = (def ? _deepClone(def) : {});
   if (custom) {
     if (custom.mandatory) {
       constraints.mandatory = {...constraints.mandatory, ...custom.mandatory};
