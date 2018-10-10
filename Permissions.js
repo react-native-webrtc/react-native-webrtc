@@ -47,7 +47,7 @@ class Permissions {
     _requestPermissionAndroid(perm) {
         return new Promise((resolve, reject) => {
             PermissionsAndroid.request(perm).then(
-                granted => resolve(granted === PermissionsAndroid.RESULTS.GRANTED),
+                granted => resolve(granted === true || granted === PermissionsAndroid.RESULTS.GRANTED),
                 () => resolve(false));
         });
     }
