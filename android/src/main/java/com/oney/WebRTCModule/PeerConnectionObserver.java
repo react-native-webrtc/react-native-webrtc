@@ -329,7 +329,7 @@ class PeerConnectionObserver implements PeerConnection.Observer {
                     = remoteStreams.entrySet().iterator();
                 i.hasNext();) {
             Map.Entry<String, MediaStream> e = i.next();
-            if (e.getValue().equals(mediaStream)) {
+            if (e.getValue().getId().equals(mediaStream.getId())) {
                 return e.getKey();
             }
         }

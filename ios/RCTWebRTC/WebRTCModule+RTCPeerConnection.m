@@ -425,12 +425,13 @@ RCT_EXPORT_METHOD(peerConnectionGetStats:(nonnull NSString *)trackID
 }
 
 - (void)peerConnection:(RTCPeerConnection *)peerConnection didRemoveStream:(RTCMediaStream *)stream {
-  NSArray *keysArray = [peerConnection.remoteStreams allKeysForObject:stream];
-  // We assume there can be only one object for 1 key
-  if (keysArray.count > 1) {
-    NSLog(@"didRemoveStream - more than one stream entry found for stream instance with id: %@", stream.streamId);
+  NSString *streamReactTag;
+  for(NSString *key in [peerConnection.remoteStreams allKeys]) {
+      RTCMediaStream *existingStream = [peerConnection.remoteStreams objectForKey:key];
+      if ([existingStream.streamId isEqualToString:stream.streamId]) {
+          streamReactTag = key;
+      }
   }
-  NSString *streamReactTag = keysArray.count ? keysArray[0] : nil;
   if (!streamReactTag) {
     NSLog(@"didRemoveStream - stream not found, id: %@", stream.streamId);
     return;
