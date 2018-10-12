@@ -154,7 +154,7 @@ export default class RTCPeerConnection extends EventTarget(PEER_CONNECTION_EVENT
   setLocalDescription(sessionDescription: RTCSessionDescription) {
     return new Promise((resolve, reject) => {
       WebRTCModule.peerConnectionSetLocalDescription(
-        sessionDescription.toJSON(),
+        sessionDescription.toJSON ? sessionDescription.toJSON() : sessionDescription,
         this._peerConnectionId,
         (successful, data) => {
           if (successful) {
@@ -170,7 +170,7 @@ export default class RTCPeerConnection extends EventTarget(PEER_CONNECTION_EVENT
   setRemoteDescription(sessionDescription: RTCSessionDescription) {
     return new Promise((resolve, reject) => {
       WebRTCModule.peerConnectionSetRemoteDescription(
-        sessionDescription.toJSON(),
+        sessionDescription.toJSON ? sessionDescription.toJSON() : sessionDescription,
         this._peerConnectionId,
         (successful, data) => {
           if (successful) {
