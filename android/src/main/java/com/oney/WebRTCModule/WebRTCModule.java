@@ -57,7 +57,7 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
 
         PeerConnectionFactory.initialize(
             PeerConnectionFactory.InitializationOptions.builder(reactContext)
-                .setEnableVideoHwAcceleration(eglContext != null)
+                .setEnableVideoHwAcceleration( eglContext != null ) // origin is : eglContext != null
                 .createInitializationOptions());
 
         VideoEncoderFactory encoderFactory;
@@ -70,6 +70,7 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
                     /* enableIntelVp8Encoder */ true,
                     /* enableH264HighProfile */ false);
             decoderFactory = new DefaultVideoDecoderFactory(eglContext);
+//            decoderFactory = new SoftwareVideoDecoderFactory();
         } else {
             encoderFactory = new SoftwareVideoEncoderFactory();
             decoderFactory = new SoftwareVideoDecoderFactory();
@@ -81,9 +82,9 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
                 .setVideoDecoderFactory(decoderFactory)
                 .createPeerConnectionFactory();
 
-        if (eglContext != null) {
-            mFactory.setVideoHwAccelerationOptions(eglContext, eglContext);
-        }
+//        if (eglContext != null) {
+//            mFactory.setVideoHwAccelerationOptions(eglContext, eglContext);
+//        }
 
         getUserMediaImpl = new GetUserMediaImpl(this, reactContext);
     }

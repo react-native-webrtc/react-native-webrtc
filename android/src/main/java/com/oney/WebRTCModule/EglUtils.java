@@ -25,18 +25,23 @@ public class EglUtils {
             // "Unable to find any matching EGL config". Fall back to EglBase10
             // in the described scenario.
             EglBase eglBase = null;
-            int[] configAttributes = EglBase.CONFIG_PLAIN;
+            int[] configAttributes = EglBase.CONFIG_PIXEL_RGBA_BUFFER;
             RuntimeException cause = null;
 
-            try {
-                // WebRTC internally does this check in isEGL14Supported, but it's no longer exposed
-                // in the public API
-                if (VERSION.SDK_INT >= 18) {
-                    eglBase = EglBase.createEgl14(configAttributes);
-                }
+//            try {
+//                // WebRTC internally does this check in isEGL14Supported, but it's no longer exposed
+//                // in the public API
+//                if (VERSION.SDK_INT >= 18) {
+//                    eglBase = EglBase.createEgl14(configAttributes);
+//                }
+//            } catch (RuntimeException ex) {
+//                // Fall back to EglBase10.
+//                cause = ex;
+//            }
+
+            try{
+                eglBase = EglBase.create();
             } catch (RuntimeException ex) {
-                // Fall back to EglBase10.
-                cause = ex;
             }
 
             if (eglBase == null) {
