@@ -70,7 +70,6 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
                     /* enableIntelVp8Encoder */ true,
                     /* enableH264HighProfile */ false);
             decoderFactory = new DefaultVideoDecoderFactory(eglContext);
-//            decoderFactory = new SoftwareVideoDecoderFactory();
         } else {
             encoderFactory = new SoftwareVideoEncoderFactory();
             decoderFactory = new SoftwareVideoDecoderFactory();
@@ -82,9 +81,9 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
                 .setVideoDecoderFactory(decoderFactory)
                 .createPeerConnectionFactory();
 
-//        if (eglContext != null) {
-//            mFactory.setVideoHwAccelerationOptions(eglContext, eglContext);
-//        }
+        if (eglContext != null) {
+            mFactory.setVideoHwAccelerationOptions(eglContext, eglContext);
+        }
 
         getUserMediaImpl = new GetUserMediaImpl(this, reactContext);
     }
@@ -205,8 +204,6 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
                 }
             }
         }
-//        conf.bundlePolicy = PeerConnection.BundlePolicy.BALANCED;
-        conf.bundlePolicy = PeerConnection.BundlePolicy.MAXBUNDLE;
 
         // rtcpMuxPolicy (public api)
         if (map.hasKey("rtcpMuxPolicy")
@@ -345,6 +342,13 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
             final boolean v = map.getBoolean("presumeWritableWhenFullyRelayed");
             conf.presumeWritableWhenFullyRelayed = v;
         }
+
+        // We work around for quality and GST
+        //        conf.bundlePolicy = PeerConnection.BundlePolicy.BALANCED;
+        conf.bundlePolicy = PeerConnection.BundlePolicy.MAXBUNDLE;
+        conf.iceTransportsType = PeerConnection.IceTransportsType.RELAY;
+        conf.iceCandidatePoolSize = 16;
+        conf.rtcpMuxPolicy = PeerConnection.RtcpMuxPolicy.REQUIRE;
 
         return conf;
     }
