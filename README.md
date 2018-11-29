@@ -61,7 +61,7 @@ let isFront = true;
 MediaStreamTrack.getSources(sourceInfos => {
   console.log(sourceInfos);
   let videoSourceId;
-  for (const i = 0; i < sourceInfos.length; i++) {
+  for (let i = 0; i < sourceInfos.length; i++) {
     const sourceInfo = sourceInfos[i];
     if(sourceInfo.kind == "video" && sourceInfo.facing == (isFront ? "front" : "back")) {
       videoSourceId = sourceInfo.id;
