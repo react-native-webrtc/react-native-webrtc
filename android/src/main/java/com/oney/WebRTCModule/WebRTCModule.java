@@ -68,7 +68,7 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
                 = new DefaultVideoEncoderFactory(
                     eglContext,
                     /* enableIntelVp8Encoder */ true,
-                    /* enableH264HighProfile */ false);
+                    /* enableH264HighProfile */ true);
             decoderFactory = new DefaultVideoDecoderFactory(eglContext);
         } else {
             encoderFactory = new SoftwareVideoEncoderFactory();
