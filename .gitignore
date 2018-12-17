@@ -11,5 +11,11 @@ ios/RCTWebRTC.xcodeproj/project.xcworkspace
 android/build/
 android/.idea
 android/.gradle
-#android/local.properties
-#android/*.iml
+android/local.properties
+android/*.iml
+
+# node.js
+#
+node_modules/
+npm-debug.log
+yarn-error.log
