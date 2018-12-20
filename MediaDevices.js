@@ -20,7 +20,7 @@ class MediaDevices extends EventTarget(MEDIA_DEVICES_EVENTS) {
      * implementation.
      */
     enumerateDevices() {
-        return new Promise(resolve => WebRTCModule.enumerateDevices(ressolve));
+        return new Promise(resolve => WebRTCModule.enumerateDevices(resolve));
     }
 
     /**

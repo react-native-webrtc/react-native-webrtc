@@ -327,4 +327,9 @@ RCT_CUSTOM_VIEW_PROPERTY(streamURL, NSString *, RTCVideoView) {
   view.videoTrack = videoTrack;
 }
 
++ (BOOL)requiresMainQueueSetup
+{
+    return NO;
+}
+
 @end

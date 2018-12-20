@@ -61,7 +61,7 @@ let isFront = true;
 MediaStreamTrack.getSources(sourceInfos => {
   console.log(sourceInfos);
   let videoSourceId;
-  for (const i = 0; i < sourceInfos.length; i++) {
+  for (let i = 0; i < sourceInfos.length; i++) {
     const sourceInfo = sourceInfos[i];
     if(sourceInfo.kind == "video" && sourceInfo.facing == (isFront ? "front" : "back")) {
       videoSourceId = sourceInfo.id;
@@ -135,22 +135,6 @@ on the fly, without the need for adding / removing tracks or renegotiating.
 Starting with version 1.67, when setting a local video track's enabled state to
 `false`, the camera will be closed, but the track will remain alive. Setting
 it back to `true` will re-enable the camera.
-
-## Demos
-
-**Official Demo**
-
-author: [@oney](https://github.com/oney)
-
-The demo project is https://github.com/oney/RCTWebRTCDemo   
-And you will need a signaling server. I have written a signaling server https://react-native-webrtc.herokuapp.com/ (the repository is https://github.com/oney/react-native-webrtc-server).   
-You can open this website in browser, and then set it as signaling server in the app, and run the app. After you enter the same room ID, the video stream will be connected.
-
-**Demo by Folks**
-
-author: [@thoqbk](https://github.com/thoqbk)
-- Signaling server and web app: https://rewebrtc.herokuapp.com/ (the repository is https://github.com/thoqbk/rewebrtc-server)
-- React native app repository: https://github.com/thoqbk/rewebrtc
 
 ## Native control
 Use [react-native-incall-manager](https://github.com/zxcpoiu/react-native-incall-manager) to keep screen on, mute microphone, etc.

@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		0B56D000212C12EF00213CEE /* WebRTCModule+VideoTrackAdapter.m in Sources */ = {isa = PBXBuildFile; fileRef = 0B56CFFF212C12EF00213CEE /* WebRTCModule+VideoTrackAdapter.m */; };
+		0BC6C06C217F1D54005DCD37 /* WebRTCModule+Permissions.m in Sources */ = {isa = PBXBuildFile; fileRef = 0BC6C06B217F1D54005DCD37 /* WebRTCModule+Permissions.m */; };
 		0BDDA6DD20C17E7C00B38B45 /* RTCMediaStreamTrack+React.m in Sources */ = {isa = PBXBuildFile; fileRef = 0BDDA6DC20C17E7C00B38B45 /* RTCMediaStreamTrack+React.m */; };
 		0BDDA6E020C18B6B00B38B45 /* VideoCaptureController.m in Sources */ = {isa = PBXBuildFile; fileRef = 0BDDA6DF20C18B6B00B38B45 /* VideoCaptureController.m */; };
 		35A222691CB493C00015FD5C /* RTCVideoViewManager.m in Sources */ = {isa = PBXBuildFile; fileRef = 35A222371CB493C00015FD5C /* RTCVideoViewManager.m */; };
@@ -33,6 +34,7 @@
 /* Begin PBXFileReference section */
 		0B56CFFE212C12EF00213CEE /* WebRTCModule+VideoTrackAdapter.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "WebRTCModule+VideoTrackAdapter.h"; sourceTree = "<group>"; };
 		0B56CFFF212C12EF00213CEE /* WebRTCModule+VideoTrackAdapter.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = "WebRTCModule+VideoTrackAdapter.m"; sourceTree = "<group>"; };
+		0BC6C06B217F1D54005DCD37 /* WebRTCModule+Permissions.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = "WebRTCModule+Permissions.m"; sourceTree = "<group>"; };
 		0BDDA6DC20C17E7C00B38B45 /* RTCMediaStreamTrack+React.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = "RTCMediaStreamTrack+React.m"; sourceTree = "<group>"; };
 		0BDDA6DE20C17EA400B38B45 /* RTCMediaStreamTrack+React.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "RTCMediaStreamTrack+React.h"; sourceTree = "<group>"; };
 		0BDDA6DF20C18B6B00B38B45 /* VideoCaptureController.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = VideoCaptureController.m; sourceTree = "<group>"; };
@@ -89,6 +91,7 @@
 				35A222371CB493C00015FD5C /* RTCVideoViewManager.m */,
 				0BDDA6E120C18B8600B38B45 /* VideoCaptureController.h */,
 				0BDDA6DF20C18B6B00B38B45 /* VideoCaptureController.m */,
+				0BC6C06B217F1D54005DCD37 /* WebRTCModule+Permissions.m */,
 				35EC08381CB9AEC400F3D79C /* WebRTCModule+RTCDataChannel.h */,
 				35EC08391CB9AEE900F3D79C /* WebRTCModule+RTCDataChannel.m */,
 				35A2223D1CB493C00015FD5C /* WebRTCModule+RTCMediaStream.m */,
@@ -164,6 +167,7 @@
 				0BDDA6DD20C17E7C00B38B45 /* RTCMediaStreamTrack+React.m in Sources */,
 				35A222701CB493C00015FD5C /* WebRTCModule.m in Sources */,
 				35EC07E61CB73DFE00F3D79C /* RCTConvert+WebRTC.m in Sources */,
+				0BC6C06C217F1D54005DCD37 /* WebRTCModule+Permissions.m in Sources */,
 				35EC083A1CB9AEE900F3D79C /* WebRTCModule+RTCDataChannel.m in Sources */,
 				35A222691CB493C00015FD5C /* RTCVideoViewManager.m in Sources */,
 			);
