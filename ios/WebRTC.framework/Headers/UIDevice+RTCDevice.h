@@ -28,11 +28,18 @@ typedef NS_ENUM(NSInteger, RTCDeviceType) {
   RTCDeviceTypeIPhone6,
   RTCDeviceTypeIPhone6S,
   RTCDeviceTypeIPhone6SPlus,
+  RTCDeviceTypeIPhone7,
+  RTCDeviceTypeIPhone7Plus,
+  RTCDeviceTypeIPhoneSE,
+  RTCDeviceTypeIPhone8,
+  RTCDeviceTypeIPhone8Plus,
+  RTCDeviceTypeIPhoneX,
   RTCDeviceTypeIPodTouch1G,
   RTCDeviceTypeIPodTouch2G,
   RTCDeviceTypeIPodTouch3G,
   RTCDeviceTypeIPodTouch4G,
   RTCDeviceTypeIPodTouch5G,
+  RTCDeviceTypeIPodTouch6G,
   RTCDeviceTypeIPad,
   RTCDeviceTypeIPad2Wifi,
   RTCDeviceTypeIPad2GSM,
@@ -47,10 +54,21 @@ typedef NS_ENUM(NSInteger, RTCDeviceType) {
   RTCDeviceTypeIPad4Wifi,
   RTCDeviceTypeIPad4GSM,
   RTCDeviceTypeIPad4GSM_CDMA,
+  RTCDeviceTypeIPad5,
+  RTCDeviceTypeIPad6,
   RTCDeviceTypeIPadAirWifi,
   RTCDeviceTypeIPadAirCellular,
+  RTCDeviceTypeIPadAirWifiCellular,
+  RTCDeviceTypeIPadAir2,
   RTCDeviceTypeIPadMini2GWifi,
   RTCDeviceTypeIPadMini2GCellular,
+  RTCDeviceTypeIPadMini2GWifiCellular,
+  RTCDeviceTypeIPadMini3,
+  RTCDeviceTypeIPadMini4,
+  RTCDeviceTypeIPadPro9Inch,
+  RTCDeviceTypeIPadPro12Inch,
+  RTCDeviceTypeIPadPro12Inch2,
+  RTCDeviceTypeIPadPro10Inch,
   RTCDeviceTypeSimulatori386,
   RTCDeviceTypeSimulatorx86_64,
 };
@@ -58,8 +76,6 @@ typedef NS_ENUM(NSInteger, RTCDeviceType) {
 @interface UIDevice (RTCDevice)
 
 + (RTCDeviceType)deviceType;
-+ (NSString *)stringForDeviceType:(RTCDeviceType)deviceType;
-+ (BOOL)isIOS9OrLater;
 + (BOOL)isIOS11OrLater;
 
 @end

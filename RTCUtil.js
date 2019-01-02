@@ -1,6 +1,16 @@
 'use strict';
 
 /**
+ * Internal util for deep clone object. Object.assign() only does a shallow copy
+ *
+ * @param {Object} obj - object to be cloned
+ * @return {Object} cloned obj
+ */
+function _deepClone(obj) {
+  return JSON.parse(JSON.stringify(obj));
+}
+
+/**
  * Merge custom constraints with the default one. The custom one take precedence.
  *
  * @param {Object} custom - custom webrtc constraints
@@ -8,7 +18,7 @@
  * @return {Object} constraints - merged webrtc constraints
  */
 export function mergeMediaConstraints(custom, def) {
-  const constraints = (def ? Object.assign({}, def) : {});
+  const constraints = (def ? _deepClone(def) : {});
   if (custom) {
     if (custom.mandatory) {
       constraints.mandatory = {...constraints.mandatory, ...custom.mandatory};
@@ -22,40 +32,4 @@ export function mergeMediaConstraints(custom, def) {
     }
   }
   return constraints;
-}
-
-/**
-* Returns a Promise and legacy callbacks compatible function
-* @param {Function} method - The function to make Promise and legacy callbacks compatible
-* @param {Boolean} [callbackFirst] - Indicate whether or not the success and failure callbacks are the firsts arguments
-* @returns {Function}
-*/
-export function promisify(method, callbackFirst) {
-  return function(...origArgs) {
-    let onSuccess = origArgs[(callbackFirst ? 0 : origArgs.length - 2)];
-    let onFailure = origArgs[(callbackFirst ? 1 : origArgs.length - 1)];
-    let args = origArgs;
-
-    // --- should promisify functions which has only one success callback.
-
-    if (typeof onSuccess === 'function') {
-      args = args.filter(item => item !== onSuccess);
-    } else {
-      onSuccess = function(res) { return res; };
-    }
-
-    if (typeof onFailure === 'function') {
-      args = args.filter(item => item !== onFailure);
-    } else {
-      onFailure = function(err) { throw err; };
-    }
-
-    // --- always pass resolve/reject as callback
-    return new Promise(function(resolve, reject) {
-      const newArgs = (callbackFirst ? [resolve, reject, ...args] : [...args, resolve, reject]);
-      method(...newArgs);
-    })
-    .then(onSuccess)
-    .catch(onFailure);
-  };
 }

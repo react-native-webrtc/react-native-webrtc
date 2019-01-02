@@ -60,8 +60,8 @@ CoreAudio.framework
 CoreVideo.framework
 VideoToolbox.framework
 libc.tbd
+libc++.tbd
 libsqlite3.tbd
-libstdc++.tbd
 ```
 
 4-5.) Under `Build setting` set `Dead Code Stripping` to `No` also under `Build Options` set `Enable Bitcode` to `No` as well  
