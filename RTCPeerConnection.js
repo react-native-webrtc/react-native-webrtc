@@ -361,6 +361,32 @@ export default class RTCPeerConnection extends EventTarget(PEER_CONNECTION_EVENT
         // checking for ResourceInUse.
         this._dataChannelIds.add(id);
         this.dispatchEvent(new RTCDataChannelEvent('datachannel', {channel}));
+      }),
+      DeviceEventEmitter.addListener('peerConnectionAddTrack', ev => {
+        let i;
+        if (ev.id !== this._peerConnectionId) {
+          return;
+        }
+        for (i = 0; i < ev.streams.length; i++) {
+          const streamRef = ev.streams[i];
+          const stream = this._remoteStreams.find(s => s.reactTag === streamRef.reactTag);
+          if (stream) {
+            stream.addTrack(new MediaStreamTrack(ev.track));
+          }
+        }
+      }),
+      DeviceEventEmitter.addListener('peerConnectionRemoveTrack', ev => {
+        let i;
+        if (ev.id !== this._peerConnectionId) {
+          return;
+        }
+        for (i = 0; i < this._remoteStreams.length; i++) {
+          const stream = this._remoteStreams[i];
+          const track = stream._tracks.find(track => track.id === ev.trackId);
+          if (track != null) {
+            stream.removeTrack(track);
+          }
+        }
       })
     ];
   }

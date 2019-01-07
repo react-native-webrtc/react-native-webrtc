@@ -19,6 +19,7 @@
 #import <WebRTC/RTCIceCandidate.h>
 #import <WebRTC/RTCLegacyStatsReport.h>
 #import <WebRTC/RTCSessionDescription.h>
+#import <WebRTC/RTCRtpReceiver.h>
 
 #import "WebRTCModule.h"
 #import "WebRTCModule+RTCDataChannel.h"
@@ -496,6 +497,39 @@ RCT_EXPORT_METHOD(peerConnectionGetStats:(nonnull NSString *)trackID
   // TODO
 }
 
+/** Called when a receiver and its track are created. */
+- (void)peerConnection:(RTCPeerConnection *)peerConnection
+        didAddReceiver:(RTCRtpReceiver *)rtpReceiver
+               streams:(NSArray<RTCMediaStream *> *)mediaStreams {
+    RTCMediaStreamTrack *track = rtpReceiver.track;
+    peerConnection.remoteTracks[track.trackId] = track;
+    NSDictionary *trackInfo = @{@"id": track.trackId, @"kind": track.kind, @"label": track.trackId, @"enabled": @(track.isEnabled), @"remote": @(YES), @"readyState": @"live"};
+    NSMutableArray<NSDictionary *> *streams = [NSMutableArray new];
+    for (RTCMediaStream *stream in mediaStreams) {
+        for (NSString *key in peerConnection.remoteStreams) {
+            if ([peerConnection.remoteStreams[key].streamId isEqualToString:stream.streamId]) {
+                [streams addObject:@{@"reactTag": key, @"id": stream.streamId}];
+                if ([track isKindOfClass:RTCVideoTrack.class]) {
+                    [peerConnection addVideoTrackAdapter:key track:(RTCVideoTrack *)track];
+                }
+            }
+        }
+    }
+    [self.bridge.eventDispatcher sendDeviceEventWithName:@"peerConnectionAddTrack"
+                                                    body:@{@"id": peerConnection.reactTag, @"streams": streams, @"track": trackInfo}];
+}
+
+/** Called when the receiver and its track are removed. */
+- (void)peerConnection:(RTCPeerConnection *)peerConnection
+     didRemoveReceiver:(RTCRtpReceiver *)rtpReceiver {
+    RTCMediaStreamTrack *track = rtpReceiver.track;
+    if ([track isKindOfClass:RTCVideoTrack.class]) {
+        [peerConnection removeVideoTrackAdapter:(RTCVideoTrack *)track];
+    }
+    [peerConnection.remoteTracks removeObjectForKey:track.trackId];
+    [self.bridge.eventDispatcher sendDeviceEventWithName:@"peerConnectionRemoveTrack"
+                                                    body:@{@"id": peerConnection.reactTag, @"trackId": track.trackId}];
+}
 
 /**
  * Parses the constraint keys and values of a specific JavaScript object into
