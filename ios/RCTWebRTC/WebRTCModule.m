@@ -13,6 +13,8 @@
 
 #import "WebRTCModule.h"
 #import "WebRTCModule+RTCPeerConnection.h"
+#import <WebRTC/RTCDefaultVideoDecoderFactory.h>
+#import <WebRTC/RTCDefaultVideoEncoderFactory.h>
 
 @interface WebRTCModule ()
 
@@ -48,12 +50,20 @@
 
 - (instancetype)init
 {
+    return [self initWithEncoderFactory:nil decoderFactory:nil];
+}
+
+- (instancetype)initWithEncoderFactory:(nullable id<RTCVideoEncoderFactory>)encoderFactory
+                        decoderFactory:(nullable id<RTCVideoDecoderFactory>)decoderFactory
+{
   self = [super init];
   if (self) {
-    RTCDefaultVideoDecoderFactory *decoderFactory
-      = [[RTCDefaultVideoDecoderFactory alloc] init];
-    RTCDefaultVideoEncoderFactory *encoderFactory
-      = [[RTCDefaultVideoEncoderFactory alloc] init];
+    if (encoderFactory == nil) {
+      encoderFactory = [RTCDefaultVideoEncoderFactory new];
+    }
+    if (decoderFactory == nil) {
+      decoderFactory = [RTCDefaultVideoDecoderFactory new];
+    }
     _peerConnectionFactory
       = [[RTCPeerConnectionFactory alloc] initWithEncoderFactory:encoderFactory
                                                   decoderFactory:decoderFactory];
@@ -63,8 +73,8 @@
     _localTracks = [NSMutableDictionary new];
 
     dispatch_queue_attr_t attributes =
-    dispatch_queue_attr_make_with_qos_class(DISPATCH_QUEUE_SERIAL,
-                                            QOS_CLASS_USER_INITIATED, -1);
+      dispatch_queue_attr_make_with_qos_class(DISPATCH_QUEUE_SERIAL,
+                                              QOS_CLASS_USER_INITIATED, -1);
     _workerQueue = dispatch_queue_create("WebRTCModule.queue", attributes);
   }
   return self;
