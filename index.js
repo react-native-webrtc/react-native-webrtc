@@ -9,7 +9,7 @@ import MediaStreamTrack from './MediaStreamTrack';
 import mediaDevices from './MediaDevices';
 import permissions from './Permissions';
 
-module.exports = {
+export {
   RTCPeerConnection,
   RTCIceCandidate,
   RTCSessionDescription,
