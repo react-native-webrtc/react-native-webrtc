@@ -4,8 +4,12 @@
 [![npm downloads](https://img.shields.io/npm/dm/react-native-webrtc.svg?maxAge=2592000)](https://img.shields.io/npm/dm/react-native-webrtc.svg?maxAge=2592000)
 
 A WebRTC module for React Native.
-- Support iOS / Android.  
+- Support iOS / Android.
 - Support Video / Audio / Data Channels.
+
+## Comunity
+
+Everyone is welcome to you our [Discourse community](https://react-native-webrtc.discourse.group/) to discuss any React Native and WebRTC related topics.
 
 ## WebRTC Revision
 
@@ -19,13 +23,13 @@ A WebRTC module for React Native.
 | master | [M67](https://chromium.googlesource.com/external/webrtc/+/branch-heads/67)<br>[commit](https://chromium.googlesource.com/external/webrtc/+/89c6af1578dd6ed086fd144fdd19ae5fa7183435)<br>(22779)<br>(+28-23167) | x86_64<br>i386<br>armv7<br>arm64 | armeabi-v7a<br>x86 | :warning: | test me plz |  |
 
 Since `0.53`, we use same branch version number like in webrtc native.
-please see [wiki page](https://github.com/oney/react-native-webrtc/wiki) about revision history 
+please see [wiki page](https://github.com/oney/react-native-webrtc/wiki) about revision history
 
 ### format:
 
 `${branch_name} stable (${branched_from_revision})(+${Cherry-Picks-Num}-${Last-Cherry-Picks-Revision})`
 
-* the webrtc revision in brackets is extracting frrom `Cr-Branched-From` instead `Cr-Commit-Position`  
+* the webrtc revision in brackets is extracting frrom `Cr-Branched-From` instead `Cr-Commit-Position
 * the number follows with `+` is the additional amount of cherry-picks since `Branched-From` revision.
 
 ### note:
@@ -136,7 +140,10 @@ Starting with version 1.67, when setting a local video track's enabled state to
 `false`, the camera will be closed, but the track will remain alive. Setting
 it back to `true` will re-enable the camera.
 
-## Native control
+## Related projects
+
+### react-native-incall-manager
+
 Use [react-native-incall-manager](https://github.com/zxcpoiu/react-native-incall-manager) to keep screen on, mute microphone, etc.
 
 ## Sponsorship
