@@ -7,6 +7,8 @@ A WebRTC module for React Native.
 - Support iOS / Android.
 - Support Video / Audio / Data Channels.
 
+**NOTE** for Expo users: this plugin doesn't work unless you eject.
+
 ## Comunity
 
 Everyone is welcome to you our [Discourse community](https://react-native-webrtc.discourse.group/) to discuss any React Native and WebRTC related topics.
