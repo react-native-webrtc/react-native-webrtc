@@ -26,10 +26,6 @@ type SourceInfo = {
 };
 
 class MediaStreamTrack extends EventTarget(MEDIA_STREAM_TRACK_EVENTS) {
-  static getSources(success: (sources: Array<SourceInfo>) => void) {
-    WebRTCModule.mediaStreamTrackGetSources(success);
-  }
-
   _enabled: boolean;
   id: string;
   kind: string;
