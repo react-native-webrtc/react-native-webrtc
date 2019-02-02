@@ -19,11 +19,9 @@ Everyone is welcome to you our [Discourse community](https://react-native-webrtc
 | :-------------: | :-------------:| :-----: | :-----: | :-----: | :-----: | :-----: |
 | 1.69.0 | [M69](https://chromium.googlesource.com/external/webrtc/+/branch-heads/69)<br>[commit](https://chromium.googlesource.com/external/webrtc/+/9110a54a60d9e0c69128338fc250319ddb751b5a)<br>(24012)<br>(+16-24348) | x86_64<br>i386<br>armv7<br>arm64 | armeabi-v7a<br>x86 | :heavy_check_mark: |  |  |
 | master | [M69](https://chromium.googlesource.com/external/webrtc/+/branch-heads/69)<br>[commit](https://chromium.googlesource.com/external/webrtc/+/9110a54a60d9e0c69128338fc250319ddb751b5a)<br>(24012)<br>(+16-24348) | x86_64<br>i386<br>armv7<br>arm64 | armeabi-v7a<br>x86 | :warning: | test me plz |  |
-  
-  
-Please see [wiki page](https://github.com/oney/react-native-webrtc/wiki) about revision history  
-  
-  
+
+Please see [wiki page](https://github.com/oney/react-native-webrtc/wiki) about revision history.
+
 ## Installation
 
 - [iOS](https://github.com/oney/react-native-webrtc/blob/master/Documentation/iOSInstallation.md)
@@ -32,26 +30,28 @@ Please see [wiki page](https://github.com/oney/react-native-webrtc/wiki) about r
 ## Usage
 Now, you can use WebRTC like in browser.
 In your `index.ios.js`/`index.android.js`, you can require WebRTC to import RTCPeerConnection, RTCSessionDescription, etc.
+
 ```javascript
-var WebRTC = require('react-native-webrtc');
-var {
+import {
   RTCPeerConnection,
   RTCIceCandidate,
   RTCSessionDescription,
   RTCView,
   MediaStream,
   MediaStreamTrack,
+  mediaDevices,
   getUserMedia,
-} = WebRTC;
+} from 'react-native-webrtc';
 ```
-Anything about using RTCPeerConnection, RTCSessionDescription and RTCIceCandidate is like browser.  
+Anything about using RTCPeerConnection, RTCSessionDescription and RTCIceCandidate is like browser.
 Support most WebRTC APIs, please see the [Document](https://developer.mozilla.org/en-US/docs/Web/API/RTCPeerConnection).
+
 ```javascript
-var configuration = {"iceServers": [{"url": "stun:stun.l.google.com:19302"}]};
-var pc = new RTCPeerConnection(configuration);
+const configuration = {"iceServers": [{"url": "stun:stun.l.google.com:19302"}]};
+const pc = new RTCPeerConnection(configuration);
 
 let isFront = true;
-MediaStreamTrack.getSources(sourceInfos => {
+mediaDevices.enumerateDevices().then(sourceInfos => {
   console.log(sourceInfos);
   let videoSourceId;
   for (let i = 0; i < sourceInfos.length; i++) {
@@ -71,17 +71,20 @@ MediaStreamTrack.getSources(sourceInfos => {
       facingMode: (isFront ? "user" : "environment"),
       optional: (videoSourceId ? [{sourceId: videoSourceId}] : [])
     }
-  }, function (stream) {
-    console.log('dddd', stream);
-    callback(stream);
-  }, logError);
+  })
+  .then(stream => {
+    // Got stream!
+  })
+  .catch(error => {
+    // Log error
+  });
 });
 
-pc.createOffer(function(desc) {
-  pc.setLocalDescription(desc, function () {
+pc.createOffer().then(desc => {
+  pc.setLocalDescription(des).then(() => {
     // Send pc.localDescription to peer
-  }, function(e) {});
-}, function(e) {});
+  });
+});
 
 pc.onicecandidate = function (event) {
   // send event.candidate to peer
@@ -93,27 +96,9 @@ pc.onicecandidate = function (event) {
 However, render video stream should be used by React way.
 
 Rendering RTCView.
+
 ```javascript
-var container;
-var RCTWebRTCDemo = React.createClass({
-  getInitialState: function() {
-    return {videoURL: null};
-  },
-  componentDidMount: function() {
-    container = this;
-  },
-  render: function() {
-    return (
-      <View>
-        <RTCView streamURL={this.state.videoURL}/>
-      </View>
-    );
-  }
-});
-```
-And set stream to RTCView
-```javascript
-container.setState({videoURL: stream.toURL()});
+<RTCView streamURL={this.state.stream.toURL()}/>
 ```
 
 ### Custom APIs
