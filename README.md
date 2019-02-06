@@ -39,8 +39,7 @@ import {
   RTCView,
   MediaStream,
   MediaStreamTrack,
-  mediaDevices,
-  getUserMedia,
+  mediaDevices
 } from 'react-native-webrtc';
 ```
 Anything about using RTCPeerConnection, RTCSessionDescription and RTCIceCandidate is like browser.
@@ -60,7 +59,7 @@ mediaDevices.enumerateDevices().then(sourceInfos => {
       videoSourceId = sourceInfo.id;
     }
   }
-  getUserMedia({
+  mediaDevices.getUserMedia({
     audio: true,
     video: {
       mandatory: {
