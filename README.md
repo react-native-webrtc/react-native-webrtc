@@ -141,6 +141,10 @@ it back to `true` will re-enable the camera.
 
 Use [react-native-incall-manager](https://github.com/zxcpoiu/react-native-incall-manager) to keep screen on, mute microphone, etc.
 
+### react-native-callkeep
+
+Use [react-native-callkeep](https://github.com/wazo-pbx/react-native-callkeep) to use callkit on iOS or connection service on Android to have native dialer with your webrtc application.
+
 ## Sponsorship
 This repository doesn't have a plan to get sponsorship.(This can be discussed afterwards by collaborators). If you would like to pay bounty to fix some bugs or get some features, be free to open a issue that adds `[BOUNTY]` category in title. Add other bounty website link like [this](https://www.bountysource.com) will be better.
 
