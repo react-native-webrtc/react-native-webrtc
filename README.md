@@ -102,7 +102,7 @@ mediaDevices.enumerateDevices().then(sourceInfos => {
 });
 
 pc.createOffer().then(desc => {
-  pc.setLocalDescription(des).then(() => {
+  pc.setLocalDescription(desc).then(() => {
     // Send pc.localDescription to peer
   });
 });
