@@ -4,6 +4,7 @@ import android.annotation.SuppressLint;
 import android.content.Context;
 import android.graphics.Color;
 import android.graphics.Point;
+import android.graphics.Color;
 import android.support.v4.view.ViewCompat;
 import android.view.View;
 import android.view.ViewGroup;
@@ -23,6 +24,12 @@ import org.webrtc.RendererCommon.RendererEvents;
 import org.webrtc.RendererCommon.ScalingType;
 import org.webrtc.SurfaceViewRenderer;
 import org.webrtc.VideoTrack;
+
+import com.facebook.react.bridge.Arguments;
+import com.facebook.react.bridge.ReactContext;
+import com.facebook.react.bridge.Callback;
+import com.facebook.react.bridge.WritableMap;
+import com.facebook.react.uimanager.events.RCTEventEmitter;
 
 public class WebRTCView extends ViewGroup {
     /**
@@ -284,9 +291,20 @@ public class WebRTCView extends ViewGroup {
      * rendered) shines through.
      */
     private void onFirstFrameRendered() {
-        post(() -> {
-            Log.d(TAG, "First frame rendered.");
-            surfaceViewRenderer.setBackgroundColor(Color.TRANSPARENT);
+        post(new Runnable() {
+            @Override
+            public void run() {
+                Log.d(TAG, "First frame rendered.");
+
+                WritableMap event = Arguments.createMap();
+                ReactContext reactContext = (ReactContext) getContext();
+                reactContext.getJSModule(RCTEventEmitter.class).receiveEvent(
+                        getId(),
+                        "onFirstFrame",
+                        event
+                );
+                getSurfaceViewRenderer().setBackgroundColor(Color.TRANSPARENT);
+            }
         });
     }
 
