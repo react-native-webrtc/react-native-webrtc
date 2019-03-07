@@ -30,6 +30,8 @@ import com.facebook.react.bridge.Callback;
 import com.facebook.react.bridge.WritableMap;
 import com.facebook.react.uimanager.events.RCTEventEmitter;
 
+import static android.os.Build.VERSION.SDK_INT;
+
 public class WebRTCView extends ViewGroup {
     /**
      * The scaling type to be utilized by default.
@@ -295,6 +297,25 @@ public class WebRTCView extends ViewGroup {
         } finally {
             super.onDetachedFromWindow();
         }
+    }
+
+    @Override
+    public void setScaleX(final float scaleX) {
+        if (SDK_INT < 24) {
+            final WebRTCView self = this;
+
+            final int l = self.getLeft();
+            final int t = self.getTop();
+            final int r = self.getRight();
+            final int b = self.getBottom();
+
+            final int w = Math.round((r - l) * scaleX);
+            final int h = Math.round((b - t) * scaleX);
+
+            self.onLayout(true, 0, 0, w, h);
+            Log.d("###", "" + scaleX);
+        }
+        super.setScaleX(scaleX);
     }
 
     /**
