@@ -50,6 +50,7 @@ typedef NS_ENUM(NSInteger, RTCVideoViewObjectFit) {
  * applications choose to mirror the front/user-facing camera.
  */
 @property (nonatomic) BOOL mirror;
+@property (nonatomic, copy) RCTBubblingEventBlock onChange;
 
 
 /**
@@ -266,8 +267,13 @@ typedef NS_ENUM(NSInteger, RTCVideoViewObjectFit) {
  */
 - (void)videoView:(id<RTCVideoRenderer>)videoView didChangeVideoSize:(CGSize)size {
   if (videoView == self.videoView) {
-    _videoSize = size;
-    [self setNeedsLayout];
+      _videoSize = size;
+      if (self.onChange) {
+          self.onChange(@{
+                                       @"action": @"didChangeVideoSize"
+                                       });
+      }
+      [self setNeedsLayout];
   }
 }
 
@@ -288,6 +294,7 @@ RCT_EXPORT_MODULE()
 }
 
 RCT_EXPORT_VIEW_PROPERTY(mirror, BOOL)
+RCT_EXPORT_VIEW_PROPERTY(onChange, RCTBubblingEventBlock)
 
 /**
  * In the fashion of
