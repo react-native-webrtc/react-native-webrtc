@@ -14,6 +14,7 @@ import com.facebook.react.bridge.ReadableMap;
 import com.facebook.react.bridge.ReadableMapKeySetIterator;
 import com.facebook.react.bridge.ReadableType;
 import com.facebook.react.bridge.WritableMap;
+import com.facebook.react.module.annotations.ReactModule;
 import com.facebook.react.modules.core.DeviceEventManagerModule;
 
 import java.util.ArrayList;
@@ -23,6 +24,7 @@ import java.util.Map;
 
 import org.webrtc.*;
 
+@ReactModule(name = "WebRTCModule")
 public class WebRTCModule extends ReactContextBaseJavaModule {
     static final String TAG = WebRTCModule.class.getCanonicalName();
 
@@ -384,6 +386,25 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
         return stream;
     }
 
+    private MediaStreamTrack getTrack(String trackId) {
+        MediaStreamTrack track = getLocalTrack(trackId);
+
+        if (track == null) {
+            for (int i = 0, size = mPeerConnectionObservers.size();
+                    i < size;
+                    i++) {
+                PeerConnectionObserver pco
+                    = mPeerConnectionObservers.valueAt(i);
+                track = pco.remoteTracks.get(trackId);
+                if (track != null) {
+                    break;
+                }
+            }
+        }
+
+        return track;
+    }
+
     MediaStreamTrack getLocalTrack(String trackId) {
         return getUserMediaImpl.getTrack(trackId);
     }
@@ -565,7 +586,7 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
     }
 
     private void mediaStreamTrackSetEnabledAsync(String id, boolean enabled) {
-        MediaStreamTrack track = getLocalTrack(id);
+        MediaStreamTrack track = getTrack(id);
         if (track == null) {
             Log.d(TAG, "mediaStreamTrackSetEnabled() track is null");
             return;
