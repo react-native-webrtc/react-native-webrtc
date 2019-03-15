@@ -9,28 +9,6 @@ A WebRTC module for React Native.
 
 **NOTE** for Expo users: this plugin doesn't work unless you eject.
 
-## Important note for React Native 0.58 users
-
-React Native 0.58 supports 64bit apps on Android, but this plugin doesn't yet have support for 64bits.
-While this support is added, make sure your app is built only for 32bits, by making sure your app/build.gradle
-has this content in the defaultConfig section:
-
-```
-ndk {
-    abiFilters 'armeabi-v7a', 'x86'
-}
-
-packagingOptions {
-    // The project react-native does not provide 64-bit binaries at the
-    // time of this writing. Unfortunately, packaging any 64-bit
-    // binaries into the .apk will crash the app at runtime on 64-bit
-    // platforms.
-    exclude '/lib/mips64/**'
-    exclude '/lib/arm64-v8a/**'
-    exclude '/lib/x86_64/**'
-}
-```
-
 ## Comunity
 
 Everyone is welcome to you our [Discourse community](https://react-native-webrtc.discourse.group/) to discuss any React Native and WebRTC related topics.
