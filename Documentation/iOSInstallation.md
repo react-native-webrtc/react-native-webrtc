@@ -108,5 +108,5 @@ The script and example are here: https://github.com/oney/react-native-webrtc/blo
 1. go to `react-native-webrtc/tools` folder
 2. extract all archs first: `node ios_arch.js --extract`
 3. re-package device related archs only: `node ios_arch.js --device`
-4. delete files generated from `step 2`
+4. delete files generated from `step 2` under `node_modules/react-native-webrtc/ios WebRTC.framework/` (e.g. with a command `rm node_modules/react-native-webrtc/ios/WebRTC.framework/WebRTC-*` from application root)
 5. you can check current arch use this command: `file node_modules/react-native-webrtc/ios/WebRTC.framework/WebRTC`
