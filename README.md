@@ -127,3 +127,5 @@ Use [react-native-callkeep](https://github.com/wazo-pbx/react-native-callkeep) t
 ## Sponsorship
 This repository doesn't have a plan to get sponsorship.(This can be discussed afterwards by collaborators). If you would like to pay bounty to fix some bugs or get some features, be free to open a issue that adds `[BOUNTY]` category in title. Add other bounty website link like [this](https://www.bountysource.com) will be better.
 
+## Creator
+This repository is originally created by [Wan Huang Yang](https://github.com/oney/).
