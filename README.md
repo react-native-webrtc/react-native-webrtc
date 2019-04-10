@@ -32,53 +32,30 @@ Please see [wiki page](https://github.com/react-native-webrtc/react-native-webrt
 Now, you can use WebRTC like in browser.
 In your `index.ios.js`/`index.android.js`, you can require WebRTC to import RTCPeerConnection, RTCSessionDescription, etc.
 
-```javascript
+Anything about using RTCPeerConnection, RTCSessionDescription and RTCIceCandidate is like browser.
+Support most WebRTC APIs, please see the [Document](https://developer.mozilla.org/en-US/docs/Web/API/RTCPeerConnection).
+
+```Javascript
+import React, { Component } from 'react';
+import {
+  Text,
+  View,
+  TouchableOpacity,
+  StyleSheet,
+}                           from 'react-native';
 import {
   RTCPeerConnection,
   RTCIceCandidate,
   RTCSessionDescription,
-  RTCView,
   MediaStream,
   MediaStreamTrack,
-  mediaDevices
-} from 'react-native-webrtc';
-```
-Anything about using RTCPeerConnection, RTCSessionDescription and RTCIceCandidate is like browser.
-Support most WebRTC APIs, please see the [Document](https://developer.mozilla.org/en-US/docs/Web/API/RTCPeerConnection).
+  RTCView,
+  mediaDevices,
+}                           from 'react-native-webrtc';
 
-```javascript
-const configuration = {"iceServers": [{"url": "stun:stun.l.google.com:19302"}]};
+
+const configuration = { "iceServers": [{ "url": "stun:stun.l.google.com:19302" }] };
 const pc = new RTCPeerConnection(configuration);
-
-let isFront = true;
-mediaDevices.enumerateDevices().then(sourceInfos => {
-  console.log(sourceInfos);
-  let videoSourceId;
-  for (let i = 0; i < sourceInfos.length; i++) {
-    const sourceInfo = sourceInfos[i];
-    if(sourceInfo.kind == "video" && sourceInfo.facing == (isFront ? "front" : "back")) {
-      videoSourceId = sourceInfo.id;
-    }
-  }
-  mediaDevices.getUserMedia({
-    audio: true,
-    video: {
-      mandatory: {
-        minWidth: 500, // Provide your own width, height and frame rate here
-        minHeight: 300,
-        minFrameRate: 30
-      },
-      facingMode: (isFront ? "user" : "environment"),
-      optional: (videoSourceId ? [{sourceId: videoSourceId}] : [])
-    }
-  })
-  .then(stream => {
-    // Got stream!
-  })
-  .catch(error => {
-    // Log error
-  });
-});
 
 pc.createOffer().then(desc => {
   pc.setLocalDescription(desc).then(() => {
@@ -92,14 +69,117 @@ pc.onicecandidate = function (event) {
 
 // also support setRemoteDescription, createAnswer, addIceCandidate, onnegotiationneeded, oniceconnectionstatechange, onsignalingstatechange, onaddstream
 
-```
-However, render video stream should be used by React way.
+export default class App extends Component {
+  state = {
+    stream: "",
+    isFront: true,
+    videoSourceId: null,
+    mirror: false,
+    objectFit: 'contain',
+  };
+  
+  async componentDidMount() {
+    await this.initStream();
+  }
+  
+  initStream = async () => {
+    try {
+      const sourceInfos = await mediaDevices.enumerateDevices();
+      console.log(sourceInfos);
+      
+      await Promise.all(sourceInfos.map(async sourceInfo => {
+        console.log(sourceInfo);
+        
+        if (sourceInfo.kind === 'videoinput' && sourceInfo.label === 'Camera 1, Facing front, Orientation 270') {
+          this.setState({ videoSourceId: sourceInfo.deviceId });
+        }
+      }));
+      
+      const stream = await mediaDevices.getUserMedia({
+        audio: true,
+        video: {
+          mandatory: {
+            minWidth: 500, // Provide your own width, height and frame rate here
+            minHeight: 300,
+            minFrameRate: 30,
+          },
+          facingMode: (this.state.isFront ? 'user' : 'environment'),
+          optional: [{ sourceId: this.state.videoSourceId }],
+        },
+      });
+      
+      this.setState({ stream });
+      console.log(stream);
+    } catch (error) {console.log(error);}
+  };
+  
+  switchCamera = async () => {
+    this.setState({ isFront: !this.state.isFront });
+    await this.initStream();
+  };
+  
+  objectFit = () => {
+    if (this.state.objectFit === 'contain') {
+      this.setState({ objectFit: 'cover' });
+    }
+    if (this.state.objectFit === 'cover') {
+      this.setState({ objectFit: 'contain' });
+    }
+  };
+  
+  button = (func, text) => (
+    <TouchableOpacity style={s.button} onPress={func}>
+      <Text style={s.buttonText}>{text}</Text>
+    </TouchableOpacity>
+  );
+  
+  render() {
+    const { stream, mirror, objectFit } = this.state;
+    
+    return (
+      <View style={s.container}>
+        <RTCView
+          style={s.rtcView}
+          streamURL={stream.id}
+          mirror={mirror}
+          objectFit={objectFit}
+        />
+        {this.button(this.switchCamera, 'Change Camera')}
+        {this.button(() => this.setState({ mirror: !mirror }), 'Mirror')}
+        {this.button(this.objectFit, 'Object Fit (contain/cover)')}
+      </View>
+    );
+  }
+}
 
-Rendering RTCView.
-
-```javascript
-<RTCView streamURL={this.state.stream.toURL()}/>
+const s = StyleSheet.create({
+  container: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: "center",
+    backgroundColor: "#F5FCFF",
+  },
+  rtcView: {
+    flex: 1,
+    width: '100%',
+    marginTop: 10,
+  },
+  button: {
+    flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'blue',
+    borderRadius: 10,
+    margin: 5,
+    padding: 10,
+  },
+  buttonText: {
+    fontSize: 20,
+    color: 'white',
+  },
+});
 ```
+
 
 ### Custom APIs
 
