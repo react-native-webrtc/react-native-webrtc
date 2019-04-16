@@ -3,6 +3,7 @@ import {
   Text,
   View,
   TouchableOpacity,
+  SafeAreaView,
 }                           from 'react-native';
 import {
   RTCPeerConnection,
@@ -64,8 +65,14 @@ export default class App extends Component {
   };
   
   switchCamera = async () => {
-    this.setState({ isFront: !this.state.isFront });
-    await this.initStream();
+    
+    const { stream } = this.state;
+    stream.getVideoTracks().forEach(track => {
+      track._switchCamera();
+    });
+    
+    /*this.setState({ isFront: !this.state.isFront });
+     await this.initStream();*/
   };
   
   objectFit = () => {
@@ -87,17 +94,19 @@ export default class App extends Component {
     const { stream, mirror, objectFit } = this.state;
     
     return (
-      <View style={s.container}>
-        <RTCView
-          style={s.rtcView}
-          streamURL={stream.id}
-          mirror={mirror}
-          objectFit={objectFit}
-        />
-        {this.button(this.switchCamera, 'Change Camera')}
-        {this.button(() => this.setState({ mirror: !mirror }), 'Mirror')}
-        {this.button(this.objectFit, 'Object Fit (contain/cover)')}
-      </View>
+      <SafeAreaView style={{ flex: 1 }}>
+        <View style={s.container}>
+          <RTCView
+            style={s.rtcView}
+            streamURL={stream.id}
+            mirror={mirror}
+            objectFit={objectFit}
+          />
+          {this.button(this.switchCamera, 'Change Camera')}
+          {this.button(() => this.setState({ mirror: !mirror }), 'Mirror')}
+          {this.button(this.objectFit, 'Object Fit (contain/cover)')}
+        </View>
+      </SafeAreaView>
     );
   }
 }
