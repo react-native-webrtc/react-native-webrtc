@@ -428,12 +428,17 @@ RCT_EXPORT_METHOD(peerConnectionGetStats:(nonnull NSString *)trackID
 }
 
 - (void)peerConnection:(RTCPeerConnection *)peerConnection didRemoveStream:(RTCMediaStream *)stream {
-  NSArray *keysArray = [peerConnection.remoteStreams allKeysForObject:stream];
-  // We assume there can be only one object for 1 key
-  if (keysArray.count > 1) {
-    NSLog(@"didRemoveStream - more than one stream entry found for stream instance with id: %@", stream.streamId);
+  // XXX Find the stream by comparing the 'streamId' values. It turns out that WebRTC (as of M69) creates new wrapper
+  // instance for the native media stream before invoking the 'didRemoveStream' callback. This means it's a different
+  // RTCMediaStream instance passed to 'didAddStream' and 'didRemoveStream'.
+  NSString *streamReactTag = nil;
+  for (NSString *aReactTag in peerConnection.remoteStreams) {
+    RTCMediaStream *aStream = peerConnection.remoteStreams[aReactTag];
+    if ([aStream.streamId isEqualToString:stream.streamId]) {
+      streamReactTag = aReactTag;
+      break;
+    }
   }
-  NSString *streamReactTag = keysArray.count ? keysArray[0] : nil;
   if (!streamReactTag) {
     NSLog(@"didRemoveStream - stream not found, id: %@", stream.streamId);
     return;
