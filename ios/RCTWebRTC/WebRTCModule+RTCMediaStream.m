@@ -13,6 +13,7 @@
 
 #import "RTCMediaStreamTrack+React.h"
 #import "WebRTCModule+RTCPeerConnection.h"
+#import "RTCCameraVideoCapturerController.h"
 
 @implementation WebRTCModule (RTCMediaStream)
 
@@ -42,9 +43,9 @@
 
 #if !TARGET_IPHONE_SIMULATOR
   RTCCameraVideoCapturer *videoCapturer = [[RTCCameraVideoCapturer alloc] initWithDelegate:videoSource];
-  VideoCaptureController *videoCaptureController
-        = [[VideoCaptureController alloc] initWithCapturer:videoCapturer
-                                            andConstraints:constraints[@"video"]];
+    id<VideoCaptureControllerProtocol> videoCaptureController
+    = [[RTCCameraVideoCapturerController alloc] initWithCapturer:videoCapturer
+                                                  andConstraints:constraints[@"video"]];
   videoTrack.videoCaptureController = videoCaptureController;
   [videoCaptureController startCapture];
 #endif
@@ -206,7 +207,10 @@ RCT_EXPORT_METHOD(mediaStreamTrackSwitchCamera:(nonnull NSString *)trackID)
   RTCMediaStreamTrack *track = self.localTracks[trackID];
   if (track) {
     RTCVideoTrack *videoTrack = (RTCVideoTrack *)track;
-    [videoTrack.videoCaptureController switchCamera];
+    if ([videoTrack.videoCaptureController conformsToProtocol:@protocol(SwitchProtocol)]) {
+      id<SwitchProtocol> switchableController = (id<SwitchProtocol>) videoTrack.videoCaptureController;
+      [switchableController switchDevice];
+    }
   }
 }
 
