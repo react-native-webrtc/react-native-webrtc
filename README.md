@@ -11,7 +11,7 @@ A WebRTC module for React Native.
 
 ## Comunity
 
-Everyone is welcome to you our [Discourse community](https://react-native-webrtc.discourse.group/) to discuss any React Native and WebRTC related topics.
+Everyone is welcome to our [Discourse community](https://react-native-webrtc.discourse.group/) to discuss any React Native and WebRTC related topics.
 
 ## WebRTC Revision
 
