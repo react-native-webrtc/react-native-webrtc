@@ -16,15 +16,15 @@ static int DEFAULT_FPS    = 30;
     self = [super init];
     if (self) {
         _capturer = capturer;
-        
+
         // Default to the front camera.
         _usingFrontCamera = YES;
-        
+
         // Check the video contraints: examine facingMode and sourceId
         // and pick a default if neither are specified.
         id facingMode = constraints[@"facingMode"];
         id optionalConstraints = constraints[@"optional"];
-        
+
         if (facingMode && [facingMode isKindOfClass:[NSString class]]) {
             AVCaptureDevicePosition position;
             if ([facingMode isEqualToString:@"environment"]) {
@@ -36,7 +36,7 @@ static int DEFAULT_FPS    = 30;
                 // to the front camera.
                 position = AVCaptureDevicePositionFront;
             }
-            
+
             _usingFrontCamera = position == AVCaptureDevicePositionFront;
         } else if (optionalConstraints && [optionalConstraints isKindOfClass:[NSArray class]]) {
             NSArray *options = optionalConstraints;
@@ -51,7 +51,7 @@ static int DEFAULT_FPS    = 30;
             }
         }
     }
-    
+
     return self;
 }
 
@@ -62,38 +62,38 @@ static int DEFAULT_FPS    = 30;
     }
     if (!device) {
         AVCaptureDevicePosition position
-        = _usingFrontCamera
-        ? AVCaptureDevicePositionFront
-        : AVCaptureDevicePositionBack;
+            = _usingFrontCamera
+                ? AVCaptureDevicePositionFront
+                : AVCaptureDevicePositionBack;
         device = [self findDeviceForPosition:position];
     }
-    
+
     // TODO: Extract width and height from constraints.
     AVCaptureDeviceFormat *format
-    = [self selectFormatForDevice:device
-                  withTargetWidth:DEFAULT_WIDTH
-                 withTargetHeight:DEFAULT_HEIGHT];
+        = [self selectFormatForDevice:device
+                      withTargetWidth:DEFAULT_WIDTH
+                     withTargetHeight:DEFAULT_HEIGHT];
     if (!format) {
         NSLog(@"[VideoCaptureController] No valid formats for device %@", device);
-        
+
         return;
     }
-    
+
     // TODO: Extract fps from constraints.
     [_capturer startCaptureWithDevice:device format:format fps:DEFAULT_FPS];
-    
+
     NSLog(@"[VideoCaptureController] Capture started");
 }
 
 -(void)stopCapture {
     [_capturer stopCapture];
-    
+
     NSLog(@"[VideoCaptureController] Capture stopped");
 }
 
 -(void)switchDevice {
     _usingFrontCamera = !_usingFrontCamera;
-    
+
     [self startCapture];
 }
 
@@ -106,7 +106,7 @@ static int DEFAULT_FPS    = 30;
             return device;
         }
     }
-    
+
     return captureDevices[0];
 }
 
@@ -117,7 +117,7 @@ static int DEFAULT_FPS    = 30;
     [RTCCameraVideoCapturer supportedFormatsForDevice:device];
     AVCaptureDeviceFormat *selectedFormat = nil;
     int currentDiff = INT_MAX;
-    
+
     for (AVCaptureDeviceFormat *format in formats) {
         CMVideoDimensions dimension = CMVideoFormatDescriptionGetDimensions(format.formatDescription);
         FourCharCode pixelFormat = CMFormatDescriptionGetMediaSubType(format.formatDescription);
@@ -129,7 +129,7 @@ static int DEFAULT_FPS    = 30;
             selectedFormat = format;
         }
     }
-    
+
     return selectedFormat;
 }
 
