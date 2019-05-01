@@ -109,6 +109,10 @@ export default class RTCPeerConnection extends EventTarget(PEER_CONNECTION_EVENT
     this._localStreams.push(stream);
   }
 
+  addTrack(track: MediaStreamTrack, stream: MediaStream) {
+    this.addStream(stream);
+  }
+
   removeStream(stream: MediaStream) {
     WebRTCModule.peerConnectionRemoveStream(stream.reactTag, this._peerConnectionId);
     let index = this._localStreams.indexOf(stream);
@@ -118,10 +122,16 @@ export default class RTCPeerConnection extends EventTarget(PEER_CONNECTION_EVENT
   }
 
   createOffer(options) {
+    const parsedOptions = {
+      mandatory: {
+        OfferToReceiveAudio: options.offerToReceiveAudio,
+        OfferToReceiveVideo: options.offerToReceiveVideo,
+      }
+    };
     return new Promise((resolve, reject) => {
       WebRTCModule.peerConnectionCreateOffer(
         this._peerConnectionId,
-        RTCUtil.mergeMediaConstraints(options, DEFAULT_SDP_CONSTRAINTS),
+        RTCUtil.mergeMediaConstraints(parsedOptions, DEFAULT_SDP_CONSTRAINTS),
         (successful, data) => {
           if (successful) {
             resolve(new RTCSessionDescription(data));
@@ -133,10 +143,16 @@ export default class RTCPeerConnection extends EventTarget(PEER_CONNECTION_EVENT
   }
 
   createAnswer(options) {
+    const parsedOptions = {
+      mandatory: {
+        OfferToReceiveAudio: options.offerToReceiveAudio,
+        OfferToReceiveVideo: options.offerToReceiveVideo,
+      }
+    };
     return new Promise((resolve, reject) => {
       WebRTCModule.peerConnectionCreateAnswer(
         this._peerConnectionId,
-        RTCUtil.mergeMediaConstraints(options, DEFAULT_SDP_CONSTRAINTS),
+        RTCUtil.mergeMediaConstraints(parsedOptions, DEFAULT_SDP_CONSTRAINTS),
         (successful, data) => {
           if (successful) {
             resolve(new RTCSessionDescription(data));
@@ -184,6 +200,9 @@ export default class RTCPeerConnection extends EventTarget(PEER_CONNECTION_EVENT
   }
 
   addIceCandidate(candidate) {
+    if (!candidate) {
+      return Promise.resolve();
+    }
     return new Promise((resolve, reject) => {
       WebRTCModule.peerConnectionAddICECandidate(
         candidate.toJSON ? candidate.toJSON() : candidate,
