@@ -31,7 +31,7 @@ GN_COMMON_ARGS = [
 
 _GN_IOS_ARGS = [
     'enable_dsyms=true',
-    'enable_ios_bitcode=false',
+    'enable_ios_bitcode=%s',
     'ios_deployment_target="9.0"',
     'ios_enable_code_signing=false',
     'target_os="ios"',
@@ -105,7 +105,7 @@ def setup(target_dir, platform):
         sh('./build/install-build-deps.sh')
 
 
-def build(target_dir, platform, debug):
+def build(target_dir, platform, debug, bitcode):
     build_dir = os.path.join(target_dir, 'build', platform)
     build_type = 'Debug' if debug else 'Release'
     depot_tools_dir = os.path.join(target_dir, 'depot_tools')
@@ -138,7 +138,7 @@ def build(target_dir, platform, debug):
     if platform == 'ios':
         for arch in IOS_BUILD_ARCHS:
             gn_out_dir = 'out/%s-%s' % (build_type, arch)
-            gn_args = GN_IOS_ARGS % (str(debug).lower(), arch)
+            gn_args = GN_IOS_ARGS % (str(debug).lower(), arch, str(bitcode).lower())
             gn_cmd = 'gn gen %s %s' % (gn_out_dir, gn_args)
             sh(gn_cmd, env)
     else:
@@ -202,6 +202,7 @@ if __name__ == "__main__":
     parser.add_argument('--ios', help='Use iOS as the target platform', action='store_true')
     parser.add_argument('--android', help='Use Android as the target platform', action='store_true')
     parser.add_argument('--debug', help='Make a Debug build (defaults to false)', action='store_true')
+    parser.add_argument('--bitcode', help='Enable bitcode (defaults to false)', action='store_true')
 
     args = parser.parse_args()
 
@@ -234,7 +235,7 @@ if __name__ == "__main__":
         sys.exit(0)
 
     if args.build:
-        build(target_dir, platform, args.debug)
+        build(target_dir, platform, args.debug, args.bitcode)
         print('WebRTC build for %s completed in %s' % (platform, target_dir))
         sys.exit(0)
 
