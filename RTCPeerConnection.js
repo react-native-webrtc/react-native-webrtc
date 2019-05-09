@@ -63,6 +63,7 @@ const PEER_CONNECTION_EVENTS = [
   'datachannel',
   // old:
   'addstream',
+  'track',
   'removestream',
 ];
 
@@ -309,7 +310,7 @@ export default class RTCPeerConnection extends EventTarget(PEER_CONNECTION_EVENT
           stream.addTrack(new MediaStreamTrack(tracks[i]));
         }
         this._remoteStreams.push(stream);
-        this.dispatchEvent(new MediaStreamEvent('addstream', {stream}));
+        this.dispatchEvent(new MediaStreamEvent('track', {streams: [stream]}));
       }),
       DeviceEventEmitter.addListener('peerConnectionRemovedStream', ev => {
         if (ev.id !== this._peerConnectionId) {
