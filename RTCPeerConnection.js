@@ -186,7 +186,7 @@ export default class RTCPeerConnection extends EventTarget(PEER_CONNECTION_EVENT
   addIceCandidate(candidate) {
     return new Promise((resolve, reject) => {
       WebRTCModule.peerConnectionAddICECandidate(
-        candidate.toJSON(),
+        candidate.toJSON ? candidate.toJSON() : candidate,
         this._peerConnectionId,
         (successful) => {
           if (successful) {
