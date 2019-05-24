@@ -108,6 +108,10 @@
     }
     config.iceServers = iceServers;
   }
+    
+  if (json[@"bundlePolicy"] != nil && [json[@"bundlePolicy"] isKindOfClass:[NSNumber class]]) {
+    config.bundlePolicy = [json[@"bundlePolicy"] intValue];
+  }
 
   // TODO: Implement the rest of the RTCConfigure options ...
 
