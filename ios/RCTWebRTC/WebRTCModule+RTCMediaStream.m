@@ -121,6 +121,7 @@ RCT_EXPORT_METHOD(enumerateDevices:(RCTResponseSenderBlock)callback) {
     NSArray *videoDevices = [AVCaptureDevice devicesWithMediaType:AVMediaTypeVideo];
     for (AVCaptureDevice *device in videoDevices) {
         [devices addObject:@{
+                             @"facing": device.position,
                              @"deviceId": device.uniqueID,
                              @"groupId": @"",
                              @"label": device.localizedName,
