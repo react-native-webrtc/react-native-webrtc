@@ -14,6 +14,7 @@ import com.facebook.react.bridge.ReadableMap;
 import com.facebook.react.bridge.ReadableMapKeySetIterator;
 import com.facebook.react.bridge.ReadableType;
 import com.facebook.react.bridge.WritableMap;
+import com.facebook.react.module.annotations.ReactModule;
 import com.facebook.react.modules.core.DeviceEventManagerModule;
 
 import java.util.ArrayList;
@@ -24,7 +25,9 @@ import java.util.UUID;
 
 import org.webrtc.*;
 
+@ReactModule(name = WebRTCModule.NAME)
 public class WebRTCModule extends ReactContextBaseJavaModule {
+    static final String NAME = "WebRTCModule";
     static final String TAG = WebRTCModule.class.getCanonicalName();
 
     PeerConnectionFactory mFactory;
@@ -90,7 +93,7 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
 
     @Override
     public String getName() {
-        return "WebRTCModule";
+        return NAME;
     }
 
     private PeerConnection getPeerConnection(int id) {
@@ -344,11 +347,11 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
         }
 
         // We work around for quality and GST
-        //        conf.bundlePolicy = PeerConnection.BundlePolicy.BALANCED;
-        conf.bundlePolicy = PeerConnection.BundlePolicy.MAXBUNDLE;
-        conf.iceTransportsType = PeerConnection.IceTransportsType.RELAY;
-        conf.iceCandidatePoolSize = 16;
-        conf.rtcpMuxPolicy = PeerConnection.RtcpMuxPolicy.REQUIRE;
+        conf.bundlePolicy = PeerConnection.BundlePolicy.BALANCED;
+        // conf.bundlePolicy = PeerConnection.BundlePolicy.MAXBUNDLE;
+        // conf.iceTransportsType = PeerConnection.IceTransportsType.RELAY;
+        // conf.iceCandidatePoolSize = 16;
+        // conf.rtcpMuxPolicy = PeerConnection.RtcpMuxPolicy.REQUIRE;
 
         return conf;
     }
