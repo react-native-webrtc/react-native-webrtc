@@ -120,8 +120,14 @@ RCT_EXPORT_METHOD(enumerateDevices:(RCTResponseSenderBlock)callback) {
     NSMutableArray *devices = [NSMutableArray array];
     NSArray *videoDevices = [AVCaptureDevice devicesWithMediaType:AVMediaTypeVideo];
     for (AVCaptureDevice *device in videoDevices) {
+        NSString *position = @"";
+        if (device.position == 1) {
+            position = @"back";
+        } else if (device.position == 2) {
+            position = @"front";
+        }
         [devices addObject:@{
-                             @"facing": device.position,
+                             @"facing": position,
                              @"deviceId": device.uniqueID,
                              @"groupId": @"",
                              @"label": device.localizedName,
