@@ -6,6 +6,7 @@ import android.util.SparseArray;
 
 import com.facebook.react.bridge.Arguments;
 import com.facebook.react.bridge.Callback;
+import com.facebook.react.bridge.Promise;
 import com.facebook.react.bridge.ReactApplicationContext;
 import com.facebook.react.bridge.ReactContextBaseJavaModule;
 import com.facebook.react.bridge.ReactMethod;
@@ -655,6 +656,47 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
         PeerConnectionObserver pco = mPeerConnectionObservers.get(id);
         if (pco == null || !pco.removeStream(mediaStream)) {
             Log.e(TAG, "peerConnectionRemoveStream() failed");
+        }
+    }
+
+    @ReactMethod
+    public void peerConnectionAddTrack(String trackId, ReadableArray streamIds,
+                                       int id, Promise promise) {
+        ThreadUtils.runOnExecutor(() ->
+            peerConnectionAddTrackAsync(trackId, streamIds, id, promise));
+    }
+
+    private void peerConnectionAddTrackAsync(String trackId, ReadableArray streamIds,
+                                             int id, Promise promise) {
+        PeerConnectionObserver pco = mPeerConnectionObservers.get(id);
+        if (pco == null) {
+            Log.e(TAG, "peerConnectionAddTrack() failed, peerconnection not found");
+            promise.reject("NotFoundError", "peerconnection not found");
+            return;
+        }
+        ArrayList<String> streamIdsList = new ArrayList<String>();
+        for (int i=0; i<streamIds.size(); i++) {
+            streamIdsList.add(streamIds.getString(i));
+        }
+        WritableMap rtpSender = pco.addTrack(trackId, streamIdsList);
+        if (rtpSender == null) {
+            Log.e(TAG, "peerConnectionAddTrack() failed to add track");
+            promise.reject("PeerConnectionError", "failed to add the track");
+            return;
+        }
+        promise.resolve(rtpSender);
+    }
+
+    @ReactMethod
+    public void peerConnectionRemoveTrack(String rtpSenderId, int id) {
+        ThreadUtils.runOnExecutor(() ->
+            peerConnectionRemoveTrackAsync(rtpSenderId, id));
+    }
+
+    private void peerConnectionRemoveTrackAsync(String rtpSenderId, int id) {
+        PeerConnectionObserver pco = mPeerConnectionObservers.get(id);
+        if (pco == null || !pco.removeTrack(rtpSenderId)) {
+            Log.e(TAG, "peerConnectionRemoveTrack() failed");
         }
     }
 

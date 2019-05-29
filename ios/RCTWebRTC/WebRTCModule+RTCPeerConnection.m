@@ -67,6 +67,16 @@
     objc_setAssociatedObject(self, @selector(remoteTracks), remoteTracks, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
 }
 
+- (NSMutableDictionary<NSString *, RTCRtpSender *> *)rtpSenders
+{
+    return objc_getAssociatedObject(self, _cmd);
+}
+
+- (void)setRtpSenders:(NSMutableDictionary<NSString *,RTCRtpSender *> *)rtpSenders
+{
+    objc_setAssociatedObject(self, @selector(rtpSenders), rtpSenders, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+}
+
 - (id)webRTCModule
 {
     return objc_getAssociatedObject(self, _cmd);
@@ -98,6 +108,7 @@ RCT_EXPORT_METHOD(peerConnectionInit:(RTCConfiguration*)configuration
   peerConnection.reactTag = objectID;
   peerConnection.remoteStreams = [NSMutableDictionary new];
   peerConnection.remoteTracks = [NSMutableDictionary new];
+  peerConnection.rtpSenders = [NSMutableDictionary new];
   peerConnection.videoTrackAdapters = [NSMutableDictionary new];
   peerConnection.webRTCModule = self;
   self.peerConnections[objectID] = peerConnection;
@@ -138,6 +149,79 @@ RCT_EXPORT_METHOD(peerConnectionRemoveStream:(nonnull NSString *)streamID object
   }
 
   [peerConnection removeStream:stream];
+}
+
+RCT_EXPORT_METHOD(peerConnectionAddTrack:(nonnull NSString *)trackID
+                               streamIDs:(nonnull NSArray *)streamIDs
+                                objectID:(nonnull NSNumber *)objectID
+                                resolver:(nonnull RCTPromiseResolveBlock)resolve
+                                rejecter:(nonnull RCTPromiseRejectBlock)reject) {
+
+  RTCPeerConnection *peerConnection = self.peerConnections[objectID];
+  if (!peerConnection) {
+    reject(@"NotFoundError", @"peer connection is not found", nil);
+    return;
+  }
+
+
+  RTCMediaStreamTrack *track = nil;
+  BOOL isTrackRemote = NO;
+  if (self.localTracks[trackID]) {
+    track = self.localTracks[trackID];
+  } else {
+    track = peerConnection.remoteTracks[trackID];
+    isTrackRemote = YES;
+  }
+  if (!track) {
+    reject(@"NotFoundError", @"track is not found", nil);
+    return;
+  }
+
+  RTCRtpSender *sender = [peerConnection addTrack: track
+                                        streamIds: streamIDs];
+  if (!sender) {
+    reject(@"PeerConnectionError", @"failed to add the track", nil);
+    return;
+  }
+  peerConnection.rtpSenders[sender.senderId] = sender;
+
+  NSString *trackState;
+  switch (track.readyState) {
+    case RTCMediaStreamTrackStateLive:
+      trackState = @"live";
+      break;
+    case RTCMediaStreamTrackStateEnded:
+      trackState = @"ended";
+      break;
+    default:
+      NSAssert(NO, @"invalid ready state");
+  }
+
+  NSDictionary *serializedTrack = @{@"id": track.trackId,
+                                  @"kind": track.kind,
+                                 @"label": track.trackId,
+                               @"enabled": @(track.isEnabled),
+                                @"remote": @(isTrackRemote),
+                            @"readyState": trackState};
+  NSDictionary *serializedSender = @{@"senderId": sender.senderId,
+                                  @"track": serializedTrack};
+  resolve(serializedSender);
+}
+
+RCT_EXPORT_METHOD(peerConnectionRemoveTrack:(nonnull NSString *)senderID
+                                   objectID:(nonnull NSNumber *)objectID) {
+
+    RTCPeerConnection *peerConnection = self.peerConnections[objectID];
+    if (!peerConnection) {
+        return;
+    }
+    RTCRtpSender *sender = peerConnection.rtpSenders[senderID];
+    if (!sender) {
+        return;
+    }
+
+    [peerConnection.rtpSenders removeObjectForKey: senderID];
+    [peerConnection removeTrack: sender];
 }
 
 
@@ -267,6 +351,7 @@ RCT_EXPORT_METHOD(peerConnectionClose:(nonnull NSNumber *)objectID)
   // Clean up peerConnection's streams and tracks
   [peerConnection.remoteStreams removeAllObjects];
   [peerConnection.remoteTracks removeAllObjects];
+  [peerConnection.rtpSenders removeAllObjects];
 
   // Clean up peerConnection's dataChannels.
   NSMutableDictionary<NSNumber *, RTCDataChannel *> *dataChannels

@@ -14,6 +14,7 @@ import RTCSessionDescription from './RTCSessionDescription';
 import RTCIceCandidate from './RTCIceCandidate';
 import RTCIceCandidateEvent from './RTCIceCandidateEvent';
 import RTCEvent from './RTCEvent';
+import RTCRtpSender from './RTCRtpSender';
 
 const {WebRTCModule} = NativeModules;
 
@@ -110,16 +111,26 @@ export default class RTCPeerConnection extends EventTarget(PEER_CONNECTION_EVENT
     this._localStreams.push(stream);
   }
 
-  addTrack(track: MediaStreamTrack, stream: MediaStream) {
-    this.addStream(stream);
-  }
-
   removeStream(stream: MediaStream) {
     WebRTCModule.peerConnectionRemoveStream(stream.reactTag, this._peerConnectionId);
     let index = this._localStreams.indexOf(stream);
     if (index !== -1) {
       this._localStreams.splice(index, 1);
     }
+  }
+
+  addTrack(track: MediaStreamTrack, ...streams: Array<MediaStream>): Promise<RTCRtpSender> {
+    const streamIds = streams.map(stream => stream.reactTag);
+    return WebRTCModule.peerConnectionAddTrack(track.id, streamIds, this._peerConnectionId)
+      .then((info) => {
+        return new RTCRtpSender(info);
+      });
+  }
+
+  removeTrack(rtpSenderPromise: Promise<RTCRtpSender>) {
+    rtpSenderPromise.then(rtpSender => {
+      WebRTCModule.peerConnectionRemoveTrack(rtpSender.id, this._peerConnectionId);
+    });
   }
 
   createOffer(options) {

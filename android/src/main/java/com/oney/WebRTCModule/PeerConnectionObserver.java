@@ -28,6 +28,7 @@ import org.webrtc.MediaStream;
 import org.webrtc.MediaStreamTrack;
 import org.webrtc.PeerConnection;
 import org.webrtc.RtpReceiver;
+import org.webrtc.RtpSender;
 import org.webrtc.StatsObserver;
 import org.webrtc.StatsReport;
 import org.webrtc.VideoTrack;
@@ -42,6 +43,7 @@ class PeerConnectionObserver implements PeerConnection.Observer {
     final List<MediaStream> localStreams;
     final Map<String, MediaStream> remoteStreams;
     final Map<String, MediaStreamTrack> remoteTracks;
+    final Map<String, RtpSender> rtpSenders;
     private final VideoTrackAdapter videoTrackAdapters;
     private final WebRTCModule webRTCModule;
 
@@ -60,6 +62,7 @@ class PeerConnectionObserver implements PeerConnection.Observer {
         this.localStreams = new ArrayList<MediaStream>();
         this.remoteStreams = new HashMap<String, MediaStream>();
         this.remoteTracks = new HashMap<String, MediaStreamTrack>();
+        this.rtpSenders = new HashMap<String, RtpSender>();
         this.videoTrackAdapters = new VideoTrackAdapter(webRTCModule, id);
     }
 
@@ -100,6 +103,50 @@ class PeerConnectionObserver implements PeerConnection.Observer {
         return localStreams.remove(localStream);
     }
 
+    WritableMap addTrack(String trackId, ArrayList<String> streamIds) {
+        if (peerConnection == null) {
+            return null;
+        }
+        boolean isRemote = false;
+        MediaStreamTrack track = webRTCModule.getLocalTrack(trackId);
+        if (track == null) {
+            track = remoteTracks.get(trackId);
+            isRemote = true;
+        }
+        if (track == null) {
+            return null;
+        }
+        RtpSender rtpSender = peerConnection.addTrack(track, streamIds);
+        if (rtpSender == null) {
+            return null;
+        }
+        rtpSenders.put(rtpSender.id(), rtpSender);
+
+        WritableMap serializedTrack = Arguments.createMap();
+        serializedTrack.putString("id", track.id());
+        serializedTrack.putString("label", track.id());
+        serializedTrack.putString("kind", track.kind());
+        serializedTrack.putBoolean("enabled", track.enabled());
+        serializedTrack.putString("readyState", track.state().toString());
+        serializedTrack.putBoolean("remote", isRemote);
+
+        WritableMap serializedSender = Arguments.createMap();
+        serializedSender.putString("senderId", rtpSender.id());
+        serializedSender.putMap("track", serializedTrack);
+
+        return serializedSender;
+    }
+
+    boolean removeTrack(String rtpSenderId) {
+        RtpSender rtpSender = rtpSenders.get(rtpSenderId);
+        rtpSenders.remove(rtpSenderId);
+
+        if (peerConnection != null && rtpSender != null) {
+            return peerConnection.removeTrack(rtpSender);
+        }
+        return false;
+    }
+
     PeerConnection getPeerConnection() {
         return peerConnection;
     }
@@ -135,6 +182,7 @@ class PeerConnectionObserver implements PeerConnection.Observer {
 
         remoteStreams.clear();
         remoteTracks.clear();
+        rtpSenders.clear();
 
         // Unlike on iOS, we cannot unregister the DataChannel.Observer
         // instance on Android. At least do whatever else we do on iOS.
