@@ -121,9 +121,9 @@ RCT_EXPORT_METHOD(enumerateDevices:(RCTResponseSenderBlock)callback) {
     NSArray *videoDevices = [AVCaptureDevice devicesWithMediaType:AVMediaTypeVideo];
     for (AVCaptureDevice *device in videoDevices) {
         NSString *position = @"";
-        if (device.position == 1) {
+        if (device.position == AVCaptureDevicePositionBack) {
             position = @"back";
-        } else if (device.position == 2) {
+        } else if (device.position == AVCaptureDevicePositionFront) {
             position = @"front";
         }
         [devices addObject:@{
