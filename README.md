@@ -93,6 +93,9 @@ pc.onicecandidate = function (event) {
 // also support setRemoteDescription, createAnswer, addIceCandidate, onnegotiationneeded, oniceconnectionstatechange, onsignalingstatechange, onaddstream
 
 ```
+
+### RTCView
+
 However, render video stream should be used by React way.
 
 Rendering RTCView.
@@ -100,6 +103,14 @@ Rendering RTCView.
 ```javascript
 <RTCView streamURL={this.state.stream.toURL()}/>
 ```
+
+| Name                           | Type             | Default                   | Description                                                                                                                                |
+| ------------------------------ | ---------------- | ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| mirror                         | boolean          | false               | Indicates whether the video specified by "streamURL" should be mirrored during rendering. Commonly, applications choose to mirror theuser-facing camera.                                                                                                                       |
+| objectFit                      | string           | 'contain'           | Can be contain or cover                                                                                                | 
+| streamURL                      | string           | ''                  | This is mandatory                                                                                                                      |
+| zOrder                         | number           | 0                   | Similarly to zIndex                                                                                              |
+
 
 ### Custom APIs
 
