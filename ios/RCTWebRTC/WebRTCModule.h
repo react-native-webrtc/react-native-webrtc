@@ -12,6 +12,7 @@
 #import <React/RCTConvert.h>
 
 #import <WebRTC/RTCMediaStream.h>
+#import <WebRTC/RTCMediaConstraints.h>
 #import <WebRTC/RTCPeerConnectionFactory.h>
 #import <WebRTC/RTCPeerConnection.h>
 #import <WebRTC/RTCAudioTrack.h>
@@ -31,5 +32,6 @@
                         decoderFactory:(id<RTCVideoDecoderFactory>)decoderFactory;
 
 - (RTCMediaStream*)streamForReactTag:(NSString*)reactTag;
+- (RTCMediaConstraints *)parseMediaConstraints:(NSDictionary *)constraints;
 
 @end

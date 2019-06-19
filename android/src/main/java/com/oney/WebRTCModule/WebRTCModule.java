@@ -444,8 +444,8 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
     }
 
     /**
-     * Parses mandatory and optional "GUM" constraints described by a specific
-     * <tt>ReadableMap</tt>.
+     * Parses "GUM" constraints and RtcOfferAnswerOptions described by a
+     * specific <tt>ReadableMap</tt>.
      *
      * @param constraints A <tt>ReadableMap</tt> which represents a JavaScript
      * object specifying the constraints to be parsed into a
@@ -456,29 +456,8 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
      */
     MediaConstraints parseMediaConstraints(ReadableMap constraints) {
         MediaConstraints mediaConstraints = new MediaConstraints();
-
-        if (constraints.hasKey("mandatory")
-                && constraints.getType("mandatory") == ReadableType.Map) {
-            parseConstraints(
-                    constraints.getMap("mandatory"),
-                    mediaConstraints.mandatory);
-        } else {
-            Log.d(TAG, "mandatory constraints are not a map");
-        }
-
-        if (constraints.hasKey("optional")
-                && constraints.getType("optional") == ReadableType.Array) {
-            ReadableArray optional = constraints.getArray("optional");
-
-            for (int i = 0, size = optional.size(); i < size; i++) {
-                if (optional.getType(i) == ReadableType.Map) {
-                    parseConstraints(
-                            optional.getMap(i),
-                            mediaConstraints.optional);
-                }
-            }
-        } else {
-            Log.d(TAG, "optional constraints are not an array");
+        if (constraints != null) {
+            parseConstraints(constraints, mediaConstraints.mandatory);
         }
 
         return mediaConstraints;
@@ -702,14 +681,14 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
 
     @ReactMethod
     public void peerConnectionCreateOffer(int id,
-                                          ReadableMap constraints,
+                                          ReadableMap options,
                                           Callback callback) {
         ThreadUtils.runOnExecutor(() ->
-            peerConnectionCreateOfferAsync(id, constraints, callback));
+            peerConnectionCreateOfferAsync(id, options, callback));
     }
 
     private void peerConnectionCreateOfferAsync(int id,
-                                                ReadableMap constraints,
+                                                ReadableMap options,
                                                 final Callback callback) {
         PeerConnection peerConnection = getPeerConnection(id);
 
@@ -733,7 +712,7 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
 
                 @Override
                 public void onSetSuccess() {}
-            }, parseMediaConstraints(constraints));
+            }, parseMediaConstraints(options));
         } else {
             Log.d(TAG, "peerConnectionCreateOffer() peerConnection is null");
             callback.invoke(false, "peerConnection is null");
@@ -742,14 +721,14 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
 
     @ReactMethod
     public void peerConnectionCreateAnswer(int id,
-                                           ReadableMap constraints,
+                                           ReadableMap options,
                                            Callback callback) {
         ThreadUtils.runOnExecutor(() ->
-            peerConnectionCreateAnswerAsync(id, constraints, callback));
+            peerConnectionCreateAnswerAsync(id, options, callback));
     }
 
     private void peerConnectionCreateAnswerAsync(int id,
-                                                 ReadableMap constraints,
+                                                 ReadableMap options,
                                                  final Callback callback) {
         PeerConnection peerConnection = getPeerConnection(id);
 
@@ -773,7 +752,7 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
 
                 @Override
                 public void onSetSuccess() {}
-            }, parseMediaConstraints(constraints));
+            }, parseMediaConstraints(options));
         } else {
             Log.d(TAG, "peerConnectionCreateAnswer() peerConnection is null");
             callback.invoke(false, "peerConnection is null");

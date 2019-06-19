@@ -102,6 +102,57 @@
   return stream;
 }
 
+/**
+ * Parses the constraint keys and values of a specific JavaScript object into
+ * a specific <tt>NSMutableDictionary</tt> in a format suitable for the
+ * initialization of a <tt>RTCMediaConstraints</tt> instance.
+ *
+ * @param src The JavaScript object which defines constraint keys and values and
+ * which is to be parsed into the specified <tt>dst</tt>.
+ * @param dst The <tt>NSMutableDictionary</tt> into which the constraint keys
+ * and values defined by <tt>src</tt> are to be written in a format suitable for
+ * the initialization of a <tt>RTCMediaConstraints</tt> instance.
+ */
+- (void)parseJavaScriptConstraints:(NSDictionary *)src
+             intoWebRTCConstraints:(NSMutableDictionary<NSString *, NSString *> *)dst {
+
+  for (id srcKey in src) {
+    id srcValue = src[srcKey];
+    NSString *dstValue;
+
+    if ([srcValue isKindOfClass:[NSNumber class]]) {
+      dstValue = [srcValue boolValue] ? @"true" : @"false";
+    } else {
+      dstValue = [srcValue description];
+    }
+    NSString *dstKey = [srcKey description];
+    dst[dstKey] = dstValue;
+  }
+}
+
+/**
+ * Parses a JavaScript object into a new <tt>RTCMediaConstraints</tt> instance.
+ *
+ * @param constraints The JavaScript object to parse into a new
+ * <tt>RTCMediaConstraints</tt> instance.
+ * @returns A new <tt>RTCMediaConstraints</tt> instance initialized with the
+ * mandatory and optional constraint keys and values specified by
+ * <tt>constraints</tt>.
+ */
+- (RTCMediaConstraints *)parseMediaConstraints:(NSDictionary *)constraints {
+  NSMutableDictionary<NSString *, NSString *> *mandatory = [NSMutableDictionary new];
+  if (constraints != nil) {
+    [self parseJavaScriptConstraints:constraints intoWebRTCConstraints:mandatory];
+  }
+
+  NSMutableDictionary<NSString *, NSString *> *optional
+    = [NSMutableDictionary new];
+
+  return [[RTCMediaConstraints alloc] initWithMandatoryConstraints:mandatory
+                                               optionalConstraints:optional];
+}
+
+
 RCT_EXPORT_MODULE();
 
 - (dispatch_queue_t)methodQueue

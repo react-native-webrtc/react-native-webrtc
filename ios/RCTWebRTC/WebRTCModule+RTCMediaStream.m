@@ -25,9 +25,15 @@
  * {@code RTCAudioTrack} instance is to satisfy.
  */
 - (RTCAudioTrack *)createAudioTrack:(NSDictionary *)constraints {
+  RTCMediaConstraints *mediaConstraints = [self parseMediaConstraints:constraints];
+
+  RTCAudioSource *audioSource
+    = [self.peerConnectionFactory audioSourceWithConstraints:mediaConstraints];
+
   NSString *trackId = [[NSUUID UUID] UUIDString];
   RTCAudioTrack *audioTrack
-    = [self.peerConnectionFactory audioTrackWithTrackId:trackId];
+    = [self.peerConnectionFactory audioTrackWithSource:audioSource
+                                               trackId:trackId];
   return audioTrack;
 }
 
@@ -65,6 +71,7 @@ RCT_EXPORT_METHOD(getUserMedia:(NSDictionary *)constraints
   RTCAudioTrack *audioTrack = nil;
   RTCVideoTrack *videoTrack = nil;
 
+  NSLog(@"getUserMedia: constraints=%@", constraints);
 
   if (constraints[@"audio"]) {
       audioTrack = [self createAudioTrack:constraints];

@@ -2,7 +2,6 @@
 
 import EventTarget from 'event-target-shim';
 import {DeviceEventEmitter, NativeModules} from 'react-native';
-import * as RTCUtil from './RTCUtil';
 
 import MediaStream from './MediaStream';
 import MediaStreamEvent from './MediaStreamEvent';
@@ -41,16 +40,29 @@ type RTCIceConnectionState =
   'closed';
 
 /**
- * The default constraints of RTCPeerConnection's createOffer() and
+ * The default options of RTCPeerConnection's createOffer() and
  * createAnswer().
  */
-const DEFAULT_SDP_CONSTRAINTS = {
-  mandatory: {
-    OfferToReceiveAudio: true,
-    OfferToReceiveVideo: true,
-  },
-  optional: [],
+const DEFAULT_SDP_OPTIONS = {
+  OfferToReceiveAudio: true,
+  OfferToReceiveVideo: true,
 };
+
+function parseSdpOptions(options) {
+  let sdpOptions = JSON.parse(JSON.stringify(DEFAULT_SDP_OPTIONS));
+  options = JSON.parse(JSON.stringify(options));
+
+  Object.keys(options).forEach(key => {
+    if (key.toLowerCase() === 'OfferToReceiveAudio'.toLowerCase()) {
+      sdpOptions.OfferToReceiveAudio = options[key];
+    } else if (key.toLowerCase() === 'OfferToReceiveVideo'.toLowerCase()) {
+      sdpOptions.OfferToReceiveVideo = options[key];
+    } else {
+      sdpOptions[key] = options[key];
+    }
+  });
+  return sdpOptions;
+}
 
 const PEER_CONNECTION_EVENTS = [
   'connectionstatechange',
@@ -134,16 +146,11 @@ export default class RTCPeerConnection extends EventTarget(PEER_CONNECTION_EVENT
   }
 
   createOffer(options) {
-    const parsedOptions = {
-      mandatory: {
-        OfferToReceiveAudio: options.offerToReceiveAudio,
-        OfferToReceiveVideo: options.offerToReceiveVideo,
-      }
-    };
     return new Promise((resolve, reject) => {
+      const sdpOptions = parseSdpOptions(options);
       WebRTCModule.peerConnectionCreateOffer(
         this._peerConnectionId,
-        RTCUtil.mergeMediaConstraints(parsedOptions, DEFAULT_SDP_CONSTRAINTS),
+        sdpOptions,
         (successful, data) => {
           if (successful) {
             resolve(new RTCSessionDescription(data));
@@ -155,16 +162,11 @@ export default class RTCPeerConnection extends EventTarget(PEER_CONNECTION_EVENT
   }
 
   createAnswer(options) {
-    const parsedOptions = {
-      mandatory: {
-        OfferToReceiveAudio: options.offerToReceiveAudio,
-        OfferToReceiveVideo: options.offerToReceiveVideo,
-      }
-    };
     return new Promise((resolve, reject) => {
+      const sdpOptions = parseSdpOptions(options);
       WebRTCModule.peerConnectionCreateAnswer(
         this._peerConnectionId,
-        RTCUtil.mergeMediaConstraints(parsedOptions, DEFAULT_SDP_CONSTRAINTS),
+        sdpOptions,
         (successful, data) => {
           if (successful) {
             resolve(new RTCSessionDescription(data));
