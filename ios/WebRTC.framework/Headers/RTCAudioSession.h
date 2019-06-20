@@ -11,7 +11,7 @@
 #import <AVFoundation/AVFoundation.h>
 #import <Foundation/Foundation.h>
 
-#import <WebRTC/RTCMacros.h>
+#import "RTCMacros.h"
 
 NS_ASSUME_NONNULL_BEGIN
 
@@ -27,7 +27,7 @@ extern NSInteger const kRTCAudioSessionErrorConfiguration;
 // Surfaces AVAudioSession events. WebRTC will listen directly for notifications
 // from AVAudioSession and handle them before calling these delegate methods,
 // at which point applications can perform additional processing if required.
-RTC_EXPORT
+RTC_OBJC_EXPORT
 @protocol RTCAudioSessionDelegate <NSObject>
 
 @optional
@@ -102,7 +102,7 @@ RTC_EXPORT
  *  activation state has changed outside of RTCAudioSession. The current known use
  *  case of this is when CallKit activates the audio session for the application
  */
-RTC_EXPORT
+RTC_OBJC_EXPORT
 @protocol RTCAudioSessionActivationDelegate <NSObject>
 
 /** Called when the audio session is activated outside of the app by iOS. */
@@ -120,7 +120,7 @@ RTC_EXPORT
  *  RTCAudioSession also coordinates activation so that the audio session is
  *  activated only once. See |setActive:error:|.
  */
-RTC_EXPORT
+RTC_OBJC_EXPORT
 @interface RTCAudioSession : NSObject <RTCAudioSessionActivationDelegate>
 
 /** Convenience property to access the AVAudioSession singleton. Callers should
@@ -181,6 +181,15 @@ RTC_EXPORT
 @property(readonly) NSTimeInterval outputLatency;
 @property(readonly) NSTimeInterval IOBufferDuration;
 @property(readonly) NSTimeInterval preferredIOBufferDuration;
+
+/**
+ When YES, calls to -setConfiguration:error: and -setConfiguration:active:error: ignore errors in
+ configuring the audio session's "preferred" attributes (e.g. preferredInputNumberOfChannels).
+ Typically, configurations to preferred attributes are optimizations, and ignoring this type of
+ configuration error allows code flow to continue along the happy path when these optimization are
+ not available. The default value of this property is NO.
+ */
+@property(nonatomic) BOOL ignoresPreferredAttributeConfigurationErrors;
 
 /** Default constructor. */
 + (instancetype)sharedInstance;
