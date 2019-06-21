@@ -58,7 +58,6 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
 
         PeerConnectionFactory.initialize(
             PeerConnectionFactory.InitializationOptions.builder(reactContext)
-                .setEnableVideoHwAcceleration(eglContext != null)
                 .createInitializationOptions());
 
         VideoEncoderFactory encoderFactory;
@@ -81,10 +80,6 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
                 .setVideoEncoderFactory(encoderFactory)
                 .setVideoDecoderFactory(decoderFactory)
                 .createPeerConnectionFactory();
-
-        if (eglContext != null) {
-            mFactory.setVideoHwAccelerationOptions(eglContext, eglContext);
-        }
 
         getUserMediaImpl = new GetUserMediaImpl(this, reactContext);
     }
