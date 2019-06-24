@@ -16,7 +16,10 @@
 #import <WebRTC/RTCPeerConnection.h>
 #import <WebRTC/RTCAudioTrack.h>
 #import <WebRTC/RTCVideoTrack.h>
-#import <WebRTC/RTCVideoCodecFactory.h>
+#import <WebRTC/RTCVideoDecoderFactory.h>
+#import <WebRTC/RTCVideoEncoderFactory.h>
+#import <WebRTC/RTCDefaultVideoDecoderFactory.h>
+#import <WebRTC/RTCDefaultVideoEncoderFactory.h>
 
 @interface WebRTCModule : NSObject <RCTBridgeModule>
 
