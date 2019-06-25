@@ -17,9 +17,6 @@ NS_ASSUME_NONNULL_BEGIN
 RTC_OBJC_EXPORT
 @interface RTCRtpEncodingParameters : NSObject
 
-/** The idenfifier for the encoding layer. This is used in simulcast. */
-@property(nonatomic, copy, nullable) NSString *rid;
-
 /** Controls whether the encoding is currently transmitted. */
 @property(nonatomic, assign) BOOL isActive;
 
@@ -50,9 +47,6 @@ RTC_OBJC_EXPORT
 
 /** The SSRC being used by this encoding. */
 @property(nonatomic, readonly, nullable) NSNumber *ssrc;
-
-/** The relative DiffServ Code Point priority. */
-@property(nonatomic, assign) double networkPriority;
 
 - (instancetype)init NS_DESIGNATED_INITIALIZER;
 

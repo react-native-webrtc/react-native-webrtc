@@ -126,11 +126,6 @@ RTC_OBJC_EXPORT
  *  This is only called with RTCSdpSemanticsUnifiedPlan specified.
  */
 @optional
-/** Called any time the IceConnectionState changes following standardized
- * transition. */
-- (void)peerConnection:(RTCPeerConnection *)peerConnection
-    didChangeStandardizedIceConnectionState:(RTCIceConnectionState)newState;
-
 /** Called any time the PeerConnectionState changes. */
 - (void)peerConnection:(RTCPeerConnection *)peerConnection
     didChangeConnectionState:(RTCPeerConnectionState)newState;
