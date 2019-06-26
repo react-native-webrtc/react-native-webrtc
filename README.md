@@ -130,7 +130,7 @@ it back to `true` will re-enable the camera.
 
 ### react-native-incall-manager
 
-Use [react-native-incall-manager](https://github.com/zxcpoiu/react-native-incall-manager) to keep screen on, mute microphone, etc.
+Use [react-native-incall-manager](https://github.com/react-native-webrtc/react-native-incall-manager) to keep screen on, mute microphone, etc.
 
 ### react-native-callkeep
 
