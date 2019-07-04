@@ -116,10 +116,14 @@ RCT_EXPORT_METHOD(getUserMedia:(NSDictionary *)constraints
 
 #pragma mark - Other stream related APIs
 
-RCT_EXPORT_METHOD(enumerateDevices:(RCTResponseSenderBlock)callback) {
+RCT_EXPORT_METHOD(enumerateDevices:(RCTResponseSenderBlock)callback)
+{
     NSMutableArray *devices = [NSMutableArray array];
-    NSArray *videoDevices = [AVCaptureDevice devicesWithMediaType:AVMediaTypeVideo];
-    for (AVCaptureDevice *device in videoDevices) {
+    AVCaptureDeviceDiscoverySession *videoevicesSession
+        = [AVCaptureDeviceDiscoverySession discoverySessionWithDeviceTypes:@[ AVCaptureDeviceTypeBuiltInWideAngleCamera ]
+                                                                 mediaType:AVMediaTypeVideo
+                                                                  position:AVCaptureDevicePositionUnspecified];
+    for (AVCaptureDevice *device in videoevicesSession.devices) {
         NSString *position = @"";
         if (device.position == AVCaptureDevicePositionBack) {
             position = @"back";
@@ -134,8 +138,11 @@ RCT_EXPORT_METHOD(enumerateDevices:(RCTResponseSenderBlock)callback) {
                              @"kind": @"videoinput",
                              }];
     }
-    NSArray *audioDevices = [AVCaptureDevice devicesWithMediaType:AVMediaTypeAudio];
-    for (AVCaptureDevice *device in audioDevices) {
+    AVCaptureDeviceDiscoverySession *audioDevicesSession
+        = [AVCaptureDeviceDiscoverySession discoverySessionWithDeviceTypes:@[ AVCaptureDeviceTypeBuiltInMicrophone ]
+                                                                 mediaType:AVMediaTypeAudio
+                                                                  position:AVCaptureDevicePositionUnspecified];
+    for (AVCaptureDevice *device in audioDevicesSession.devices) {
         [devices addObject:@{
                              @"deviceId": device.uniqueID,
                              @"groupId": @"",
