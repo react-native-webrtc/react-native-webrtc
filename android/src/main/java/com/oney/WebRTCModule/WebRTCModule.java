@@ -53,12 +53,11 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
     private void initAsync() {
         ReactApplicationContext reactContext = getReactApplicationContext();
 
-        // Initialize EGL contexts required for HW acceleration.
+        // Initialize EGL context required for HW acceleration.
         EglBase.Context eglContext = EglUtils.getRootEglBaseContext();
 
         PeerConnectionFactory.initialize(
             PeerConnectionFactory.InitializationOptions.builder(reactContext)
-                .setEnableVideoHwAcceleration(eglContext != null)
                 .createInitializationOptions());
 
         VideoEncoderFactory encoderFactory;
@@ -81,10 +80,6 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
                 .setVideoEncoderFactory(encoderFactory)
                 .setVideoDecoderFactory(decoderFactory)
                 .createPeerConnectionFactory();
-
-        if (eglContext != null) {
-            mFactory.setVideoHwAccelerationOptions(eglContext, eglContext);
-        }
 
         getUserMediaImpl = new GetUserMediaImpl(this, reactContext);
     }

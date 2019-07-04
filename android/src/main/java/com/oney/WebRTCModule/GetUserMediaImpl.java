@@ -87,7 +87,11 @@ class GetUserMediaImpl {
         }
 
         PeerConnectionFactory pcFactory = webRTCModule.mFactory;
-        VideoSource videoSource = pcFactory.createVideoSource(videoCapturer);
+        EglBase.Context eglContext = EglUtils.getRootEglBaseContext();
+        SurfaceTextureHelper surfaceTextureHelper =
+            SurfaceTextureHelper.create("CaptureThread", eglContext);
+        VideoSource videoSource = pcFactory.createVideoSource(videoCapturer.isScreencast());
+        videoCapturer.initialize(surfaceTextureHelper, reactContext, videoSource.getCapturerObserver());
 
         String id = UUID.randomUUID().toString();
         VideoTrack track = pcFactory.createVideoTrack(id, videoSource);
