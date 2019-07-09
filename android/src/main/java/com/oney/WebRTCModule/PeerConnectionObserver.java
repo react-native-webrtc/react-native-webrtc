@@ -206,6 +206,7 @@ class PeerConnectionObserver implements PeerConnection.Observer {
         }
     }
 
+    @SuppressWarnings("deprecation") // TODO(saghul): getStats is deprecated.
     void getStats(String trackId, final Callback cb) {
         MediaStreamTrack track = null;
         if (trackId == null
@@ -213,12 +214,7 @@ class PeerConnectionObserver implements PeerConnection.Observer {
                 || (track = webRTCModule.getLocalTrack(trackId)) != null
                 || (track = remoteTracks.get(trackId)) != null) {
             peerConnection.getStats(
-                    new StatsObserver() {
-                        @Override
-                        public void onComplete(StatsReport[] reports) {
-                            cb.invoke(true, statsToJSON(reports));
-                        }
-                    },
+                reports -> cb.invoke(true, statsToJSON(reports)),
                     track);
         } else {
             Log.e(TAG, "peerConnectionGetStats() MediaStreamTrack not found for id: " + trackId);

@@ -10,21 +10,13 @@
 
 #import <Foundation/Foundation.h>
 
-#import <WebRTC/RTCMacros.h>
-#import <WebRTC/RTCVideoCodecFactory.h>
+#import "RTCMacros.h"
 
-/** Class for H264 specific config. */
-typedef NS_ENUM(NSUInteger, RTCH264PacketizationMode) {
-  RTCH264PacketizationModeNonInterleaved = 0,  // Mode 1 - STAP-A, FU-A is allowed
-  RTCH264PacketizationModeSingleNalUnit        // Mode 0 - only single NALU allowed
-};
-
-RTC_EXPORT
-@interface RTCCodecSpecificInfoH264 : NSObject <RTCCodecSpecificInfo>
-
-@property(nonatomic, assign) RTCH264PacketizationMode packetizationMode;
-
-@end
+RTC_OBJC_EXPORT extern NSString *const kRTCVideoCodecH264Name;
+RTC_OBJC_EXPORT extern NSString *const kRTCLevel31ConstrainedHigh;
+RTC_OBJC_EXPORT extern NSString *const kRTCLevel31ConstrainedBaseline;
+RTC_OBJC_EXPORT extern NSString *const kRTCMaxSupportedH264ProfileLevelConstrainedHigh;
+RTC_OBJC_EXPORT extern NSString *const kRTCMaxSupportedH264ProfileLevelConstrainedBaseline;
 
 /** H264 Profiles and levels. */
 typedef NS_ENUM(NSUInteger, RTCH264Profile) {
@@ -55,7 +47,7 @@ typedef NS_ENUM(NSUInteger, RTCH264Level) {
   RTCH264Level5_2 = 52
 };
 
-RTC_EXPORT
+RTC_OBJC_EXPORT
 @interface RTCH264ProfileLevelId : NSObject
 
 @property(nonatomic, readonly) RTCH264Profile profile;
@@ -65,27 +57,4 @@ RTC_EXPORT
 - (instancetype)initWithHexString:(NSString *)hexString;
 - (instancetype)initWithProfile:(RTCH264Profile)profile level:(RTCH264Level)level;
 
-@end
-
-/** Encoder. */
-RTC_EXPORT
-@interface RTCVideoEncoderH264 : NSObject <RTCVideoEncoder>
-
-- (instancetype)initWithCodecInfo:(RTCVideoCodecInfo *)codecInfo;
-
-@end
-
-/** Decoder. */
-RTC_EXPORT
-@interface RTCVideoDecoderH264 : NSObject <RTCVideoDecoder>
-@end
-
-/** Encoder factory. */
-RTC_EXPORT
-@interface RTCVideoEncoderFactoryH264 : NSObject <RTCVideoEncoderFactory>
-@end
-
-/** Decoder factory. */
-RTC_EXPORT
-@interface RTCVideoDecoderFactoryH264 : NSObject <RTCVideoDecoderFactory>
 @end
