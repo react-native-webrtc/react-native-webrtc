@@ -181,9 +181,6 @@
     if (json[@"ordered"]) {
       init.isOrdered = [RCTConvert BOOL:json[@"ordered"]];
     }
-    if (json[@"maxRetransmitTime"]) {
-      init.maxRetransmitTimeMs = [RCTConvert NSInteger:json[@"maxRetransmitTime"]];
-    }
     if (json[@"maxRetransmits"]) {
       init.maxRetransmits = [RCTConvert int:json[@"maxRetransmits"]];
     }

@@ -8,14 +8,14 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#import <WebRTC/RTCMacros.h>
-#import <WebRTC/RTCMediaStreamTrack.h>
+#import "RTCMacros.h"
+#import "RTCMediaStreamTrack.h"
 
 NS_ASSUME_NONNULL_BEGIN
 
 @class RTCAudioSource;
 
-RTC_EXPORT
+RTC_OBJC_EXPORT
 @interface RTCAudioTrack : RTCMediaStreamTrack
 
 - (instancetype)init NS_UNAVAILABLE;
