@@ -23,6 +23,8 @@ import java.util.List;
 import java.util.Map;
 
 import org.webrtc.*;
+import org.webrtc.audio.AudioDeviceModule;
+import org.webrtc.audio.JavaAudioDeviceModule;
 
 @ReactModule(name = "WebRTCModule")
 public class WebRTCModule extends ReactContextBaseJavaModule {
@@ -38,45 +40,83 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
      */
     private GetUserMediaImpl getUserMediaImpl;
 
+    public static class Options {
+        private VideoEncoderFactory videoEncoderFactory = null;
+        private VideoDecoderFactory videoDecoderFactory = null;
+        private AudioDeviceModule audioDeviceModule = null;
+
+        public Options() {}
+
+        public void setAudioDeviceModule(AudioDeviceModule audioDeviceModule) {
+            this.audioDeviceModule = audioDeviceModule;
+        }
+
+        public void setVideoDecoderFactory(VideoDecoderFactory videoDecoderFactory) {
+            this.videoDecoderFactory = videoDecoderFactory;
+        }
+
+        public void setVideoEncoderFactory(VideoEncoderFactory videoEncoderFactory) {
+            this.videoEncoderFactory = videoEncoderFactory;
+        }
+    }
+
     public WebRTCModule(ReactApplicationContext reactContext) {
+        this(reactContext, null);
+    }
+
+    public WebRTCModule(ReactApplicationContext reactContext, Options options) {
         super(reactContext);
 
         mPeerConnectionObservers = new SparseArray<>();
         localStreams = new HashMap<>();
 
-        ThreadUtils.runOnExecutor(() -> initAsync());
+        ThreadUtils.runOnExecutor(() -> initAsync(options));
     }
 
     /**
      * Invoked asynchronously to initialize this {@code WebRTCModule} instance.
      */
-    private void initAsync() {
+    private void initAsync(Options options) {
         ReactApplicationContext reactContext = getReactApplicationContext();
-
-        // Initialize EGL context required for HW acceleration.
-        EglBase.Context eglContext = EglUtils.getRootEglBaseContext();
 
         PeerConnectionFactory.initialize(
             PeerConnectionFactory.InitializationOptions.builder(reactContext)
                 .createInitializationOptions());
 
-        VideoEncoderFactory encoderFactory;
-        VideoDecoderFactory decoderFactory;
+        AudioDeviceModule adm = null;
+        VideoEncoderFactory encoderFactory = null;
+        VideoDecoderFactory decoderFactory = null;
 
-        if (eglContext != null) {
-            encoderFactory
-                = new DefaultVideoEncoderFactory(
+        if (options != null) {
+            adm = options.audioDeviceModule;
+            encoderFactory = options.videoEncoderFactory;
+            decoderFactory = options.videoDecoderFactory;
+        }
+
+        if (encoderFactory == null || decoderFactory == null) {
+            // Initialize EGL context required for HW acceleration.
+            EglBase.Context eglContext = EglUtils.getRootEglBaseContext();
+
+            if (eglContext != null) {
+                encoderFactory
+                    = new DefaultVideoEncoderFactory(
                     eglContext,
                     /* enableIntelVp8Encoder */ true,
                     /* enableH264HighProfile */ false);
-            decoderFactory = new DefaultVideoDecoderFactory(eglContext);
-        } else {
-            encoderFactory = new SoftwareVideoEncoderFactory();
-            decoderFactory = new SoftwareVideoDecoderFactory();
+                decoderFactory = new DefaultVideoDecoderFactory(eglContext);
+            } else {
+                encoderFactory = new SoftwareVideoEncoderFactory();
+                decoderFactory = new SoftwareVideoDecoderFactory();
+            }
+        }
+
+        if (adm == null) {
+            adm = JavaAudioDeviceModule.builder(reactContext).createAudioDeviceModule();
         }
 
         mFactory
             = PeerConnectionFactory.builder()
+                .setAudioDeviceModule(adm)
                 .setVideoEncoderFactory(encoderFactory)
                 .setVideoDecoderFactory(decoderFactory)
                 .createPeerConnectionFactory();

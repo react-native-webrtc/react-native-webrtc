@@ -109,6 +109,8 @@ class PeerConnectionObserver implements PeerConnection.Observer {
     }
 
     void close() {
+        Log.d(TAG, "PeerConnection.close() for " + id);
+
         // Close the PeerConnection first to stop any events.
         peerConnection.close();
 
@@ -122,9 +124,9 @@ class PeerConnectionObserver implements PeerConnection.Observer {
         }
 
         // Remove video track adapters
-        for (MediaStreamTrack track : remoteTracks.values()) {
-            if (track.kind().equals("video")) {
-                videoTrackAdapters.removeAdapter((VideoTrack) track);
+        for (MediaStream stream : remoteStreams.values()) {
+            for (VideoTrack videoTrack : stream.videoTracks) {
+                videoTrackAdapters.removeAdapter(videoTrack);
             }
         }
 
