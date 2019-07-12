@@ -28,6 +28,8 @@ public class VideoCaptureController {
     private static final int DEFAULT_HEIGHT = 720;
     private static final int DEFAULT_FPS    = 30;
 
+    private boolean isFrontFacing;
+
     /**
      * Values for width, height and fps (respectively) which will be
      * used to open the camera at.
@@ -35,6 +37,8 @@ public class VideoCaptureController {
     private int width  = DEFAULT_WIDTH;
     private int height = DEFAULT_HEIGHT;
     private int fps    = DEFAULT_FPS;
+
+    private CameraEnumerator cameraEnumerator;
 
     /**
      * The {@link CameraEventsHandler} used with
@@ -52,6 +56,8 @@ public class VideoCaptureController {
 
     public VideoCaptureController(CameraEnumerator cameraEnumerator,
                                   ReadableMap constraints) {
+        this.cameraEnumerator = cameraEnumerator;
+
         ReadableMap videoConstraintsMandatory = null;
 
         if (constraints.hasKey("mandatory")
@@ -62,8 +68,7 @@ public class VideoCaptureController {
         String sourceId = getSourceIdConstraint(constraints);
         String facingMode = getFacingMode(constraints);
 
-        videoCapturer
-            = createVideoCapturer(cameraEnumerator, sourceId, facingMode);
+        videoCapturer = createVideoCapturer(sourceId, facingMode);
 
         if (videoConstraintsMandatory != null) {
             width = videoConstraintsMandatory.hasKey("minWidth")
@@ -110,16 +115,70 @@ public class VideoCaptureController {
 
     public void switchCamera() {
         if (videoCapturer instanceof CameraVideoCapturer) {
-            ((CameraVideoCapturer) videoCapturer).switchCamera(null);
+            CameraVideoCapturer capturer = (CameraVideoCapturer) videoCapturer;
+            String[] deviceNames = cameraEnumerator.getDeviceNames();
+            int deviceCount = deviceNames.length;
+
+            // Nothing to switch to.
+            if (deviceCount < 2) {
+                return;
+            }
+
+            // The usual case.
+            if (deviceCount == 2) {
+                capturer.switchCamera(new CameraVideoCapturer.CameraSwitchHandler() {
+                    @Override
+                    public void onCameraSwitchDone(boolean b) {
+                        isFrontFacing = b;
+                    }
+
+                    @Override
+                    public void onCameraSwitchError(String s) {
+                        Log.e(TAG, "Error switching camera: " + s);
+                    }
+                });
+                return;
+            }
+
+            // If we are here the device has more than 2 cameras. Cycle through them
+            // and switch to the first one of the desired facing mode.
+            switchCamera(!isFrontFacing, deviceCount);
         }
+    }
+
+    /**
+     * Helper function which tries to switch cameras until the desired facing mode is found.
+     *
+     * @param desiredFrontFacing - The desired front facing value.
+     * @param tries - How many times to try switching.
+     */
+    private void switchCamera(boolean desiredFrontFacing, int tries) {
+        CameraVideoCapturer capturer = (CameraVideoCapturer) videoCapturer;
+
+        capturer.switchCamera(new CameraVideoCapturer.CameraSwitchHandler() {
+            @Override
+            public void onCameraSwitchDone(boolean b) {
+                if (b != desiredFrontFacing) {
+                    int newTries = tries-1;
+                    if (newTries > 0) {
+                        switchCamera(desiredFrontFacing, newTries);
+                    }
+                } else {
+                    isFrontFacing = desiredFrontFacing;
+                }
+            }
+
+            @Override
+            public void onCameraSwitchError(String s) {
+                Log.e(TAG, "Error switching camera: " + s);
+            }
+        });
     }
 
     /**
      * Constructs a new {@code VideoCapturer} instance attempting to satisfy
      * specific constraints.
      *
-     * @param enumerator a {@code CameraEnumerator} provided by WebRTC. It can
-     * be {@code Camera1Enumerator} or {@code Camera2Enumerator}.
      * @param sourceId the ID of the requested video source. If not
      * {@code null} and a {@code VideoCapturer} can be created for it, then
      * {@code facingMode} is ignored.
@@ -129,11 +188,8 @@ public class VideoCaptureController {
      * @return a {@code VideoCapturer} satisfying the {@code facingMode} or
      * {@code sourceId} constraint
      */
-    private VideoCapturer createVideoCapturer(
-            CameraEnumerator enumerator,
-            String sourceId,
-            String facingMode) {
-        String[] deviceNames = enumerator.getDeviceNames();
+    private VideoCapturer createVideoCapturer(String sourceId, String facingMode) {
+        String[] deviceNames = cameraEnumerator.getDeviceNames();
         List<String> failedDevices = new ArrayList<>();
 
         // If sourceId is specified, then it takes precedence over facingMode.
@@ -141,10 +197,11 @@ public class VideoCaptureController {
             for (String name : deviceNames) {
                 if (name.equals(sourceId)) {
                     VideoCapturer videoCapturer
-                        = enumerator.createCapturer(name, cameraEventsHandler);
+                        = cameraEnumerator.createCapturer(name, cameraEventsHandler);
                     String message = "Create user-specified camera " + name;
                     if (videoCapturer != null) {
                         Log.d(TAG, message + " succeeded");
+                        this.isFrontFacing = cameraEnumerator.isFrontFacing(name);
                         return videoCapturer;
                     } else {
                         Log.d(TAG, message + " failed");
@@ -164,7 +221,7 @@ public class VideoCaptureController {
             }
             try {
                 // This can throw an exception when using the Camera 1 API.
-                if (enumerator.isFrontFacing(name) != isFrontFacing) {
+                if (cameraEnumerator.isFrontFacing(name) != isFrontFacing) {
                     continue;
                 }
             } catch (Exception e) {
@@ -176,10 +233,11 @@ public class VideoCaptureController {
                 continue;
             }
             VideoCapturer videoCapturer
-                = enumerator.createCapturer(name, cameraEventsHandler);
+                = cameraEnumerator.createCapturer(name, cameraEventsHandler);
             String message = "Create camera " + name;
             if (videoCapturer != null) {
                 Log.d(TAG, message + " succeeded");
+                this.isFrontFacing = cameraEnumerator.isFrontFacing(name);
                 return videoCapturer;
             } else {
                 Log.d(TAG, message + " failed");
@@ -191,10 +249,11 @@ public class VideoCaptureController {
         for (String name : deviceNames) {
             if (!failedDevices.contains(name)) {
                 VideoCapturer videoCapturer
-                    = enumerator.createCapturer(name, cameraEventsHandler);
+                    = cameraEnumerator.createCapturer(name, cameraEventsHandler);
                 String message = "Create fallback camera " + name;
                 if (videoCapturer != null) {
                     Log.d(TAG, message + " succeeded");
+                    this.isFrontFacing = cameraEnumerator.isFrontFacing(name);
                     return videoCapturer;
                 } else {
                     Log.d(TAG, message + " failed");
