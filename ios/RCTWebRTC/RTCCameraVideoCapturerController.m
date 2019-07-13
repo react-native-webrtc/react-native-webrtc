@@ -1,12 +1,11 @@
 
-#import "VideoCaptureController.h"
+#import "RTCCameraVideoCapturerController.h"
 
 static int DEFAULT_WIDTH  = 1280;
 static int DEFAULT_HEIGHT = 720;
 static int DEFAULT_FPS    = 30;
 
-
-@implementation VideoCaptureController {
+@implementation RTCCameraVideoCapturerController {
     RTCCameraVideoCapturer *_capturer;
     NSString *_sourceId;
     BOOL _usingFrontCamera;
@@ -92,7 +91,7 @@ static int DEFAULT_FPS    = 30;
     NSLog(@"[VideoCaptureController] Capture stopped");
 }
 
--(void)switchCamera {
+-(void)switchDevice {
     _usingFrontCamera = !_usingFrontCamera;
 
     [self startCapture];

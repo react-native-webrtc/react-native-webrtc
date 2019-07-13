@@ -4,11 +4,11 @@
 
 @implementation RTCMediaStreamTrack (React)
 
-- (VideoCaptureController *)videoCaptureController {
+- (id<VideoCaptureControllerProtocol>)videoCaptureController {
     return objc_getAssociatedObject(self, @selector(videoCaptureController));
 }
 
-- (void)setVideoCaptureController:(VideoCaptureController *)videoCaptureController {
+- (void)setVideoCaptureController:(id<VideoCaptureControllerProtocol>)videoCaptureController {
     objc_setAssociatedObject(self, @selector(videoCaptureController), videoCaptureController, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
 }
 
