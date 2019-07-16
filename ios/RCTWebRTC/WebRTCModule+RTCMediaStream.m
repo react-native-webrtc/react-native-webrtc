@@ -52,6 +52,26 @@
   return videoTrack;
 }
 
+RCT_EXPORT_METHOD(useAudioOutput: (NSInteger)audioUsageAndroid :(NSInteger) audioUsageIos) {
+    AVAudioSession *audioSession = [AVAudioSession sharedInstance];
+    NSError *error = nil;
+    NSString *mode = @"";
+    switch(audioUsageIos) {
+        case 1: mode = AVAudioSessionModeDefault; break;
+        case 2: mode = AVAudioSessionModeGameChat; break;
+        case 3: mode = AVAudioSessionModeMeasurement; break;
+        case 4: mode = AVAudioSessionModeMoviePlayback; break;
+        case 5: mode = AVAudioSessionModeSpokenAudio; break;
+        case 6: mode = AVAudioSessionModeVideoChat; break;
+        case 7: mode = AVAudioSessionModeVideoRecording; break;
+        case 8: mode = AVAudioSessionModeVoiceChat; break;
+        case 9: mode = AVAudioSessionModeVoicePrompt; break;
+        default: mode = AVAudioSessionModeDefault;
+    }
+    mode = AVAudioSessionModeMoviePlayback;
+    [audioSession setMode:mode error: &error];
+}
+
 /**
   * Implements {@code getUserMedia}. Note that at this point constraints have
   * been normalized and permissions have been granted. The constraints only
