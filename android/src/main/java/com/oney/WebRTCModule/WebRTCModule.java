@@ -880,20 +880,37 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
     }
 
     @ReactMethod
-    public void peerConnectionGetStats(String trackId, int id, Callback cb) {
+    public void peerConnectionGetStats(int id, Callback cb) {
         ThreadUtils.runOnExecutor(() ->
-            peerConnectionGetStatsAsync(trackId, id, cb));
+            peerConnectionGetStatsAsync(id, cb));
     }
 
-    private void peerConnectionGetStatsAsync(String trackId,
-                                             int id,
+    private void peerConnectionGetStatsAsync(int id,
                                              Callback cb) {
         PeerConnectionObserver pco = mPeerConnectionObservers.get(id);
         if (pco == null || pco.getPeerConnection() == null) {
             Log.d(TAG, "peerConnectionGetStats() peerConnection is null");
             cb.invoke(false, "PeerConnection ID not found");
         } else {
-            pco.getStats(trackId, cb);
+            pco.getStats(cb);
+        }
+    }
+
+    @ReactMethod
+    public void peerConnectionGetStatsForTrack(String trackId, int id, Callback cb) {
+        ThreadUtils.runOnExecutor(() ->
+            peerConnectionGetStatsForTrackAsync(trackId, id, cb));
+    }
+
+    private void peerConnectionGetStatsForTrackAsync(String trackId,
+                                                     int id,
+                                                     Callback cb) {
+        PeerConnectionObserver pco = mPeerConnectionObservers.get(id);
+        if (pco == null || pco.getPeerConnection() == null) {
+            Log.d(TAG, "peerConnectionGetStatsForTrack() peerConnection is null");
+            cb.invoke(false, "PeerConnection ID not found");
+        } else {
+            pco.getStatsForTrack(trackId, cb);
         }
     }
 

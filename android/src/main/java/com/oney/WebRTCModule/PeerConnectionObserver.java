@@ -27,6 +27,8 @@ import org.webrtc.IceCandidate;
 import org.webrtc.MediaStream;
 import org.webrtc.MediaStreamTrack;
 import org.webrtc.PeerConnection;
+import org.webrtc.RTCStats;
+import org.webrtc.RTCStatsReport;
 import org.webrtc.RtpReceiver;
 import org.webrtc.RtpSender;
 import org.webrtc.StatsObserver;
@@ -254,20 +256,87 @@ class PeerConnectionObserver implements PeerConnection.Observer {
         }
     }
 
+    void getStats(final Callback cb) {
+        peerConnection.getStats(
+            stats -> {
+                cb.invoke(true, statsToJSON(stats));
+            }
+        );
+    }
+
     @SuppressWarnings("deprecation") // TODO(saghul): getStats is deprecated.
-    void getStats(String trackId, final Callback cb) {
+    void getStatsForTrack(String trackId, final Callback cb) {
         MediaStreamTrack track = null;
         if (trackId == null
                 || trackId.isEmpty()
                 || (track = webRTCModule.getLocalTrack(trackId)) != null
                 || (track = remoteTracks.get(trackId)) != null) {
             peerConnection.getStats(
-                reports -> cb.invoke(true, statsToJSON(reports)),
+                reports -> cb.invoke(true, legacyStatsToJSON(reports)),
                     track);
         } else {
-            Log.e(TAG, "peerConnectionGetStats() MediaStreamTrack not found for id: " + trackId);
+            Log.e(TAG, "peerConnectionGetStatsForTrack() MediaStreamTrack not found for id: " + trackId);
             cb.invoke(false, "Track not found");
         }
+    }
+
+    private void appendStatValue(StringBuilder s, Object value) {
+        if (value instanceof Object[]) {
+            s.append("[");
+            Object[] arrayValue = (Object[])value;
+            for(int i = 0; i < arrayValue.length; ++i) {
+                if (i != 0) {
+                    s.append(",");
+                }
+                appendStatValue(s, arrayValue[i]);
+            }
+            s.append("]");
+        } else if (value instanceof String) {
+            s.append("\"").append((String)value).append("\"");
+        } else {
+            s.append(value);
+        }
+    }
+
+    private void appendRtcStat(StringBuilder s, RTCStats stat) {
+        s.append("{");
+        s.append("\"timestamp\":").append(stat.getTimestampUs());
+        s.append(",\"type\":\"").append(stat.getType());
+        s.append("\",\"id\":\"").append(stat.getId()).append("\"");
+        for (Iterator iter = stat.getMembers().entrySet().iterator(); iter.hasNext();) {
+            Map.Entry<String, Object> entry = (Map.Entry)iter.next();
+            s.append(",\"").append(entry.getKey()).append("\":");
+            appendStatValue(s, entry.getValue());
+        }
+        s.append("}");
+    }
+
+    private String statsToJSON(RTCStatsReport statsReport) {
+        // If possible, reuse a single StringBuilder instance across multiple
+        // getStats method calls in order to reduce the total number of
+        // allocations.
+        StringBuilder s = statsToJSONStringBuilder.get();
+        if (s == null) {
+            s = new StringBuilder();
+            statsToJSONStringBuilder = new SoftReference(s);
+        }
+
+        s.append("{");
+        s.append("\"timestamp\":").append(statsReport.getTimestampUs());
+        for (Iterator iter = statsReport.getStatsMap().entrySet().iterator(); iter.hasNext();) {
+            Map.Entry<String, RTCStats> entry = (Map.Entry)iter.next();
+            s.append(",\"").append(entry.getKey()).append("\":");
+            appendRtcStat(s, entry.getValue());
+        }
+        s.append("}");
+
+        String r = s.toString();
+        // Prepare the StringBuilder instance for reuse (in order to reduce the
+        // total number of allocations performed during multiple getStats method
+        // calls).
+        s.setLength(0);
+
+        return r;
     }
 
     /**
@@ -284,7 +353,7 @@ class PeerConnectionObserver implements PeerConnection.Observer {
      * @return a <tt>String</tt> which represents the specified <tt>reports</tt>
      * in JSON format
      */
-    private String statsToJSON(StatsReport[] reports) {
+    private String legacyStatsToJSON(StatsReport[] reports) {
         // If possible, reuse a single StringBuilder instance across multiple
         // getStats method calls in order to reduce the total number of
         // allocations.

@@ -232,12 +232,45 @@ export default class RTCPeerConnection extends EventTarget(PEER_CONNECTION_EVENT
     });
   }
 
-  getStats(track) {
+  getStats(callbackOrSelector) {
+    if (callbackOrSelector === null) {
+      return this.getStandardStats();
+    } else if (typeof callbackOrSelector === 'function') {
+      this.getStandardStats().then((stats) => {
+        callbackOrSelector(stats);
+      });
+    } else {
+      return this.getMediaTrackStats(callbackOrSelector);
+    }
+  }
+
+  getStandardStats() {
+    return new Promise((resolve, reject) => {
+      WebRTCModule.peerConnectionGetStats(
+        this._peerConnectionId,
+        (success, data) => {
+          if (success) {
+            try {
+              const stats = JSON.parse(data);
+              let statsMap = new Map();
+              Object.keys(stats).forEach(key => statsMap.set(key, stats[key]));
+              resolve(statsMap);
+            } catch(e) {
+              reject(e);
+            }
+          } else {
+            reject(new Error(data));
+          }
+        });
+    });
+  }
+
+  getMediaTrackStats(track) {
     // NOTE: This returns a Promise but the format of the results is still
     // the "legacy" one. The native side (in Oobj-C) doesn't yet support the
     // new format: https://bugs.chromium.org/p/webrtc/issues/detail?id=6872
     return new Promise((resolve, reject) => {
-      WebRTCModule.peerConnectionGetStats(
+      WebRTCModule.peerConnectionGetStatsForTrack(
         (track && track.id) || '',
         this._peerConnectionId,
         (success, data) => {

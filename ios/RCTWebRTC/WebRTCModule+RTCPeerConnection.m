@@ -19,6 +19,7 @@
 #import <WebRTC/RTCIceCandidate.h>
 #import <WebRTC/RTCLegacyStatsReport.h>
 #import <WebRTC/RTCSessionDescription.h>
+#import <WebRTC/RTCStatisticsReport.h>
 
 #import "WebRTCModule.h"
 #import "WebRTCModule+RTCDataChannel.h"
@@ -370,9 +371,23 @@ RCT_EXPORT_METHOD(peerConnectionClose:(nonnull NSNumber *)objectID)
   [dataChannels removeAllObjects];
 }
 
-RCT_EXPORT_METHOD(peerConnectionGetStats:(nonnull NSString *)trackID
-                                objectID:(nonnull NSNumber *)objectID
+RCT_EXPORT_METHOD(peerConnectionGetStats:(nonnull NSNumber *)objectID
                                 callback:(RCTResponseSenderBlock)callback)
+{
+  RTCPeerConnection *peerConnection = self.peerConnections[objectID];
+  if (!peerConnection) {
+    callback(@[@(NO), @"PeerConnection not found"]);
+    return;
+  }
+
+  [peerConnection statisticsWithCompletionHandler:^(RTCStatisticsReport *stats) {
+    callback(@[@(YES), [self statsToJSON:stats]]);
+  }];
+}
+
+RCT_EXPORT_METHOD(peerConnectionGetStatsForTrack:(nonnull NSString *)trackID
+                                        objectID:(nonnull NSNumber *)objectID
+                                        callback:(RCTResponseSenderBlock)callback)
 {
   RTCPeerConnection *peerConnection = self.peerConnections[objectID];
   if (!peerConnection) {
@@ -388,11 +403,85 @@ RCT_EXPORT_METHOD(peerConnectionGetStats:(nonnull NSString *)trackID
     [peerConnection statsForTrack:track
                  statsOutputLevel:RTCStatsOutputLevelStandard
                 completionHandler:^(NSArray<RTCLegacyStatsReport *> *stats) {
-                  callback(@[@(YES), [self statsToJSON:stats]]);
+                  callback(@[@(YES), [self legacyStatsToJSON:stats]]);
                 }];
   } else {
     callback(@[@(NO), @"Track not found"]);
   }
+}
+
+- (NSString *)statValueToJSON:(NSObject *)statValue
+{
+  /*
+   * The value is either NSNumber or NSString, or NSArray encapsulating NSNumbers
+   * or NSStrings.
+   */
+  NSMutableString *s = [NSMutableString stringWithCapacity:8 * 1024];
+  if([statValue isKindOfClass:[NSArray class]]) {
+    [s appendString:@"["];
+    BOOL isFirst = YES;
+    for (NSObject* value in statValue) {
+      if (isFirst) {
+        isFirst = NO;
+      } else {
+        [s appendString:@","];
+      }
+      [s appendString:[self statValueToJSON:value]];
+    }
+    [s appendString:@"]"];
+  } else if([statValue isKindOfClass:[NSString class]]) {
+    [s appendString:@"\""];
+    [s appendString:statValue];
+    [s appendString:@"\""];
+  } else {
+    [s appendString:[NSString stringWithFormat:@"%@", statValue]];
+  }
+  return s;
+}
+
+- (NSString *)statToJSON:(RTCStatistics *)stat
+{
+  NSMutableString *s = [NSMutableString stringWithCapacity:8 * 1024];
+  [s appendString:@"{"];
+  [s appendString:@"\"timestamp\":"];
+  [s appendFormat:@"%f", stat.timestamp_us];
+  [s appendString:@",\"type\":\""];
+  [s appendString:stat.type];
+  [s appendString:@"\",\"id\":\""];
+  [s appendString:stat.id];
+  [s appendString:@"\""];
+  [stat.values enumerateKeysAndObjectsUsingBlock:^(
+      NSString *key,
+      NSObject *value,
+      BOOL *stop) {
+    [s appendString:@",\""];
+    [s appendString:key];
+    [s appendString:@"\":"];
+    [s appendString:[self statValueToJSON:value]];
+  }];
+  [s appendString:@"}"];
+
+  return s;
+}
+
+- (NSString *)statsToJSON:(RTCStatisticsReport *)stats
+{
+  NSMutableString *s = [NSMutableString stringWithCapacity:8 * 1024];
+  [s appendString:@"{"];
+  [s appendString:@"\"timestamp\":"];
+  [s appendFormat:@"%f", stats.timestamp_us];
+  [stats.statistics enumerateKeysAndObjectsUsingBlock:^(
+      NSString *key,
+      RTCStatistics *value,
+      BOOL *stop) {
+    [s appendString:@",\""];
+    [s appendString:key];
+    [s appendString:@"\":"];
+    [s appendString:[self statToJSON:value]];
+  }];
+  [s appendString:@"}"];
+
+  return s;
 }
 
 /**
@@ -409,7 +498,7 @@ RCT_EXPORT_METHOD(peerConnectionGetStats:(nonnull NSString *)trackID
  * @return an <tt>NSString</tt> which represents the specified <tt>stats</tt> in
  * JSON format
  */
-- (NSString *)statsToJSON:(NSArray<RTCLegacyStatsReport *> *)reports
+- (NSString *)legacyStatsToJSON:(NSArray<RTCLegacyStatsReport *> *)reports
 {
   // XXX The initial capacity matters, of course, because it determines how many
   // times the NSMutableString will have grow. But walking through the reports
