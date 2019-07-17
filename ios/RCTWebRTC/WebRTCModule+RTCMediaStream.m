@@ -126,7 +126,7 @@ RCT_EXPORT_METHOD(enumerateDevices:(RCTResponseSenderBlock)callback)
     for (AVCaptureDevice *device in videoevicesSession.devices) {
         NSString *position = @"";
         if (device.position == AVCaptureDevicePositionBack) {
-            position = @"back";
+            position = @"environment";
         } else if (device.position == AVCaptureDevicePositionFront) {
             position = @"front";
         }

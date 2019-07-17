@@ -111,9 +111,9 @@ class GetUserMediaImpl {
         for(int i = 0; i < devices.length; ++i) {
             WritableMap params = Arguments.createMap();
             if (cameraEnumerator.isFrontFacing(devices[i])) {
-               params.putString("facing", "front");
+                params.putString("facing", "front");
             } else {
-                params.putString("facing", "back");
+                params.putString("facing", "environment");
             }
             params.putString("deviceId", "" + i);
             params.putString("groupId", "");
