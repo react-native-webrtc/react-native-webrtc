@@ -1,5 +1,118 @@
 'use strict';
 
+const DEFAULT_AUDIO_CONSTRAINTS = {};
+
+const DEFAULT_VIDEO_CONSTRAINTS = {
+    facingMode: 'user',
+    frameRate: 30,
+    height: 720,
+    width: 1280
+};
+
+const ASPECT_RATIO = 16 / 9;
+
+const STANDARD_OA_OPTIONS = [
+    'iceRestart',
+    'offerToReceiveAudio',
+    'offerToReceiveVideo',
+    'voiceActivityDetection'
+];
+
+function getDefaultMediaConstraints(mediaType) {
+    switch(mediaType) {
+    case 'audio':
+        return DEFAULT_AUDIO_CONSTRAINTS;
+    case 'video':
+        return DEFAULT_VIDEO_CONSTRAINTS;
+    default:
+        throw new TypeError(`Invalid media type: ${mediaType}`);
+    }
+}
+
+function extractString(constraints, prop) {
+    const value = constraints[prop];
+    const type = typeof value;
+
+    if (type === 'object') {
+        for (const v of [ 'exact', 'ideal' ]) {
+            if (value[v]) {
+                return value[v];
+            }
+        }
+    } else if (type === 'string') {
+        return value;
+    }
+}
+
+function extractNumber(constraints, prop) {
+    const value = constraints[prop];
+    const type = typeof value;
+
+    if (type === 'number') {
+        return Number.parseInt(value);
+    } else if (type === 'object') {
+        for (const v of [ 'exact', 'ideal', 'min', 'max' ]) {
+            if (value[v]) {
+                return Number.parseInt(value[v]);
+            }
+        }
+    }
+}
+
+function normalizeMediaConstraints(constraints, mediaType) {
+    switch(mediaType) {
+    case 'audio':
+        return constraints;
+    case 'video': {
+        let c;
+        if (constraints.mandatory) {
+            // Old style.
+            c = {
+                deviceId: extractString(constraints.optional || {}, 'sourceId'),
+                facingMode: extractString(constraints, 'facingMode'),
+                frameRate: extractNumber(constraints.mandatory, 'minFrameRate'),
+                height: extractNumber(constraints.mandatory, 'minHeight'),
+                width: extractNumber(constraints.mandatory, 'minWidth')
+            };
+        } else {
+            // New style.
+            c = {
+                deviceId: extractString(constraints, 'deviceId'),
+                facingMode: extractString(constraints, 'facingMode'),
+                frameRate: extractNumber(constraints, 'frameRate'),
+                height: extractNumber(constraints, 'height'),
+                width: extractNumber(constraints, 'width')
+            };
+        }
+
+        if (!c.deviceId) {
+            delete c.deviceId;
+        }
+
+        if (!c.facingMode || (c.facingMode !== 'user' && c.facingMode !== 'environment')) {
+            c.facingMode = DEFAULT_VIDEO_CONSTRAINTS.facingMode;
+        }
+
+        if (!c.frameRate) {
+            c.frameRate = DEFAULT_VIDEO_CONSTRAINTS.frameRate;
+        }
+
+        if (!c.height && !c.width) {
+            c.height = DEFAULT_VIDEO_CONSTRAINTS.height;
+            c.width = DEFAULT_VIDEO_CONSTRAINTS.width;
+        } else if (!c.height) {
+            c.height = Math.round(c.width / ASPECT_RATIO);
+        } else if (!c.width) {
+            c.width = Math.round(c.height * ASPECT_RATIO);
+        }
+
+        return c;
+    }
+    default:
+        throw new TypeError(`Invalid media type: ${mediaType}`);
+    }
+}
+
 /**
  * Internal util for deep clone object. Object.assign() only does a shallow copy
  *
@@ -7,29 +120,59 @@
  * @return {Object} cloned obj
  */
 function _deepClone(obj) {
-  return JSON.parse(JSON.stringify(obj));
+    return JSON.parse(JSON.stringify(obj));
 }
 
 /**
- * Merge custom constraints with the default one. The custom one take precedence.
+ * Normalize options passed to createOffer() / createAnswer().
  *
- * @param {Object} custom - custom webrtc constraints
- * @param {Object} def - default webrtc constraints
- * @return {Object} constraints - merged webrtc constraints
+ * @param {Object} options - user supplied options
+ * @return {Object} newOptions - normalized options
  */
-export function mergeMediaConstraints(custom, def) {
-  const constraints = (def ? _deepClone(def) : {});
-  if (custom) {
-    if (custom.mandatory) {
-      constraints.mandatory = {...constraints.mandatory, ...custom.mandatory};
+export function normalizeOfferAnswerOptions(options = {}) {
+    const newOptions = {};
+
+    if (!options) {
+        return newOptions;
     }
-    if (custom.optional && Array.isArray(custom.optional)) {
-      // `optional` is an array, webrtc only finds first and ignore the rest if duplicate.
-      constraints.optional = custom.optional.concat(constraints.optional);
+
+    // Convert standard options into WebRTC internal constant names.
+    // See: https://github.com/jitsi/webrtc/blob/0cd6ce4de669bed94ba47b88cb71b9be0341bb81/sdk/media_constraints.cc#L113
+    for (const [ key, value ] of Object.entries(options)) {
+        if (STANDARD_OA_OPTIONS.indexOf(key) !== -1) {
+            // offerToReceiveAudio -> OfferToReceiveAudio
+            const newKey = key.charAt(0).toUpperCase() + key.slice(1);
+            newOptions[newKey] = String(Boolean(value));
+        } else {
+            newOptions[key] = value;
+        }
     }
-    if (custom.facingMode) {
-      constraints.facingMode = custom.facingMode.toString(); // string, 'user' or the default 'environment'
+
+    return newOptions;
+}
+
+/**
+ * Normalize the given constraints in something we can work with.
+ */
+export function normalizeConstraints(constraints) {
+    const c = _deepClone(constraints);
+
+    for (const mediaType of [ 'audio', 'video' ]) {
+        const mediaTypeConstraints = c[mediaType];
+        const typeofMediaTypeConstraints = typeof mediaTypeConstraints;
+
+        if (typeofMediaTypeConstraints !== 'undefined') {
+            if (typeofMediaTypeConstraints === 'boolean') {
+                if (mediaTypeConstraints) {
+                    c[mediaType] = getDefaultMediaConstraints(mediaType);
+                }
+            } else if (typeofMediaTypeConstraints === 'object') {
+                c[mediaType] = normalizeMediaConstraints(mediaTypeConstraints, mediaType);
+            } else {
+                throw new TypeError(`constraints.${mediaType} is neither a boolean nor a dictionary`);
+            }
+        }
     }
-  }
-  return constraints;
+
+    return c;
 }

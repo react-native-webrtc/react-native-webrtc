@@ -2,7 +2,6 @@
 
 import EventTarget from 'event-target-shim';
 import {DeviceEventEmitter, NativeModules} from 'react-native';
-import * as RTCUtil from './RTCUtil';
 
 import MediaStream from './MediaStream';
 import MediaStreamEvent from './MediaStreamEvent';
@@ -14,6 +13,7 @@ import RTCSessionDescription from './RTCSessionDescription';
 import RTCIceCandidate from './RTCIceCandidate';
 import RTCIceCandidateEvent from './RTCIceCandidateEvent';
 import RTCEvent from './RTCEvent';
+import * as RTCUtil from './RTCUtil';
 
 const {WebRTCModule} = NativeModules;
 
@@ -40,15 +40,11 @@ type RTCIceConnectionState =
   'closed';
 
 /**
- * The default constraints of RTCPeerConnection's createOffer() and
- * createAnswer().
+ * The default constraints of RTCPeerConnection's createOffer().
  */
-const DEFAULT_SDP_CONSTRAINTS = {
-  mandatory: {
-    OfferToReceiveAudio: true,
-    OfferToReceiveVideo: true,
-  },
-  optional: [],
+const DEFAULT_OFFER_OPTIONS = {
+    offerToReceiveAudio: true,
+    offerToReceiveVideo: true,
 };
 
 const PEER_CONNECTION_EVENTS = [
@@ -117,11 +113,11 @@ export default class RTCPeerConnection extends EventTarget(PEER_CONNECTION_EVENT
     }
   }
 
-  createOffer(options) {
+  createOffer(options = DEFAULT_OFFER_OPTIONS) {
     return new Promise((resolve, reject) => {
       WebRTCModule.peerConnectionCreateOffer(
         this._peerConnectionId,
-        RTCUtil.mergeMediaConstraints(options, DEFAULT_SDP_CONSTRAINTS),
+        RTCUtil.normalizeOfferAnswerOptions(options),
         (successful, data) => {
           if (successful) {
             resolve(new RTCSessionDescription(data));
@@ -132,11 +128,11 @@ export default class RTCPeerConnection extends EventTarget(PEER_CONNECTION_EVENT
     });
   }
 
-  createAnswer(options) {
+  createAnswer(options = {}) {
     return new Promise((resolve, reject) => {
       WebRTCModule.peerConnectionCreateAnswer(
         this._peerConnectionId,
-        RTCUtil.mergeMediaConstraints(options, DEFAULT_SDP_CONSTRAINTS),
+        RTCUtil.normalizeOfferAnswerOptions(options),
         (successful, data) => {
           if (successful) {
             resolve(new RTCSessionDescription(data));

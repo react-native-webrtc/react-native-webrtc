@@ -58,14 +58,13 @@ class GetUserMediaImpl {
     }
 
     private AudioTrack createAudioTrack(ReadableMap constraints) {
-        MediaConstraints audioConstraints
-            = webRTCModule.parseMediaConstraints(constraints.getMap("audio"));
+        ReadableMap audioConstraintsMap = constraints.getMap("audio");
 
-        Log.d(TAG, "getUserMedia(audio): " + audioConstraints);
+        Log.d(TAG, "getUserMedia(audio): " + audioConstraintsMap);
 
         String id = UUID.randomUUID().toString();
         PeerConnectionFactory pcFactory = webRTCModule.mFactory;
-        AudioSource audioSource = pcFactory.createAudioSource(audioConstraints);
+        AudioSource audioSource = pcFactory.createAudioSource(webRTCModule.constraintsForOptions(audioConstraintsMap));
         AudioTrack track = pcFactory.createAudioTrack(id, audioSource);
         tracks.put(
             id,

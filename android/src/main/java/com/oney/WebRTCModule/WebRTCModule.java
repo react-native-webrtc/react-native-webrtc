@@ -461,63 +461,23 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
     }
 
     /**
-     * Parses a constraint set specified in the form of a JavaScript object into
-     * a specific <tt>List</tt> of <tt>MediaConstraints.KeyValuePair</tt>s.
+     * Turns an "options" <tt>ReadableMap</tt> into a <tt>MediaConstraints</tt> object.
      *
-     * @param src The constraint set in the form of a JavaScript object to
-     * parse.
-     * @param dst The <tt>List</tt> of <tt>MediaConstraints.KeyValuePair</tt>s
-     * into which the specified <tt>src</tt> is to be parsed.
+     * @param options A <tt>ReadableMap</tt> which represents a JavaScript
+     * object specifying the options to be parsed into a
+     * <tt>MediaConstraints</tt> instance.
+     * @return A new <tt>MediaConstraints</tt> instance initialized with the
+     * mandatory keys and values specified by <tt>options</tt>.
      */
-    private void parseConstraints(
-            ReadableMap src,
-            List<MediaConstraints.KeyValuePair> dst) {
-        ReadableMapKeySetIterator keyIterator = src.keySetIterator();
+    MediaConstraints constraintsForOptions(ReadableMap options) {
+        MediaConstraints mediaConstraints = new MediaConstraints();
+        ReadableMapKeySetIterator keyIterator = options.keySetIterator();
 
         while (keyIterator.hasNextKey()) {
             String key = keyIterator.nextKey();
-            String value = ReactBridgeUtil.getMapStrValue(src, key);
+            String value = ReactBridgeUtil.getMapStrValue(options, key);
 
-            dst.add(new MediaConstraints.KeyValuePair(key, value));
-        }
-    }
-
-    /**
-     * Parses mandatory and optional "GUM" constraints described by a specific
-     * <tt>ReadableMap</tt>.
-     *
-     * @param constraints A <tt>ReadableMap</tt> which represents a JavaScript
-     * object specifying the constraints to be parsed into a
-     * <tt>MediaConstraints</tt> instance.
-     * @return A new <tt>MediaConstraints</tt> instance initialized with the
-     * mandatory and optional constraint keys and values specified by
-     * <tt>constraints</tt>.
-     */
-    MediaConstraints parseMediaConstraints(ReadableMap constraints) {
-        MediaConstraints mediaConstraints = new MediaConstraints();
-
-        if (constraints.hasKey("mandatory")
-                && constraints.getType("mandatory") == ReadableType.Map) {
-            parseConstraints(
-                    constraints.getMap("mandatory"),
-                    mediaConstraints.mandatory);
-        } else {
-            Log.d(TAG, "mandatory constraints are not a map");
-        }
-
-        if (constraints.hasKey("optional")
-                && constraints.getType("optional") == ReadableType.Array) {
-            ReadableArray optional = constraints.getArray("optional");
-
-            for (int i = 0, size = optional.size(); i < size; i++) {
-                if (optional.getType(i) == ReadableType.Map) {
-                    parseConstraints(
-                            optional.getMap(i),
-                            mediaConstraints.optional);
-                }
-            }
-        } else {
-            Log.d(TAG, "optional constraints are not an array");
+            mediaConstraints.mandatory.add(new MediaConstraints.KeyValuePair(key, value));
         }
 
         return mediaConstraints;
@@ -700,14 +660,14 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
 
     @ReactMethod
     public void peerConnectionCreateOffer(int id,
-                                          ReadableMap constraints,
+                                          ReadableMap options,
                                           Callback callback) {
         ThreadUtils.runOnExecutor(() ->
-            peerConnectionCreateOfferAsync(id, constraints, callback));
+            peerConnectionCreateOfferAsync(id, options, callback));
     }
 
     private void peerConnectionCreateOfferAsync(int id,
-                                                ReadableMap constraints,
+                                                ReadableMap options,
                                                 final Callback callback) {
         PeerConnection peerConnection = getPeerConnection(id);
 
@@ -731,7 +691,7 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
 
                 @Override
                 public void onSetSuccess() {}
-            }, parseMediaConstraints(constraints));
+            }, constraintsForOptions(options));
         } else {
             Log.d(TAG, "peerConnectionCreateOffer() peerConnection is null");
             callback.invoke(false, "peerConnection is null");
@@ -740,14 +700,14 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
 
     @ReactMethod
     public void peerConnectionCreateAnswer(int id,
-                                           ReadableMap constraints,
+                                           ReadableMap options,
                                            Callback callback) {
         ThreadUtils.runOnExecutor(() ->
-            peerConnectionCreateAnswerAsync(id, constraints, callback));
+            peerConnectionCreateAnswerAsync(id, options, callback));
     }
 
     private void peerConnectionCreateAnswerAsync(int id,
-                                                 ReadableMap constraints,
+                                                 ReadableMap options,
                                                  final Callback callback) {
         PeerConnection peerConnection = getPeerConnection(id);
 
@@ -771,7 +731,7 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
 
                 @Override
                 public void onSetSuccess() {}
-            }, parseMediaConstraints(constraints));
+            }, constraintsForOptions(options));
         } else {
             Log.d(TAG, "peerConnectionCreateAnswer() peerConnection is null");
             callback.invoke(false, "peerConnection is null");
