@@ -2,9 +2,7 @@ package com.oney.WebRTCModule;
 
 import android.util.Log;
 
-import com.facebook.react.bridge.ReadableArray;
 import com.facebook.react.bridge.ReadableMap;
-import com.facebook.react.bridge.ReadableType;
 
 import org.webrtc.CameraEnumerator;
 import org.webrtc.CameraVideoCapturer;
@@ -20,23 +18,15 @@ public class VideoCaptureController {
     private static final String TAG
         = VideoCaptureController.class.getSimpleName();
 
-    /**
-     * Default values for width, height and fps (respectively) which will be
-     * used to open the camera at.
-     */
-    private static final int DEFAULT_WIDTH  = 1280;
-    private static final int DEFAULT_HEIGHT = 720;
-    private static final int DEFAULT_FPS    = 30;
-
     private boolean isFrontFacing;
 
     /**
      * Values for width, height and fps (respectively) which will be
      * used to open the camera at.
      */
-    private int width  = DEFAULT_WIDTH;
-    private int height = DEFAULT_HEIGHT;
-    private int fps    = DEFAULT_FPS;
+    private final int width;
+    private final int height;
+    private final int fps;
 
     private CameraEnumerator cameraEnumerator;
 
@@ -54,33 +44,17 @@ public class VideoCaptureController {
      */
     private VideoCapturer videoCapturer;
 
-    public VideoCaptureController(CameraEnumerator cameraEnumerator,
-                                  ReadableMap constraints) {
+    public VideoCaptureController(CameraEnumerator cameraEnumerator, ReadableMap constraints) {
         this.cameraEnumerator = cameraEnumerator;
 
-        ReadableMap videoConstraintsMandatory = null;
+        width = constraints.getInt("width");
+        height = constraints.getInt("height");
+        fps = constraints.getInt("frameRate");
 
-        if (constraints.hasKey("mandatory")
-                && constraints.getType("mandatory") == ReadableType.Map) {
-            videoConstraintsMandatory = constraints.getMap("mandatory");
-        }
+        String deviceId = ReactBridgeUtil.getMapStrValue(constraints, "deviceId");
+        String facingMode = ReactBridgeUtil.getMapStrValue(constraints, "facingMode");
 
-        String sourceId = getSourceIdConstraint(constraints);
-        String facingMode = getFacingMode(constraints);
-
-        videoCapturer = createVideoCapturer(sourceId, facingMode);
-
-        if (videoConstraintsMandatory != null) {
-            width = videoConstraintsMandatory.hasKey("minWidth")
-                ? videoConstraintsMandatory.getInt("minWidth")
-                : DEFAULT_WIDTH;
-            height = videoConstraintsMandatory.hasKey("minHeight")
-                ? videoConstraintsMandatory.getInt("minHeight")
-                : DEFAULT_HEIGHT;
-            fps = videoConstraintsMandatory.hasKey("minFrameRate")
-                ? videoConstraintsMandatory.getInt("minFrameRate")
-                : DEFAULT_FPS;
-        }
+        videoCapturer = createVideoCapturer(deviceId, facingMode);
     }
 
     public void dispose() {
@@ -179,23 +153,23 @@ public class VideoCaptureController {
      * Constructs a new {@code VideoCapturer} instance attempting to satisfy
      * specific constraints.
      *
-     * @param sourceId the ID of the requested video source. If not
+     * @param deviceId the ID of the requested video device. If not
      * {@code null} and a {@code VideoCapturer} can be created for it, then
      * {@code facingMode} is ignored.
      * @param facingMode the facing of the requested video source such as
      * {@code user} and {@code environment}. If {@code null}, "user" is
      * presumed.
      * @return a {@code VideoCapturer} satisfying the {@code facingMode} or
-     * {@code sourceId} constraint
+     * {@code deviceId} constraint
      */
-    private VideoCapturer createVideoCapturer(String sourceId, String facingMode) {
+    private VideoCapturer createVideoCapturer(String deviceId, String facingMode) {
         String[] deviceNames = cameraEnumerator.getDeviceNames();
         List<String> failedDevices = new ArrayList<>();
 
-        // If sourceId is specified, then it takes precedence over facingMode.
-        if (sourceId != null) {
+        // If deviceId is specified, then it takes precedence over facingMode.
+        if (deviceId != null) {
             for (String name : deviceNames) {
-                if (name.equals(sourceId)) {
+                if (name.equals(deviceId)) {
                     VideoCapturer videoCapturer
                         = cameraEnumerator.createCapturer(name, cameraEventsHandler);
                     String message = "Create user-specified camera " + name;
@@ -264,51 +238,6 @@ public class VideoCaptureController {
         }
 
         Log.w(TAG, "Unable to identify a suitable camera.");
-
-        return null;
-    }
-
-    /**
-     * Retrieves "facingMode" constraint value.
-     *
-     * @param mediaConstraints a {@code ReadableMap} which represents "GUM"
-     * constraints argument.
-     * @return String value of "facingMode" constraints in "GUM" or
-     * {@code null} if not specified.
-     */
-    private String getFacingMode(ReadableMap mediaConstraints) {
-        return
-            mediaConstraints == null
-                ? null
-                : ReactBridgeUtil.getMapStrValue(mediaConstraints, "facingMode");
-    }
-
-    /**
-     * Retrieves "sourceId" constraint value.
-     *
-     * @param mediaConstraints a {@code ReadableMap} which represents "GUM"
-     * constraints argument
-     * @return String value of "sourceId" optional "GUM" constraint or
-     * {@code null} if not specified.
-     */
-    private String getSourceIdConstraint(ReadableMap mediaConstraints) {
-        if (mediaConstraints != null
-                && mediaConstraints.hasKey("optional")
-                && mediaConstraints.getType("optional") == ReadableType.Array) {
-            ReadableArray optional = mediaConstraints.getArray("optional");
-
-            for (int i = 0, size = optional.size(); i < size; i++) {
-                if (optional.getType(i) == ReadableType.Map) {
-                    ReadableMap option = optional.getMap(i);
-
-                    if (option.hasKey("sourceId")
-                            && option.getType("sourceId")
-                                == ReadableType.String) {
-                        return option.getString("sourceId");
-                    }
-                }
-            }
-        }
 
         return null;
     }
