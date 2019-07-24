@@ -217,30 +217,10 @@ class GetUserMediaImpl {
         }
     }
 
-    void mediaStreamTrackStop(String id) {
-        MediaStreamTrack track = getTrack(id);
-        if (track == null) {
-            Log.d(
-                TAG,
-                "mediaStreamTrackStop() No local MediaStreamTrack with id "
-                    + id);
-            return;
-        }
-        track.setEnabled(false);
-        removeTrack(id);
-    }
-
-    private void removeTrack(String id) {
+    void disposeTrack(String id) {
         TrackPrivate track = tracks.remove(id);
         if (track != null) {
-            VideoCaptureController videoCaptureController
-                = track.videoCaptureController;
-            if (videoCaptureController != null) {
-                if (videoCaptureController.stopCapture()) {
-                    videoCaptureController.dispose();
-                }
-            }
-            track.mediaSource.dispose();
+            track.dispose();
         }
     }
 
@@ -270,12 +250,17 @@ class GetUserMediaImpl {
         public final VideoCaptureController videoCaptureController;
 
         /**
+         * Whether this object has been disposed or not.
+         */
+        private boolean disposed;
+
+        /**
          * Initializes a new {@code TrackPrivate} instance.
          *
          * @param track
          * @param mediaSource the {@code MediaSource} from which the specified
          * {@code code} was created
-         * @param videoCapturer the {@code VideoCapturer} from which the
+         * @param videoCaptureController the {@code VideoCaptureController} from which the
          * specified {@code mediaSource} was created if the specified
          * {@code track} is a {@link VideoTrack}
          */
@@ -286,6 +271,20 @@ class GetUserMediaImpl {
             this.track = track;
             this.mediaSource = mediaSource;
             this.videoCaptureController = videoCaptureController;
+            this.disposed = false;
+        }
+
+        public void dispose() {
+            if (!disposed) {
+                if (videoCaptureController != null) {
+                    if (videoCaptureController.stopCapture()) {
+                        videoCaptureController.dispose();
+                    }
+                }
+                mediaSource.dispose();
+                track.dispose();
+                disposed = true;
+            }
         }
     }
 }

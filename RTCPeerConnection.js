@@ -101,16 +101,21 @@ export default class RTCPeerConnection extends EventTarget(PEER_CONNECTION_EVENT
   }
 
   addStream(stream: MediaStream) {
-    WebRTCModule.peerConnectionAddStream(stream.reactTag, this._peerConnectionId);
-    this._localStreams.push(stream);
+      const index = this._localStreams.indexOf(stream);
+      if (index !== -1) {
+          return;
+      }
+      WebRTCModule.peerConnectionAddStream(stream._reactTag, this._peerConnectionId);
+      this._localStreams.push(stream);
   }
 
   removeStream(stream: MediaStream) {
-    WebRTCModule.peerConnectionRemoveStream(stream.reactTag, this._peerConnectionId);
-    let index = this._localStreams.indexOf(stream);
-    if (index !== -1) {
+      const index = this._localStreams.indexOf(stream);
+      if (index === -1) {
+          return;
+      }
       this._localStreams.splice(index, 1);
-    }
+      WebRTCModule.peerConnectionRemoveStream(stream._reactTag, this._peerConnectionId);
   }
 
   createOffer(options = DEFAULT_OFFER_OPTIONS) {
@@ -240,7 +245,7 @@ export default class RTCPeerConnection extends EventTarget(PEER_CONNECTION_EVENT
   _getTrack(streamReactTag, trackId): MediaStreamTrack {
     const stream
       = this._remoteStreams.find(
-          stream => stream.reactTag === streamReactTag);
+          stream => stream._reactTag === streamReactTag);
 
     return stream && stream._tracks.find(track => track.id === trackId);
   }
@@ -280,11 +285,7 @@ export default class RTCPeerConnection extends EventTarget(PEER_CONNECTION_EVENT
         if (ev.id !== this._peerConnectionId) {
           return;
         }
-        const stream = new MediaStream(ev.streamId, ev.streamReactTag);
-        const tracks = ev.tracks;
-        for (let i = 0; i < tracks.length; i++) {
-          stream.addTrack(new MediaStreamTrack(tracks[i]));
-        }
+        const stream = new MediaStream(ev);
         this._remoteStreams.push(stream);
         this.dispatchEvent(new MediaStreamEvent('addstream', {stream}));
       }),
@@ -292,10 +293,10 @@ export default class RTCPeerConnection extends EventTarget(PEER_CONNECTION_EVENT
         if (ev.id !== this._peerConnectionId) {
           return;
         }
-        const stream = this._remoteStreams.find(s => s.reactTag === ev.streamId);
+        const stream = this._remoteStreams.find(s => s._reactTag === ev.streamId);
         if (stream) {
           const index = this._remoteStreams.indexOf(stream);
-          if (index > -1) {
+          if (index !== -1) {
             this._remoteStreams.splice(index, 1);
           }
         }

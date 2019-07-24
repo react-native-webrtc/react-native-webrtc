@@ -406,11 +406,8 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
         MediaStream stream = localStreams.get(streamReactTag);
 
         if (stream == null) {
-            for (int i = 0, size = mPeerConnectionObservers.size();
-                    i < size;
-                    i++) {
-                PeerConnectionObserver pco
-                    = mPeerConnectionObservers.valueAt(i);
+            for (int i = 0, size = mPeerConnectionObservers.size(); i < size; i++) {
+                PeerConnectionObserver pco = mPeerConnectionObservers.valueAt(i);
                 stream = pco.remoteStreams.get(streamReactTag);
                 if (stream != null) {
                     break;
@@ -425,11 +422,8 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
         MediaStreamTrack track = getLocalTrack(trackId);
 
         if (track == null) {
-            for (int i = 0, size = mPeerConnectionObservers.size();
-                    i < size;
-                    i++) {
-                PeerConnectionObserver pco
-                    = mPeerConnectionObservers.valueAt(i);
+            for (int i = 0, size = mPeerConnectionObservers.size(); i < size; i++) {
+                PeerConnectionObserver pco = mPeerConnectionObservers.valueAt(i);
                 track = pco.remoteTracks.get(trackId);
                 if (track != null) {
                     break;
@@ -492,77 +486,57 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
     }
 
     @ReactMethod
-    public void mediaStreamRelease(String id) {
-        ThreadUtils.runOnExecutor(() -> mediaStreamReleaseAsync(id));
-    }
-
-    private void mediaStreamReleaseAsync(String id) {
-        MediaStream stream = localStreams.get(id);
-        if (stream == null) {
-            Log.d(TAG, "mediaStreamRelease() stream is null");
-        } else {
-            // XXX Copy the lists of audio and video tracks because we'll be
-            // incrementally modifying them. Though a while loop with isEmpty()
-            // is generally a clearer approach (employed by MediaStream), we'll
-            // be searching through our own lists and these may (or may not) get
-            // out of sync with MediaStream's lists which raises the risk of
-            // entering infinite loops.
-            List<MediaStreamTrack> tracks
-                = new ArrayList<>(
-                    stream.audioTracks.size() + stream.videoTracks.size());
-
-            tracks.addAll(stream.audioTracks);
-            tracks.addAll(stream.videoTracks);
-            for (MediaStreamTrack track : tracks) {
-                 mediaStreamTrackRelease(id, track.id());
-            }
-
-            localStreams.remove(id);
-
-            // MediaStream.dispose() may be called without an exception only if
-            // it's no longer added to any PeerConnection.
-            for (int i = 0, size = mPeerConnectionObservers.size();
-                    i < size;
-                    i++) {
-                mPeerConnectionObservers.valueAt(i).removeStream(stream);
-            }
-
-            stream.dispose();
-        }
-    }
-
-    @ReactMethod
     public void enumerateDevices(Callback callback) {
         ThreadUtils.runOnExecutor(() ->
             callback.invoke(getUserMediaImpl.enumerateDevices()));
     }
 
     @ReactMethod
-    public void mediaStreamTrackRelease(String streamId, String trackId) {
-        ThreadUtils.runOnExecutor(() ->
-            mediaStreamTrackReleaseAsync(streamId, trackId));
+    public void mediaStreamCreate(String id) {
+        ThreadUtils.runOnExecutor(() -> mediaStreamCreateAsync(id));
     }
 
-    private void mediaStreamTrackReleaseAsync(String streamId, String trackId) {
+    private void mediaStreamCreateAsync(String id) {
+        MediaStream mediaStream = mFactory.createLocalMediaStream(id);
+        localStreams.put(id, mediaStream);
+    }
+
+    @ReactMethod
+    public void mediaStreamAddTrack(String streamId, String trackId) {
+        ThreadUtils.runOnExecutor(() ->
+            mediaStreamAddTrackAsync(streamId, trackId));
+    }
+
+    private void mediaStreamAddTrackAsync(String streamId, String trackId) {
         MediaStream stream = localStreams.get(streamId);
-        if (stream == null) {
-            Log.d(TAG, "mediaStreamTrackRelease() stream is null");
+        MediaStreamTrack track = getLocalTrack(trackId);
+
+        if (stream == null || track == null) {
+            Log.d(TAG, "mediaStreamAddTrack() stream || track is null");
             return;
         }
+
+        String kind = track.kind();
+        if ("audio".equals(kind)) {
+            stream.addTrack((AudioTrack)track);
+        } else if ("video".equals(kind)) {
+            stream.addTrack((VideoTrack)track);
+        }
+    }
+
+    @ReactMethod
+    public void mediaStreamRemoveTrack(String streamId, String trackId) {
+        ThreadUtils.runOnExecutor(() ->
+            mediaStreamRemoveTrackAsync(streamId, trackId));
+    }
+
+    private void mediaStreamRemoveTrackAsync(String streamId, String trackId) {
+        MediaStream stream = localStreams.get(streamId);
         MediaStreamTrack track = getLocalTrack(trackId);
-        if (track == null) {
-            // XXX The specified trackId may have already been stopped by
-            // mediaStreamTrackStop().
-            track = getLocalTrack(stream, trackId);
-            if (track == null) {
-                Log.d(
-                    TAG,
-                    "mediaStreamTrackRelease() No local MediaStreamTrack with id "
-                        + trackId);
-                return;
-            }
-        } else {
-            mediaStreamTrackStop(trackId);
+
+        if (stream == null || track == null) {
+            Log.d(TAG, "mediaStreamRemoveTrack() stream || track is null");
+            return;
         }
 
         String kind = track.kind();
@@ -571,7 +545,62 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
         } else if ("video".equals(kind)) {
             stream.removeTrack((VideoTrack)track);
         }
-        track.dispose();
+    }
+
+    @ReactMethod
+    public void mediaStreamRelease(String id) {
+        ThreadUtils.runOnExecutor(() -> mediaStreamReleaseAsync(id));
+    }
+
+    private void mediaStreamReleaseAsync(String id) {
+        MediaStream stream = localStreams.get(id);
+        if (stream == null) {
+            Log.d(TAG, "mediaStreamRelease() stream is null");
+            return;
+        }
+
+        // Remove and dispose any tracks ourselves before calling stream.dispose().
+        // We need to remove the extra objects (TrackPrivate) we create.
+
+        List<AudioTrack> audioTracks = new ArrayList<>(stream.audioTracks);
+        for (AudioTrack track : audioTracks) {
+            track.setEnabled(false);
+            stream.removeTrack(track);
+            getUserMediaImpl.disposeTrack(track.id());
+        }
+
+        List<VideoTrack> videoTracks = new ArrayList<>(stream.videoTracks);
+        for (VideoTrack track : videoTracks) {
+            track.setEnabled(false);
+            stream.removeTrack(track);
+            getUserMediaImpl.disposeTrack(track.id());
+        }
+
+        localStreams.remove(id);
+
+        // MediaStream.dispose() may be called without an exception only if
+        // it's no longer added to any PeerConnection.
+        for (int i = 0, size = mPeerConnectionObservers.size(); i < size; i++) {
+            mPeerConnectionObservers.valueAt(i).removeStream(stream);
+        }
+
+        stream.dispose();
+    }
+
+    @ReactMethod
+    public void mediaStreamTrackRelease(String id) {
+        ThreadUtils.runOnExecutor(() ->
+            mediaStreamTrackReleaseAsync(id));
+    }
+
+    private void mediaStreamTrackReleaseAsync(String id) {
+        MediaStreamTrack track = getLocalTrack(id);
+        if (track == null) {
+            Log.d(TAG, "mediaStreamTrackRelease() track is null");
+            return;
+        }
+        track.setEnabled(false);
+        getUserMediaImpl.disposeTrack(id);
     }
 
     @ReactMethod
@@ -590,11 +619,6 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
         }
         track.setEnabled(enabled);
         getUserMediaImpl.mediaStreamTrackSetEnabled(id, enabled);
-    }
-
-    @ReactMethod
-    public void mediaStreamTrackStop(String trackId) {
-        getUserMediaImpl.mediaStreamTrackStop(trackId);
     }
 
     @ReactMethod

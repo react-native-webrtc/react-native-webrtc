@@ -65,14 +65,12 @@ RCT_EXPORT_METHOD(getUserMedia:(NSDictionary *)constraints
   RTCAudioTrack *audioTrack = nil;
   RTCVideoTrack *videoTrack = nil;
 
-
   if (constraints[@"audio"]) {
       audioTrack = [self createAudioTrack:constraints];
   }
   if (constraints[@"video"]) {
       videoTrack = [self createVideoTrack:constraints];
   }
-
 
   if (audioTrack == nil && videoTrack == nil) {
     // Fail with DOMException with name AbortError as per:
@@ -153,39 +151,92 @@ RCT_EXPORT_METHOD(enumerateDevices:(RCTResponseSenderBlock)callback)
     callback(@[devices]);
 }
 
+RCT_EXPORT_METHOD(mediaStreamCreate:(nonnull NSString *)streamID)
+{
+    RTCMediaStream *mediaStream = [self.peerConnectionFactory mediaStreamWithStreamId:streamID];
+    self.localStreams[streamID] = mediaStream;
+}
+
+RCT_EXPORT_METHOD(mediaStreamAddTrack:(nonnull NSString *)streamID : (nonnull NSString *)trackID)
+{
+    RTCMediaStream *mediaStream = self.localStreams[streamID];
+    RTCMediaStreamTrack *track = self.localTracks[trackID];
+
+    if (mediaStream && track) {
+        if ([track.kind isEqualToString:@"audio"]) {
+            [mediaStream addAudioTrack:(RTCAudioTrack *)track];
+        } else if([track.kind isEqualToString:@"video"]) {
+            [mediaStream addVideoTrack:(RTCVideoTrack *)track];
+        }
+    }
+}
+
+RCT_EXPORT_METHOD(mediaStreamRemoveTrack:(nonnull NSString *)streamID : (nonnull NSString *)trackID)
+{
+    RTCMediaStream *mediaStream = self.localStreams[streamID];
+    RTCMediaStreamTrack *track = self.localTracks[trackID];
+
+    if (mediaStream && track) {
+        if ([track.kind isEqualToString:@"audio"]) {
+            [mediaStream removeAudioTrack:(RTCAudioTrack *)track];
+        } else if([track.kind isEqualToString:@"video"]) {
+            [mediaStream removeVideoTrack:(RTCVideoTrack *)track];
+        }
+    }
+}
+
 RCT_EXPORT_METHOD(mediaStreamRelease:(nonnull NSString *)streamID)
 {
   RTCMediaStream *stream = self.localStreams[streamID];
   if (stream) {
     for (RTCVideoTrack *track in stream.videoTracks) {
+      track.isEnabled = NO;
       [track.videoCaptureController stopCapture];
       [self.localTracks removeObjectForKey:track.trackId];
     }
     for (RTCAudioTrack *track in stream.audioTracks) {
+      track.isEnabled = NO;
       [self.localTracks removeObjectForKey:track.trackId];
     }
     [self.localStreams removeObjectForKey:streamID];
   }
 }
 
-RCT_EXPORT_METHOD(mediaStreamTrackRelease:(nonnull NSString *)streamID : (nonnull NSString *)trackID)
+RCT_EXPORT_METHOD(mediaStreamTrackRelease:(nonnull NSString *)trackID)
 {
-  // what's different to mediaStreamTrackStop? only call mediaStream explicitly?
-  RTCMediaStream *mediaStream = self.localStreams[streamID];
-  RTCMediaStreamTrack *track = self.localTracks[trackID];
-  if (mediaStream && track) {
-    track.isEnabled = NO;
-    [track.videoCaptureController stopCapture];
-    // FIXME this is called when track is removed from the MediaStream,
-    // but it doesn't mean it can not be added back using MediaStream.addTrack
-    [self.localTracks removeObjectForKey:trackID];
-    if ([track.kind isEqualToString:@"audio"]) {
-      [mediaStream removeAudioTrack:(RTCAudioTrack *)track];
-    } else if([track.kind isEqualToString:@"video"]) {
-      [mediaStream removeVideoTrack:(RTCVideoTrack *)track];
+    RTCMediaStreamTrack *track = self.localTracks[trackID];
+    if (track) {
+        track.isEnabled = NO;
+        [track.videoCaptureController stopCapture];
+        [self.localTracks removeObjectForKey:trackID];
+    }
+}
+
+RCT_EXPORT_METHOD(mediaStreamTrackSetEnabled:(nonnull NSString *)trackID : (BOOL)enabled)
+{
+  RTCMediaStreamTrack *track = [self trackForId:trackID];
+  if (track && track.isEnabled != enabled) {
+    track.isEnabled = enabled;
+    if (track.videoCaptureController) {  // It could be a remote track!
+      if (enabled) {
+        [track.videoCaptureController startCapture];
+      } else {
+        [track.videoCaptureController stopCapture];
+      }
     }
   }
 }
+
+RCT_EXPORT_METHOD(mediaStreamTrackSwitchCamera:(nonnull NSString *)trackID)
+{
+  RTCMediaStreamTrack *track = self.localTracks[trackID];
+  if (track) {
+    RTCVideoTrack *videoTrack = (RTCVideoTrack *)track;
+    [videoTrack.videoCaptureController switchCamera];
+  }
+}
+
+#pragma mark - Helpers
 
 - (RTCMediaStreamTrack*)trackForId:(NSString*)trackId
 {
@@ -200,38 +251,6 @@ RCT_EXPORT_METHOD(mediaStreamTrackRelease:(nonnull NSString *)streamID : (nonnul
     }
   }
   return track;
-}
-
-RCT_EXPORT_METHOD(mediaStreamTrackSetEnabled:(nonnull NSString *)trackID : (BOOL)enabled)
-{
-  RTCMediaStreamTrack *track = [self trackForId:trackID];
-  if (track && track.isEnabled != enabled) {
-    track.isEnabled = enabled;
-    if (enabled) {
-      [track.videoCaptureController startCapture];
-    } else {
-      [track.videoCaptureController stopCapture];
-    }
-  }
-}
-
-RCT_EXPORT_METHOD(mediaStreamTrackSwitchCamera:(nonnull NSString *)trackID)
-{
-  RTCMediaStreamTrack *track = self.localTracks[trackID];
-  if (track) {
-    RTCVideoTrack *videoTrack = (RTCVideoTrack *)track;
-    [videoTrack.videoCaptureController switchCamera];
-  }
-}
-
-RCT_EXPORT_METHOD(mediaStreamTrackStop:(nonnull NSString *)trackID)
-{
-  RTCMediaStreamTrack *track = self.localTracks[trackID];
-  if (track) {
-    track.isEnabled = NO;
-    [track.videoCaptureController stopCapture];
-    [self.localTracks removeObjectForKey:trackID];
-  }
 }
 
 @end
