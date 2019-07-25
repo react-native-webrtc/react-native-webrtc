@@ -5,7 +5,6 @@ import * as RTCUtil from './RTCUtil';
 
 import MediaStream from './MediaStream';
 import MediaStreamError from './MediaStreamError';
-import MediaStreamTrack from './MediaStreamTrack';
 import permissions from './Permissions';
 
 const { WebRTCModule } = NativeModules;
@@ -61,36 +60,19 @@ export default function getUserMedia(constraints = {}) {
       audioPerm || (delete constraints.audio);
       videoPerm || (delete constraints.video);
 
-      WebRTCModule.getUserMedia(
-        constraints,
-        /* successCallback */ (id, tracks) => {
-          const stream = new MediaStream(id);
-          for (const track of tracks) {
-            stream.addTrack(new MediaStreamTrack(track));
-          }
+      const success = (id, tracks) => {
+          const info = {
+            streamId: id,
+            streamReactTag: id,
+            tracks
+          };
     
-          resolve(stream);
-        },
-        /* errorCallback */ (type, message) => {
+          resolve(new MediaStream(info));
+      };
+
+      const failure = (type, message) => {
           let error;
           switch (type) {
-          case 'DOMException':
-            // According to
-            // https://www.w3.org/TR/mediacapture-streams/#idl-def-MediaStreamError,
-            // MediaStreamError is either a DOMException object or an
-            // OverconstrainedError object. We are very likely to not have a
-            // definition of DOMException on React Native (unless the client has
-            // provided such a definition). If necessary, we will fall back to our
-            // definition of MediaStreamError.
-            if (typeof DOMException === 'function') {
-              error = new DOMException(/* message */ undefined, /* name */ message);
-            }
-            break;
-          case 'OverconstrainedError':
-            if (typeof OverconstrainedError === 'function') {
-              error = new OverconstrainedError(/* constraint */ undefined, message);
-            }
-            break;
           case 'TypeError':
             error = new TypeError(message);
             break;
@@ -100,7 +82,9 @@ export default function getUserMedia(constraints = {}) {
           }
 
           reject(error);
-        });
+      };
+
+      WebRTCModule.getUserMedia(constraints, success, failure);
     });
   });
 }

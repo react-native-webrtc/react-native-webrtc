@@ -343,8 +343,7 @@ class PeerConnectionObserver implements PeerConnection.Observer {
         // MediaStream instance with the label default that the implementation
         // reuses.
         if ("default".equals(streamId)) {
-            for (Map.Entry<String, MediaStream> e
-                    : remoteStreams.entrySet()) {
+            for (Map.Entry<String, MediaStream> e : remoteStreams.entrySet()) {
                 if (e.getValue().equals(mediaStream)) {
                     streamReactTag = e.getKey();
                     break;
