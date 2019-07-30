@@ -24,6 +24,9 @@
     "event-target-shim": "^1.0.5",
     "prop-types": "^15.5.10"
   },
+  "devDependencies": {
+    "react-native": "^0.59.8"
+  },
   "peerDependencies": {
     "react-native": ">=0.40.0"
   },

@@ -2,6 +2,11 @@
 # https://www.npmjs.org/doc/misc/npm-faq.html#should-i-check-my-node_modules-folder-into-git
 node_modules
 ios/RCTWebRTC.xcodeproj/xcuserdata
+tests/ios/testing.xcodeproj/xcuserdata
+tests/ios/testing.xcworkspace/xcuserdata
+tests/ios/testing.xcodeproj/project.xcworkspace/xcuserdata/
 ios/RCTWebRTC.xcodeproj/project.xcworkspace
 .DS_Store
 .idea
+
+Pods/
