@@ -90,7 +90,7 @@ SPEC CHECKSUMS:
   Folly: de497beb10f102453a1afa9edbf8cf8a251890de
   glog: aefd1eb5dda2ab95ba0938556f34b98e2da3a60d
   React: 36d0768f9e93be2473b37e7fa64f92c1d5341eef
-  react-native-webrtc: 1415d2a54b2246dd85ba95eb3e4bf2b66533f951
+  react-native-webrtc: 0ad1460bd282eea64f0961d3941e60df3c253b63
   yoga: 684513b14b03201579ba3cee20218c9d1298b0cc
 
 PODFILE CHECKSUM: f43056ef88756113185b696de7041b9de0aceecc

@@ -28,6 +28,8 @@
 
 /* Begin PBXFileReference section */
 		3ABF9F0229C8CA0DF8DAF606 /* Pods_testing.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_testing.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		4F4219FF22F0F3A4008E3423 /* AudioSession.swift */ = {isa = PBXFileReference; indentWidth = 2; lastKnownFileType = sourcecode.swift; path = AudioSession.swift; sourceTree = "<group>"; tabWidth = 2; };
+		4F421A0022F13102008E3423 /* AudioSession.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = AudioSession.m; sourceTree = "<group>"; };
 		4F89AAEB22F0B26E0081CFF7 /* RTCMediaStreamTrack+React.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "RTCMediaStreamTrack+React.h"; sourceTree = "<group>"; };
 		4F89AAEC22F0B26E0081CFF7 /* WebRTCModule+VideoTrackAdapter.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = "WebRTCModule+VideoTrackAdapter.m"; sourceTree = "<group>"; };
 		4F89AAED22F0B26E0081CFF7 /* RCTConvert+WebRTC.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = "RCTConvert+WebRTC.m"; sourceTree = "<group>"; };
@@ -46,7 +48,7 @@
 		4F89AAFB22F0B26F0081CFF7 /* VideoCaptureController.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = VideoCaptureController.m; sourceTree = "<group>"; };
 		4F89AAFC22F0B26F0081CFF7 /* WebRTCModule+RTCPeerConnection.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "WebRTCModule+RTCPeerConnection.h"; sourceTree = "<group>"; };
 		4F89AAFD22F0B26F0081CFF7 /* WebRTCModule+RTCDataChannel.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = "WebRTCModule+RTCDataChannel.m"; sourceTree = "<group>"; };
-		4F89AAFF22F0DF920081CFF7 /* react-native-webrtc.podspec */ = {isa = PBXFileReference; explicitFileType = text.script.ruby; fileEncoding = 4; name = "react-native-webrtc.podspec"; path = "../../react-native-webrtc.podspec"; sourceTree = "<group>"; };
+		4F89AAFF22F0DF920081CFF7 /* react-native-webrtc.podspec */ = {isa = PBXFileReference; explicitFileType = text.script.ruby; fileEncoding = 4; name = "react-native-webrtc.podspec"; path = "../../react-native-webrtc.podspec"; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.ruby; };
 		4FC07D3C229857DA006693AD /* testing.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = testing.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		4FC07D3F229857DA006693AD /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		4FC07D41229857DA006693AD /* ViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewController.swift; sourceTree = "<group>"; };
@@ -114,6 +116,8 @@
 				4F89AAF222F0B26E0081CFF7 /* WebRTCModule+RTCPeerConnection.m */,
 				4F89AAF122F0B26E0081CFF7 /* WebRTCModule+RTCDataChannel.h */,
 				4F89AAFD22F0B26F0081CFF7 /* WebRTCModule+RTCDataChannel.m */,
+				4F4219FF22F0F3A4008E3423 /* AudioSession.swift */,
+				4F421A0022F13102008E3423 /* AudioSession.m */,
 			);
 			name = RCTWebRTC;
 			path = ../../ios/RCTWebRTC;
