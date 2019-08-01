@@ -9,10 +9,23 @@ import WebRTC
 import React
 import AVFoundation
 
+protocol RTCAudioSessionProtocol {
+  var useManualAudio: Bool { get set }
+  var isAudioEnabled: Bool { get set }
+  var category: String { get }
+  var isActive: Bool { get }
+  
+  func lockForConfiguration()
+  func unlockForConfiguration()
+  func setActive(_ active: Bool) throws
+}
+
+extension RTCAudioSession: RTCAudioSessionProtocol {}
+
 @objc(AudioSession)
 public class AudioSession: NSObject {
   
-  lazy var rtcAudioSession = RTCAudioSession.sharedInstance()
+  lazy var rtcAudioSession: RTCAudioSessionProtocol = RTCAudioSession.sharedInstance()
   
   @objc
   public func isManualAudio() -> Bool {
@@ -55,16 +68,7 @@ public class AudioSession: NSObject {
   }
   
   @objc
-  public func restartAudio(_ resolve: @escaping RCTPromiseResolveBlock, rejecter reject: @escaping RCTPromiseRejectBlock) {
-    do {
-      try restartAudio()
-      resolve("success")
-    } catch {
-      reject(AudioSessionErrorCode.restartError.rawValue, "Unable to stop and start audio", error)
-    }
-  }
-  
-  func setManualAudio(_ manualAudio: Bool, initialState enabled: Bool = false) {
+  public func setManualAudio(_ manualAudio: Bool) {
     rtcAudioSession.useManualAudio = manualAudio
     rtcAudioSession.isAudioEnabled = false
   }
@@ -102,11 +106,6 @@ public class AudioSession: NSObject {
     }
     
     rtcAudioSession.isAudioEnabled = false
-  }
-  
-  public func restartAudio() throws {
-    try stopAudio()
-    try startAudio()
   }
 }
 

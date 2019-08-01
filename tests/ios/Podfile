@@ -34,10 +34,13 @@ target 'testing' do
   
   pod 'react-native-webrtc', :path => "../../", :inhibit_warnings => false
   
-  #target 'testingTests' do
-  #    inherit! :complete
+  target 'testingTests' do
+    inherit! :search_paths
+    pod 'Quick'
+    pod 'Nimble'
+    pod 'OCMock'
   #    pod 'react-native-webrtc', :path => "../../", :testspecs => ['UnitTests'], :inhibit_warnings => false
-  #end
+  end
   
 
   post_install do |installer|
