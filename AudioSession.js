@@ -6,47 +6,47 @@ const isIOS = Platform.OS === 'ios';
 
 export const AudioSession = {
 
-  lockConfiguration = () => {
+  lockConfiguration() {
     if (isIOS) {
       RCTAudioSession.lockForConfiguration();
     }
   },
   
-  unlockConfiguration = async () => {
+  unlockConfiguration() {
     if (isIOS) {
       RCTAudioSession.unlockForConfiguration();
     }
   },
 
-  setManualAudio = async (manual) => {
+  setManualAudio(manual) {
     if (isIOS) {
       RCTAudioSession.setManualAudio(manual);
     }
   },
 
-  isManualAudio = async () => {
+  isManualAudio() {
     if (isIOS) {
       return RCTAudioSession.isManualAudio();
     }
     return false
   },
 
-  isAudioEnabled = async () => {
+  isAudioEnabled() {
     if (isIOS) {
-      return await RCTAudioSession.isAudioEnabled();
+      return RCTAudioSession.isAudioEnabled();
     }
     return true
   },
   
-  startAudio = async () => {
+  startAudio() {
     if (isIOS) {
-      await RCTAudioSession.startAudio();
+      return RCTAudioSession.startAudio();
     }
   },
   
-  stopAudio = async () => {
+  stopAudio() {
     if (isIOS) {
-      await RCTAudioSession.stopAudio();
+      return RCTAudioSession.stopAudio();
     }
   }
 }
