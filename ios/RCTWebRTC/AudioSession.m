@@ -7,7 +7,7 @@
 
 @import React;
 
-@interface RCT_EXTERN_REMAP_MODULE(RCTAudioSession, AudioSession, NSObject)
+@interface RCT_EXTERN_MODULE(RCTAudioSession, NSObject)
 
 #pragma mark - Audio session configuration -
 

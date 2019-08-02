@@ -22,7 +22,7 @@ protocol RTCAudioSessionProtocol {
 
 extension RTCAudioSession: RTCAudioSessionProtocol {}
 
-@objc(AudioSession)
+@objc(RCTAudioSession)
 public class AudioSession: NSObject {
   
   lazy var rtcAudioSession: RTCAudioSessionProtocol = RTCAudioSession.sharedInstance()

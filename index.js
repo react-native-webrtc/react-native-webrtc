@@ -8,6 +8,7 @@ import MediaStream from './MediaStream';
 import MediaStreamTrack from './MediaStreamTrack';
 import mediaDevices from './MediaDevices';
 import permissions from './Permissions';
+import AudioSession from './AudioSession';
 
 export {
   RTCPeerConnection,
@@ -17,5 +18,6 @@ export {
   MediaStream,
   MediaStreamTrack,
   mediaDevices,
-  permissions
+  permissions,
+  AudioSession
 };

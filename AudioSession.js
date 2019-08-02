@@ -1,52 +1,52 @@
 'use strict';
 
-import {NativeModules} from 'react-native';
-const {WebRTCModule} = NativeModules;
+import { NativeModules, Platform } from 'react-native';
+const {RCTAudioSession} = NativeModules;
 const isIOS = Platform.OS === 'ios';
 
 export const AudioSession = {
 
   lockConfiguration = () => {
     if (isIOS) {
-      WebRTCModule.lockConfiguration();
+      RCTAudioSession.lockForConfiguration();
     }
   },
   
-  unlockConfiguration = () => {
+  unlockConfiguration = async () => {
     if (isIOS) {
-      WebRTCModule.unlockConfiguration();
+      RCTAudioSession.unlockForConfiguration();
     }
   },
 
-  setManualAudio = (manual) => {
+  setManualAudio = async (manual) => {
     if (isIOS) {
-      WebRTCModule.setManualAudio(manual);
+      RCTAudioSession.setManualAudio(manual);
     }
   },
 
-  isManualAudio = () => {
+  isManualAudio = async () => {
     if (isIOS) {
-      return WebRTCModule.isManualAudio();
+      return RCTAudioSession.isManualAudio();
     }
     return false
   },
 
-  isAudioEnabled = () => {
+  isAudioEnabled = async () => {
     if (isIOS) {
-      return WebRTCModule.isAudioEnabled();
+      return await RCTAudioSession.isAudioEnabled();
     }
     return true
   },
   
   startAudio = async () => {
     if (isIOS) {
-      return await WebRTCModule.startAudio();
+      await RCTAudioSession.startAudio();
     }
   },
   
   stopAudio = async () => {
     if (isIOS) {
-      return await WebRTCModule.stopAudio();
+      await RCTAudioSession.stopAudio();
     }
   }
 }
