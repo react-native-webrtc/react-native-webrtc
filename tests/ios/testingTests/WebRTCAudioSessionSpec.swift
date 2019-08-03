@@ -11,17 +11,23 @@ import OCMock
 
 @testable import react_native_webrtc
 
-class AudioSessionSpec: QuickSpec {
+class WebRTCAudioSessionSpec: QuickSpec {
     
     override func spec() {
         
         var rtcAudioSession: MockRTCAudioSession!
-        var audioSession: AudioSession!
+        var audioSession: WebRTCAudioSession!
         
         beforeEach {
             rtcAudioSession = MockRTCAudioSession()
-            audioSession = AudioSession()
+            audioSession = WebRTCAudioSession()
             audioSession.rtcAudioSession = rtcAudioSession
+        }
+        
+        it("should launch WebAudioSession from bridge") {
+            let bridge = RCTBridge(delegate: BridgeDelegate(), launchOptions: [:])!
+            let rtcAudioSession = bridge.module(forName: "WebRTCAudioSession") as? WebRTCAudioSession
+            expect(rtcAudioSession).toNot(beNil())
         }
         
         it("should call lock configuration on rtc audio session") {
@@ -252,7 +258,12 @@ class AudioSessionSpec: QuickSpec {
             }
         }
     }
-    
+}
+
+class BridgeDelegate: NSObject, RCTBridgeDelegate {
+    func sourceURL(for bridge: RCTBridge!) -> URL! {
+        return Bundle.main.bundleURL
+    }
 }
 
 class MockRTCAudioSession: RTCAudioSessionProtocol {

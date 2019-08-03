@@ -22,8 +22,8 @@ protocol RTCAudioSessionProtocol {
 
 extension RTCAudioSession: RTCAudioSessionProtocol {}
 
-@objc(RCTAudioSession)
-public class AudioSession: NSObject {
+@objc(WebRTCAudioSession)
+public class WebRTCAudioSession: NSObject {
   
   lazy var rtcAudioSession: RTCAudioSessionProtocol = RTCAudioSession.sharedInstance()
   

@@ -7,7 +7,7 @@
 
 @import React;
 
-@interface RCT_EXTERN_MODULE(RCTAudioSession, NSObject)
+@interface RCT_EXTERN_MODULE(WebRTCAudioSession, NSObject)
 
 #pragma mark - Audio session configuration -
 
