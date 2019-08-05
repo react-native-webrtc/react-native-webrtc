@@ -73,6 +73,10 @@ public class WebRTCAudioSession: NSObject {
     rtcAudioSession.isAudioEnabled = false
   }
   
+  public static func requiresMainQueueSetup() -> Bool {
+    return true
+  }
+  
   /**
    Starts the web rtc audio units to start gathering data from the the audio session under manual mode. IF we are in
    manual mode we throw an error. We should also have the category of play and record so we have access to the
