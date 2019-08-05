@@ -8,7 +8,7 @@ import MediaStream from './MediaStream';
 import MediaStreamTrack from './MediaStreamTrack';
 import mediaDevices from './MediaDevices';
 import permissions from './Permissions';
-import AudioSession from './AudioSession';
+import WebRTCAudioSession from './WebRTCAudioSession';
 
 export {
   RTCPeerConnection,
@@ -19,5 +19,5 @@ export {
   MediaStreamTrack,
   mediaDevices,
   permissions,
-  AudioSession
+  WebRTCAudioSession
 };

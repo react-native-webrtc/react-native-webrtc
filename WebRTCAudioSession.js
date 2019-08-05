@@ -1,52 +1,52 @@
 'use strict';
 
 import { NativeModules, Platform } from 'react-native';
-const {RCTAudioSession} = NativeModules;
+const { WebRTCAudioSession } = NativeModules;
 const isIOS = Platform.OS === 'ios';
 
 export const AudioSession = {
 
   lockConfiguration() {
     if (isIOS) {
-      RCTAudioSession.lockForConfiguration();
+      WebRTCAudioSession.lockForConfiguration();
     }
   },
   
   unlockConfiguration() {
     if (isIOS) {
-      RCTAudioSession.unlockForConfiguration();
+      WebRTCAudioSession.unlockForConfiguration();
     }
   },
 
   setManualAudio(manual) {
     if (isIOS) {
-      RCTAudioSession.setManualAudio(manual);
+      WebRTCAudioSession.setManualAudio(manual);
     }
   },
 
   isManualAudio() {
     if (isIOS) {
-      return RCTAudioSession.isManualAudio();
+      return WebRTCAudioSession.isManualAudio();
     }
     return false
   },
 
   isAudioEnabled() {
     if (isIOS) {
-      return RCTAudioSession.isAudioEnabled();
+      return WebRTCAudioSession.isAudioEnabled();
     }
     return true
   },
   
   startAudio() {
     if (isIOS) {
-      return RCTAudioSession.startAudio();
+      return WebRTCAudioSession.startAudio();
     }
   },
   
   stopAudio() {
     if (isIOS) {
-      return RCTAudioSession.stopAudio();
+      return WebRTCAudioSession.stopAudio();
     }
   }
 }
