@@ -73,6 +73,7 @@ public class WebRTCAudioSession: NSObject {
     rtcAudioSession.isAudioEnabled = false
   }
   
+  @objc
   public static func requiresMainQueueSetup() -> Bool {
     return true
   }
