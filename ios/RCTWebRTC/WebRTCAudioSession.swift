@@ -93,7 +93,9 @@ public class WebRTCAudioSession: NSObject {
     }
     
     if isAudioEnabled() == true {
+      rtcAudioSession.lockForConfiguration()
       rtcAudioSession.isAudioEnabled = false
+      rtcAudioSession.unlockForConfiguration()
     }
     
     // ensure the that audio session is active before we say is audio enabled. We need an active audio session
