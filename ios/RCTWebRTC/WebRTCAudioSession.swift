@@ -9,23 +9,14 @@ import WebRTC
 import React
 import AVFoundation
 
-protocol RTCAudioSessionProtocol {
-  var useManualAudio: Bool { get set }
-  var isAudioEnabled: Bool { get set }
-  var category: String { get }
-  var isActive: Bool { get }
-  
-  func lockForConfiguration()
-  func unlockForConfiguration()
-  func setActive(_ active: Bool) throws
-}
-
-extension RTCAudioSession: RTCAudioSessionProtocol {}
-
+// Define the react-native exposed class with the interface that is mapped in the bridging to be expose to react native.
 @objc(WebRTCAudioSession)
 public class WebRTCAudioSession: NSObject {
   
   lazy var rtcAudioSession: RTCAudioSessionProtocol = RTCAudioSession.sharedInstance()
+  lazy var center = NotificationCenter.default
+  
+  // MARK: - React Native interface -
   
   @objc
   public func isManualAudio() -> Bool {
@@ -78,6 +69,8 @@ public class WebRTCAudioSession: NSObject {
     return true
   }
   
+  // MARK: - Internal -
+  
   /**
    Starts the web rtc audio units to start gathering data from the the audio session under manual mode. IF we are in
    manual mode we throw an error. We should also have the category of play and record so we have access to the
@@ -124,6 +117,29 @@ public class WebRTCAudioSession: NSObject {
   }
 }
 
+// MARK: - Mocking interfaces -
+
+/**
+ We define a protocol of what we use on the RTCAudioSession in the WebRTC.framework. This protocol allows us to inject a
+ mock object conforming to that protocol to test the implementation of our methods to its interactions with the
+ RTCAudioSession. */
+protocol RTCAudioSessionProtocol {
+  var useManualAudio: Bool { get set }
+  var isAudioEnabled: Bool { get set }
+  var category: String { get }
+  var isActive: Bool { get }
+  
+  func lockForConfiguration()
+  func unlockForConfiguration()
+  func setActive(_ active: Bool) throws
+}
+
+// We add our protocol as an extension to the object from the framework so we the refer to is as the protocol rather
+// than as the class.
+extension RTCAudioSession: RTCAudioSessionProtocol {}
+
+// MARK: - Errors -
+
 enum AudioSessionError: Error {
   case manualModeNotSet
   case audioCategoryNotPlayRecord
@@ -132,5 +148,4 @@ enum AudioSessionError: Error {
 enum AudioSessionErrorCode: String {
   case startError = "RTCAudioSessionStartError"
   case stopError = "RTCAudioSessionStopError"
-  case restartError = "RTCAudioSessionRestartError"
 }
