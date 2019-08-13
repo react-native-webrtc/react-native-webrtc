@@ -93,14 +93,22 @@ public class WebRTCAudioSession: NSObject {
     }
     
     if isAudioEnabled() == true {
-      rtcAudioSession.lockForConfiguration()
       rtcAudioSession.isAudioEnabled = false
-      rtcAudioSession.unlockForConfiguration()
     }
     
-    // ensure the that audio session is active before we say is audio enabled. We need an active audio session
+    // We post this notification to "Kick start the audio session back into gear". This should clear up anything that
+    // might be caused by an interuption having triggered the audio interuptions mode in webRTC, if there is anything
+    // lingering there. This is a noted workaround for the interuption causing it to become broken.
+    let info = [AVAudioSessionInterruptionTypeKey: AVAudioSession.InterruptionType.ended.rawValue as UInt]
+    center.post(name: AVAudioSession.interruptionNotification, object: nil, userInfo: info)
+    
+    // Ensure the that audio session is active before we say is audio enabled. We need an active audio session. we
+    // should normally be active, this is mostly just a sanity check. due to the locking nature of the RTCAudioSession,
+    // we manually engage and disengage the lock. if we do not it will throw an error.
     if rtcAudioSession.isActive == false {
+      rtcAudioSession.lockForConfiguration()
       try rtcAudioSession.setActive(true)
+      rtcAudioSession.unlockForConfiguration()
     }
     
     rtcAudioSession.isAudioEnabled = true
