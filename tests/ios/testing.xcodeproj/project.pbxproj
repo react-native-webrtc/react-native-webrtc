@@ -9,6 +9,7 @@
 /* Begin PBXBuildFile section */
 		300E39B362EB393AAE13E073 /* Pods_testing.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 3ABF9F0229C8CA0DF8DAF606 /* Pods_testing.framework */; };
 		4F010C9D22F26EBE00BFACBE /* WebRTCAudioSessionSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F010C9C22F26EBE00BFACBE /* WebRTCAudioSessionSpec.swift */; };
+		4FBAA0DC2304579000A157E5 /* WebRTCAudioSessionConfigurationSpec.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4FBAA0DB2304578F00A157E5 /* WebRTCAudioSessionConfigurationSpec.swift */; };
 		4FC07D40229857DA006693AD /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4FC07D3F229857DA006693AD /* AppDelegate.swift */; };
 		4FC07D42229857DA006693AD /* ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4FC07D41229857DA006693AD /* ViewController.swift */; };
 		4FC07D45229857DA006693AD /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 4FC07D43229857DA006693AD /* Main.storyboard */; };
@@ -54,6 +55,7 @@
 		4F89AAFC22F0B26F0081CFF7 /* WebRTCModule+RTCPeerConnection.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "WebRTCModule+RTCPeerConnection.h"; sourceTree = "<group>"; };
 		4F89AAFD22F0B26F0081CFF7 /* WebRTCModule+RTCDataChannel.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = "WebRTCModule+RTCDataChannel.m"; sourceTree = "<group>"; };
 		4F89AAFF22F0DF920081CFF7 /* react-native-webrtc.podspec */ = {isa = PBXFileReference; explicitFileType = text.script.ruby; fileEncoding = 4; name = "react-native-webrtc.podspec"; path = "../../react-native-webrtc.podspec"; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.ruby; };
+		4FBAA0DB2304578F00A157E5 /* WebRTCAudioSessionConfigurationSpec.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = WebRTCAudioSessionConfigurationSpec.swift; sourceTree = "<group>"; };
 		4FC07D3C229857DA006693AD /* testing.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = testing.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		4FC07D3F229857DA006693AD /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		4FC07D41229857DA006693AD /* ViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewController.swift; sourceTree = "<group>"; };
@@ -64,6 +66,7 @@
 		4FC07D50229857DE006693AD /* testingTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = testingTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		4FC07D54229857DE006693AD /* testingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = testingTests.swift; sourceTree = "<group>"; };
 		4FC07D56229857DE006693AD /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		4FC986382303396200FB2C10 /* WebRTCAudioSessionConfiguration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebRTCAudioSessionConfiguration.swift; sourceTree = "<group>"; };
 		7017765D29D438C246CE5D1A /* Pods-testingTests.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-testingTests.debug.xcconfig"; path = "Target Support Files/Pods-testingTests/Pods-testingTests.debug.xcconfig"; sourceTree = "<group>"; };
 		7663B5F24FFA57C36785F702 /* Pods-testing-testingTests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-testing-testingTests.release.xcconfig"; path = "Target Support Files/Pods-testing-testingTests/Pods-testing-testingTests.release.xcconfig"; sourceTree = "<group>"; };
 		9466D223AB985D2E4D98B4A9 /* Pods-testingTests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-testingTests.release.xcconfig"; path = "Target Support Files/Pods-testingTests/Pods-testingTests.release.xcconfig"; sourceTree = "<group>"; };
@@ -126,6 +129,7 @@
 				4F89AAF122F0B26E0081CFF7 /* WebRTCModule+RTCDataChannel.h */,
 				4F89AAFD22F0B26F0081CFF7 /* WebRTCModule+RTCDataChannel.m */,
 				4F4219FF22F0F3A4008E3423 /* WebRTCAudioSession.swift */,
+				4FC986382303396200FB2C10 /* WebRTCAudioSessionConfiguration.swift */,
 				4F421A0022F13102008E3423 /* WebRTCAudioSession.m */,
 			);
 			name = RCTWebRTC;
@@ -182,6 +186,7 @@
 				4FC07D54229857DE006693AD /* testingTests.swift */,
 				4FC07D56229857DE006693AD /* Info.plist */,
 				4F010C9C22F26EBE00BFACBE /* WebRTCAudioSessionSpec.swift */,
+				4FBAA0DB2304578F00A157E5 /* WebRTCAudioSessionConfigurationSpec.swift */,
 			);
 			path = testingTests;
 			sourceTree = "<group>";
@@ -376,6 +381,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				4FBAA0DC2304579000A157E5 /* WebRTCAudioSessionConfigurationSpec.swift in Sources */,
 				4F010C9D22F26EBE00BFACBE /* WebRTCAudioSessionSpec.swift in Sources */,
 				4FC07D55229857DE006693AD /* testingTests.swift in Sources */,
 			);
