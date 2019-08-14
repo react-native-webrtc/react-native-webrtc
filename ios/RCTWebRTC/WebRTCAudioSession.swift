@@ -127,6 +127,10 @@ public class WebRTCAudioSession: NSObject {
   
   func disengageAudioSession() throws {
     
+    if rtcAudioSession.isAudioEnabled == true {
+      try stopAudio()
+    }
+    
     NSLog("[AudioSession]: Disengage Audio Session")
     
     let config = WebRTCAudioSessionConfiguration.Defaults.playback
