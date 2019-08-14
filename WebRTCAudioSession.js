@@ -6,15 +6,28 @@ const isIOS = Platform.OS === 'ios';
 
 const WebRTCAudioSession = {
 
-  lockConfiguration() {
+  isEngaged() {
     if (isIOS) {
-      WebRTCAudioSessionModule.lockForConfiguration();
+      return WebRTCAudioSessionModule.isEngaged();
+    }
+    return false
+  },
+
+  engageVOIPMode() {
+    if (isIOS) {
+      return WebRTCAudioSessionModule.engageVOIPAudioSession();
     }
   },
-  
-  unlockConfiguration() {
+
+  engageVideoMode() {
     if (isIOS) {
-      WebRTCAudioSessionModule.unlockForConfiguration();
+      return WebRTCAudioSessionModule.engageVideoAudioSession();
+    }
+  },
+
+  disengaged() {
+    if (isIOS) {
+      return WebRTCAudioSessionModule.disengageAudioSession();
     }
   },
 
