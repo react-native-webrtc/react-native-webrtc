@@ -15,7 +15,7 @@ const WebRTCAudioSession = {
 
   engageVOIPMode() {
     if (isIOS) {
-      return WebRTCAudioSessionModule.engageVOIPAudioSession();
+      return WebRTCAudioSessionModule.engageVoipAudioSession();
     }
   },
 
@@ -25,7 +25,7 @@ const WebRTCAudioSession = {
     }
   },
 
-  disengaged() {
+  disengage() {
     if (isIOS) {
       return WebRTCAudioSessionModule.disengageAudioSession();
     }
