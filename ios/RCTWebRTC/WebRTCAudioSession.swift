@@ -28,6 +28,11 @@ public class WebRTCAudioSession: NSObject {
   // Disengage will return the audio session to be in a default state.
   
   @objc
+  public func isEngaged() -> Bool {
+    return rtcAudioSession.isVoIPActive
+  }
+  
+  @objc
   public func engageVoipAudioSession(_ resolve: @escaping RCTPromiseResolveBlock, rejecter reject: @escaping RCTPromiseRejectBlock) {
     do {
       try engageAudioSession( WebRTCAudioSessionConfiguration.Defaults.voip )

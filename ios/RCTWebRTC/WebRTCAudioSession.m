@@ -11,6 +11,7 @@
 
 #pragma mark - Audio session configuration -
 
+RCT_EXTERN_METHOD(isEngaged);
 RCT_EXTERN_METHOD(engageVoipAudioSession:(RCTPromiseResolveBlock _Nonnull)resolve rejecter:(RCTPromiseRejectBlock _Nonnull)reject);
 RCT_EXTERN_METHOD(engageVideoAudioSession:(RCTPromiseResolveBlock _Nonnull)resolve rejecter:(RCTPromiseRejectBlock _Nonnull)reject);
 RCT_EXTERN_METHOD(disengageAudioSession:(RCTPromiseResolveBlock _Nonnull)resolve rejecter:(RCTPromiseRejectBlock _Nonnull)reject);
