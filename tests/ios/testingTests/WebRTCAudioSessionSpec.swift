@@ -31,12 +31,12 @@ class WebRTCAudioSessionSpec: QuickSpec {
         }
         
         it("should return audio enabled from rtc audio session") {
-            rtcAudioSession.isAudioEnabled = true
+            rtcAudioSession.onGetIsAudioEnabled = { return true }
             expect(audioSession.isAudioEnabled()) == true
         }
         
         it("should return manual audio from rtc audio session") {
-            rtcAudioSession.useManualAudio = true
+            rtcAudioSession.onGetUseManualAudio = { return true }
             expect(audioSession.isManualAudio()) == true
         }
         
@@ -70,8 +70,9 @@ class WebRTCAudioSessionSpec: QuickSpec {
                 
                 context("success") {
                     beforeEach {
-                        rtcAudioSession.useManualAudio = true
-                        rtcAudioSession.category = AVAudioSession.Category.playAndRecord.rawValue
+                        rtcAudioSession.onGetUseManualAudio = { return true }
+                        rtcAudioSession.onCategory = { return .playAndRecord }
+                        rtcAudioSession.onMode = { return .voiceChat }
                     }
                     
                     it("should resolve") {
@@ -87,16 +88,96 @@ class WebRTCAudioSessionSpec: QuickSpec {
             describe("internal") {
                 
                 it("should throw error if manual audio is not enabled") {
+                    rtcAudioSession.onGetUseManualAudio = { return false }
                     expect{
                         try audioSession.startAudio()
-                        }.to(throwError( AudioSessionError.manualModeNotSet ))
+                    }.to(throwError( AudioSessionError.manualModeNotSet ))
                 }
                 
                 context("manual audio is enabled") {
                     
                     beforeEach {
-                        rtcAudioSession.useManualAudio = true
+                        rtcAudioSession.onGetUseManualAudio = { return true }
                     }
+                    
+                    context("voip inactive") {
+                        
+                        beforeEach {
+                            rtcAudioSession.onCategory = { return .ambient }
+                            rtcAudioSession.onMode = { return .default }
+                        }
+                        
+                    }
+                    
+                    context("voip active") {
+                        
+                        beforeEach {
+                            rtcAudioSession.onCategory = { return .playAndRecord }
+                            rtcAudioSession.onMode = { return .voiceChat }
+                        }
+                        
+                        context("audio category is play and record") {
+                            
+                            beforeEach {
+                                rtcAudioSession.onCategory = { return .playAndRecord }
+                            }
+                            
+                            it("should set is audio enabled to true") {
+                                try? audioSession.startAudio()
+                                expect(rtcAudioSession.setIsAudioEnabledCalled) == true
+                            }
+                            
+                            it("should set is audio enabled once") {
+                                try? audioSession.startAudio()
+                                expect(rtcAudioSession.setIsAudioEnabledCalledCount) == 1
+                            }
+                            
+                            it("should not call set active on audio session") {
+                                try? audioSession.startAudio()
+                                expect(rtcAudioSession.setActiveCalled) == false
+                            }
+                            
+                            it("should not throw error") {
+                                expect {
+                                    try audioSession.startAudio()
+                                    }.toNot(throwError())
+                            }
+                            
+                            context("is audio enabled already true") {
+                                
+                                beforeEach {
+                                    rtcAudioSession.onGetIsAudioEnabled = { return true }
+                                }
+                                
+                                it("should set is audio enabled twice") {
+                                    try? audioSession.startAudio()
+                                    expect(rtcAudioSession.setIsAudioEnabledCalledCount) == 2
+                                }
+                            }
+                            
+                            context("audio session is not active") {
+                                
+                                beforeEach {
+                                    rtcAudioSession.onIsActive = { return false }
+                                }
+                                
+                                it("should call set active on audio session") {
+                                    try? audioSession.startAudio()
+                                    expect(rtcAudioSession.setActiveCalled) == true
+                                }
+                                
+                                it("should throw exception if set audio failed") {
+                                    let error = NSError(domain: "test error", code: 0, userInfo: nil)
+                                    rtcAudioSession.onSetActive = { _ in throw error }
+                                    expect {
+                                        try audioSession.startAudio()
+                                        }.to(throwError(error))
+                                }
+                            }
+                        }
+                    }
+                    
+                    //TODO: ask if voip is active and it went into engaging the voip or not.
                     
                     xit("should throw error if audio category is not play and record") {
                         expect{
@@ -104,67 +185,7 @@ class WebRTCAudioSessionSpec: QuickSpec {
                         }.to(throwError( AudioSessionError.audioCategoryNotPlayRecord ))
                     }
                     
-                    context("audio category is play and record") {
-                        
-                        beforeEach {
-                            rtcAudioSession.category = AVAudioSession.Category.playAndRecord.rawValue
-                        }
-                        
-                        it("should set is audio enabled to true") {
-                            try? audioSession.startAudio()
-                            expect(rtcAudioSession.isAudioEnabledCalled) == true
-                        }
-                        
-                        it("should set is audio enabled once") {
-                            try? audioSession.startAudio()
-                            expect(rtcAudioSession.isAudioEnabledCalledCount) == 1
-                        }
-                        
-                        it("should not call set active on audio session") {
-                            try? audioSession.startAudio()
-                            expect(rtcAudioSession.setActiveCalled) == false
-                        }
-                        
-                        it("should not throw error") {
-                            expect {
-                                try audioSession.startAudio()
-                                }.toNot(throwError())
-                        }
-                        
-                        context("is audio enabled already true") {
-                            
-                            beforeEach {
-                                rtcAudioSession.isAudioEnabled = true
-                                rtcAudioSession.isAudioEnabledCalledCount = 0
-                                rtcAudioSession.isAudioEnabledCalled = false
-                            }
-                            
-                            it("should set is audio enabled once") {
-                                try? audioSession.startAudio()
-                                expect(rtcAudioSession.isAudioEnabledCalledCount) == 2
-                            }
-                        }
-                        
-                        context("audio session is not active") {
-                            
-                            beforeEach {
-                                rtcAudioSession.isActive = false
-                            }
-                            
-                            it("should call set active on audio session") {
-                                try? audioSession.startAudio()
-                                expect(rtcAudioSession.setActiveCalled) == true
-                            }
-                            
-                            it("should throw exception if set audio failed") {
-                                let error = NSError(domain: "test error", code: 0, userInfo: nil)
-                                rtcAudioSession.onSetActive = { _ in throw error }
-                                expect {
-                                    try audioSession.startAudio()
-                                    }.to(throwError(error))
-                            }
-                        }
-                    }
+                    
                 }
             }
         }
@@ -199,7 +220,7 @@ class WebRTCAudioSessionSpec: QuickSpec {
                 
                 context("success") {
                     beforeEach {
-                        rtcAudioSession.useManualAudio = true
+                        rtcAudioSession.onGetUseManualAudio = { return true }
                     }
                     
                     it("should resolve") {
@@ -227,8 +248,10 @@ class WebRTCAudioSessionSpec: QuickSpec {
                     }
                     
                     it("should set audio enabled") {
+                        rtcAudioSession.onSetIsAudioEnabled = { result in
+                            expect(result) == false
+                        }
                         try? audioSession.stopAudio()
-                        expect(rtcAudioSession.isAudioEnabledCalled) == true
                     }
                 }
             }
@@ -237,14 +260,18 @@ class WebRTCAudioSessionSpec: QuickSpec {
         describe("set manual audio") {
             
             it("should set manual audio on the rctAudioSession") {
+                rtcAudioSession.onSetUseManualAudio = { result in
+                    expect(result) == true
+                }
                 audioSession.setManualAudio(true)
-                expect(rtcAudioSession.useManualAudio) == true
             }
             
             it("should set is audio enabled to false") {
+                rtcAudioSession.onSetIsAudioEnabled = { result in
+                    expect(result) == false
+                }
                 audioSession.setManualAudio(true)
-                expect(rtcAudioSession.isAudioEnabled) == false
-                expect(rtcAudioSession.isAudioEnabledCalled) == true
+                expect(rtcAudioSession.setIsAudioEnabledCalled) == true
             }
         }
     }
@@ -256,93 +283,4 @@ class BridgeDelegate: NSObject, RCTBridgeDelegate {
     }
 }
 
-class MockRTCAudioSession: RTCAudioSessionProtocol {
-    
-    
-    var useManualAudioCalled = false
-    var useManualAudio: Bool = false {
-        didSet {
-            useManualAudioCalled = true
-        }
-    }
-    
-    var isAudioEnabledCalled = false
-    var isAudioEnabledCalledCount = 0
-    var isAudioEnabled: Bool = false {
-        didSet {
-            isAudioEnabledCalled = true
-            isAudioEnabledCalledCount += 1
-        }
-    }
-    var category: String = AVAudioSession.Category.ambient.rawValue
-    var isActive: Bool = true
-    
-    var lockForConfigurationCalled = false
-    func lockForConfiguration() {
-        lockForConfigurationCalled = true
-    }
-    
-    var unlockForConfigurationCalled = false
-    func unlockForConfiguration() {
-        unlockForConfigurationCalled = true
-    }
-    
-    var setActiveCalled = false
-    var onSetActive: (Bool) throws -> Void = { _ in }
-    func setActive(_ active: Bool) throws {
-        setActiveCalled = true
-        try onSetActive(active)
-    }
-    
-    var isVoIPActive: Bool = true
-    
-    var categoryOptions: AVAudioSession.CategoryOptions = []
-    
-    var mode: String = ""
-    
-    var sampleRate: Double = 0
-    
-    var inputNumberOfChannels: Int = 0
-    
-    var outputNumberOfChannels: Int = 0
-    
-    var outputVolume: Float = 0.0
-    
-    var inputLatency: TimeInterval = 1.0
-    
-    var outputLatency: TimeInterval = 1.0
-    
-    var ioBufferDuration: TimeInterval = 1.0
-    
-    var preferredSampleRate: Double = 1.0
-    
-    var preferredIOBufferDuration: TimeInterval = 1.0
-    
-    func setCategory(_ category: String, mode: String, options: AVAudioSession.CategoryOptions) throws {
-        
-    }
-    
-    func setMode(_ mode: String) throws {
-        
-    }
-    
-    func setPreferredInput(_ inPort: AVAudioSessionPortDescription) throws {
-        
-    }
-    
-    func setPreferredSampleRate(_ sampleRate: Double) throws {
-        
-    }
-    
-    func setPreferredIOBufferDuration(_ duration: TimeInterval) throws {
-        
-    }
-    
-    func setPreferredInputNumberOfChannels(_ count: Int) throws {
-        
-    }
-    
-    func setPreferredOutputNumberOfChannels(_ count: Int) throws {
-        
-    }
-}
+

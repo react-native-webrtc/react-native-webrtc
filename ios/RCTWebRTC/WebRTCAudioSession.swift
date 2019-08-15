@@ -240,7 +240,7 @@ public class WebRTCAudioSession: NSObject {
  We define a protocol of what we use on the RTCAudioSession in the WebRTC.framework. This protocol allows us to inject a
  mock object conforming to that protocol to test the implementation of our methods to its interactions with the
  RTCAudioSession. */
-protocol RTCAudioSessionProtocol {
+protocol RTCAudioSessionProtocol: CustomDebugStringConvertible {
   var useManualAudio: Bool { get set }
   var isAudioEnabled: Bool { get set }
   var isActive: Bool { get }
@@ -263,7 +263,7 @@ protocol RTCAudioSessionProtocol {
   var preferredSampleRate: Double { get }
   var preferredIOBufferDuration: TimeInterval { get }
   
-  func setCategory(_ category: String, mode: String, options: AVAudioSession.CategoryOptions) throws
+  func setCategory(_ category: String, with options: AVAudioSession.CategoryOptions) throws
   func setMode(_ mode: String) throws /* set session mode */
   func setPreferredInput(_ inPort: AVAudioSessionPortDescription) throws
   func setPreferredSampleRate(_ sampleRate: Double) throws
@@ -272,15 +272,13 @@ protocol RTCAudioSessionProtocol {
   func setPreferredOutputNumberOfChannels(_ count: Int) throws
 }
 
-// We add our protocol as an extension to the object from the framework so we the refer to is as the protocol rather
-// than as the class.
-extension RTCAudioSession: RTCAudioSessionProtocol {
+extension RTCAudioSessionProtocol {
   
   /**
    Determine if our audio session is setup to be VOIP from its properties. if we have video or voice chat for out
    mode and we have Play and Record enabled, then we are currently VOIP enabled and active.
    */
-  public var isVoIPActive: Bool {
+  var isVoIPActive: Bool {
     return category == AVAudioSession.Category.playAndRecord.rawValue && (mode == AVAudioSession.Mode.voiceChat.rawValue || mode == AVAudioSession.Mode.videoChat.rawValue)
   }
   
@@ -289,7 +287,7 @@ extension RTCAudioSession: RTCAudioSessionProtocol {
     try setMode(mode)
   }
   
-  open override var debugDescription: String {
+  var debugDescription: String {
     return "WebRTCAudioSession: {\n" +
       "  category: \(category)\n" +
       "  categoryOptions: \(categoryOptions.rawValue)\n" +
@@ -305,6 +303,10 @@ extension RTCAudioSession: RTCAudioSessionProtocol {
     "}"
   }
 }
+
+// We add our protocol as an extension to the object from the framework so we the refer to is as the protocol rather
+// than as the class.
+extension RTCAudioSession: RTCAudioSessionProtocol {}
 
 // MARK: - Errors -
 
