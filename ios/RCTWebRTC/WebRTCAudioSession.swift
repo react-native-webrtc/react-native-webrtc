@@ -138,7 +138,7 @@ public class WebRTCAudioSession: RCTEventEmitter {
   
   func engageAudioSession(_ config: WebRTCAudioSessionConfiguration ) throws {
     
-    guard rtcAudioSession.isVoIPActive == false else {
+    guard !rtcAudioSession.isVoIPActive else {
       return
     }
     
@@ -151,7 +151,7 @@ public class WebRTCAudioSession: RCTEventEmitter {
   
   func disengageAudioSession() throws {
     
-    if rtcAudioSession.isAudioEnabled == true {
+    if rtcAudioSession.isAudioEnabled {
       try stopAudio()
     }
     
