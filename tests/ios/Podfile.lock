@@ -6,6 +6,9 @@ PODS:
     - DoubleConversion
     - glog
   - glog (0.3.5)
+  - Nimble (8.0.2)
+  - OCMock (3.4.3)
+  - Quick (2.1.0)
   - React (0.59.10):
     - React/Core (= 0.59.10)
   - react-native-webrtc (1.69.2):
@@ -56,6 +59,9 @@ DEPENDENCIES:
   - DoubleConversion (from `../../node_modules/react-native/third-party-podspecs/DoubleConversion.podspec`)
   - Folly (from `../../node_modules/react-native/third-party-podspecs/Folly.podspec`)
   - glog (from `../../node_modules/react-native/third-party-podspecs/glog.podspec`)
+  - Nimble
+  - OCMock
+  - Quick
   - react-native-webrtc (from `../../`)
   - React/Core (from `../../node_modules/react-native`)
   - React/CxxBridge (from `../../node_modules/react-native`)
@@ -69,6 +75,9 @@ DEPENDENCIES:
 SPEC REPOS:
   https://github.com/cocoapods/specs.git:
     - boost-for-react-native
+    - Nimble
+    - OCMock
+    - Quick
 
 EXTERNAL SOURCES:
   DoubleConversion:
@@ -89,10 +98,13 @@ SPEC CHECKSUMS:
   DoubleConversion: bb338842f62ab1d708ceb63ec3d999f0f3d98ecd
   Folly: de497beb10f102453a1afa9edbf8cf8a251890de
   glog: aefd1eb5dda2ab95ba0938556f34b98e2da3a60d
+  Nimble: 622629381bda1dd5678162f21f1368cec7cbba60
+  OCMock: 43565190abc78977ad44a61c0d20d7f0784d35ab
+  Quick: 4be43f6634acfa727dd106bdf3929ce125ffa79d
   React: 36d0768f9e93be2473b37e7fa64f92c1d5341eef
-  react-native-webrtc: 1415d2a54b2246dd85ba95eb3e4bf2b66533f951
+  react-native-webrtc: b88f891654136530395abe4c393bc9396cae3c7e
   yoga: 684513b14b03201579ba3cee20218c9d1298b0cc
 
-PODFILE CHECKSUM: f43056ef88756113185b696de7041b9de0aceecc
+PODFILE CHECKSUM: c01def7234d63a9a1d00fe7220393b11479eae6d
 
 COCOAPODS: 1.7.5

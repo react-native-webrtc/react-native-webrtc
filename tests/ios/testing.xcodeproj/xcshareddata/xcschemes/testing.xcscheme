@@ -32,9 +32,9 @@
       <CodeCoverageTargets>
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "A1EB25F35BB1127780B4B394949CC973"
-            BuildableName = "RNVoipPushKit.framework"
-            BlueprintName = "RNVoipPushKit"
+            BlueprintIdentifier = "45FC9E7810A05BB6C84CD7AFBB1D985D"
+            BuildableName = "react_native_webrtc.framework"
+            BlueprintName = "react-native-webrtc"
             ReferencedContainer = "container:Pods/Pods.xcodeproj">
          </BuildableReference>
       </CodeCoverageTargets>

@@ -13,9 +13,10 @@ Pod::Spec.new do |s|
   s.requires_arc        = true
 
   s.platform            = :ios, '10.0'
+  s.swift_version       = '5'
 
-  s.preserve_paths      = 'ios/**/*'
-  s.source_files        = 'ios/**/*.{h,m}'
+  s.preserve_paths      = 'ios/RCTWebRTC/**/*'
+  s.source_files        = 'ios/RCTWebRTC/**/*.{h,m,swift}'
   s.libraries           = 'c', 'sqlite3', 'stdc++'
   s.framework           = 'AudioToolbox','AVFoundation', 'CoreAudio', 'CoreGraphics', 'CoreVideo', 'GLKit', 'VideoToolbox'
   s.ios.vendored_frameworks = 'ios/WebRTC.framework'
