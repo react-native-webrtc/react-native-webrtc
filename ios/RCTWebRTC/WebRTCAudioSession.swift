@@ -212,7 +212,7 @@ public class WebRTCAudioSession: RCTEventEmitter {
     // Ensure the that audio session is active before we say is audio enabled. We need an active audio session. we
     // should normally be active, this is mostly just a sanity check. due to the locking nature of the RTCAudioSession,
     // we manually engage and disengage the lock. if we do not it will throw an error.
-    if rtcAudioSession.isActive == false {
+    if !rtcAudioSession.isActive {
       rtcAudioSession.lockForConfiguration()
       try rtcAudioSession.setActive(true)
       rtcAudioSession.unlockForConfiguration()
