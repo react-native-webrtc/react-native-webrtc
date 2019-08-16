@@ -191,7 +191,7 @@ public class WebRTCAudioSession: RCTEventEmitter {
     
     // Check to see if we are in voip mode. if not, try to configure the audio session to be VOIP. If it is configured
     // for video, this should already be enabled.
-    if rtcAudioSession.isVoIPActive == false {
+    if !rtcAudioSession.isVoIPActive {
       try engageAudioSession( WebRTCAudioSessionConfiguration.Defaults.voip )
     }
     
@@ -199,7 +199,7 @@ public class WebRTCAudioSession: RCTEventEmitter {
       throw AudioSessionError.audioCategoryNotPlayRecord
     }
     
-    if isAudioEnabled() == true {
+    if isAudioEnabled() {
       rtcAudioSession.isAudioEnabled = false
     }
     
