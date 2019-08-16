@@ -61,8 +61,8 @@ public struct WebRTCAudioSessionConfiguration: Equatable {
       let device = deviceInfo
       return WebRTCAudioSessionConfiguration(
         category: PreferredCategory,
-        categoryOptions: PreferredCategoryMode,
-        mode: .voiceChat,
+        categoryOptions: PreferredVOIPCategoryMode,
+        mode: PreferredVOIPMode,
         sampleRate: device.sampleRate,
         ioBufferDuration: device.iOBufferDuration,
         inputNumberOfChannels: PreferredNumberOfChannels,
@@ -73,8 +73,8 @@ public struct WebRTCAudioSessionConfiguration: Equatable {
       let device = deviceInfo
       return WebRTCAudioSessionConfiguration(
         category: PreferredCategory,
-        categoryOptions: PreferredCategoryMode,
-        mode: .videoChat,
+        categoryOptions: PreferredVideoCategoryMode,
+        mode: PreferredVideoMode,
         sampleRate: device.sampleRate,
         ioBufferDuration: device.iOBufferDuration,
         inputNumberOfChannels: PreferredNumberOfChannels,
@@ -107,10 +107,30 @@ public struct WebRTCAudioSessionConfiguration: Equatable {
     static let PreferredCategory = AVAudioSession.Category.playAndRecord
     
     // Specify a category option that allows us to use bluetooth.
-    static let PreferredCategoryMode = AVAudioSession.CategoryOptions.allowBluetooth
+    static let PreferredVOIPCategoryMode: AVAudioSession.CategoryOptions = [.allowBluetooth,      // Determines whether Bluetooth handsfree devices appear as available input routes.
+                                                                            .allowBluetoothA2DP,  // Determines whether audio from this session can be streamed to Bluetooth devices that support the Advanced Audio Distribution Profile (A2DP).
+                                                                            .allowAirPlay]        // Determines whether audio from this session can be streamed to AirPlay devices.
+    
+    static let PreferredVideoCategoryMode: AVAudioSession.CategoryOptions = [.allowBluetooth,     // Determines whether Bluetooth handsfree devices appear as available input routes.
+                                                                             .allowBluetoothA2DP, // Determines whether audio from this session can be streamed to Bluetooth devices that support the Advanced Audio Distribution Profile (A2DP).
+                                                                             .allowAirPlay,       // Determines whether audio from this session can be streamed to AirPlay devices.
+                                                                             .defaultToSpeaker]   // Determines whether audio from the session defaults to the built-in speaker instead of the receiver.
     
     // Specify mode for two-way voice communication (e.g. VoIP).
-    static let PreferredMode = AVAudioSession.Mode.voiceChat
+    // This mode is intended for Voice over IP (VoIP) apps and can only be used
+    // with the playAndRecord category. When this mode is used, the device’s tonal
+    // equalization is optimized for voice and the set of allowable audio routes is
+    // reduced to only those appropriate for voice chat. Using this mode has the
+    // side effect of enabling the allowBluetooth category option.
+    static let PreferredVOIPMode = AVAudioSession.Mode.voiceChat
+    
+    // Specify this mode if your app is engaging in online video conferencing.
+    // This mode is intended for video chat apps and can only be used with the
+    // playAndRecord or record categories. When this mode is used, the device’s
+    // tonal equalization is optimized for voice and the set of allowable audio
+    // routes is reduced to only those appropriate for video chat. Using this mode
+    // has the side effect of enabling the allowBluetooth category option.
+    static let PreferredVideoMode = AVAudioSession.Mode.videoChat
     
     // Try to use mono to save resources. Also avoids channel format conversion
     // in the I/O audio unit. Initial tests have shown that it is possible to use
