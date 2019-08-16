@@ -61,7 +61,7 @@ public class WebRTCAudioSession: RCTEventEmitter {
       try disengageAudioSession()
       resolve("success")
     } catch {
-      reject(AudioSessionErrorCode.disengageAudioError.rawValue, "Unable to start audio", error)
+      reject(AudioSessionErrorCode.disengageAudioError.rawValue, "Unable to disengage audio", error)
     }
   }
   
@@ -153,6 +153,10 @@ public class WebRTCAudioSession: RCTEventEmitter {
     
     if rtcAudioSession.isAudioEnabled == true {
       try stopAudio()
+    }
+    
+    guard rtcAudioSession.isVoIPActive else {
+      return
     }
     
     NSLog("[AudioSession]: Disengage Audio Session")
@@ -278,7 +282,7 @@ public class WebRTCAudioSession: RCTEventEmitter {
   }
   
   enum Event: String, CaseIterable {
-    case audioDidUpdate = "audioDidUpdate"                  // Dispatched if we changed the audio session configuration
+    case audioDidUpdate = "audioDidUpdate" // Dispatched if we changed the audio session configuration
   }
 }
 
@@ -288,7 +292,7 @@ public class WebRTCAudioSession: RCTEventEmitter {
  We define a protocol of what we use on the RTCAudioSession in the WebRTC.framework. This protocol allows us to inject a
  mock object conforming to that protocol to test the implementation of our methods to its interactions with the
  RTCAudioSession. */
-protocol RTCAudioSessionProtocol: CustomDebugStringConvertible {
+protocol RTCAudioSessionProtocol {
   var useManualAudio: Bool { get set }
   var isAudioEnabled: Bool { get set }
   var isActive: Bool { get }
@@ -333,22 +337,6 @@ extension RTCAudioSessionProtocol {
   func setCategory(_ category: String, mode: String, options: AVAudioSession.CategoryOptions) throws {
     try setCategory(category, with: options)
     try setMode(mode)
-  }
-  
-  var debugDescription: String {
-    return "WebRTCAudioSession: {\n" +
-      "  category: \(category)\n" +
-      "  categoryOptions: \(categoryOptions.rawValue)\n" +
-      "  mode: \(mode)\n" +
-      "  isVoipActive: \(isVoIPActive)\n" +
-      "  sampleRate: \(sampleRate)\n" +
-      "  IOBufferDuration: \(ioBufferDuration)\n" +
-      "  outputNumberOfChannels: \(outputNumberOfChannels)\n" +
-      "  inputNumberOfChannels: \(inputNumberOfChannels)\n" +
-      "  outputLatency: \(outputLatency)\n" +
-      "  inputLatency: \(inputLatency)\n" +
-      "  outputVolume: \(outputVolume)\n" +
-    "}"
   }
 }
 

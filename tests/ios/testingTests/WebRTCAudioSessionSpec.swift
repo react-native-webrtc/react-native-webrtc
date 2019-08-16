@@ -42,20 +42,233 @@ class WebRTCAudioSessionSpec: QuickSpec {
       expect(audioSession.isManualAudio()) == true
     }
     
+    describe("is enabled") {
+      
+      context("voip") {
+        
+        beforeEach {
+          rtcAudioSession.onCategory = { return .playAndRecord }
+          rtcAudioSession.onMode = { return .voiceChat }
+        }
+        
+        it("should return is engaged as true") {
+          expect(audioSession.isEngaged()) == true
+        }
+        
+      }
+      
+      context("video") {
+        
+        beforeEach {
+          rtcAudioSession.onCategory = { return .playAndRecord }
+          rtcAudioSession.onMode = { return .videoChat }
+        }
+        
+        it("should return is engaged as true") {
+          expect(audioSession.isEngaged()) == true
+        }
+        
+      }
+      
+      context("playback") {
+        
+        beforeEach {
+          rtcAudioSession.onCategory = { return .ambient }
+          rtcAudioSession.onMode = { return .default }
+        }
+        
+        it("should return is engaged as true") {
+          expect(audioSession.isEngaged()) == false
+        }
+      }
+    }
+    
     describe("engageAudioSession") {
       
       describe("promise") {
         
+        context("voip") {
+          
+          beforeEach {
+            rtcAudioSession.onCategory = { return .ambient }
+            rtcAudioSession.onMode = { return .default }
+          }
+          
+          context("failed") {
+            
+            var error: NSError!
+            
+            beforeEach {
+              error = NSError(domain: "error", code: 0, userInfo: nil)
+              rtcAudioSession.onSetCategory = { _, _ in
+                throw error
+              }
+            }
+            
+            it("should call reject with code if failed") {
+              audioSession.engageVoipAudioSession({ _ in
+                fail("should not call this")
+              }, rejecter: { code, _, _ in
+                expect(code) == AudioSessionErrorCode.engageAudioError.rawValue
+              })
+            }
+            
+            it("should call reject with message if failed") {
+              audioSession.engageVoipAudioSession({ _ in
+                fail("should not call this")
+              }, rejecter: { _, message, _ in
+                expect(message) == "Unable to engage voip session"
+              })
+            }
+            
+            it("should call reject with error if failed") {
+              audioSession.engageVoipAudioSession({ _ in
+                fail("should not call this")
+              }, rejecter: { _, _, testError in
+                expect(testError).to(matchError( error ))
+              })
+            }
+          }
+          
+          context("success") {
+            
+            it("should resolve") {
+              audioSession.engageVoipAudioSession({ result in
+                expect(result as? String) == "success"
+              }, rejecter: { _, _, error in
+                fail("should not call this")
+              })
+            }
+          }
+        }
+        
+        context("video") {
+          
+          beforeEach {
+            rtcAudioSession.onCategory = { return .ambient }
+            rtcAudioSession.onMode = { return .default }
+          }
+          
+          context("failed") {
+            
+            var error: NSError!
+            
+            beforeEach {
+              error = NSError(domain: "error", code: 0, userInfo: nil)
+              rtcAudioSession.onSetCategory = { _, _ in
+                throw error
+              }
+            }
+            
+            it("should call reject with code if failed") {
+              audioSession.engageVideoAudioSession({ _ in
+                fail("should not call this")
+              }, rejecter: { code, _, _ in
+                expect(code) == AudioSessionErrorCode.engageAudioError.rawValue
+              })
+            }
+            
+            it("should call reject with message if failed") {
+              audioSession.engageVideoAudioSession({ _ in
+                fail("should not call this")
+              }, rejecter: { _, message, _ in
+                expect(message) == "Unable to engage video session"
+              })
+            }
+            
+            it("should call reject with error if failed") {
+              audioSession.engageVideoAudioSession({ _ in
+                fail("should not call this")
+              }, rejecter: { _, _, testError in
+                expect(testError).to(matchError( error ))
+              })
+            }
+          }
+          
+          context("success") {
+            
+            it("should resolve") {
+              audioSession.engageVideoAudioSession({ result in
+                expect(result as? String) == "success"
+              }, rejecter: { _, _, error in
+                fail("should not call this")
+              })
+            }
+          }
+        }
       }
       
       describe("internal") {
         
+        let configuration = WebRTCAudioSessionConfiguration.Defaults.voip
+        
         context("voip is active") {
           
+          beforeEach {
+            rtcAudioSession.onCategory = { return .playAndRecord }
+            rtcAudioSession.onMode = { return .voiceChat }
+          }
+          
+          it("should not call lock") {
+            try! audioSession.engageAudioSession(configuration)
+            expect(rtcAudioSession.lockForConfigurationCalled) == false
+          }
+          
+          it("should not set the category with options") {
+            try! audioSession.engageAudioSession(configuration)
+            expect(rtcAudioSession.setCategoryWithOptionsCalled) == false
+          }
+          
+          it("should not set the mode") {
+            try! audioSession.engageAudioSession(configuration)
+            expect(rtcAudioSession.setModeCalled) == false
+          }
+          
+          it("should not call unlock") {
+            try! audioSession.engageAudioSession(configuration)
+            expect(rtcAudioSession.unlockForConfigurationCalled) == false
+          }
         }
         
         context("voip is inactive") {
           
+          beforeEach {
+            rtcAudioSession.onCategory = { return .ambient }
+            rtcAudioSession.onMode = { return .default }
+          }
+          
+          it("should call lock") {
+            try! audioSession.engageAudioSession(configuration)
+            expect(rtcAudioSession.lockForConfigurationCalled) == true
+          }
+          
+          it("should set the category with options") {
+            try! audioSession.engageAudioSession(configuration)
+            expect(rtcAudioSession.setCategoryWithOptionsCalled) == true
+          }
+          
+          it("should set the mode") {
+            try! audioSession.engageAudioSession(configuration)
+            expect(rtcAudioSession.setModeCalled) == true
+          }
+          
+          it("should call unlock") {
+            try! audioSession.engageAudioSession(configuration)
+            expect(rtcAudioSession.unlockForConfigurationCalled) == true
+          }
+          
+          it("should anounce configuration changes if different") {
+            
+            audioSession.startObserving()
+            audioSession.addListener(WebRTCAudioSession.Event.audioDidUpdate.rawValue)
+            
+            let name = Notification.Name(rawValue:  WebRTCAudioSession.Event.audioDidUpdate.rawValue)
+            let testNotification = Notification(name: name, object: audioSession, userInfo: nil )
+            
+            expect {
+              try! audioSession.engageAudioSession(configuration)
+            }.toEventually(postNotifications(contain([testNotification])))
+          }
         }
       }
     }
@@ -64,16 +277,128 @@ class WebRTCAudioSessionSpec: QuickSpec {
       
       describe("promise") {
         
+        beforeEach {
+          rtcAudioSession.onCategory = { return .playAndRecord }
+          rtcAudioSession.onMode = { return .voiceChat }
+        }
+        
+        context("failed") {
+          
+          var error: NSError!
+          
+          beforeEach {
+            error = NSError(domain: "error", code: 0, userInfo: nil)
+            rtcAudioSession.onSetCategory = { _, _ in
+              throw error
+            }
+          }
+          
+          it("should call reject with code if failed") {
+            audioSession.disengageAudioSession({ _ in
+              fail("should not call this")
+            }, rejecter: { code, _, _ in
+              expect(code) == AudioSessionErrorCode.disengageAudioError.rawValue
+            })
+          }
+          
+          it("should call reject with message if failed") {
+            audioSession.disengageAudioSession({ _ in
+              fail("should not call this")
+            }, rejecter: { _, message, _ in
+              expect(message) == "Unable to disengage audio"
+            })
+          }
+          
+          it("should call reject with error if failed") {
+            audioSession.disengageAudioSession({ _ in
+              fail("should not call this")
+            }, rejecter: { _, _, testError in
+              expect(testError).to(matchError( error ))
+            })
+          }
+        }
+        
+        context("success") {
+          
+          it("should resolve") {
+            audioSession.disengageAudioSession({ result in
+              expect(result as? String) == "success"
+            }, rejecter: { _, _, error in
+              fail("should not call this")
+            })
+          }
+        }
       }
       
       describe("internal") {
         
+        beforeEach {
+          rtcAudioSession.onGetUseManualAudio = { return true }
+        }
+        
+        it("should stop audio if enabled") {
+          
+          rtcAudioSession.onGetIsAudioEnabled = { return true }
+          rtcAudioSession.onSetIsAudioEnabled = { result in
+            expect(result) == false
+          }
+          try! audioSession.disengageAudioSession()
+        }
+        
         context("voip is active") {
           
+          beforeEach {
+            rtcAudioSession.onCategory = { return .playAndRecord }
+            rtcAudioSession.onMode = { return .voiceChat }
+          }
+          
+          it("should call lock") {
+            try! audioSession.disengageAudioSession()
+            expect(rtcAudioSession.lockForConfigurationCalled) == true
+          }
+          
+          it("should set the category with options") {
+            try! audioSession.disengageAudioSession()
+            expect(rtcAudioSession.setCategoryWithOptionsCalled) == true
+          }
+          
+          it("should set the mode") {
+            try! audioSession.disengageAudioSession()
+            expect(rtcAudioSession.setModeCalled) == true
+          }
+          
+          it("should call unlock") {
+            try! audioSession.disengageAudioSession()
+            expect(rtcAudioSession.unlockForConfigurationCalled) == true
+          }
         }
         
         context("voip is inactive") {
           
+          beforeEach {
+            rtcAudioSession.onCategory = { return .ambient }
+            rtcAudioSession.onMode = { return .default }
+          }
+          
+          it("should not call lock") {
+            try! audioSession.disengageAudioSession()
+            expect(rtcAudioSession.lockForConfigurationCalled) == false
+          }
+          
+          it("should not set the category with options") {
+            try! audioSession.disengageAudioSession()
+            expect(rtcAudioSession.setCategoryWithOptionsCalled) == false
+          }
+          
+          it("should not set the mode") {
+            try! audioSession.disengageAudioSession()
+            expect(rtcAudioSession.setModeCalled) == false
+          }
+          
+          it("should not call unlock") {
+            try! audioSession.disengageAudioSession()
+            expect(rtcAudioSession.unlockForConfigurationCalled) == false
+          }
         }
       }
     }
@@ -302,6 +627,16 @@ class WebRTCAudioSessionSpec: QuickSpec {
               try? audioSession.startAudio()
               expect(rtcAudioSession.setModeCalled) == true
             }
+            
+            it("should call lock") {
+              try? audioSession.startAudio()
+              expect(rtcAudioSession.lockForConfigurationCalled) == true
+            }
+            
+            it("should call unlock") {
+              try? audioSession.startAudio()
+              expect(rtcAudioSession.unlockForConfigurationCalled) == true
+            }
           }
           
           context("voip active") {
@@ -370,14 +705,6 @@ class WebRTCAudioSessionSpec: QuickSpec {
                 }
               }
             }
-          }
-          
-          //TODO: ask if voip is active and it went into engaging the voip or not.
-          
-          xit("should throw error if audio category is not play and record") {
-            expect{
-              try audioSession.startAudio()
-              }.to(throwError( AudioSessionError.audioCategoryNotPlayRecord ))
           }
           
           
