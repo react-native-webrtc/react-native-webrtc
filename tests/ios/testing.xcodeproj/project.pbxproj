@@ -37,6 +37,7 @@
 		4F010C9C22F26EBE00BFACBE /* WebRTCAudioSessionSpec.swift */ = {isa = PBXFileReference; indentWidth = 2; lastKnownFileType = sourcecode.swift; path = WebRTCAudioSessionSpec.swift; sourceTree = "<group>"; tabWidth = 2; };
 		4F4219FF22F0F3A4008E3423 /* WebRTCAudioSession.swift */ = {isa = PBXFileReference; indentWidth = 2; lastKnownFileType = sourcecode.swift; path = WebRTCAudioSession.swift; sourceTree = "<group>"; tabWidth = 2; };
 		4F421A0022F13102008E3423 /* WebRTCAudioSession.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = WebRTCAudioSession.m; sourceTree = "<group>"; };
+		4F6D83B8230709CF00516A56 /* RTCAudioSession+Additions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "RTCAudioSession+Additions.swift"; sourceTree = "<group>"; };
 		4F89AAEB22F0B26E0081CFF7 /* RTCMediaStreamTrack+React.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "RTCMediaStreamTrack+React.h"; sourceTree = "<group>"; };
 		4F89AAEC22F0B26E0081CFF7 /* WebRTCModule+VideoTrackAdapter.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = "WebRTCModule+VideoTrackAdapter.m"; sourceTree = "<group>"; };
 		4F89AAED22F0B26E0081CFF7 /* RCTConvert+WebRTC.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = "RCTConvert+WebRTC.m"; sourceTree = "<group>"; };
@@ -133,6 +134,7 @@
 				4F4219FF22F0F3A4008E3423 /* WebRTCAudioSession.swift */,
 				4FC986382303396200FB2C10 /* WebRTCAudioSessionConfiguration.swift */,
 				4F421A0022F13102008E3423 /* WebRTCAudioSession.m */,
+				4F6D83B8230709CF00516A56 /* RTCAudioSession+Additions.swift */,
 			);
 			name = RCTWebRTC;
 			path = ../../ios/RCTWebRTC;
