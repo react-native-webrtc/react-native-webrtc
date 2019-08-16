@@ -11,11 +11,14 @@ import AVFoundation
 
 // Define the react-native exposed class with the interface that is mapped in the bridging to be expose to react native.
 @objc(WebRTCAudioSession)
-public class WebRTCAudioSession: NSObject {
+public class WebRTCAudioSession: RCTEventEmitter {
   
   lazy var dispatchQueue = DispatchQueue(label: "react-native-webrtc.audiosession")
   lazy var rtcAudioSession: RTCAudioSessionProtocol = RTCAudioSession.sharedInstance()
   lazy var center = NotificationCenter.default
+  
+  var hasListeners = false
+  var registeredListeners = [String]()
   
   // MARK: - React Native interface -
   
@@ -75,6 +78,12 @@ public class WebRTCAudioSession: NSObject {
   }
   
   @objc
+  public func setManualAudio(_ manualAudio: Bool) {
+    rtcAudioSession.useManualAudio = manualAudio
+    rtcAudioSession.isAudioEnabled = false
+  }
+  
+  @objc
   public func isAudioEnabled() -> Bool {
     return rtcAudioSession.isAudioEnabled
   }
@@ -99,14 +108,29 @@ public class WebRTCAudioSession: NSObject {
     }
   }
   
-  @objc
-  public func setManualAudio(_ manualAudio: Bool) {
-    rtcAudioSession.useManualAudio = manualAudio
-    rtcAudioSession.isAudioEnabled = false
+  // MARK: React Native Event Interface
+  
+  public override func startObserving() {
+    super.startObserving()
+    hasListeners = true
+  }
+  
+  public override func stopObserving() {
+    super.stopObserving()
+    hasListeners = false
+  }
+  
+  public override func addListener(_ eventName: String!) {
+    super.addListener(eventName)
+    registeredListeners.append(eventName)
+  }
+  
+  public override func supportedEvents() -> [String]! {
+    return Event.allCases.compactMap({ $0.rawValue })
   }
   
   @objc
-  public static func requiresMainQueueSetup() -> Bool {
+  public override static func requiresMainQueueSetup() -> Bool {
     return true
   }
   
@@ -143,11 +167,14 @@ public class WebRTCAudioSession: NSObject {
     var madeChanges = false
     defer {
       if madeChanges {
-        center.post(name: .audioSessionDidChange, object: self)
+        send(event: .audioDidUpdate)
       }
     }
     
-    if rtcAudioSession.category != config.category.rawValue || rtcAudioSession.categoryOptions != config.categoryOptions || rtcAudioSession.mode != config.mode.rawValue {
+    let category = rtcAudioSession.category
+    let options = rtcAudioSession.categoryOptions
+    let mode = rtcAudioSession.mode
+    if category != config.category.rawValue || options != config.categoryOptions || mode != config.mode.rawValue {
       try rtcAudioSession.setCategory(config.category.rawValue, mode: config.mode.rawValue, options: config.categoryOptions)
       madeChanges = true
     }
@@ -231,6 +258,27 @@ public class WebRTCAudioSession: NSObject {
     }
     
     rtcAudioSession.isAudioEnabled = false
+  }
+  
+  internal func canSendEvent(_ event: Event) -> Bool {
+    return hasListeners && registeredListeners.contains(event.rawValue)
+  }
+  
+  func send(event: Event, body: [String: String]? = nil) {
+    
+    guard canSendEvent(event) else {
+      return
+    }
+    
+    DispatchQueue.main.async { [weak self] in
+      let name = Notification.Name(rawValue: event.rawValue)
+      self?.center.post(name: name, object: self, userInfo: body)
+      self?.sendEvent(withName: event.rawValue, body: body)
+    }
+  }
+  
+  enum Event: String, CaseIterable {
+    case audioDidUpdate = "audioDidUpdate"                  // Dispatched if we changed the audio session configuration
   }
 }
 
