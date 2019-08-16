@@ -38,7 +38,7 @@ public class WebRTCAudioSession: RCTEventEmitter {
   @objc
   public func engageVoipAudioSession(_ resolve: @escaping RCTPromiseResolveBlock, rejecter reject: @escaping RCTPromiseRejectBlock) {
     do {
-      try engageAudioSession( WebRTCAudioSessionConfiguration.Defaults.voip )
+      try engageAudioSession(WebRTCAudioSessionConfiguration.Defaults.voip)
       resolve("success")
     } catch {
       reject(AudioSessionErrorCode.engageAudioError.rawValue, "Unable to engage voip session", error)
@@ -48,7 +48,7 @@ public class WebRTCAudioSession: RCTEventEmitter {
   @objc
   public func engageVideoAudioSession(_ resolve: @escaping RCTPromiseResolveBlock, rejecter reject: @escaping RCTPromiseRejectBlock) {
     do {
-      try engageAudioSession( WebRTCAudioSessionConfiguration.Defaults.video )
+      try engageAudioSession(WebRTCAudioSessionConfiguration.Defaults.video)
       resolve("success")
     } catch {
       reject(AudioSessionErrorCode.engageAudioError.rawValue, "Unable to engage video session", error)
