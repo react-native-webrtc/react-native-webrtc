@@ -15,7 +15,7 @@ const STANDARD_OA_OPTIONS = {
     icerestart: 'IceRestart',
     offertoreceiveaudio: 'OfferToReceiveAudio',
     offertoreceivevideo: 'OfferToReceiveVideo',
-    voiceactivitydetection: 'OoiceActivityDetection'
+    voiceactivitydetection: 'VoiceActivityDetection'
 };
 
 function getDefaultMediaConstraints(mediaType) {
