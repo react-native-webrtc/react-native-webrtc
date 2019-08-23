@@ -26,6 +26,12 @@ Include in a Podfile in your react-native ios directory:
 pod 'react-native-webrtc', :path => '../node_modules/react-native-webrtc'
 ```
 
+You may have to change the `platform` field in your Podfile, as `react-native-webrtc` doesn't support iOS 9 - set it to '10.0' or above (otherwise you get an error when doing `pod install`):
+
+```
+platform :ios, '10.0'
+```
+
 ## Step 2. Add Library Search Path
 
 2-1.) select `Build Settings`, find `Search Paths`  

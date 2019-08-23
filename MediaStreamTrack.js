@@ -70,13 +70,9 @@ class MediaStreamTrack extends EventTarget(MEDIA_STREAM_TRACK_EVENTS) {
   }
 
   stop() {
-    if (this.remote) {
-      return;
-    }
-    WebRTCModule.mediaStreamTrackStop(this.id);
-    this._enabled = false;
+    WebRTCModule.mediaStreamTrackSetEnabled(this.id, false);
     this.readyState = 'ended';
-    this.muted = !this._enabled;
+    // TODO: save some stopped flag?
   }
 
   /**
@@ -114,6 +110,10 @@ class MediaStreamTrack extends EventTarget(MEDIA_STREAM_TRACK_EVENTS) {
 
   getSettings() {
     throw new Error('Not implemented.');
+  }
+
+  release() {
+    WebRTCModule.mediaStreamTrackRelease(this.id);
   }
 }
 

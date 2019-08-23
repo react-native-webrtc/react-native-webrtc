@@ -235,10 +235,12 @@ RCT_EXPORT_METHOD(peerConnectionCreateOffer:(nonnull NSNumber *)objectID
     return;
   }
 
-  NSLog(@"peerConnectionCreateOffer: id=%@, options=%@", objectID, options);
+  RTCMediaConstraints *constraints =
+    [[RTCMediaConstraints alloc] initWithMandatoryConstraints:options
+                                          optionalConstraints:nil];
 
   [peerConnection
-    offerForConstraints:[self parseMediaConstraints:options]
+    offerForConstraints:constraints
       completionHandler:^(RTCSessionDescription *sdp, NSError *error) {
         if (error) {
           NSLog(@"peerConnectionCreateOffer: failed");
@@ -265,10 +267,12 @@ RCT_EXPORT_METHOD(peerConnectionCreateAnswer:(nonnull NSNumber *)objectID
     return;
   }
 
-  NSLog(@"peerConnectionCreateAnswer: id=%@, options=%@", objectID, options);
+  RTCMediaConstraints *constraints =
+    [[RTCMediaConstraints alloc] initWithMandatoryConstraints:options
+                                          optionalConstraints:nil];
 
   [peerConnection
-    answerForConstraints:[self parseMediaConstraints:options]
+    answerForConstraints:constraints
        completionHandler:^(RTCSessionDescription *sdp, NSError *error) {
          if (error) {
            NSLog(@"peerConnectionCreateAnswer: failed");

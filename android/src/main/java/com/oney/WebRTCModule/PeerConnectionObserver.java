@@ -158,6 +158,8 @@ class PeerConnectionObserver implements PeerConnection.Observer {
     }
 
     void close() {
+        Log.d(TAG, "PeerConnection.close() for " + id);
+
         // Close the PeerConnection first to stop any events.
         peerConnection.close();
 
@@ -171,9 +173,9 @@ class PeerConnectionObserver implements PeerConnection.Observer {
         }
 
         // Remove video track adapters
-        for (MediaStreamTrack track : remoteTracks.values()) {
-            if (track.kind().equals("video")) {
-                videoTrackAdapters.removeAdapter((VideoTrack) track);
+        for (MediaStream stream : remoteStreams.values()) {
+            for (VideoTrack videoTrack : stream.videoTracks) {
+                videoTrackAdapters.removeAdapter(videoTrack);
             }
         }
 
@@ -458,8 +460,7 @@ class PeerConnectionObserver implements PeerConnection.Observer {
         // MediaStream instance with the label default that the implementation
         // reuses.
         if ("default".equals(streamId)) {
-            for (Map.Entry<String, MediaStream> e
-                    : remoteStreams.entrySet()) {
+            for (Map.Entry<String, MediaStream> e : remoteStreams.entrySet()) {
                 if (e.getValue().equals(mediaStream)) {
                     streamReactTag = e.getKey();
                     break;
