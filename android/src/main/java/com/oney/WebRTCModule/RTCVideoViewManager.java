@@ -1,11 +1,9 @@
 package com.oney.WebRTCModule;
 
-import com.facebook.react.bridge.ReactContext;
 import com.facebook.react.uimanager.annotations.ReactProp;
 import com.facebook.react.uimanager.SimpleViewManager;
 import com.facebook.react.uimanager.ThemedReactContext;
 
-import org.webrtc.MediaStream;
 
 public class RTCVideoViewManager extends SimpleViewManager<WebRTCView> {
   private static final String REACT_CLASS = "RTCVideoView";

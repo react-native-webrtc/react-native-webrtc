@@ -17,10 +17,11 @@ Everyone is welcome to our [Discourse community](https://react-native-webrtc.dis
 
 | react-native-webrtc | WebRTC Version | arch(ios) | arch(android)  | npm published | notes |
 | :-------------: | :-------------:| :-----: | :-----: | :-----: | :-----: |
+| 1.75.0 | [M75](https://github.com/jitsi/webrtc/commit/0cd6ce4de669bed94ba47b88cb71b9be0341bb81) | x86_64<br>i386<br>armv7<br>arm64 | armeabi-v7a<br>arm64-v8a<br>x86<br>x86_64 | :heavy_check_mark: | |
 | 1.69.2 | [M69](https://github.com/jitsi/webrtc/tree/cb536cf7a368e77ec29a6779de7fbebf2c300b70) | x86_64<br>i386<br>armv7<br>arm64 | armeabi-v7a<br>arm64-v8a<br>x86<br>x86_64 | :heavy_check_mark: |  |
 | 1.69.1 | [M69](https://chromium.googlesource.com/external/webrtc/+/branch-heads/69)<br>[commit](https://chromium.googlesource.com/external/webrtc/+/9110a54a60d9e0c69128338fc250319ddb751b5a)<br>(24012)<br>(+16-24348) | x86_64<br>i386<br>armv7<br>arm64 | armeabi-v7a<br>arm64-v8a<br>x86<br>x86_64 | :heavy_check_mark: |  |
 | 1.69.0 | [M69](https://chromium.googlesource.com/external/webrtc/+/branch-heads/69)<br>[commit](https://chromium.googlesource.com/external/webrtc/+/9110a54a60d9e0c69128338fc250319ddb751b5a)<br>(24012)<br>(+16-24348) | x86_64<br>i386<br>armv7<br>arm64 | armeabi-v7a<br>x86 | :heavy_check_mark: |  |
-| master | [M75](https://github.com/jitsi/webrtc/commit/0cd6ce4de669bed94ba47b88cb71b9be0341bb81) | x86_64<br>i386<br>armv7<br>arm64 | armeabi-v7a<br>x86 | :warning: | Please test! |
+| master | [M75](https://github.com/jitsi/webrtc/commit/0cd6ce4de669bed94ba47b88cb71b9be0341bb81) | x86_64<br>i386<br>armv7<br>arm64 | armeabi-v7a<br>arm64-v8a<br>x86<br>x86_64 | :warning: | Please test! |
 
 Please see [wiki page](https://github.com/react-native-webrtc/react-native-webrtc/wiki) about revision history.
 

@@ -24,6 +24,8 @@ import java.util.List;
 import java.util.Map;
 
 import org.webrtc.*;
+import org.webrtc.audio.AudioDeviceModule;
+import org.webrtc.audio.JavaAudioDeviceModule;
 
 @ReactModule(name = "WebRTCModule")
 public class WebRTCModule extends ReactContextBaseJavaModule {
@@ -39,45 +41,83 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
      */
     private GetUserMediaImpl getUserMediaImpl;
 
+    public static class Options {
+        private VideoEncoderFactory videoEncoderFactory = null;
+        private VideoDecoderFactory videoDecoderFactory = null;
+        private AudioDeviceModule audioDeviceModule = null;
+
+        public Options() {}
+
+        public void setAudioDeviceModule(AudioDeviceModule audioDeviceModule) {
+            this.audioDeviceModule = audioDeviceModule;
+        }
+
+        public void setVideoDecoderFactory(VideoDecoderFactory videoDecoderFactory) {
+            this.videoDecoderFactory = videoDecoderFactory;
+        }
+
+        public void setVideoEncoderFactory(VideoEncoderFactory videoEncoderFactory) {
+            this.videoEncoderFactory = videoEncoderFactory;
+        }
+    }
+
     public WebRTCModule(ReactApplicationContext reactContext) {
+        this(reactContext, null);
+    }
+
+    public WebRTCModule(ReactApplicationContext reactContext, Options options) {
         super(reactContext);
 
         mPeerConnectionObservers = new SparseArray<>();
         localStreams = new HashMap<>();
 
-        ThreadUtils.runOnExecutor(() -> initAsync());
+        ThreadUtils.runOnExecutor(() -> initAsync(options));
     }
 
     /**
      * Invoked asynchronously to initialize this {@code WebRTCModule} instance.
      */
-    private void initAsync() {
+    private void initAsync(Options options) {
         ReactApplicationContext reactContext = getReactApplicationContext();
-
-        // Initialize EGL context required for HW acceleration.
-        EglBase.Context eglContext = EglUtils.getRootEglBaseContext();
 
         PeerConnectionFactory.initialize(
             PeerConnectionFactory.InitializationOptions.builder(reactContext)
                 .createInitializationOptions());
 
-        VideoEncoderFactory encoderFactory;
-        VideoDecoderFactory decoderFactory;
+        AudioDeviceModule adm = null;
+        VideoEncoderFactory encoderFactory = null;
+        VideoDecoderFactory decoderFactory = null;
 
-        if (eglContext != null) {
-            encoderFactory
-                = new DefaultVideoEncoderFactory(
+        if (options != null) {
+            adm = options.audioDeviceModule;
+            encoderFactory = options.videoEncoderFactory;
+            decoderFactory = options.videoDecoderFactory;
+        }
+
+        if (encoderFactory == null || decoderFactory == null) {
+            // Initialize EGL context required for HW acceleration.
+            EglBase.Context eglContext = EglUtils.getRootEglBaseContext();
+
+            if (eglContext != null) {
+                encoderFactory
+                    = new DefaultVideoEncoderFactory(
                     eglContext,
                     /* enableIntelVp8Encoder */ true,
                     /* enableH264HighProfile */ false);
-            decoderFactory = new DefaultVideoDecoderFactory(eglContext);
-        } else {
-            encoderFactory = new SoftwareVideoEncoderFactory();
-            decoderFactory = new SoftwareVideoDecoderFactory();
+                decoderFactory = new DefaultVideoDecoderFactory(eglContext);
+            } else {
+                encoderFactory = new SoftwareVideoEncoderFactory();
+                decoderFactory = new SoftwareVideoDecoderFactory();
+            }
+        }
+
+        if (adm == null) {
+            adm = JavaAudioDeviceModule.builder(reactContext).createAudioDeviceModule();
         }
 
         mFactory
             = PeerConnectionFactory.builder()
+                .setAudioDeviceModule(adm)
                 .setVideoEncoderFactory(encoderFactory)
                 .setVideoDecoderFactory(decoderFactory)
                 .createPeerConnectionFactory();
@@ -367,11 +407,8 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
         MediaStream stream = localStreams.get(streamReactTag);
 
         if (stream == null) {
-            for (int i = 0, size = mPeerConnectionObservers.size();
-                    i < size;
-                    i++) {
-                PeerConnectionObserver pco
-                    = mPeerConnectionObservers.valueAt(i);
+            for (int i = 0, size = mPeerConnectionObservers.size(); i < size; i++) {
+                PeerConnectionObserver pco = mPeerConnectionObservers.valueAt(i);
                 stream = pco.remoteStreams.get(streamReactTag);
                 if (stream != null) {
                     break;
@@ -386,11 +423,8 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
         MediaStreamTrack track = getLocalTrack(trackId);
 
         if (track == null) {
-            for (int i = 0, size = mPeerConnectionObservers.size();
-                    i < size;
-                    i++) {
-                PeerConnectionObserver pco
-                    = mPeerConnectionObservers.valueAt(i);
+            for (int i = 0, size = mPeerConnectionObservers.size(); i < size; i++) {
+                PeerConnectionObserver pco = mPeerConnectionObservers.valueAt(i);
                 track = pco.remoteTracks.get(trackId);
                 if (track != null) {
                     break;
@@ -422,42 +456,23 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
     }
 
     /**
-     * Parses a constraint set specified in the form of a JavaScript object into
-     * a specific <tt>List</tt> of <tt>MediaConstraints.KeyValuePair</tt>s.
+     * Turns an "options" <tt>ReadableMap</tt> into a <tt>MediaConstraints</tt> object.
      *
-     * @param src The constraint set in the form of a JavaScript object to
-     * parse.
-     * @param dst The <tt>List</tt> of <tt>MediaConstraints.KeyValuePair</tt>s
-     * into which the specified <tt>src</tt> is to be parsed.
+     * @param options A <tt>ReadableMap</tt> which represents a JavaScript
+     * object specifying the options to be parsed into a
+     * <tt>MediaConstraints</tt> instance.
+     * @return A new <tt>MediaConstraints</tt> instance initialized with the
+     * mandatory keys and values specified by <tt>options</tt>.
      */
-    private void parseConstraints(
-            ReadableMap src,
-            List<MediaConstraints.KeyValuePair> dst) {
-        ReadableMapKeySetIterator keyIterator = src.keySetIterator();
+    MediaConstraints constraintsForOptions(ReadableMap options) {
+        MediaConstraints mediaConstraints = new MediaConstraints();
+        ReadableMapKeySetIterator keyIterator = options.keySetIterator();
 
         while (keyIterator.hasNextKey()) {
             String key = keyIterator.nextKey();
-            String value = ReactBridgeUtil.getMapStrValue(src, key);
+            String value = ReactBridgeUtil.getMapStrValue(options, key);
 
-            dst.add(new MediaConstraints.KeyValuePair(key, value));
-        }
-    }
-
-    /**
-     * Parses "GUM" constraints and RtcOfferAnswerOptions described by a
-     * specific <tt>ReadableMap</tt>.
-     *
-     * @param constraints A <tt>ReadableMap</tt> which represents a JavaScript
-     * object specifying the constraints to be parsed into a
-     * <tt>MediaConstraints</tt> instance.
-     * @return A new <tt>MediaConstraints</tt> instance initialized with the
-     * mandatory and optional constraint keys and values specified by
-     * <tt>constraints</tt>.
-     */
-    MediaConstraints parseMediaConstraints(ReadableMap constraints) {
-        MediaConstraints mediaConstraints = new MediaConstraints();
-        if (constraints != null) {
-            parseConstraints(constraints, mediaConstraints.mandatory);
+            mediaConstraints.mandatory.add(new MediaConstraints.KeyValuePair(key, value));
         }
 
         return mediaConstraints;
@@ -472,77 +487,57 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
     }
 
     @ReactMethod
-    public void mediaStreamRelease(String id) {
-        ThreadUtils.runOnExecutor(() -> mediaStreamReleaseAsync(id));
-    }
-
-    private void mediaStreamReleaseAsync(String id) {
-        MediaStream stream = localStreams.get(id);
-        if (stream == null) {
-            Log.d(TAG, "mediaStreamRelease() stream is null");
-        } else {
-            // XXX Copy the lists of audio and video tracks because we'll be
-            // incrementally modifying them. Though a while loop with isEmpty()
-            // is generally a clearer approach (employed by MediaStream), we'll
-            // be searching through our own lists and these may (or may not) get
-            // out of sync with MediaStream's lists which raises the risk of
-            // entering infinite loops.
-            List<MediaStreamTrack> tracks
-                = new ArrayList<>(
-                    stream.audioTracks.size() + stream.videoTracks.size());
-
-            tracks.addAll(stream.audioTracks);
-            tracks.addAll(stream.videoTracks);
-            for (MediaStreamTrack track : tracks) {
-                 mediaStreamTrackRelease(id, track.id());
-            }
-
-            localStreams.remove(id);
-
-            // MediaStream.dispose() may be called without an exception only if
-            // it's no longer added to any PeerConnection.
-            for (int i = 0, size = mPeerConnectionObservers.size();
-                    i < size;
-                    i++) {
-                mPeerConnectionObservers.valueAt(i).removeStream(stream);
-            }
-
-            stream.dispose();
-        }
-    }
-
-    @ReactMethod
     public void enumerateDevices(Callback callback) {
         ThreadUtils.runOnExecutor(() ->
             callback.invoke(getUserMediaImpl.enumerateDevices()));
     }
 
     @ReactMethod
-    public void mediaStreamTrackRelease(String streamId, String trackId) {
-        ThreadUtils.runOnExecutor(() ->
-            mediaStreamTrackReleaseAsync(streamId, trackId));
+    public void mediaStreamCreate(String id) {
+        ThreadUtils.runOnExecutor(() -> mediaStreamCreateAsync(id));
     }
 
-    private void mediaStreamTrackReleaseAsync(String streamId, String trackId) {
+    private void mediaStreamCreateAsync(String id) {
+        MediaStream mediaStream = mFactory.createLocalMediaStream(id);
+        localStreams.put(id, mediaStream);
+    }
+
+    @ReactMethod
+    public void mediaStreamAddTrack(String streamId, String trackId) {
+        ThreadUtils.runOnExecutor(() ->
+            mediaStreamAddTrackAsync(streamId, trackId));
+    }
+
+    private void mediaStreamAddTrackAsync(String streamId, String trackId) {
         MediaStream stream = localStreams.get(streamId);
-        if (stream == null) {
-            Log.d(TAG, "mediaStreamTrackRelease() stream is null");
+        MediaStreamTrack track = getLocalTrack(trackId);
+
+        if (stream == null || track == null) {
+            Log.d(TAG, "mediaStreamAddTrack() stream || track is null");
             return;
         }
+
+        String kind = track.kind();
+        if ("audio".equals(kind)) {
+            stream.addTrack((AudioTrack)track);
+        } else if ("video".equals(kind)) {
+            stream.addTrack((VideoTrack)track);
+        }
+    }
+
+    @ReactMethod
+    public void mediaStreamRemoveTrack(String streamId, String trackId) {
+        ThreadUtils.runOnExecutor(() ->
+            mediaStreamRemoveTrackAsync(streamId, trackId));
+    }
+
+    private void mediaStreamRemoveTrackAsync(String streamId, String trackId) {
+        MediaStream stream = localStreams.get(streamId);
         MediaStreamTrack track = getLocalTrack(trackId);
-        if (track == null) {
-            // XXX The specified trackId may have already been stopped by
-            // mediaStreamTrackStop().
-            track = getLocalTrack(stream, trackId);
-            if (track == null) {
-                Log.d(
-                    TAG,
-                    "mediaStreamTrackRelease() No local MediaStreamTrack with id "
-                        + trackId);
-                return;
-            }
-        } else {
-            mediaStreamTrackStop(trackId);
+
+        if (stream == null || track == null) {
+            Log.d(TAG, "mediaStreamRemoveTrack() stream || track is null");
+            return;
         }
 
         String kind = track.kind();
@@ -551,7 +546,62 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
         } else if ("video".equals(kind)) {
             stream.removeTrack((VideoTrack)track);
         }
-        track.dispose();
+    }
+
+    @ReactMethod
+    public void mediaStreamRelease(String id) {
+        ThreadUtils.runOnExecutor(() -> mediaStreamReleaseAsync(id));
+    }
+
+    private void mediaStreamReleaseAsync(String id) {
+        MediaStream stream = localStreams.get(id);
+        if (stream == null) {
+            Log.d(TAG, "mediaStreamRelease() stream is null");
+            return;
+        }
+
+        // Remove and dispose any tracks ourselves before calling stream.dispose().
+        // We need to remove the extra objects (TrackPrivate) we create.
+
+        List<AudioTrack> audioTracks = new ArrayList<>(stream.audioTracks);
+        for (AudioTrack track : audioTracks) {
+            track.setEnabled(false);
+            stream.removeTrack(track);
+            getUserMediaImpl.disposeTrack(track.id());
+        }
+
+        List<VideoTrack> videoTracks = new ArrayList<>(stream.videoTracks);
+        for (VideoTrack track : videoTracks) {
+            track.setEnabled(false);
+            stream.removeTrack(track);
+            getUserMediaImpl.disposeTrack(track.id());
+        }
+
+        localStreams.remove(id);
+
+        // MediaStream.dispose() may be called without an exception only if
+        // it's no longer added to any PeerConnection.
+        for (int i = 0, size = mPeerConnectionObservers.size(); i < size; i++) {
+            mPeerConnectionObservers.valueAt(i).removeStream(stream);
+        }
+
+        stream.dispose();
+    }
+
+    @ReactMethod
+    public void mediaStreamTrackRelease(String id) {
+        ThreadUtils.runOnExecutor(() ->
+            mediaStreamTrackReleaseAsync(id));
+    }
+
+    private void mediaStreamTrackReleaseAsync(String id) {
+        MediaStreamTrack track = getLocalTrack(id);
+        if (track == null) {
+            Log.d(TAG, "mediaStreamTrackRelease() track is null");
+            return;
+        }
+        track.setEnabled(false);
+        getUserMediaImpl.disposeTrack(id);
     }
 
     @ReactMethod
@@ -570,11 +620,6 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
         }
         track.setEnabled(enabled);
         getUserMediaImpl.mediaStreamTrackSetEnabled(id, enabled);
-    }
-
-    @ReactMethod
-    public void mediaStreamTrackStop(String trackId) {
-        getUserMediaImpl.mediaStreamTrackStop(trackId);
     }
 
     @ReactMethod
@@ -712,7 +757,7 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
 
                 @Override
                 public void onSetSuccess() {}
-            }, parseMediaConstraints(options));
+            }, constraintsForOptions(options));
         } else {
             Log.d(TAG, "peerConnectionCreateOffer() peerConnection is null");
             callback.invoke(false, "peerConnection is null");
@@ -752,7 +797,7 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
 
                 @Override
                 public void onSetSuccess() {}
-            }, parseMediaConstraints(options));
+            }, constraintsForOptions(options));
         } else {
             Log.d(TAG, "peerConnectionCreateAnswer() peerConnection is null");
             callback.invoke(false, "peerConnection is null");

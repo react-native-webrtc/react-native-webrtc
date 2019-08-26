@@ -2,9 +2,7 @@ package com.oney.WebRTCModule;
 
 import android.util.Log;
 
-import com.facebook.react.bridge.ReadableArray;
 import com.facebook.react.bridge.ReadableMap;
-import com.facebook.react.bridge.ReadableType;
 
 import org.webrtc.CameraEnumerator;
 import org.webrtc.CameraVideoCapturer;
@@ -20,21 +18,17 @@ public class VideoCaptureController {
     private static final String TAG
         = VideoCaptureController.class.getSimpleName();
 
-    /**
-     * Default values for width, height and fps (respectively) which will be
-     * used to open the camera at.
-     */
-    private static final int DEFAULT_WIDTH  = 1280;
-    private static final int DEFAULT_HEIGHT = 720;
-    private static final int DEFAULT_FPS    = 30;
+    private boolean isFrontFacing;
 
     /**
      * Values for width, height and fps (respectively) which will be
      * used to open the camera at.
      */
-    private int width  = DEFAULT_WIDTH;
-    private int height = DEFAULT_HEIGHT;
-    private int fps    = DEFAULT_FPS;
+    private final int width;
+    private final int height;
+    private final int fps;
+
+    private CameraEnumerator cameraEnumerator;
 
     /**
      * The {@link CameraEventsHandler} used with
@@ -50,32 +44,17 @@ public class VideoCaptureController {
      */
     private VideoCapturer videoCapturer;
 
-    public VideoCaptureController(CameraEnumerator cameraEnumerator,
-                                  ReadableMap constraints) {
-        ReadableMap videoConstraintsMandatory = null;
+    public VideoCaptureController(CameraEnumerator cameraEnumerator, ReadableMap constraints) {
+        this.cameraEnumerator = cameraEnumerator;
 
-        if (constraints.hasKey("mandatory")
-                && constraints.getType("mandatory") == ReadableType.Map) {
-            videoConstraintsMandatory = constraints.getMap("mandatory");
-        }
+        width = constraints.getInt("width");
+        height = constraints.getInt("height");
+        fps = constraints.getInt("frameRate");
 
-        String sourceId = getSourceIdConstraint(constraints);
-        String facingMode = getFacingMode(constraints);
+        String deviceId = ReactBridgeUtil.getMapStrValue(constraints, "deviceId");
+        String facingMode = ReactBridgeUtil.getMapStrValue(constraints, "facingMode");
 
-        videoCapturer
-            = createVideoCapturer(cameraEnumerator, sourceId, facingMode);
-
-        if (videoConstraintsMandatory != null) {
-            width = videoConstraintsMandatory.hasKey("minWidth")
-                ? videoConstraintsMandatory.getInt("minWidth")
-                : DEFAULT_WIDTH;
-            height = videoConstraintsMandatory.hasKey("minHeight")
-                ? videoConstraintsMandatory.getInt("minHeight")
-                : DEFAULT_HEIGHT;
-            fps = videoConstraintsMandatory.hasKey("minFrameRate")
-                ? videoConstraintsMandatory.getInt("minFrameRate")
-                : DEFAULT_FPS;
-        }
+        videoCapturer = createVideoCapturer(deviceId, facingMode);
     }
 
     public void dispose() {
@@ -110,41 +89,93 @@ public class VideoCaptureController {
 
     public void switchCamera() {
         if (videoCapturer instanceof CameraVideoCapturer) {
-            ((CameraVideoCapturer) videoCapturer).switchCamera(null);
+            CameraVideoCapturer capturer = (CameraVideoCapturer) videoCapturer;
+            String[] deviceNames = cameraEnumerator.getDeviceNames();
+            int deviceCount = deviceNames.length;
+
+            // Nothing to switch to.
+            if (deviceCount < 2) {
+                return;
+            }
+
+            // The usual case.
+            if (deviceCount == 2) {
+                capturer.switchCamera(new CameraVideoCapturer.CameraSwitchHandler() {
+                    @Override
+                    public void onCameraSwitchDone(boolean b) {
+                        isFrontFacing = b;
+                    }
+
+                    @Override
+                    public void onCameraSwitchError(String s) {
+                        Log.e(TAG, "Error switching camera: " + s);
+                    }
+                });
+                return;
+            }
+
+            // If we are here the device has more than 2 cameras. Cycle through them
+            // and switch to the first one of the desired facing mode.
+            switchCamera(!isFrontFacing, deviceCount);
         }
+    }
+
+    /**
+     * Helper function which tries to switch cameras until the desired facing mode is found.
+     *
+     * @param desiredFrontFacing - The desired front facing value.
+     * @param tries - How many times to try switching.
+     */
+    private void switchCamera(boolean desiredFrontFacing, int tries) {
+        CameraVideoCapturer capturer = (CameraVideoCapturer) videoCapturer;
+
+        capturer.switchCamera(new CameraVideoCapturer.CameraSwitchHandler() {
+            @Override
+            public void onCameraSwitchDone(boolean b) {
+                if (b != desiredFrontFacing) {
+                    int newTries = tries-1;
+                    if (newTries > 0) {
+                        switchCamera(desiredFrontFacing, newTries);
+                    }
+                } else {
+                    isFrontFacing = desiredFrontFacing;
+                }
+            }
+
+            @Override
+            public void onCameraSwitchError(String s) {
+                Log.e(TAG, "Error switching camera: " + s);
+            }
+        });
     }
 
     /**
      * Constructs a new {@code VideoCapturer} instance attempting to satisfy
      * specific constraints.
      *
-     * @param enumerator a {@code CameraEnumerator} provided by WebRTC. It can
-     * be {@code Camera1Enumerator} or {@code Camera2Enumerator}.
-     * @param sourceId the ID of the requested video source. If not
+     * @param deviceId the ID of the requested video device. If not
      * {@code null} and a {@code VideoCapturer} can be created for it, then
      * {@code facingMode} is ignored.
      * @param facingMode the facing of the requested video source such as
      * {@code user} and {@code environment}. If {@code null}, "user" is
      * presumed.
      * @return a {@code VideoCapturer} satisfying the {@code facingMode} or
-     * {@code sourceId} constraint
+     * {@code deviceId} constraint
      */
-    private VideoCapturer createVideoCapturer(
-            CameraEnumerator enumerator,
-            String sourceId,
-            String facingMode) {
-        String[] deviceNames = enumerator.getDeviceNames();
+    private VideoCapturer createVideoCapturer(String deviceId, String facingMode) {
+        String[] deviceNames = cameraEnumerator.getDeviceNames();
         List<String> failedDevices = new ArrayList<>();
 
-        // If sourceId is specified, then it takes precedence over facingMode.
-        if (sourceId != null) {
+        // If deviceId is specified, then it takes precedence over facingMode.
+        if (deviceId != null) {
             for (String name : deviceNames) {
-                if (name.equals(sourceId)) {
+                if (name.equals(deviceId)) {
                     VideoCapturer videoCapturer
-                        = enumerator.createCapturer(name, cameraEventsHandler);
+                        = cameraEnumerator.createCapturer(name, cameraEventsHandler);
                     String message = "Create user-specified camera " + name;
                     if (videoCapturer != null) {
                         Log.d(TAG, message + " succeeded");
+                        this.isFrontFacing = cameraEnumerator.isFrontFacing(name);
                         return videoCapturer;
                     } else {
                         Log.d(TAG, message + " failed");
@@ -164,7 +195,7 @@ public class VideoCaptureController {
             }
             try {
                 // This can throw an exception when using the Camera 1 API.
-                if (enumerator.isFrontFacing(name) != isFrontFacing) {
+                if (cameraEnumerator.isFrontFacing(name) != isFrontFacing) {
                     continue;
                 }
             } catch (Exception e) {
@@ -176,10 +207,11 @@ public class VideoCaptureController {
                 continue;
             }
             VideoCapturer videoCapturer
-                = enumerator.createCapturer(name, cameraEventsHandler);
+                = cameraEnumerator.createCapturer(name, cameraEventsHandler);
             String message = "Create camera " + name;
             if (videoCapturer != null) {
                 Log.d(TAG, message + " succeeded");
+                this.isFrontFacing = cameraEnumerator.isFrontFacing(name);
                 return videoCapturer;
             } else {
                 Log.d(TAG, message + " failed");
@@ -191,10 +223,11 @@ public class VideoCaptureController {
         for (String name : deviceNames) {
             if (!failedDevices.contains(name)) {
                 VideoCapturer videoCapturer
-                    = enumerator.createCapturer(name, cameraEventsHandler);
+                    = cameraEnumerator.createCapturer(name, cameraEventsHandler);
                 String message = "Create fallback camera " + name;
                 if (videoCapturer != null) {
                     Log.d(TAG, message + " succeeded");
+                    this.isFrontFacing = cameraEnumerator.isFrontFacing(name);
                     return videoCapturer;
                 } else {
                     Log.d(TAG, message + " failed");
@@ -205,51 +238,6 @@ public class VideoCaptureController {
         }
 
         Log.w(TAG, "Unable to identify a suitable camera.");
-
-        return null;
-    }
-
-    /**
-     * Retrieves "facingMode" constraint value.
-     *
-     * @param mediaConstraints a {@code ReadableMap} which represents "GUM"
-     * constraints argument.
-     * @return String value of "facingMode" constraints in "GUM" or
-     * {@code null} if not specified.
-     */
-    private String getFacingMode(ReadableMap mediaConstraints) {
-        return
-            mediaConstraints == null
-                ? null
-                : ReactBridgeUtil.getMapStrValue(mediaConstraints, "facingMode");
-    }
-
-    /**
-     * Retrieves "sourceId" constraint value.
-     *
-     * @param mediaConstraints a {@code ReadableMap} which represents "GUM"
-     * constraints argument
-     * @return String value of "sourceId" optional "GUM" constraint or
-     * {@code null} if not specified.
-     */
-    private String getSourceIdConstraint(ReadableMap mediaConstraints) {
-        if (mediaConstraints != null
-                && mediaConstraints.hasKey("optional")
-                && mediaConstraints.getType("optional") == ReadableType.Array) {
-            ReadableArray optional = mediaConstraints.getArray("optional");
-
-            for (int i = 0, size = optional.size(); i < size; i++) {
-                if (optional.getType(i) == ReadableType.Map) {
-                    ReadableMap option = optional.getMap(i);
-
-                    if (option.hasKey("sourceId")
-                            && option.getType("sourceId")
-                                == ReadableType.String) {
-                        return option.getString("sourceId");
-                    }
-                }
-            }
-        }
 
         return null;
     }

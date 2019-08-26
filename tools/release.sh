@@ -34,7 +34,7 @@ last_version=`git describe --tags --abbrev=0`
 git_log_cmd='git log '$last_version'..HEAD --no-merges --pretty=format:%h%x20%s%x20%x20%x28%x20%an%x20%ad%x29 --date=iso'
 
 # --- commit with change logs
-git add ./package.json
+git add package.json package-lock.json
 git commit -m "release ${version}" -m "$($git_log_cmd)"
 git tag -a "$version" -m "$($git_log_cmd)"
 
