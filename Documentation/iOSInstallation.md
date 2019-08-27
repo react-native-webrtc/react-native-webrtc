@@ -69,10 +69,10 @@ libc.tbd
 libc++.tbd
 libsqlite3.tbd
 ```
-
+![Picture 4](https://github.com/react-native-webrtc/react-native-webrtc/blob/master/Documentation/doc_install_xcode_link_libraries.png)
 4-5.) Under `Build setting` set `Dead Code Stripping` to `No` also under `Build Options` set `Enable Bitcode` to `No` as well  
 
-![Picture 4](https://github.com/react-native-webrtc/react-native-webrtc/blob/master/Documentation/doc_install_xcode_link_libraries.png)
+
 
 ## Step 5. Add Permissions
 
