@@ -8,6 +8,7 @@
 #import <AVFoundation/AVFoundation.h>
 #import <objc/runtime.h>
 
+#import <React/RCTLog.h>
 #import <WebRTC/RTCEAGLVideoView.h>
 #import <WebRTC/RTCMediaStream.h>
 #import <WebRTC/RTCMTLVideoView.h>
@@ -320,7 +321,7 @@ RCT_CUSTOM_VIEW_PROPERTY(streamURL, NSString *, RTCVideoView) {
 
     videoTrack = videoTracks && videoTracks.count ? videoTracks[0] : nil;
     if (!videoTrack) {
-      NSLog(@"No video stream for react tag: %@", streamReactTag);
+      RCTLogWarn(@"No video stream for react tag: %@", streamReactTag);
     }
   }
 

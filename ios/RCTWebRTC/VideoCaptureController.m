@@ -1,6 +1,8 @@
 
 #import "VideoCaptureController.h"
 
+#import <React/RCTLog.h>
+
 
 @implementation VideoCaptureController {
     RTCCameraVideoCapturer *_capturer;
@@ -64,20 +66,20 @@
                       withTargetWidth:_width
                      withTargetHeight:_height];
     if (!format) {
-        NSLog(@"[VideoCaptureController] No valid formats for device %@", device);
+        RCTLogWarn(@"[VideoCaptureController] No valid formats for device %@", device);
 
         return;
     }
 
     [_capturer startCaptureWithDevice:device format:format fps:_fps];
 
-    NSLog(@"[VideoCaptureController] Capture started");
+    RCTLog(@"[VideoCaptureController] Capture started");
 }
 
 -(void)stopCapture {
     [_capturer stopCapture];
 
-    NSLog(@"[VideoCaptureController] Capture stopped");
+    RCTLog(@"[VideoCaptureController] Capture stopped");
 }
 
 -(void)switchCamera {
