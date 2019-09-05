@@ -21,6 +21,8 @@
 
 @interface WebRTCModule : NSObject <RCTBridgeModule>
 
+@property(nonatomic, strong) dispatch_queue_t workerQueue;
+
 @property (nonatomic, strong) RTCPeerConnectionFactory *peerConnectionFactory;
 
 @property (nonatomic, strong) NSMutableDictionary<NSNumber *, RTCPeerConnection *> *peerConnections;
