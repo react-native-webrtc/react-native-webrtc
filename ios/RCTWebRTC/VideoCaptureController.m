@@ -71,15 +71,31 @@
         return;
     }
 
-    [_capturer startCaptureWithDevice:device format:format fps:_fps];
+    // Starting the capture happens on another thread. Wait for it.
+    dispatch_semaphore_t semaphore = dispatch_semaphore_create(0);
 
-    RCTLog(@"[VideoCaptureController] Capture started");
+    [_capturer startCaptureWithDevice:device format:format fps:_fps completionHandler:^(NSError *err) {
+        if (err) {
+            RCTLogError(@"[VideoCaptureController] Error starting capture: %@", err);
+        } else {
+            RCTLog(@"[VideoCaptureController] Capture started");
+        }
+        dispatch_semaphore_signal(semaphore);
+    }];
+
+    dispatch_semaphore_wait(semaphore, DISPATCH_TIME_FOREVER);
 }
 
 -(void)stopCapture {
-    [_capturer stopCapture];
+    // Stopping the capture happens on another thread. Wait for it.
+    dispatch_semaphore_t semaphore = dispatch_semaphore_create(0);
 
-    RCTLog(@"[VideoCaptureController] Capture stopped");
+    [_capturer stopCaptureWithCompletionHandler:^{
+        RCTLog(@"[VideoCaptureController] Capture stopped");
+        dispatch_semaphore_signal(semaphore);
+    }];
+
+    dispatch_semaphore_wait(semaphore, DISPATCH_TIME_FOREVER);
 }
 
 -(void)switchCamera {
