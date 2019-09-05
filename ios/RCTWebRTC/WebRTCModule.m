@@ -19,9 +19,6 @@
 #import "WebRTCModule+RTCPeerConnection.h"
 
 @interface WebRTCModule ()
-
-@property(nonatomic, strong) dispatch_queue_t workerQueue;
-
 @end
 
 @implementation WebRTCModule

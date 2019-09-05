@@ -73,6 +73,11 @@ typedef NS_ENUM(NSInteger, RTCVideoViewObjectFit) {
  */
 @property (nonatomic, strong) RTCVideoTrack *videoTrack;
 
+/**
+ * Reference to the main WebRTC RN module.
+ */
+@property (nonatomic, weak) WebRTCModule *module;
+
 @end
 
 @implementation RTCVideoView {
@@ -98,9 +103,13 @@ typedef NS_ENUM(NSInteger, RTCVideoViewObjectFit) {
 
   if (videoTrack) {
     if (self.window) {
-      [videoTrack addRenderer:self.videoView];
+      dispatch_async(_module.workerQueue, ^{
+        [videoTrack addRenderer:self.videoView];
+      });
     } else {
-      [videoTrack removeRenderer:self.videoView];
+      dispatch_async(_module.workerQueue, ^{
+        [videoTrack removeRenderer:self.videoView];
+      });
       _videoSize.height = 0;
       _videoSize.width = 0;
       [self setNeedsLayout];
@@ -236,7 +245,9 @@ typedef NS_ENUM(NSInteger, RTCVideoViewObjectFit) {
 
   if (oldValue != videoTrack) {
     if (oldValue) {
-      [oldValue removeRenderer:self.videoView];
+      dispatch_async(_module.workerQueue, ^{
+        [oldValue removeRenderer:self.videoView];
+      });
       _videoSize.height = 0;
       _videoSize.width = 0;
       [self setNeedsLayout];
@@ -251,7 +262,9 @@ typedef NS_ENUM(NSInteger, RTCVideoViewObjectFit) {
     // order to break the cycle, have this RTCVideoView as the RTCVideoRenderer
     // of its videoTrack only while this view resides in a window.
     if (videoTrack && self.window) {
-      [videoTrack addRenderer:self.videoView];
+        dispatch_async(_module.workerQueue, ^{
+            [videoTrack addRenderer:self.videoView];
+        });
     }
   }
 }
@@ -283,6 +296,7 @@ RCT_EXPORT_MODULE()
 
 - (UIView *)view {
   RTCVideoView *v = [[RTCVideoView alloc] init];
+  v.module = [self.bridge moduleForName:@"WebRTCModule"];
   v.clipsToBounds = YES;
   return v;
 }
@@ -310,22 +324,26 @@ RCT_CUSTOM_VIEW_PROPERTY(objectFit, NSString *, RTCVideoView) {
 }
 
 RCT_CUSTOM_VIEW_PROPERTY(streamURL, NSString *, RTCVideoView) {
-  RTCVideoTrack *videoTrack = nil;
-
-  if (json) {
-    NSString *streamReactTag = (NSString *)json;
-
-    WebRTCModule *module = [self.bridge moduleForName:@"WebRTCModule"];
-    RTCMediaStream *stream = [module streamForReactTag:streamReactTag];
-    NSArray *videoTracks = stream ? stream.videoTracks : nil;
-
-    videoTrack = videoTracks && videoTracks.count ? videoTracks[0] : nil;
-    if (!videoTrack) {
-      RCTLogWarn(@"No video stream for react tag: %@", streamReactTag);
+    if (!json) {
+        view.videoTrack = nil;
+        return;
     }
-  }
 
-  view.videoTrack = videoTrack;
+    NSString *streamReactTag = (NSString *)json;
+    WebRTCModule *module = view.module;
+
+    dispatch_async(module.workerQueue, ^{
+        RTCMediaStream *stream = [module streamForReactTag:streamReactTag];
+        NSArray *videoTracks = stream ? stream.videoTracks : @[];
+        RTCVideoTrack *videoTrack = [videoTracks firstObject];
+        if (!videoTrack) {
+            RCTLogWarn(@"No video stream for react tag: %@", streamReactTag);
+        } else {
+            dispatch_async(dispatch_get_main_queue(), ^{
+                view.videoTrack = videoTrack;
+            });
+        }
+    });
 }
 
 + (BOOL)requiresMainQueueSetup
