@@ -9,7 +9,7 @@ A WebRTC module for React Native.
 
 **NOTE** for Expo users: this plugin doesn't work unless you eject.
 
-## Comunity
+## Community
 
 Everyone is welcome to our [Discourse community](https://react-native-webrtc.discourse.group/) to discuss any React Native and WebRTC related topics.
 
