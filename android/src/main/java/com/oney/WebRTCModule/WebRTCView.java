@@ -399,7 +399,13 @@ public class WebRTCView extends ViewGroup {
             VideoTrack videoTrack = getVideoTrack();
 
             if (videoTrack != null) {
-                videoTrack.removeSink(surfaceViewRenderer);
+                try {
+                    videoTrack.removeSink(surfaceViewRenderer);
+                } catch (Throwable tr) {
+                    // Releasing streams happens in the WebRTC thread, thus we might (briefly) hold
+                    // a reference to a released stream.
+                    Log.e(TAG, "Failed to remove renderer", tr);
+                }
             }
 
             surfaceViewRenderer.release();
@@ -597,7 +603,17 @@ public class WebRTCView extends ViewGroup {
             }
 
             surfaceViewRenderer.init(sharedContext, rendererEvents);
-            videoTrack.addSink(surfaceViewRenderer);
+
+            try {
+                videoTrack.addSink(surfaceViewRenderer);
+            } catch (Throwable tr) {
+                // Releasing streams happens in the WebRTC thread, thus we might (briefly) hold
+                // a reference to a released stream.
+                Log.e(TAG, "Failed to add renderer", tr);
+
+                surfaceViewRenderer.release();
+                return;
+            }
 
             rendererAttached = true;
         }
