@@ -14,6 +14,7 @@ import com.facebook.react.bridge.ReactContext;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.List;
+import java.util.Objects;
 
 import org.webrtc.EglBase;
 import org.webrtc.MediaStream;
@@ -494,9 +495,7 @@ public class WebRTCView extends ViewGroup {
      */
     void setStreamURL(String streamURL) {
         // Is the value of this.streamURL really changing?
-        if (streamURL == null
-                ? this.streamURL != null
-                : !streamURL.equals(this.streamURL)) {
+        if (!Objects.equals(streamURL, this.streamURL)) {
             // XXX The value of this.streamURL is really changing. Before
             // realizing/applying the change, let go of the old videoTrack. Of
             // course, that is only necessary if the value of videoTrack will
