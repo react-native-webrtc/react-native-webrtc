@@ -503,7 +503,7 @@ public class WebRTCView extends ViewGroup {
             // videoTrack before assigning to this.streamURL is vital;
             // otherwise, removeRendererFromVideoTrack will fail to remove the
             // old videoTrack from the associated videoRenderer, two
-            // VideoTracks (the old and the new) may start rendereding and, most
+            // VideoTracks (the old and the new) may start rendering and, most
             // importantly the videoRender may eventually crash when the old
             // videoTrack is disposed.
             VideoTrack videoTrack = getVideoTrackForStreamURL(streamURL);
