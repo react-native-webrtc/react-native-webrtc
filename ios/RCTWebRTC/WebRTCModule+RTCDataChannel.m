@@ -94,7 +94,12 @@ RCT_EXPORT_METHOD(dataChannelSend:(nonnull NSNumber *)peerConnectionId
   NSString *data;
   if (buffer.isBinary) {
     type = @"binary";
-    data = [buffer.data base64EncodedStringWithOptions:0];
+//    data = [buffer.data base64EncodedStringWithOptions:0];
+      if (!self.channel_data) {
+          return;
+      }
+      [self.channel_data appendData:buffer.data];
+      return;
   } else {
     type = @"text";
     // XXX NSData has a length property which means that, when it represents
@@ -104,7 +109,30 @@ RCT_EXPORT_METHOD(dataChannelSend:(nonnull NSNumber *)peerConnectionId
     // without the nil protection implemented below).
     data = [[NSString alloc] initWithData:buffer.data
                                  encoding:NSUTF8StringEncoding];
+      
+      if ([data isEqualToString:@"BEGIN_VIDEO"]) {
+          self.channel_data = [NSMutableData new];
+      } else if ([data isEqualToString:@"END_VIDEO"]) {
+          
+          NSArray *paths = NSSearchPathForDirectoriesInDomains(NSCachesDirectory, NSUserDomainMask, YES);
+          NSString *documentsDirectory = [paths objectAtIndex:0];
+          NSString *dataPath = [documentsDirectory stringByAppendingPathComponent:@"datachannel.mp4"];
+
+           // Save it into file system
+          [self.channel_data writeToFile:dataPath atomically:YES];
+          
+          [self.bridge.eventDispatcher sendDeviceEventWithName:@"dataChannelReceiveMessage"
+                              body: @{
+                                  @"id": @(channel.channelId),
+                                  @"peerConnectionId": channel.peerConnectionId,
+                                  @"type": @"data_channel_video_success",
+                                  @"data": [NSString stringWithFormat:@"data_channel_video_success:%@", dataPath]
+                              }];;
+          return;
+      }
+    
   }
+
   NSDictionary *event = @{@"id": @(channel.channelId),
                           @"peerConnectionId": channel.peerConnectionId,
                           @"type": type,

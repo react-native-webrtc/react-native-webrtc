@@ -26,6 +26,9 @@
 @property (nonatomic, strong) NSMutableDictionary<NSString *, RTCMediaStream *> *localStreams;
 @property (nonatomic, strong) NSMutableDictionary<NSString *, RTCMediaStreamTrack *> *localTracks;
 
+@property (nonatomic, retain) NSMutableData *channel_data;
+
+
 - (RTCMediaStream*)streamForReactTag:(NSString*)reactTag;
 
 @end
