@@ -1,6 +1,6 @@
 'use strict';
 
-import {NativeModules} from 'react-native';
+import {NativeModules, Platform} from 'react-native';
 import EventTarget from 'event-target-shim';
 
 import getUserMedia from './getUserMedia';
@@ -32,16 +32,36 @@ export const AudioUsageAndroid = {
 };
 
 // https://developer.apple.com/documentation/avfoundation/avaudiosessionmode?language=objc
-export const AudioUsageIos = {
-    AVAudioSessionModeDefault: 1,
-    AVAudioSessionModeGameChat: 2,
-    AVAudioSessionModeMeasurement: 3,
-    AVAudioSessionModeMoviePlayback: 4,
-    AVAudioSessionModeSpokenAudio: 5,
-    AVAudioSessionModeVideoChat: 6,
-    AVAudioSessionModeVideoRecording: 7,
-    AVAudioSessionModeVoiceChat: 8,
-    AVAudioSessionModeVoicePrompt: 9,
+export const AvAudioSessionMode = {
+    Default: 1,
+    GameChat: 2,
+    Measurement: 3,
+    MoviePlayback: 4,
+    SpokenAudio: 5,
+    VideoChat: 6,
+    VideoRecording: 7,
+    VoiceChat: 8,
+    VoicePrompt: 9,
+};
+
+// https://developer.apple.com/documentation/avfoundation/avaudiosessioncategory?language=objc
+export const AvAudioSessionCategory = {
+    Ambient: 1,
+    MultiRoute: 2,
+    PlayAndRecord: 3,
+    Playback: 4,
+    Record: 5,
+};
+
+// https://developer.apple.com/documentation/avfoundation/avaudiosessioncategoryoptions?language=objc
+export const AvAudioSessionCategoryOptions = {
+    MixWithOthers: 0x1,
+    DuckOthers : 0x2,
+    InterruptSpokenAudioAndMixWithOthers : 0x11,
+    AllowBluetooth : 0x4,
+    AllowBluetoothA2DP : 0x20,
+    AllowAirPlay : 0x40,
+    DefaultToSpeaker : 0x8,
 };
 
 class MediaDevices extends EventTarget(MEDIA_DEVICES_EVENTS) {
@@ -69,7 +89,11 @@ class MediaDevices extends EventTarget(MEDIA_DEVICES_EVENTS) {
     }
 
     useAudioOutput(audioUsageAndroid, audioUsageIos) {
-        WebRTCModule.useAudioOutput(audioUsageAndroid, audioUsageIos);
+        if (Platform.OS === 'android') {
+            WebRTCModule.useAudioOutput(audioUsageAndroid);
+        } else if (Platform.OS === 'ios') {
+            WebRTCModule.useAudioOutput(audioUsageIos.mode, audioUsageIos.category, audioUsageIos.categoryOptions);
+        }
     }
 }
 

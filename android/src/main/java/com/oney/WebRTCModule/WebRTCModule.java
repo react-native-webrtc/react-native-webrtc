@@ -983,7 +983,7 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
     }
 
     @ReactMethod
-    public void useAudioOutput(int audioOutputAndroid, int audioOutputIos) {
+    public void useAudioOutput(int audioOutputAndroid) {
         WebRtcAudioTrack.setAudioTrackUsageAttribute(audioOutputAndroid);
     }
 }

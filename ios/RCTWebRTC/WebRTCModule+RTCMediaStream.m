@@ -10,7 +10,10 @@
 #import <WebRTC/RTCCameraVideoCapturer.h>
 #import <WebRTC/RTCVideoTrack.h>
 #import <WebRTC/RTCMediaConstraints.h>
+#import <WebRTC/RTCAudioSession.h>
+#import <WebRTC/RTCAudioSessionConfiguration.h>
 
+#import <React/RCTLog.h>
 #import "RTCMediaStreamTrack+React.h"
 #import "WebRTCModule+RTCPeerConnection.h"
 
@@ -52,24 +55,59 @@
   return videoTrack;
 }
 
-RCT_EXPORT_METHOD(useAudioOutput: (NSInteger)audioUsageAndroid :(NSInteger) audioUsageIos) {
-    AVAudioSession *audioSession = [AVAudioSession sharedInstance];
-    NSError *error = nil;
-    NSString *mode = @"";
-    switch(audioUsageIos) {
-        case 1: mode = AVAudioSessionModeDefault; break;
-        case 2: mode = AVAudioSessionModeGameChat; break;
-        case 3: mode = AVAudioSessionModeMeasurement; break;
-        case 4: mode = AVAudioSessionModeMoviePlayback; break;
-        case 5: mode = AVAudioSessionModeSpokenAudio; break;
-        case 6: mode = AVAudioSessionModeVideoChat; break;
-        case 7: mode = AVAudioSessionModeVideoRecording; break;
-        case 8: mode = AVAudioSessionModeVoiceChat; break;
-        case 9: mode = AVAudioSessionModeVoicePrompt; break;
-        default: mode = AVAudioSessionModeDefault;
+- (NSString *)getAvSessionMode:(NSInteger) mode {
+    switch(mode) {
+        case 1: return AVAudioSessionModeDefault;
+        case 2: return AVAudioSessionModeGameChat;
+        case 3: return AVAudioSessionModeMeasurement;
+        case 4: return AVAudioSessionModeMoviePlayback;
+        case 5: return AVAudioSessionModeSpokenAudio;
+        case 6: return AVAudioSessionModeVideoChat;
+        case 7: return AVAudioSessionModeVideoRecording;
+        case 8: return AVAudioSessionModeVoiceChat;
+        case 9: if (@available(iOS 12.0, *)) {
+            return AVAudioSessionModeVoicePrompt;
+        } else {
+            return AVAudioSessionModeDefault;
+        }
+        default: return AVAudioSessionModeDefault;
     }
-    mode = AVAudioSessionModeMoviePlayback;
-    [audioSession setMode:mode error: &error];
+}
+
+- (NSString *)getAvSessionCategory:(NSInteger) category {
+    switch(category) {
+       case 1: return  AVAudioSessionCategoryAmbient;
+       case 2: return  AVAudioSessionCategoryMultiRoute;
+       case 3: return  AVAudioSessionCategoryPlayAndRecord;
+       case 4: return  AVAudioSessionCategoryPlayback;
+       case 5: return  AVAudioSessionCategoryRecord;
+       case 6: return  AVAudioSessionCategorySoloAmbient;
+       default: return AVAudioSessionCategoryPlayAndRecord;
+    }
+}
+
+RCT_EXPORT_METHOD(useAudioOutput: (NSInteger)mode :(NSInteger) category :(NSUInteger) categoryOptions) {
+    RTCAudioSessionConfiguration *configuration = [[RTCAudioSessionConfiguration alloc] init];
+
+    configuration.mode = [self getAvSessionMode:mode];
+    configuration.category = [self getAvSessionCategory:category];
+    configuration.categoryOptions = categoryOptions;
+
+    RTCAudioSession *session = [RTCAudioSession sharedInstance];
+    [session lockForConfiguration];
+    BOOL hasSucceeded = NO;
+    NSError *error = nil;
+    if (session.isActive) {
+        hasSucceeded = [session setConfiguration:configuration error:&error];
+    } else {
+        hasSucceeded = [session setConfiguration:configuration
+                                          active:YES
+                                           error:&error];
+    }
+    if (!hasSucceeded) {
+        RCTLog(@"Error setting configuration: %@", error.localizedDescription);
+    }
+    [session unlockForConfiguration];
 }
 
 /**
