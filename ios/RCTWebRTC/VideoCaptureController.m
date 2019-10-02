@@ -61,6 +61,12 @@
         device = [self findDeviceForPosition:position];
     }
 
+    if (!device) {
+        RCTLogWarn(@"[VideoCaptureController] No capture devices found!");
+
+        return;
+    }
+
     AVCaptureDeviceFormat *format
         = [self selectFormatForDevice:device
                       withTargetWidth:_width
@@ -114,7 +120,7 @@
         }
     }
 
-    return captureDevices[0];
+    return [captureDevices firstObject];
 }
 
 - (AVCaptureDeviceFormat *)selectFormatForDevice:(AVCaptureDevice *)device
