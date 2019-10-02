@@ -1,6 +1,8 @@
 
 #import "VideoCaptureController.h"
 
+#import <React/RCTLog.h>
+
 
 @implementation VideoCaptureController {
     RTCCameraVideoCapturer *_capturer;
@@ -59,25 +61,47 @@
         device = [self findDeviceForPosition:position];
     }
 
+    if (!device) {
+        RCTLogWarn(@"[VideoCaptureController] No capture devices found!");
+
+        return;
+    }
+
     AVCaptureDeviceFormat *format
         = [self selectFormatForDevice:device
                       withTargetWidth:_width
                      withTargetHeight:_height];
     if (!format) {
-        NSLog(@"[VideoCaptureController] No valid formats for device %@", device);
+        RCTLogWarn(@"[VideoCaptureController] No valid formats for device %@", device);
 
         return;
     }
 
-    [_capturer startCaptureWithDevice:device format:format fps:_fps];
+    // Starting the capture happens on another thread. Wait for it.
+    dispatch_semaphore_t semaphore = dispatch_semaphore_create(0);
 
-    NSLog(@"[VideoCaptureController] Capture started");
+    [_capturer startCaptureWithDevice:device format:format fps:_fps completionHandler:^(NSError *err) {
+        if (err) {
+            RCTLogError(@"[VideoCaptureController] Error starting capture: %@", err);
+        } else {
+            RCTLog(@"[VideoCaptureController] Capture started");
+        }
+        dispatch_semaphore_signal(semaphore);
+    }];
+
+    dispatch_semaphore_wait(semaphore, DISPATCH_TIME_FOREVER);
 }
 
 -(void)stopCapture {
-    [_capturer stopCapture];
+    // Stopping the capture happens on another thread. Wait for it.
+    dispatch_semaphore_t semaphore = dispatch_semaphore_create(0);
 
-    NSLog(@"[VideoCaptureController] Capture stopped");
+    [_capturer stopCaptureWithCompletionHandler:^{
+        RCTLog(@"[VideoCaptureController] Capture stopped");
+        dispatch_semaphore_signal(semaphore);
+    }];
+
+    dispatch_semaphore_wait(semaphore, DISPATCH_TIME_FOREVER);
 }
 
 -(void)switchCamera {
@@ -96,7 +120,7 @@
         }
     }
 
-    return captureDevices[0];
+    return [captureDevices firstObject];
 }
 
 - (AVCaptureDeviceFormat *)selectFormatForDevice:(AVCaptureDevice *)device

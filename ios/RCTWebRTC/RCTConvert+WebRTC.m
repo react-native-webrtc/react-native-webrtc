@@ -1,4 +1,5 @@
 #import "RCTConvert+WebRTC.h"
+#import <React/RCTLog.h>
 #import <WebRTC/RTCDataChannelConfiguration.h>
 #import <WebRTC/RTCIceServer.h>
 #import <WebRTC/RTCSessionDescription.h>
@@ -46,7 +47,7 @@
   }
 
   NSString *sdp = json[@"candidate"];
-  NSLog(@"%@ <- candidate", sdp);
+  RCTLogTrace(@"%@ <- candidate", sdp);
   int sdpMLineIndex = [RCTConvert int:json[@"sdpMLineIndex"]];
   NSString *sdpMid = json[@"sdpMid"];
 

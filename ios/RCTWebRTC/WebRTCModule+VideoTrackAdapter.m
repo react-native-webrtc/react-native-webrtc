@@ -6,6 +6,7 @@
 
 #import <React/RCTBridge.h>
 #import <React/RCTEventDispatcher.h>
+#import <React/RCTLog.h>
 
 #import <WebRTC/RTCVideoRenderer.h>
 #import <WebRTC/RTCVideoTrack.h>
@@ -76,7 +77,7 @@ static const NSTimeInterval MUTE_DELAY = 1.5;
                           @"streamReactTag": self.streamReactTag,
                           @"trackId": self.trackId,
                           @"muted": @(muted)}];
-    NSLog(@"[VideoTrackAdapter] %@ event for %@ %@ %@",
+    RCTLog(@"[VideoTrackAdapter] %@ event for %@ %@ %@",
           muted ? @"Mute" : @"Unmute",
           self.peerConnectionId,
           self.streamReactTag,
@@ -145,7 +146,7 @@ static const NSTimeInterval MUTE_DELAY = 1.5;
 - (void)addVideoTrackAdapter:(NSString*)streamReactId track:(RTCVideoTrack*)track {
     NSString* trackId = track.trackId;
     if ([self.videoTrackAdapters objectForKey:trackId] != nil) {
-        NSLog(@"[VideoTrackAdapter] Adapter already exists for track %@", trackId);
+        RCTLogWarn(@"[VideoTrackAdapter] Adapter already exists for track %@", trackId);
         return;
     }
 
@@ -158,7 +159,7 @@ static const NSTimeInterval MUTE_DELAY = 1.5;
     [track addRenderer:muteDetector];
     [muteDetector start];
 
-    NSLog(@"[VideoTrackAdapter] Adapter created for track %@", trackId);
+    RCTLogTrace(@"[VideoTrackAdapter] Adapter created for track %@", trackId);
 }
 
 - (void)removeVideoTrackAdapter:(RTCVideoTrack*)track {
@@ -166,14 +167,14 @@ static const NSTimeInterval MUTE_DELAY = 1.5;
     TrackMuteDetector* muteDetector
         = [self.videoTrackAdapters objectForKey:trackId];
     if (muteDetector == nil) {
-        NSLog(@"[VideoTrackAdapter] Adapter doesn't exist for track %@", trackId);
+        RCTLogWarn(@"[VideoTrackAdapter] Adapter doesn't exist for track %@", trackId);
         return;
     }
 
     [track removeRenderer:muteDetector];
     [muteDetector dispose];
     [self.videoTrackAdapters removeObjectForKey:trackId];
-    NSLog(@"[VideoTrackAdapter] Adapter removed for track %@", trackId);
+    RCTLogTrace(@"[VideoTrackAdapter] Adapter removed for track %@", trackId);
 }
 
 @end

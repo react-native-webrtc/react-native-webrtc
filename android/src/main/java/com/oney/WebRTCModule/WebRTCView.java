@@ -14,6 +14,7 @@ import com.facebook.react.bridge.ReactContext;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.List;
+import java.util.Objects;
 
 import org.webrtc.EglBase;
 import org.webrtc.MediaStream;
@@ -398,7 +399,13 @@ public class WebRTCView extends ViewGroup {
             VideoTrack videoTrack = getVideoTrack();
 
             if (videoTrack != null) {
-                videoTrack.removeSink(surfaceViewRenderer);
+                try {
+                    videoTrack.removeSink(surfaceViewRenderer);
+                } catch (Throwable tr) {
+                    // Releasing streams happens in the WebRTC thread, thus we might (briefly) hold
+                    // a reference to a released stream.
+                    Log.e(TAG, "Failed to remove renderer", tr);
+                }
             }
 
             surfaceViewRenderer.release();
@@ -494,9 +501,7 @@ public class WebRTCView extends ViewGroup {
      */
     void setStreamURL(String streamURL) {
         // Is the value of this.streamURL really changing?
-        if (streamURL == null
-                ? this.streamURL != null
-                : !streamURL.equals(this.streamURL)) {
+        if (!Objects.equals(streamURL, this.streamURL)) {
             // XXX The value of this.streamURL is really changing. Before
             // realizing/applying the change, let go of the old videoTrack. Of
             // course, that is only necessary if the value of videoTrack will
@@ -504,7 +509,7 @@ public class WebRTCView extends ViewGroup {
             // videoTrack before assigning to this.streamURL is vital;
             // otherwise, removeRendererFromVideoTrack will fail to remove the
             // old videoTrack from the associated videoRenderer, two
-            // VideoTracks (the old and the new) may start rendereding and, most
+            // VideoTracks (the old and the new) may start rendering and, most
             // importantly the videoRender may eventually crash when the old
             // videoTrack is disposed.
             VideoTrack videoTrack = getVideoTrackForStreamURL(streamURL);
@@ -598,7 +603,17 @@ public class WebRTCView extends ViewGroup {
             }
 
             surfaceViewRenderer.init(sharedContext, rendererEvents);
-            videoTrack.addSink(surfaceViewRenderer);
+
+            try {
+                videoTrack.addSink(surfaceViewRenderer);
+            } catch (Throwable tr) {
+                // Releasing streams happens in the WebRTC thread, thus we might (briefly) hold
+                // a reference to a released stream.
+                Log.e(TAG, "Failed to add renderer", tr);
+
+                surfaceViewRenderer.release();
+                return;
+            }
 
             rendererAttached = true;
         }

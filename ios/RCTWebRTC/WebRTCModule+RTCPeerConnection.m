@@ -251,7 +251,7 @@ RCT_EXPORT_METHOD(peerConnectionAddICECandidate:(RTCIceCandidate*)candidate obje
   }
 
   [peerConnection addIceCandidate:candidate];
-  NSLog(@"addICECandidateresult: %@", candidate);
+  RCTLogTrace(@"addICECandidateresult: %@", candidate);
   callback(@[@true]);
 }
 
@@ -448,7 +448,7 @@ RCT_EXPORT_METHOD(peerConnectionGetStats:(nonnull NSString *)trackID
     }
   }
   if (!streamReactTag) {
-    NSLog(@"didRemoveStream - stream not found, id: %@", stream.streamId);
+    RCTLogWarn(@"didRemoveStream - stream not found, id: %@", stream.streamId);
     return;
   }
   for (RTCVideoTrack *track in stream.videoTracks) {
