@@ -13,7 +13,6 @@
 
 #import <WebRTC/RTCDefaultVideoDecoderFactory.h>
 #import <WebRTC/RTCDefaultVideoEncoderFactory.h>
-#import <WebRTC/RTCFieldTrials.h>
 
 #import "WebRTCModule.h"
 #import "WebRTCModule+RTCPeerConnection.h"
@@ -57,11 +56,6 @@
 {
   self = [super init];
   if (self) {
-    // Initialize field trial for solving audio issues after hold when using CallKit.
-    // See: https://bugs.chromium.org/p/webrtc/issues/detail?id=8126#c35
-    NSDictionary *fieldTrials = @{ @"WebRTC-Audio-iOS-Holding" : kRTCFieldTrialEnabledValue };
-    RTCInitFieldTrialDictionary(fieldTrials);
-
     if (encoderFactory == nil) {
       encoderFactory = [[RTCDefaultVideoEncoderFactory alloc] init];
     }
