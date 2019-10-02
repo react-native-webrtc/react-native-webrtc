@@ -31,29 +31,32 @@ dependencies {
 
 4.) In `android/app/src/main/java/com/xxx/MainApplication.java`
 
-After 0.19.0
+React Native versions 0.60.0 after
 ```java
 import com.oney.WebRTCModule.WebRTCModulePackage;  // <--- Add this line
 ...
     @Override
     protected List<ReactPackage> getPackages() {
-      return Arrays.<ReactPackage>asList(
-        new MainReactPackage(),
-        new WebRTCModulePackage()                  // <--- Add this line
-      );
+      @SuppressWarnings("UnnecessaryLocalVariable")
+      List<ReactPackage> packages = new PackageList(this).getPackages();
+      // Packages that cannot be autolinked yet can be added manually here, for example:
+      // packages.add(new MyReactNativePackage());
+      packages.add(new WebRTCModulePackage()); // <-- Add this line
+      return packages;
     }
 ```
-Before 0.18.0
+React Native versions 0.60.0 before
 ```java
 import com.oney.WebRTCModule.WebRTCModulePackage;  // <--- Add this line
 ...
 
- public class MainActivity extends Activity implements DefaultHardwareBackBtnHandler {
- ...
-
-     .addPackage(new MainReactPackage())
-     .addPackage(new WebRTCModulePackage())        // <--- Add this line
-     .setUseDeveloperSupport(BuildConfig.DEBUG)
+@Override
+protected List<ReactPackage> getPackages() {
+    return Arrays.<ReactPackage>asList(
+        new MainReactPackage(),
+        new WebRTCModulePackage() // <-- Add this line
+    );
+}
 ```
 
 5.) Enable Java 8 support in your project. You will probably need to have React Native 0.55+ for this.

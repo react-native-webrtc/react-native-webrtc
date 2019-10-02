@@ -4,7 +4,7 @@ import {NativeModules} from 'react-native';
 import EventTarget from 'event-target-shim';
 import uuid from 'uuid';
 
-import type MediaStreamTrack from './MediaStreamTrack';
+import MediaStreamTrack from './MediaStreamTrack';
 
 const {WebRTCModule} = NativeModules;
 

@@ -11,12 +11,12 @@ const DEFAULT_VIDEO_CONSTRAINTS = {
 
 const ASPECT_RATIO = 16 / 9;
 
-const STANDARD_OA_OPTIONS = [
-    'iceRestart',
-    'offerToReceiveAudio',
-    'offerToReceiveVideo',
-    'voiceActivityDetection'
-];
+const STANDARD_OA_OPTIONS = {
+    icerestart: 'IceRestart',
+    offertoreceiveaudio: 'OfferToReceiveAudio',
+    offertoreceivevideo: 'OfferToReceiveVideo',
+    voiceactivitydetection: 'VoiceActivityDetection'
+};
 
 function getDefaultMediaConstraints(mediaType) {
     switch(mediaType) {
@@ -144,12 +144,9 @@ export function normalizeOfferAnswerOptions(options = {}) {
     // Convert standard options into WebRTC internal constant names.
     // See: https://github.com/jitsi/webrtc/blob/0cd6ce4de669bed94ba47b88cb71b9be0341bb81/sdk/media_constraints.cc#L113
     for (const [ key, value ] of Object.entries(options)) {
-        if (STANDARD_OA_OPTIONS.indexOf(key) !== -1) {
-            // offerToReceiveAudio -> OfferToReceiveAudio
-            const newKey = key.charAt(0).toUpperCase() + key.slice(1);
+        const newKey = STANDARD_OA_OPTIONS[key.toLowerCase()];
+        if (newKey) {
             newOptions[newKey] = String(Boolean(value));
-        } else {
-            newOptions[key] = value;
         }
     }
 
