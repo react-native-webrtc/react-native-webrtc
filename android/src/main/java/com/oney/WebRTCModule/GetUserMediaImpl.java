@@ -108,15 +108,20 @@ class GetUserMediaImpl {
         String[] devices = cameraEnumerator.getDeviceNames();
 
         for(int i = 0; i < devices.length; ++i) {
-            WritableMap params = Arguments.createMap();
-            if (cameraEnumerator.isFrontFacing(devices[i])) {
-                params.putString("facing", "front");
-            } else {
-                params.putString("facing", "environment");
+            String deviceName = devices[i];
+            boolean isFrontFacing;
+            try {
+                // This can throw an exception when using the Camera 1 API.
+                isFrontFacing = cameraEnumerator.isFrontFacing(deviceName);
+            } catch (Exception e) {
+                Log.e(TAG, "Failed to check the facing mode of camera");
+                continue;
             }
+            WritableMap params = Arguments.createMap();
+            params.putString("facing", isFrontFacing ? "front" : "environment");
             params.putString("deviceId", "" + i);
             params.putString("groupId", "");
-            params.putString("label", devices[i]);
+            params.putString("label", deviceName);
             params.putString("kind", "videoinput");
             array.pushMap(params);
         }
