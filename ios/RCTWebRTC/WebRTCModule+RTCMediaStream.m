@@ -83,12 +83,13 @@ RCT_EXPORT_METHOD(getUserMedia:(NSDictionary *)constraints
   RTCMediaStream *mediaStream
     = [self.peerConnectionFactory mediaStreamWithStreamId:mediaStreamId];
   NSMutableArray *tracks = [NSMutableArray array];
+  NSMutableArray *tmp = [NSMutableArray array];
+  if (audioTrack)
+      [tmp addObject:audioTrack];
+  if (videoTrack)
+      [tmp addObject:videoTrack];
 
-  for (RTCMediaStreamTrack *track in @[ audioTrack ? audioTrack : [NSNull null], videoTrack ? videoTrack : [NSNull null] ]) {
-    if (track == [NSNull null]) {
-      continue;
-    }
-
+  for (RTCMediaStreamTrack *track in tmp) {
     if ([track.kind isEqualToString:@"audio"]) {
       [mediaStream addAudioTrack:(RTCAudioTrack *)track];
     } else if([track.kind isEqualToString:@"video"]) {
