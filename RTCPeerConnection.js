@@ -39,14 +39,6 @@ type RTCIceConnectionState =
   'disconnected' |
   'closed';
 
-/**
- * The default constraints of RTCPeerConnection's createOffer().
- */
-const DEFAULT_OFFER_OPTIONS = {
-    offerToReceiveAudio: true,
-    offerToReceiveVideo: true,
-};
-
 const PEER_CONNECTION_EVENTS = [
   'connectionstatechange',
   'icecandidate',
@@ -118,7 +110,7 @@ export default class RTCPeerConnection extends EventTarget(PEER_CONNECTION_EVENT
       WebRTCModule.peerConnectionRemoveStream(stream._reactTag, this._peerConnectionId);
   }
 
-  createOffer(options = DEFAULT_OFFER_OPTIONS) {
+  createOffer(options) {
     return new Promise((resolve, reject) => {
       WebRTCModule.peerConnectionCreateOffer(
         this._peerConnectionId,
