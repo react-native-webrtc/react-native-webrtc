@@ -42,7 +42,8 @@ import {
   RTCView,
   MediaStream,
   MediaStreamTrack,
-  mediaDevices
+  mediaDevices,
+  registerGlobals
 } from 'react-native-webrtc';
 ```
 Anything about using RTCPeerConnection, RTCSessionDescription and RTCIceCandidate is like browser.
@@ -115,6 +116,21 @@ Rendering RTCView.
 
 
 ### Custom APIs
+
+#### registerGlobals()
+
+By calling this method the JavaScript global namespace gets "polluted" with the following additions:
+
+* `navigator.mediaDevices.getUserMedia()`
+* `navigator.mediaDevices.enumerateDevices()`
+* `window.RTCPeerConnection`
+* `window.RTCIceCandidate`
+* `window.RTCSessionDescription`
+* `window.MediaStream`
+* `window.MediaStreamTrack`
+
+This is useful to make existing WebRTC JavaScript libraries (that expect those globals to exist) work with react-native-webrtc.
+
 
 #### MediaStreamTrack.prototype._switchCamera()
 
