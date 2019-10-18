@@ -31,10 +31,6 @@ function registerGlobals() {
 		navigator.mediaDevices = {};
 	}
 
-	// Deprecated API.
-	navigator.getUserMedia = mediaDevices.getUserMedia.bind(mediaDevices);
-
-	// New API.
 	navigator.mediaDevices.getUserMedia =
 		mediaDevices.getUserMedia.bind(mediaDevices);
 
