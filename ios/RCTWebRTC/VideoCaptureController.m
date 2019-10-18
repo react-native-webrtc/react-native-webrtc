@@ -7,6 +7,7 @@
 @implementation VideoCaptureController {
     RTCCameraVideoCapturer *_capturer;
     NSString *_deviceId;
+    BOOL _running;
     BOOL _usingFrontCamera;
     int _width;
     int _height;
@@ -18,6 +19,7 @@
     self = [super init];
     if (self) {
         _capturer = capturer;
+        _running = NO;
 
         // Default to the front camera.
         _usingFrontCamera = YES;
@@ -77,6 +79,8 @@
         return;
     }
 
+    RCTLog(@"[VideoCaptureController] Capture will start");
+
     // Starting the capture happens on another thread. Wait for it.
     dispatch_semaphore_t semaphore = dispatch_semaphore_create(0);
 
@@ -85,6 +89,7 @@
             RCTLogError(@"[VideoCaptureController] Error starting capture: %@", err);
         } else {
             RCTLog(@"[VideoCaptureController] Capture started");
+            self->_running = YES;
         }
         dispatch_semaphore_signal(semaphore);
     }];
@@ -93,11 +98,16 @@
 }
 
 -(void)stopCapture {
+    if (!_running)
+        return;
+
+    RCTLog(@"[VideoCaptureController] Capture will stop");
     // Stopping the capture happens on another thread. Wait for it.
     dispatch_semaphore_t semaphore = dispatch_semaphore_create(0);
 
     [_capturer stopCaptureWithCompletionHandler:^{
         RCTLog(@"[VideoCaptureController] Capture stopped");
+        self->_running = NO;
         dispatch_semaphore_signal(semaphore);
     }];
 
