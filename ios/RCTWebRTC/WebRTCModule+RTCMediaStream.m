@@ -161,7 +161,7 @@ RCT_EXPORT_METHOD(mediaStreamCreate:(nonnull NSString *)streamID)
 RCT_EXPORT_METHOD(mediaStreamAddTrack:(nonnull NSString *)streamID : (nonnull NSString *)trackID)
 {
     RTCMediaStream *mediaStream = self.localStreams[streamID];
-    RTCMediaStreamTrack *track = self.localTracks[trackID];
+    RTCMediaStreamTrack *track = [self trackForId:trackID];
 
     if (mediaStream && track) {
         if ([track.kind isEqualToString:@"audio"]) {
@@ -175,7 +175,7 @@ RCT_EXPORT_METHOD(mediaStreamAddTrack:(nonnull NSString *)streamID : (nonnull NS
 RCT_EXPORT_METHOD(mediaStreamRemoveTrack:(nonnull NSString *)streamID : (nonnull NSString *)trackID)
 {
     RTCMediaStream *mediaStream = self.localStreams[streamID];
-    RTCMediaStreamTrack *track = self.localTracks[trackID];
+    RTCMediaStreamTrack *track = [self trackForId:trackID];
 
     if (mediaStream && track) {
         if ([track.kind isEqualToString:@"audio"]) {

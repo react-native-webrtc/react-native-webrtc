@@ -509,7 +509,7 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
 
     private void mediaStreamAddTrackAsync(String streamId, String trackId) {
         MediaStream stream = localStreams.get(streamId);
-        MediaStreamTrack track = getLocalTrack(trackId);
+        MediaStreamTrack track = getTrack(trackId);
 
         if (stream == null || track == null) {
             Log.d(TAG, "mediaStreamAddTrack() stream || track is null");
@@ -532,7 +532,7 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
 
     private void mediaStreamRemoveTrackAsync(String streamId, String trackId) {
         MediaStream stream = localStreams.get(streamId);
-        MediaStreamTrack track = getLocalTrack(trackId);
+        MediaStreamTrack track = getTrack(trackId);
 
         if (stream == null || track == null) {
             Log.d(TAG, "mediaStreamRemoveTrack() stream || track is null");
