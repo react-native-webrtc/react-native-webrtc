@@ -38,17 +38,21 @@ class GetUserMediaImpl {
 
     private final WebRTCModule webRTCModule;
 
-    GetUserMediaImpl(
-            WebRTCModule webRTCModule,
-            ReactApplicationContext reactContext) {
+    GetUserMediaImpl(WebRTCModule webRTCModule, ReactApplicationContext reactContext) {
         this.webRTCModule = webRTCModule;
         this.reactContext = reactContext;
 
-        // NOTE: to support Camera2, the device should:
-        //   1. Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP
-        //   2. all camera support level should greater than LEGACY
-        //   see: https://developer.android.com/reference/android/hardware/camera2/CameraCharacteristics.html#INFO_SUPPORTED_HARDWARE_LEVEL
-        if (Camera2Enumerator.isSupported(reactContext)) {
+        boolean camera2supported = false;
+
+        try {
+            camera2supported = Camera2Enumerator.isSupported(reactContext);
+        } catch (Throwable tr) {
+            // Some devices will crash here with: Fatal Exception: java.lang.AssertionError: Supported FPS ranges cannot be null.
+            // Make sure we don't.
+            Log.w(TAG, "Error checking for Camera2 API support.", tr);
+        }
+
+        if (camera2supported) {
             Log.d(TAG, "Creating video capturer using Camera2 API.");
             cameraEnumerator = new Camera2Enumerator(reactContext);
         } else {
