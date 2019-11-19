@@ -290,10 +290,10 @@ typedef NS_ENUM(NSInteger, RTCVideoViewObjectFit) {
 - (void)videoView:(id<RTCVideoRenderer>)videoView didChangeVideoSize:(CGSize)size {
   if (videoView == self.videoView) {
     _videoSize = size;
-    if (onFrameLayout) {
-      onFrameLayout(@{
-        @"videoWidth" : size.width,
-        @"videoHeight" : size.height,
+    if (_onFrameLayout) {
+      _onFrameLayout(@{
+        @"videoWidth" : @(size.width),
+        @"videoHeight" : @(size.height),
         @"rotation" : @0
       });
     }
@@ -363,5 +363,7 @@ RCT_CUSTOM_VIEW_PROPERTY(streamURL, NSString *, RTCVideoView) {
 {
     return NO;
 }
+
+RCT_EXPORT_VIEW_PROPERTY(onFrameLayout, RCTDirectEventBlock)
 
 @end
