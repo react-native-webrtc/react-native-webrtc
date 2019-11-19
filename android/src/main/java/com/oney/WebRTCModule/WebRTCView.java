@@ -9,7 +9,10 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.util.Log;
 
+import com.facebook.react.bridge.Arguments;
 import com.facebook.react.bridge.ReactContext;
+import com.facebook.react.bridge.WritableMap;
+import com.facebook.react.uimanager.events.RCTEventEmitter;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -317,11 +320,24 @@ public class WebRTCView extends ViewGroup {
                 changed = true;
             }
         }
+        dispatchFrameLayout(videoWidth, videoHeight, rotation);
         if (changed) {
             // The onFrameResolutionChanged method call executes on the
             // surfaceViewRenderer's render Thread.
             post(requestSurfaceViewRendererLayoutRunnable);
         }
+    }
+
+    /**
+     * Dispatch 'frameLayout' event to js.
+     */
+    private void dispatchFrameLayout(int videoWidth, int videoHeight, int rotation) {
+        WritableMap event = Arguments.createMap();
+        event.putInt("videoWidth", videoWidth);
+        event.putInt("videoHeight", videoHeight);
+        event.putInt("rotation", rotation);
+        ReactContext reactContext = (ReactContext)getContext();
+        reactContext.getJSModule(RCTEventEmitter.class).receiveEvent(getId(), "frameLayout", event);
     }
 
     @Override

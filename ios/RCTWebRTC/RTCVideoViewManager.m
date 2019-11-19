@@ -9,6 +9,7 @@
 #import <objc/runtime.h>
 
 #import <React/RCTLog.h>
+#import <React/RCTView.h>
 #import <WebRTC/RTCEAGLVideoView.h>
 #import <WebRTC/RTCMediaStream.h>
 #import <WebRTC/RTCMTLVideoView.h>
@@ -77,6 +78,11 @@ typedef NS_ENUM(NSInteger, RTCVideoViewObjectFit) {
  * Reference to the main WebRTC RN module.
  */
 @property (nonatomic, weak) WebRTCModule *module;
+
+/**
+ * Frame layout event.
+ */
+@property (nonatomic, copy) RCTDirectEventBlock onFrameLayout;
 
 @end
 
@@ -284,6 +290,13 @@ typedef NS_ENUM(NSInteger, RTCVideoViewObjectFit) {
 - (void)videoView:(id<RTCVideoRenderer>)videoView didChangeVideoSize:(CGSize)size {
   if (videoView == self.videoView) {
     _videoSize = size;
+    if (onFrameLayout) {
+      onFrameLayout(@{
+        @"videoWidth" : size.width,
+        @"videoHeight" : size.height,
+        @"rotation" : @0
+      });
+    }
     [self setNeedsLayout];
   }
 }
