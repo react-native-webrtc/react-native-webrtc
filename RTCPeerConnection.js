@@ -386,7 +386,7 @@ export default class RTCPeerConnection extends EventTarget(PEER_CONNECTION_EVENT
       // is reserved due to SCTP INIT and INIT-ACK chunks only allowing a
       // maximum of 65535 streams to be negotiated (as defined by the WebRTC
       // Data Channel Establishment Protocol).
-      for (id = 0; id < 65535 && dataChannelIds.has(id); ++id);
+      for (id = 1; id < 65535 && dataChannelIds.has(id); ++id);
       // TODO Throw an error if no unused id is available.
       dataChannelDict = Object.assign({id}, dataChannelDict);
     }
