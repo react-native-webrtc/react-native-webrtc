@@ -291,20 +291,16 @@ public class WebRTCView extends ViewGroup {
      * rendered) shines through.
      */
     private void onFirstFrameRendered() {
-        post(new Runnable() {
-            @Override
-            public void run() {
-                Log.d(TAG, "First frame rendered.");
-
-                WritableMap event = Arguments.createMap();
-                ReactContext reactContext = (ReactContext) getContext();
-                reactContext.getJSModule(RCTEventEmitter.class).receiveEvent(
-                        getId(),
-                        "onFirstFrame",
-                        event
-                );
-                getSurfaceViewRenderer().setBackgroundColor(Color.TRANSPARENT);
-            }
+        post(() -> {
+            Log.d(TAG, "First frame rendered.");
+            WritableMap event = Arguments.createMap();
+            ReactContext reactContext = (ReactContext) getContext();
+            reactContext.getJSModule(RCTEventEmitter.class).receiveEvent(
+                    getId(),
+                    "onFirstFrame",
+                    event
+            );
+            surfaceViewRenderer.setBackgroundColor(Color.TRANSPARENT);
         });
     }
 
