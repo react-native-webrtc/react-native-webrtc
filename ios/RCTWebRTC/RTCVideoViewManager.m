@@ -282,7 +282,7 @@ typedef NS_ENUM(NSInteger, RTCVideoViewObjectFit) {
  */
 - (void)renderFrame:(RTCVideoFrame *)frame {
     id<RTCVideoRenderer> videoRenderer = self.videoView;
-    if (!firstFrameRendered) {
+    if (self.onFirstFrame && !firstFrameRendered) {
       firstFrameRendered = YES;
       self.onFirstFrame(@{});
     }
