@@ -29,12 +29,10 @@ RCT_EXPORT_METHOD(createDataChannel:(nonnull NSNumber *)peerConnectionId
 {
   RTCPeerConnection *peerConnection = self.peerConnections[peerConnectionId];
   RTCDataChannel *dataChannel = [peerConnection dataChannelForLabel:label configuration:config];
-  // XXX RTP data channels are not defined by the WebRTC standard, have been
-  // deprecated in Chromium, and Google have decided (in 2015) to no longer
-  // support them (in the face of multiple reported issues of breakages).
-  if (-1 != dataChannel.channelId) {
+  if (dataChannel != nil && (dataChannel.readyState == RTCDataChannelStateConnecting
+      || dataChannel.readyState == RTCDataChannelStateOpen)) {
     dataChannel.peerConnectionId = peerConnectionId;
-    NSNumber *dataChannelId = [NSNumber numberWithInteger:dataChannel.channelId];
+    NSNumber *dataChannelId = [NSNumber numberWithInteger:config.channelId];
     peerConnection.dataChannels[dataChannelId] = dataChannel;
     dataChannel.delegate = self;
   }
