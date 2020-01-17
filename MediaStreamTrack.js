@@ -32,7 +32,6 @@ class MediaStreamTrack extends EventTarget(MEDIA_STREAM_TRACK_EVENTS) {
   kind: string;
   label: string;
   muted: boolean;
-  readonly: boolean; // how to decide?
   // readyState in java: INITIALIZING, LIVE, ENDED, FAILED
   readyState: MediaStreamTrackState;
   remote: boolean;
@@ -51,7 +50,6 @@ class MediaStreamTrack extends EventTarget(MEDIA_STREAM_TRACK_EVENTS) {
     this.kind = info.kind;
     this.label = info.label;
     this.muted = false;
-    this.readonly = true; // how to decide?
     this.remote = info.remote;
 
     const _readyState = info.readyState.toLowerCase();
