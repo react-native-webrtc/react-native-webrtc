@@ -18,13 +18,6 @@ const MEDIA_STREAM_TRACK_EVENTS = [
 
 type MediaStreamTrackState = "live" | "ended";
 
-type SourceInfo = {
-  id: string;
-  label: string;
-  facing: string;
-  kind: string;
-};
-
 class MediaStreamTrack extends EventTarget(MEDIA_STREAM_TRACK_EVENTS) {
   _enabled: boolean;
   id: string;
