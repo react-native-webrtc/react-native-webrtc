@@ -39,6 +39,8 @@ class MediaStreamTrack extends EventTarget(MEDIA_STREAM_TRACK_EVENTS) {
 
     this._constraints = info.constraints || {};
     this._enabled = info.enabled;
+    this._settings = {};
+
     this.id = info.id;
     this.kind = info.kind;
     this.label = info.label;
@@ -103,7 +105,7 @@ class MediaStreamTrack extends EventTarget(MEDIA_STREAM_TRACK_EVENTS) {
   }
 
   getSettings() {
-    throw new Error('Not implemented.');
+    return deepClone(this._settings);
   }
 
   release() {
