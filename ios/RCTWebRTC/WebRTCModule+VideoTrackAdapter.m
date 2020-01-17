@@ -38,6 +38,8 @@ static const NSTimeInterval MUTE_DELAY = 1.5;
 @implementation TrackMuteDetector {
     BOOL _disposed;
     atomic_ullong _frameCount;
+    int _frameHeight;
+    int _frameWidth;
     BOOL _muted;
     dispatch_source_t _timer;
 }
@@ -55,6 +57,8 @@ static const NSTimeInterval MUTE_DELAY = 1.5;
 
         _disposed = NO;
         _frameCount = 0;
+        _frameHeight = 0;
+        _frameWidth = 0;
         _muted = NO;
         _timer = nil;
     }
@@ -70,18 +74,9 @@ static const NSTimeInterval MUTE_DELAY = 1.5;
     }
 }
 
-- (void)emitMuteEvent:(BOOL)muted {
-    [self.module.bridge.eventDispatcher
-        sendDeviceEventWithName:@"mediaStreamTrackMuteChanged"
-                   body:@{@"peerConnectionId": self.peerConnectionId,
-                          @"streamReactTag": self.streamReactTag,
-                          @"trackId": self.trackId,
-                          @"muted": @(muted)}];
-    RCTLog(@"[VideoTrackAdapter] %@ event for %@ %@ %@",
-          muted ? @"Mute" : @"Unmute",
-          self.peerConnectionId,
-          self.streamReactTag,
-          self.trackId);
+- (void)emitEventWithName:(NSString *)name body:(id)body {
+    [self.module.bridge.eventDispatcher sendDeviceEventWithName:name body:body];
+    RCTLog(@"[VideoTrackAdapter] %@ event with body %@", name, body);
 }
 
 - (void)start {
@@ -112,7 +107,11 @@ static const NSTimeInterval MUTE_DELAY = 1.5;
         BOOL isMuted = lastFrameCount == self->_frameCount;
         if (isMuted != self->_muted) {
             self->_muted = isMuted;
-            [self emitMuteEvent:isMuted];
+            [self emitEventWithName:@"mediaStreamTrackMuteChanged"
+                               body:@{@"peerConnectionId": self.peerConnectionId,
+                                      @"streamReactTag": self.streamReactTag,
+                                      @"trackId": self.trackId,
+                                      @"muted": @(isMuted)}];
         }
 
         lastFrameCount = self->_frameCount;
@@ -122,7 +121,29 @@ static const NSTimeInterval MUTE_DELAY = 1.5;
 }
 
 - (void)renderFrame:(nullable RTCVideoFrame *)frame {
+    if (frame == nil) {
+        return;
+    }
+
     atomic_fetch_add(&_frameCount, 1);
+
+    if (frame.height != _frameHeight || frame.width != _frameWidth) {
+        _frameHeight = frame.height;
+        _frameWidth = frame.width;
+
+        dispatch_async(dispatch_get_main_queue(), ^{
+            if (self->_disposed) {
+                return;
+            }
+
+            NSDictionary *settings = @{ @"height": @(self->_frameHeight), @"width": @(self->_frameWidth) };
+            [self emitEventWithName:@"mediaStreamTrackUpdateSettings"
+                               body:@{@"peerConnectionId": self.peerConnectionId,
+                                      @"streamReactTag": self.streamReactTag,
+                                      @"trackId": self.trackId,
+                                      @"settings": settings}];
+        });
+    }
 }
 
 - (void)setSize:(CGSize)size {
