@@ -107,6 +107,15 @@ We provide a handy script to do it easily. see below sections.
 
 credit: The script is originally provided by [@besarthoxhaj](https://github.com/besarthoxhaj) in [#141](https://github.com/react-native-webrtc/react-native-webrtc/issues/141), thanks!
 
+## Appendix C - Library not loaded/Code signature invalid
+
+(ios only)
+
+This is an issue with iOS 13.3.1. All dynamic frameworks being compiled to the newest release of iOS 13.3.1 are experiencing this issue when run on a personal provisioning profile/developer account. Use a non-Personal Team provisioning profile (paid developer account).
+
+Source (https://stackoverflow.com/a/60090629/8691951)
+ 
+
 #### Strip Simulator Archs Usage
 
 The script and example are here: https://github.com/react-native-webrtc/react-native-webrtc/blob/master/tools/ios_arch.js
