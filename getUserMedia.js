@@ -61,6 +61,14 @@ export default function getUserMedia(constraints = {}) {
       videoPerm || (delete constraints.video);
 
       const success = (id, tracks) => {
+          // Store initial constraints.
+          for (const trackInfo of tracks) {
+            const c = constraints[trackInfo.kind];
+            if (typeof c === 'object') {
+              trackInfo.constraints = RTCUtil.deepClone(c);
+            }
+          }
+
           const info = {
             streamId: id,
             streamReactTag: id,

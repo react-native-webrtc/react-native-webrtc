@@ -114,12 +114,12 @@ function normalizeMediaConstraints(constraints, mediaType) {
 }
 
 /**
- * Internal util for deep clone object. Object.assign() only does a shallow copy
+ * Utility for deep cloning an object. Object.assign() only does a shallow copy.
  *
  * @param {Object} obj - object to be cloned
  * @return {Object} cloned obj
  */
-function _deepClone(obj) {
+export function deepClone(obj) {
     return JSON.parse(JSON.stringify(obj));
 }
 
@@ -157,7 +157,7 @@ export function normalizeOfferAnswerOptions(options = {}) {
  * Normalize the given constraints in something we can work with.
  */
 export function normalizeConstraints(constraints) {
-    const c = _deepClone(constraints);
+    const c = deepClone(constraints);
 
     for (const mediaType of [ 'audio', 'video' ]) {
         const mediaTypeConstraints = c[mediaType];
