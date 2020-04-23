@@ -1043,6 +1043,20 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
         }
     }
 
+    private RtpTransceiver.RtpTransceiverDirection parseDirection(String src) {
+        switch (src) {
+            case "sendrecv":
+                return RtpTransceiver.RtpTransceiverDirection.SEND_RECV;
+            case "sendonly":
+                return RtpTransceiver.RtpTransceiverDirection.SEND_ONLY;
+            case "recvonly":
+                return RtpTransceiver.RtpTransceiverDirection.RECV_ONLY;
+            case "inactive":
+                return RtpTransceiver.RtpTransceiverDirection.INACTIVE;
+        }
+        throw new Error("Invalid direction");
+    }
+
     private RtpTransceiver.RtpTransceiverInit parseTransceiverOptions(ReadableMap map) {
         RtpTransceiver.RtpTransceiverDirection direction = RtpTransceiver.RtpTransceiverDirection.SEND_RECV;
         ArrayList<String> streamIds = new ArrayList<>();
@@ -1050,20 +1064,7 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
             if (map.hasKey("direction")) {
                 String directionRaw = map.getString("direction");
                 if (directionRaw != null) {
-                    switch (directionRaw) {
-                        case "sendrecv":
-                            direction = RtpTransceiver.RtpTransceiverDirection.SEND_RECV;
-                            break;
-                        case "sendonly":
-                            direction = RtpTransceiver.RtpTransceiverDirection.SEND_ONLY;
-                            break;
-                        case "recvonly":
-                            direction = RtpTransceiver.RtpTransceiverDirection.RECV_ONLY;
-                            break;
-                        case "inactive":
-                            direction = RtpTransceiver.RtpTransceiverDirection.INACTIVE;
-                            break;
-                    }
+                    direction = this.parseDirection(directionRaw);
                 }
             }
             if (map.hasKey("streamIds")) {
@@ -1212,6 +1213,30 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
             callback.invoke(true, serializeTransceiverState(transceiverId, transceiver));
         } else {
             Log.d(TAG, "peerConnectionTransceiverReplaceTrack() peerConnection is null");
+            callback.invoke(false, "peerConnection is null");
+        }
+    }
+
+    @ReactMethod
+    public void peerConnectionTransceiverSetDirection(int id,
+                                              String transceiverId,
+                                              String direction,
+                                              final Callback callback) {
+        ThreadUtils.runOnExecutor(() ->
+                this.peerConnectionTransceiverSetDirectionAsync(id, transceiverId, direction, callback));
+    }
+
+    private void peerConnectionTransceiverSetDirectionAsync(int id,
+                                                            String transceiverId,
+                                                            String direction,
+                                                            final Callback callback) {
+        PeerConnectionObserver pco  = mPeerConnectionObservers.get(id);
+        if (pco != null) {
+            RtpTransceiver transceiver = pco.transceivers.get(transceiverId);
+            transceiver.setDirection(this.parseDirection(direction));
+            callback.invoke(true, serializeTransceiverState(transceiverId, transceiver));
+        } else {
+            Log.d(TAG, "peerConnectionTransceiverSetDirection() peerConnection is null");
             callback.invoke(false, "peerConnection is null");
         }
     }
