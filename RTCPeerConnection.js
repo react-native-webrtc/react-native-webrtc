@@ -13,6 +13,7 @@ import RTCSessionDescription from './RTCSessionDescription';
 import RTCIceCandidate from './RTCIceCandidate';
 import RTCIceCandidateEvent from './RTCIceCandidateEvent';
 import RTCEvent from './RTCEvent';
+import RTCRtpTransceiver from './RTCRtpTransceiver';
 import * as RTCUtil from './RTCUtil';
 import EventEmitter from './EventEmitter';
 
@@ -123,6 +124,28 @@ export default class RTCPeerConnection extends EventTarget(PEER_CONNECTION_EVENT
       this._localStreams.splice(index, 1);
       WebRTCModule.peerConnectionRemoveStream(stream._reactTag, this._peerConnectionId);
   }
+
+  addTransceiver(source: 'audio' |'video' | MediaStreamTrack, init) {
+    return new Promise((resolve, reject) => {
+
+      let src;
+      if (source === 'audio') {
+        src = { type: 'audio' };
+      } else if (source === 'video') {
+        src = { type: 'video' };
+      } else {
+        src = { trackId: track.id };
+      }
+
+      WebRTCModule.peerConnectionAddTransceiver(this._peerConnectionId, {...src, init: { ...init } }, (successful, data) => {
+        if (successful) {
+          resolve(new RTCRtpTransceiver(this._peerConnectionId, data));
+        } else {
+          reject(data);
+        }
+      });
+    });
+  };
 
   createOffer(options) {
     return new Promise((resolve, reject) => {

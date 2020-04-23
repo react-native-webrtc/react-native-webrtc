@@ -1,5 +1,6 @@
 package com.oney.WebRTCModule;
 
+import java.lang.ref.SoftReference;
 import android.util.Base64;
 import android.util.Log;
 import android.util.SparseArray;
@@ -20,6 +21,9 @@ import org.webrtc.MediaStreamTrack;
 import org.webrtc.PeerConnection;
 import org.webrtc.RtpReceiver;
 import org.webrtc.SessionDescription;
+import org.webrtc.RtpTransceiver;
+import org.webrtc.StatsObserver;
+import org.webrtc.StatsReport;
 import org.webrtc.VideoTrack;
 
 import java.io.UnsupportedEncodingException;
@@ -41,6 +45,7 @@ class PeerConnectionObserver implements PeerConnection.Observer {
     final List<MediaStream> localStreams;
     final Map<String, MediaStream> remoteStreams;
     final Map<String, MediaStreamTrack> remoteTracks;
+    final Map<String, RtpTransceiver> transceivers;
     private final VideoTrackAdapter videoTrackAdapters;
     private final WebRTCModule webRTCModule;
 
@@ -48,9 +53,10 @@ class PeerConnectionObserver implements PeerConnection.Observer {
         this.webRTCModule = webRTCModule;
         this.id = id;
         this.dataChannels = new HashMap<>();
-        this.localStreams = new ArrayList<>();
-        this.remoteStreams = new HashMap<>();
-        this.remoteTracks = new HashMap<>();
+        this.localStreams = new ArrayList<MediaStream>();
+        this.remoteStreams = new HashMap<String, MediaStream>();
+        this.remoteTracks = new HashMap<String, MediaStreamTrack>();
+        this.transceivers = new HashMap<>();
         this.videoTrackAdapters = new VideoTrackAdapter(webRTCModule, id);
     }
 
@@ -90,6 +96,27 @@ class PeerConnectionObserver implements PeerConnection.Observer {
 
         return localStreams.remove(localStream);
     }
+
+    String addTransceiver(MediaStreamTrack.MediaType mediaType, RtpTransceiver.RtpTransceiverInit init) {
+        if (peerConnection == null) {
+            throw new Error("Impossible");
+        }
+        RtpTransceiver transceiver = peerConnection.addTransceiver(mediaType, init);
+        String id = UUID.randomUUID().toString();
+        this.transceivers.put(id, transceiver);
+        return id;
+    }
+
+    String addTransceiver(MediaStreamTrack track, RtpTransceiver.RtpTransceiverInit init) {
+        if (peerConnection == null) {
+            throw new Error("Impossible");
+        }
+        RtpTransceiver transceiver = peerConnection.addTransceiver(track, init);
+        String id = UUID.randomUUID().toString();
+        this.transceivers.put(id, transceiver);
+        return id;
+    }
+
 
     PeerConnection getPeerConnection() {
         return peerConnection;
