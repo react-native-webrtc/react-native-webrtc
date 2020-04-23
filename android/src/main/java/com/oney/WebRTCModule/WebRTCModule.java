@@ -1,6 +1,6 @@
 package com.oney.WebRTCModule;
 
-import android.support.annotation.Nullable;
+import androidx.annotation.Nullable;
 import android.util.Log;
 import android.util.SparseArray;
 
@@ -377,6 +377,22 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
                 && map.getType("presumeWritableWhenFullyRelayed") == ReadableType.Boolean) {
             final boolean v = map.getBoolean("presumeWritableWhenFullyRelayed");
             conf.presumeWritableWhenFullyRelayed = v;
+        }
+
+        // sdpSemantics
+        if (map.hasKey("sdpSemantics")
+            && map.getType("sdpSemantics") == ReadableType.String) {
+            final String v = map.getString("sdpSemantics");
+            if (v != null) {
+                switch (v) {
+                    case "unified-plan":
+                        conf.sdpSemantics = PeerConnection.SdpSemantics.UNIFIED_PLAN;
+                        break;
+                    case "plan-b":
+                        conf.sdpSemantics = PeerConnection.SdpSemantics.PLAN_B;
+                }
+
+            }
         }
 
         return conf;
@@ -977,6 +993,146 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
             Log.d(TAG, "dataChannelSend() peerConnection is null");
         } else {
             pco.dataChannelSend(dataChannelId, data, type);
+        }
+    }
+
+    /*
+     * Transceivers API
+     */
+
+    private String serializeDirection(RtpTransceiver.RtpTransceiverDirection src) {
+        if (src == RtpTransceiver.RtpTransceiverDirection.INACTIVE) {
+            return "inactive";
+        } else if (src == RtpTransceiver.RtpTransceiverDirection.RECV_ONLY) {
+            return "recvonly";
+        } else if (src == RtpTransceiver.RtpTransceiverDirection.SEND_ONLY) {
+            return "sendonly";
+        }else if (src == RtpTransceiver.RtpTransceiverDirection.SEND_RECV) {
+            return "sendrecv";
+        } else {
+            throw new Error("Invalid direction");
+        }
+    }
+
+    private RtpTransceiver.RtpTransceiverInit parseTransceiverOptions(ReadableMap map) {
+        RtpTransceiver.RtpTransceiverDirection direction = RtpTransceiver.RtpTransceiverDirection.SEND_RECV;
+        ArrayList<String> streamIds = new ArrayList<>();
+        if (map != null) {
+            if (map.hasKey("direction")) {
+                String directionRaw = map.getString("direction");
+                if (directionRaw != null) {
+                    switch (directionRaw) {
+                        case "sendrecv":
+                            direction = RtpTransceiver.RtpTransceiverDirection.SEND_RECV;
+                            break;
+                        case "sendonly":
+                            direction = RtpTransceiver.RtpTransceiverDirection.SEND_ONLY;
+                            break;
+                        case "recvonly":
+                            direction = RtpTransceiver.RtpTransceiverDirection.RECV_ONLY;
+                            break;
+                        case "inactive":
+                            direction = RtpTransceiver.RtpTransceiverDirection.INACTIVE;
+                            break;
+                    }
+                }
+            }
+            if (map.hasKey("streamIds")) {
+                ReadableArray rawStreamIds = map.getArray("streamIds");
+                if (rawStreamIds != null) {
+                    for(int i = 0; i < rawStreamIds.size(); i++){
+                        streamIds.add(rawStreamIds.getString(i));
+                    }
+                }
+            }
+        }
+
+        return new RtpTransceiver.RtpTransceiverInit(direction, streamIds);
+    }
+
+    private ReadableMap serializeTransceiverState(String id, RtpTransceiver transceiver) {
+        WritableMap res = Arguments.createMap();
+        res.putString("id", id);
+        String mid = transceiver.getMid();
+        if (mid != null){
+            res.putString("mid", mid);
+        }
+        res.putString("direction", serializeDirection(transceiver.getDirection()));
+        RtpTransceiver.RtpTransceiverDirection currentDirection = transceiver.getCurrentDirection();
+        if (currentDirection != null) {
+            res.putString("currentDirection", serializeDirection(transceiver.getCurrentDirection()));
+        }
+        res.putBoolean("isStopped",transceiver.isStopped());
+        return res;
+    }
+
+    @ReactMethod
+    public void peerConnectionAddTransceiver(int id,
+                                             ReadableMap options,
+                                             final Callback callback) {
+        ThreadUtils.runOnExecutor(() ->
+            this.peerConnectionAddTransceiverAsync(id, options, callback));
+    }
+
+    private void peerConnectionAddTransceiverAsync(int id,
+                                                   ReadableMap options,
+                                                   final Callback callback) {
+        PeerConnectionObserver pco  = mPeerConnectionObservers.get(id);
+
+        if (pco != null) {
+            String transceiverId;
+            if (options.hasKey("type")) {
+                String kind = options.getString("type");
+                MediaStreamTrack.MediaType type;
+                if (kind != null && kind.equals("audio")) {
+                    type = MediaStreamTrack.MediaType.MEDIA_TYPE_AUDIO;
+                } else if (kind != null && kind.equals("video")) {
+                    type = MediaStreamTrack.MediaType.MEDIA_TYPE_VIDEO;
+                } else {
+                    callback.invoke(false, "invalid type");
+                    return;
+                }
+
+                transceiverId = pco.addTransceiver(type, parseTransceiverOptions(options.getMap("init")));
+            } else if (options.hasKey("trackId")) {
+                String trackId = options.getString("trackId");
+                if (trackId == null) {
+                    callback.invoke(false, "invalid trackId");
+                    return;
+                }
+                MediaStreamTrack track = getTrack(trackId);
+                transceiverId = pco.addTransceiver(track, parseTransceiverOptions(options.getMap("init")));
+            } else {
+                callback.invoke(false, "invalid trackId and type");
+                return;
+            }
+
+            callback.invoke(true, serializeTransceiverState(transceiverId, pco.transceivers.get(transceiverId)));
+        } else {
+            Log.d(TAG, "peerConnectionAddTransceiver() peerConnection is null");
+            callback.invoke(false, "peerConnection is null");
+        }
+    }
+
+    @ReactMethod
+    public void peerConnectionTransceiverStop(int id,
+                                              String transceiverId,
+                                              final Callback callback) {
+        ThreadUtils.runOnExecutor(() ->
+                this.peerConnectionTransceiverStopAsync(id, transceiverId, callback));
+    }
+
+    private void peerConnectionTransceiverStopAsync(int id,
+                                                    String transceiverId,
+                                                    final Callback callback) {
+        PeerConnectionObserver pco  = mPeerConnectionObservers.get(id);
+        if (pco != null) {
+            RtpTransceiver transceiver = pco.transceivers.get(transceiverId);
+            transceiver.stop();
+            callback.invoke(true, serializeTransceiverState(transceiverId, transceiver));
+        } else {
+            Log.d(TAG, "peerConnectionTransceiverStop() peerConnection is null");
+            callback.invoke(false, "peerConnection is null");
         }
     }
 }
