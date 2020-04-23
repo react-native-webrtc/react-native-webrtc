@@ -3,8 +3,10 @@
 import {NativeModules} from 'react-native';
 import EventTarget from 'event-target-shim';
 import uuid from 'uuid';
+import {DeviceEventEmitter,} from 'react-native';
 
 import MediaStreamTrack from './MediaStreamTrack';
+import MediaStreamTrackEvent from './MediaStreamTrackEvent';
 
 const {WebRTCModule} = NativeModules;
 
@@ -81,6 +83,17 @@ export default class MediaStream extends EventTarget(MEDIA_STREAM_EVENTS) {
       } else {
           throw new TypeError(`invalid type: ${typeof arg}`);
       }
+
+      DeviceEventEmitter.addListener('mediaStreamTrackMuteChanged', ev => {
+        
+        const track = this.getTrackById(ev.trackId);
+
+        if (track) {
+          track.muted = ev.muted;
+          const eventName = ev.muted ? 'mute' : 'unmute';
+          track.dispatchEvent(new MediaStreamTrackEvent(eventName, {track}));
+        }
+      })
   }
 
   addTrack(track: MediaStreamTrack) {
