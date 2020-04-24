@@ -442,7 +442,8 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
     private void peerConnectionInitAsync(
             PeerConnection.RTCConfiguration configuration,
             int id) {
-        PeerConnectionObserver observer = new PeerConnectionObserver(this, id);
+        PeerConnectionObserver observer = new PeerConnectionObserver(this,
+                id, configuration.sdpSemantics == PeerConnection.SdpSemantics.PLAN_B);
         PeerConnection peerConnection
                 = mFactory.createPeerConnection(configuration, observer);
 
@@ -722,8 +723,10 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
         PeerConnection peerConnection = getPeerConnection(id);
         PeerConnectionObserver pco = mPeerConnectionObservers.get(id);
         WritableArray transceivers = Arguments.createArray();
-        for (RtpTransceiver transceiver : peerConnection.getTransceivers()) {
-            transceivers.pushMap(serializeTransceiver(pco.resolveTransceiverId(transceiver), transceiver));
+        if (pco.isUnifiedPlan){
+            for (RtpTransceiver transceiver : peerConnection.getTransceivers()) {
+                transceivers.pushMap(serializeTransceiver(pco.resolveTransceiverId(transceiver), transceiver));
+            }
         }
         WritableMap res = Arguments.createMap();
         res.putArray("transceivers", transceivers);

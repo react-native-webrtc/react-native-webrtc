@@ -45,13 +45,24 @@ class PeerConnectionObserver implements PeerConnection.Observer {
     final List<MediaStream> localStreams;
     final Map<String, MediaStream> remoteStreams;
     final Map<String, MediaStreamTrack> remoteTracks;
+    final boolean isUnifiedPlan;
     private final VideoTrackAdapter videoTrackAdapters;
     private final WebRTCModule webRTCModule;
 
-    PeerConnectionObserver(WebRTCModule webRTCModule, int id) {
+    /**
+     * The <tt>StringBuilder</tt> cache utilized by {@link #statsToJSON} in
+     * order to minimize the number of allocations of <tt>StringBuilder</tt>
+     * instances and, more importantly, the allocations of its <tt>char</tt>
+     * buffer in an attempt to improve performance.
+     */
+    private SoftReference<StringBuilder> statsToJSONStringBuilder
+        = new SoftReference<>(null);
+
+    PeerConnectionObserver(WebRTCModule webRTCModule, int id, boolean isUnifiedPlan) {
         this.webRTCModule = webRTCModule;
         this.id = id;
         this.dataChannels = new HashMap<>();
+        this.isUnifiedPlan = isUnifiedPlan;
         this.localStreams = new ArrayList<MediaStream>();
         this.remoteStreams = new HashMap<String, MediaStream>();
         this.remoteTracks = new HashMap<String, MediaStreamTrack>();
