@@ -167,7 +167,11 @@ RCT_EXPORT_METHOD(peerConnectionCreateOffer:(nonnull NSNumber *)objectID
           ]);
         } else {
           NSString *type = [RTCSessionDescription stringForType:sdp.type];
-          callback(@[@(YES), @{@"sdp": sdp.sdp, @"type": type}]);
+          id response = @{
+            @"state": [self extractPeerConnectionState: peerConnection],
+            @"session":  @{@"sdp": sdp.sdp, @"type": type}
+          };
+          callback(@[@(YES), response]);
         }
       }];
 }
@@ -198,7 +202,11 @@ RCT_EXPORT_METHOD(peerConnectionCreateAnswer:(nonnull NSNumber *)objectID
            ]);
          } else {
            NSString *type = [RTCSessionDescription stringForType:sdp.type];
-           callback(@[@(YES), @{@"sdp": sdp.sdp, @"type": type}]);
+           id response = @{
+             @"state": [self extractPeerConnectionState: peerConnection],
+             @"session":  @{@"sdp": sdp.sdp, @"type": type}
+           };
+           callback(@[@(YES), response]);
          }
        }];
 }
@@ -218,7 +226,10 @@ RCT_EXPORT_METHOD(peerConnectionSetLocalDescription:(RTCSessionDescription *)sdp
       };
       callback(@[@(NO), errorResponse]);
     } else {
-      callback(@[@(YES)]);
+      id response = @{
+        @"state": [self extractPeerConnectionState: peerConnection]
+      };
+      callback(@[@(YES), response]);
     }
   }];
 }
@@ -238,7 +249,10 @@ RCT_EXPORT_METHOD(peerConnectionSetRemoteDescription:(RTCSessionDescription *)sd
       };
       callback(@[@(NO), errorResponse]);
     } else {
-      callback(@[@(YES)]);
+      id response = @{
+        @"state": [self extractPeerConnectionState: peerConnection]
+      };
+      callback(@[@(YES), response]);
     }
   }];
 }
@@ -408,6 +422,13 @@ RCT_EXPORT_METHOD(peerConnectionGetStats:(nonnull NSString *)trackID
     case RTCSignalingStateClosed: return @"closed";
   }
   return nil;
+}
+
+- (NSDictionary *)extractPeerConnectionState:(RTCPeerConnection *)peerConnection {
+    NSMutableDictionary *res = [NSMutableDictionary dictionary];
+    NSMutableArray *transceivers = [NSMutableArray array];
+    [res setValue:transceivers forKey:@"transceivers"];
+    return res;
 }
 
 #pragma mark - RTCPeerConnectionDelegate methods
