@@ -294,10 +294,13 @@ export default class RTCPeerConnection extends EventTarget(PEER_CONNECTION_EVENT
 
     // Merge Transcievers states
     if (state.transceivers) {
-      // TODO: Fix Order
+      // Apply states
       for(let transciever of state.transceivers) {
         this._getTransciever(transciever);
       }
+      // Restore Order
+      this._transceivers = 
+        this._transceivers.map((t, i) => this._transceivers.find((t2) => t2.id === state.transceivers[i].id));
     }
   }
 
