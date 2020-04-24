@@ -237,21 +237,4 @@ RCT_EXPORT_METHOD(mediaStreamTrackSwitchCamera:(nonnull NSString *)trackID)
   }
 }
 
-#pragma mark - Helpers
-
-- (RTCMediaStreamTrack*)trackForId:(NSString*)trackId
-{
-  RTCMediaStreamTrack *track = self.localTracks[trackId];
-  if (!track) {
-    for (NSNumber *peerConnectionId in self.peerConnections) {
-      RTCPeerConnection *peerConnection = self.peerConnections[peerConnectionId];
-      track = peerConnection.remoteTracks[trackId];
-      if (track) {
-        break;
-      }
-    }
-  }
-  return track;
-}
-
 @end

@@ -33,5 +33,6 @@
                         decoderFactory:(id<RTCVideoDecoderFactory>)decoderFactory;
 
 - (RTCMediaStream*)streamForReactTag:(NSString*)reactTag;
+- (RTCMediaStreamTrack*)trackForId:(NSString*)trackId;
 
 @end

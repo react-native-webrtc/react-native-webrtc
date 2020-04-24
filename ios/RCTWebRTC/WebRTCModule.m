@@ -93,6 +93,21 @@
   return stream;
 }
 
+- (RTCMediaStreamTrack*)trackForId:(NSString*)trackId
+{
+  RTCMediaStreamTrack *track = _localTracks[trackId];
+  if (!track) {
+    for (NSNumber *peerConnectionId in _peerConnections) {
+      RTCPeerConnection *peerConnection = _peerConnections[peerConnectionId];
+      track = peerConnection.remoteTracks[trackId];
+      if (track) {
+        break;
+      }
+    }
+  }
+  return track;
+}
+
 RCT_EXPORT_MODULE();
 
 - (dispatch_queue_t)methodQueue
