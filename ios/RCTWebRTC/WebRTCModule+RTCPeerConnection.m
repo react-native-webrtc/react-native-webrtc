@@ -174,7 +174,11 @@ RCT_EXPORT_METHOD(peerConnectionCreateOffer:(nonnull NSNumber *)objectID
           ]);
         } else {
           NSString *type = [RTCSessionDescription stringForType:sdp.type];
-          callback(@[@(YES), @{@"sdp": sdp.sdp, @"type": type}]);
+          id response = @{
+            @"state": [self extractPeerConnectionState: peerConnection],
+            @"session":  @{@"sdp": sdp.sdp, @"type": type}
+          };
+          callback(@[@(YES), response]);
         }
       }];
 }
@@ -205,7 +209,11 @@ RCT_EXPORT_METHOD(peerConnectionCreateAnswer:(nonnull NSNumber *)peerConnectionI
            ]);
          } else {
            NSString *type = [RTCSessionDescription stringForType:sdp.type];
-           callback(@[@(YES), @{@"sdp": sdp.sdp, @"type": type}]);
+           id response = @{
+             @"state": [self extractPeerConnectionState: peerConnection],
+             @"session":  @{@"sdp": sdp.sdp, @"type": type}
+           };
+           callback(@[@(YES), response]);
          }
        }];
 }
@@ -227,7 +235,8 @@ RCT_EXPORT_METHOD(peerConnectionSetLocalDescription:(RTCSessionDescription *)sdp
     } else {
       id newSdp = @{
           @"type": [RTCSessionDescription stringForType:peerConnection.localDescription.type],
-          @"sdp": peerConnection.localDescription.sdp
+          @"sdp": peerConnection.localDescription.sdp,
+          @"state": [self extractPeerConnectionState: peerConnection]
       };
       callback(@[@(YES), newSdp]);
     }
@@ -251,7 +260,8 @@ RCT_EXPORT_METHOD(peerConnectionSetRemoteDescription:(RTCSessionDescription *)sd
     } else {
       id newSdp = @{
           @"type": [RTCSessionDescription stringForType:peerConnection.remoteDescription.type],
-          @"sdp": peerConnection.remoteDescription.sdp
+          @"sdp": peerConnection.remoteDescription.sdp,
+          @"state": [self extractPeerConnectionState: peerConnection]
       };
       callback(@[@(YES), newSdp]);
     }
@@ -447,6 +457,13 @@ RCT_EXPORT_METHOD(peerConnectionGetStats:(nonnull NSNumber *) objectID
     case RTCSignalingStateClosed: return @"closed";
   }
   return nil;
+}
+
+- (NSDictionary *)extractPeerConnectionState:(RTCPeerConnection *)peerConnection {
+    NSMutableDictionary *res = [NSMutableDictionary dictionary];
+    NSMutableArray *transceivers = [NSMutableArray array];
+    [res setValue:transceivers forKey:@"transceivers"];
+    return res;
 }
 
 #pragma mark - RTCPeerConnectionDelegate methods
