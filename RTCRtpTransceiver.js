@@ -1,25 +1,31 @@
 import {NativeModules} from 'react-native';
 import RTCRtpSender from './RTCRtpSender';
+import RTCRtpReceiver from './RTCRtpReceiver';
+import MediaStreamTrack from './MediaStreamTrack';
 
 const {WebRTCModule} = NativeModules;
 
 export default class RTCRtpTransceiver {
     _peerConnectionId: number;
     _sender: RTCRtpSender;
+    _receiver: RTCRtpReceiver
     
     _id: string;
     _mid: string | null;
     _direction: string;
     _currentDirection: string;
     _stopped: boolean;
+    _mergeState: Function;
     
-    constructor(pcId, state) {
+    constructor(pcId, state, mergeState) {
         this._peerConnectionId = pcId;
         this._id = state.id;
         this._direction = state.direction;
         this._currentDirection = state.currentDirection;
         this._stopped = state.isStopped;
-        this.sender = new RTCRtpSender(this);
+        this._mergeState = mergeState;
+        this._sender = new RTCRtpSender(this, mergeState);
+        this._receiver = new RTCRtpReceiver(state.receiver.id, new MediaStreamTrack(state.receiver.track));
     }
 
     get id() {
@@ -46,7 +52,7 @@ export default class RTCRtpTransceiver {
 
         WebRTCModule.peerConnectionTransceiverSetDirection(this._peerConnectionId, this.id, val, (successful, data) => {
             if (successful) {
-                this._updateState(data);
+                this._mergeState(data.state);
             } else {
                 console.warn("Unable to set direction: " + data);
             }
@@ -57,6 +63,14 @@ export default class RTCRtpTransceiver {
         return this._currentDirection;
     }
 
+    get sender() {
+        return this._sender;
+    }
+
+    get receiver() {
+        return this._receiver;
+    }
+
     stop() {
         if (this._stopped) {
             return;
@@ -65,7 +79,7 @@ export default class RTCRtpTransceiver {
         return new Promise((resolve, reject) => {
             WebRTCModule.peerConnectionTransceiverStop(this._peerConnectionId, this.id, (successful, data) => {
                 if (successful) {
-                    this._updateState(data);
+                    this._mergeState(data.state);
                     resolve();
                 } else {
                     reject(new Error(data));

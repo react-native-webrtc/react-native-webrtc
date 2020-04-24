@@ -45,7 +45,6 @@ class PeerConnectionObserver implements PeerConnection.Observer {
     final List<MediaStream> localStreams;
     final Map<String, MediaStream> remoteStreams;
     final Map<String, MediaStreamTrack> remoteTracks;
-    final Map<String, RtpTransceiver> transceivers;
     private final VideoTrackAdapter videoTrackAdapters;
     private final WebRTCModule webRTCModule;
 
@@ -56,7 +55,6 @@ class PeerConnectionObserver implements PeerConnection.Observer {
         this.localStreams = new ArrayList<MediaStream>();
         this.remoteStreams = new HashMap<String, MediaStream>();
         this.remoteTracks = new HashMap<String, MediaStreamTrack>();
-        this.transceivers = new HashMap<>();
         this.videoTrackAdapters = new VideoTrackAdapter(webRTCModule, id);
     }
 
@@ -102,9 +100,7 @@ class PeerConnectionObserver implements PeerConnection.Observer {
             throw new Error("Impossible");
         }
         RtpTransceiver transceiver = peerConnection.addTransceiver(mediaType, init);
-        String id = UUID.randomUUID().toString();
-        this.transceivers.put(id, transceiver);
-        return id;
+        return this.resolveTransceiverId(transceiver);
     }
 
     String addTransceiver(MediaStreamTrack track, RtpTransceiver.RtpTransceiverInit init) {
@@ -112,9 +108,20 @@ class PeerConnectionObserver implements PeerConnection.Observer {
             throw new Error("Impossible");
         }
         RtpTransceiver transceiver = peerConnection.addTransceiver(track, init);
-        String id = UUID.randomUUID().toString();
-        this.transceivers.put(id, transceiver);
-        return id;
+        return this.resolveTransceiverId(transceiver);
+    }
+
+    String resolveTransceiverId(RtpTransceiver transceiver) {
+        return transceiver.getSender().id();
+    }
+
+    RtpTransceiver getTransceiver(String id) {
+        for(RtpTransceiver transceiver: this.peerConnection.getTransceivers()) {
+            if (transceiver.getSender().id().equals(id)) {
+                return transceiver;
+            }
+        }
+        throw new Error("Unable to find transceiver");
     }
 
 
