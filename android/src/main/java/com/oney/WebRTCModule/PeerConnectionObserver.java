@@ -43,6 +43,7 @@ class PeerConnectionObserver implements PeerConnection.Observer {
     final List<MediaStream> localStreams;
     final Map<String, MediaStream> remoteStreams;
     final Map<String, MediaStreamTrack> remoteTracks;
+    final boolean isUnifiedPlan;
     private final VideoTrackAdapter videoTrackAdapters;
     private final WebRTCModule webRTCModule;
 
@@ -55,9 +56,10 @@ class PeerConnectionObserver implements PeerConnection.Observer {
     private SoftReference<StringBuilder> statsToJSONStringBuilder
         = new SoftReference<>(null);
 
-    PeerConnectionObserver(WebRTCModule webRTCModule, int id) {
+    PeerConnectionObserver(WebRTCModule webRTCModule, int id, boolean isUnifiedPlan) {
         this.webRTCModule = webRTCModule;
         this.id = id;
+        this.isUnifiedPlan = isUnifiedPlan;
         this.localStreams = new ArrayList<MediaStream>();
         this.remoteStreams = new HashMap<String, MediaStream>();
         this.remoteTracks = new HashMap<String, MediaStreamTrack>();
