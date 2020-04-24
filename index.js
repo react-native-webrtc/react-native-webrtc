@@ -4,6 +4,8 @@ import RTCPeerConnection from './RTCPeerConnection';
 import RTCIceCandidate from './RTCIceCandidate';
 import RTCSessionDescription from './RTCSessionDescription';
 import RTCRtpTransceiver from './RTCRtpTransceiver';
+import RTCRtpSender from './RTCRtpSender';
+import RTCRtpReceiver from './RTCRtpReceiver';
 import RTCView from './RTCView';
 import MediaStream from './MediaStream';
 import MediaStreamTrack from './MediaStreamTrack';
@@ -15,6 +17,8 @@ export {
   RTCIceCandidate,
   RTCSessionDescription,
   RTCRtpTransceiver,
+  RTCRtpReceiver,
+  RTCRtpSender,
   RTCView,
   MediaStream,
   MediaStreamTrack,
