@@ -259,8 +259,8 @@ export default class RTCPeerConnection extends EventTarget(PEER_CONNECTION_EVENT
     return this._remoteStreams.slice();
   }
 
-  getTranscievers() {
-    return this._transcievers.slice();
+  getTransceivers() {
+    return this._transceivers.slice();
   }
 
   close() {
@@ -275,7 +275,7 @@ export default class RTCPeerConnection extends EventTarget(PEER_CONNECTION_EVENT
     return stream && stream._tracks.find(track => track.id === trackId);
   }
 
-  _getTransciever(state): RTCRtpTransceiver {
+  _getTransceiver(state): RTCRtpTransceiver {
     const existing = this._transceivers.find((t) => t.id === state.id);
     if (existing) {
       existing._updateState(state);
@@ -292,11 +292,11 @@ export default class RTCPeerConnection extends EventTarget(PEER_CONNECTION_EVENT
       return;
     }
 
-    // Merge Transcievers states
+    // Merge Transceivers states
     if (state.transceivers) {
       // Apply states
-      for(let transciever of state.transceivers) {
-        this._getTransciever(transciever);
+      for(let transceiver of state.transceivers) {
+        this._getTransceiver(transceiver);
       }
       // Restore Order
       this._transceivers = 
