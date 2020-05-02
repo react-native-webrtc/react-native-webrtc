@@ -126,6 +126,11 @@ RTC_OBJC_EXPORT
  *  This is only called with RTCSdpSemanticsUnifiedPlan specified.
  */
 @optional
+/** Called any time the IceConnectionState changes following standardized
+ * transition. */
+- (void)peerConnection:(RTCPeerConnection *)peerConnection
+    didChangeStandardizedIceConnectionState:(RTCIceConnectionState)newState;
+
 /** Called any time the PeerConnectionState changes. */
 - (void)peerConnection:(RTCPeerConnection *)peerConnection
     didChangeConnectionState:(RTCPeerConnectionState)newState;
@@ -141,6 +146,13 @@ RTC_OBJC_EXPORT
 /** Called when the receiver and its track are removed. */
 - (void)peerConnection:(RTCPeerConnection *)peerConnection
      didRemoveReceiver:(RTCRtpReceiver *)rtpReceiver;
+
+/** Called when the selected ICE candidate pair is changed. */
+- (void)peerConnection:(RTCPeerConnection *)peerConnection
+    didChangeLocalCandidate:(RTCIceCandidate *)local
+            remoteCandidate:(RTCIceCandidate *)remote
+             lastReceivedMs:(int)lastDataReceivedMs
+               changeReason:(NSString *)reason;
 
 @end
 

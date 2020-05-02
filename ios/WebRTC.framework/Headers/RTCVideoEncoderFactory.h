@@ -23,6 +23,9 @@ RTC_OBJC_EXPORT
 - (nullable id<RTCVideoEncoder>)createEncoder:(RTCVideoCodecInfo *)info;
 - (NSArray<RTCVideoCodecInfo *> *)supportedCodecs;  // TODO(andersc): "supportedFormats" instead?
 
+@optional
+- (NSArray<RTCVideoCodecInfo *> *)implementations;
+
 @end
 
 NS_ASSUME_NONNULL_END
