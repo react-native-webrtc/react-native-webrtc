@@ -20,6 +20,7 @@ export default class RTCRtpTransceiver {
     constructor(pcId, state, mergeState) {
         this._peerConnectionId = pcId;
         this._id = state.id;
+        this._mid = state.mid ? state.mid : null;
         this._direction = state.direction;
         this._currentDirection = state.currentDirection;
         this._stopped = state.isStopped;
@@ -89,7 +90,7 @@ export default class RTCRtpTransceiver {
     }
 
     _updateState(state) {
-        this._mid = state.mid;
+        this._mid = state.mid ? state.mid : null;
         this._direction = state.direction;
         this._currentDirection = state.currentDirection;
         if (state.isStopped) {
