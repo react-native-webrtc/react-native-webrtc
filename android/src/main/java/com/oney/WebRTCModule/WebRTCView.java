@@ -2,14 +2,19 @@ package com.oney.WebRTCModule;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
+import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.graphics.Point;
 import android.support.v4.view.ViewCompat;
 import android.view.View;
 import android.view.ViewGroup;
 import android.util.Log;
+import android.support.annotation.Nullable;
 
+import com.facebook.react.bridge.Arguments;
 import com.facebook.react.bridge.ReactContext;
+import com.facebook.react.bridge.ReadableMap;
+import com.facebook.react.bridge.WritableMap;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -17,6 +22,7 @@ import java.util.List;
 import java.util.Objects;
 
 import org.webrtc.EglBase;
+import org.webrtc.EglRenderer;
 import org.webrtc.MediaStream;
 import org.webrtc.RendererCommon;
 import org.webrtc.RendererCommon.RendererEvents;
@@ -160,6 +166,14 @@ public class WebRTCView extends ViewGroup {
      * actually renders {@link #videoTrack} on behalf of this instance.
      */
     private final SurfaceViewRenderer surfaceViewRenderer;
+
+    /**
+     * if snapshotId is null, do nothing
+     * if snapshotId not changed, do nothing
+     * if snapshotId has value and changed, do snapshot (add listener)
+     */
+    private String mSnapshotId;
+    private boolean mIsTakingSnapshot = false;
 
     /**
      * The {@code VideoTrack}, if any, rendered by this {@code WebRTCView}.
@@ -616,6 +630,70 @@ public class WebRTCView extends ViewGroup {
             }
 
             rendererAttached = true;
+        }
+    }
+
+    public void handleTakeSnapshot(@Nullable ReadableMap snapshotOption) {
+        // --- should we check this.streamURL and this.videoTrack are not null? not is controled at js side.
+        if (snapshotOption == null) {
+            // --- do nothing
+            return;
+        }
+
+        String snapshotId = snapshotOption.getString("id");
+        if (snapshotId == null || snapshotId.equals(mSnapshotId)) {
+            // --- do nothing due to invalid arguments or id not changed
+            return;
+        }
+
+        if (mIsTakingSnapshot) {
+            // --- do nothing due to is taking snapshot
+            return;
+        }
+        // --- store id
+        mIsTakingSnapshot = true;
+        mSnapshotId = snapshotId;
+
+        ReactContext reactContext = (ReactContext) getContext();
+        WebRTCModule module = reactContext.getNativeModule(WebRTCModule.class);
+        WritableMap params = Arguments.createMap();
+        try {
+            surfaceViewRenderer.addFrameListener(new EglRenderer.FrameListener() {
+                @Override
+                public void onFrame(Bitmap bitmap) {
+                    //runOnUiThread(() -> {
+                    ThreadUtils.runOnExecutor(() -> {
+                        try {
+                            String saveTarget = "cameraRoll";
+                            double jpegQuality = 1;
+                            int maxSize = 5000;
+
+                            if (snapshotOption.hasKey("saveTarget")) {
+                                saveTarget = snapshotOption.getString("saveTarget");
+                            }
+                            if (snapshotOption.hasKey("jpegQuality")) {
+                                jpegQuality = snapshotOption.getDouble("jpegQuality");
+                            }
+                            if (snapshotOption.hasKey("maxSize")) {
+                                maxSize = snapshotOption.getInt("maxSize");
+                            }
+
+                            String file = SnapshotUtils.savePicture(reactContext, bitmap, saveTarget, jpegQuality, maxSize);
+                            params.putString("file", file);
+                        } catch (Exception e) {
+                            params.putString("error", String.format("onFrame() failed: %s", e.getMessage()));
+                        } finally {
+                            surfaceViewRenderer.removeFrameListener(this);
+                            mIsTakingSnapshot = false;
+                            module.sendEvent("WebRTCViewSnapshotResult", params);
+                        }
+                    });
+                }
+            }, 1);
+        } catch (Exception e) {
+            mIsTakingSnapshot = false;
+            params.putString("error", String.format("failed: %s", e.getMessage()));
+            module.sendEvent("WebRTCViewSnapshotResult", params);
         }
     }
 }

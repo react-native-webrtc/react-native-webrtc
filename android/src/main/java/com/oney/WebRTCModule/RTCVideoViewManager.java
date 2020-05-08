@@ -1,5 +1,8 @@
 package com.oney.WebRTCModule;
 
+import android.support.annotation.Nullable;
+
+import com.facebook.react.bridge.ReadableMap;
 import com.facebook.react.uimanager.annotations.ReactProp;
 import com.facebook.react.uimanager.SimpleViewManager;
 import com.facebook.react.uimanager.ThemedReactContext;
@@ -70,5 +73,18 @@ public class RTCVideoViewManager extends SimpleViewManager<WebRTCView> {
   @ReactProp(name = "zOrder")
   public void setZOrder(WebRTCView view, int zOrder) {
     view.setZOrder(zOrder);
+  }
+
+  /**
+   * Take a snapshot of a specific {@link WebRTCView}
+   *
+   * @param view The {@code WebRTCView} on which the specified {@code option} is
+   * to be set.
+   * @param snapshotOption Represent each unique snapshot action, everytime the option changes,
+   * will triiger one snapshot.
+   */
+  @ReactProp(name = "snapshotOption")
+  public void handleTakeSnapshot(WebRTCView view, @Nullable ReadableMap snapshotOption) {
+    view.handleTakeSnapshot(snapshotOption);
   }
 }
