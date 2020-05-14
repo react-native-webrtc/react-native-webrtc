@@ -27,6 +27,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
+import java.util.UUID;
 
 import org.webrtc.*;
 import org.webrtc.audio.AudioDeviceModule;
@@ -756,6 +757,8 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
 
                 @Override
                 public void onCreateSuccess(SessionDescription sdp) {
+                    applyTransceivers(id);
+
                     WritableMap params = Arguments.createMap();
                     params.putString("sdp", sdp.description);
                     params.putString("type", sdp.type.canonicalForm());
@@ -802,6 +805,8 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
 
                 @Override
                 public void onCreateSuccess(SessionDescription sdp) {
+                    applyTransceivers(id);
+
                     WritableMap params = Arguments.createMap();
                     params.putString("sdp", sdp.description);
                     params.putString("type", sdp.type.canonicalForm());
@@ -856,6 +861,7 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
 
             @Override
             public void onSetSuccess() {
+                applyTransceivers(id);
                 SessionDescription newSdp = peerConnection.getLocalDescription();
                 WritableMap newSdpMap = Arguments.createMap();
                 newSdpMap.putString("type", newSdp.type.canonicalForm());
@@ -906,6 +912,7 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
 
             @Override
             public void onSetSuccess() {
+                applyTransceivers(id);
                 SessionDescription newSdp = peerConnection.getRemoteDescription();
                 WritableMap newSdpMap = Arguments.createMap();
                 newSdpMap.putString("type", newSdp.type.canonicalForm());
@@ -1197,6 +1204,8 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
                 return;
             }
 
+            applyTransceivers(id);
+
             WritableMap res = Arguments.createMap();
             res.putString("id", transceiverId);
             res.putMap("state", this.serializeState(id));
@@ -1287,6 +1296,26 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
         } else {
             Log.d(TAG, "peerConnectionTransceiverSetDirection() peerConnection is null");
             callback.invoke(false, "peerConnection is null");
+        }
+    }
+
+    private void applyTransceivers(int id){
+        PeerConnectionObserver pco = mPeerConnectionObservers.get(id);
+        if (pco != null && pco.isUnifiedPlan) {
+            MediaStreamTrack track;
+            for(RtpTransceiver transceiver: pco.getPeerConnection().getTransceivers()){
+                track = transceiver.getReceiver().track();
+                if(track != null){
+                    if(pco.remoteTracks.get(track.id()) == null){
+                        pco.remoteTracks.put(track.id(), track);
+                        if(transceiver.getMediaType() == MediaStreamTrack.MediaType.MEDIA_TYPE_VIDEO){
+                            pco.videoTrackAdapters.addAdapter(UUID.randomUUID().toString(), (VideoTrack) track);
+                        }
+                    }
+                }
+            }
+        } else {
+            Log.d(TAG, "applyTransceivers() peerConnection is null");
         }
     }
 }
