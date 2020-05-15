@@ -46,7 +46,7 @@ class PeerConnectionObserver implements PeerConnection.Observer {
     final Map<String, MediaStream> remoteStreams;
     final Map<String, MediaStreamTrack> remoteTracks;
     final boolean isUnifiedPlan;
-    private final VideoTrackAdapter videoTrackAdapters;
+    final VideoTrackAdapter videoTrackAdapters;
     private final WebRTCModule webRTCModule;
 
     /**
