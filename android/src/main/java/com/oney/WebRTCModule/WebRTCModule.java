@@ -415,7 +415,7 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
             PeerConnection.RTCConfiguration configuration,
             int id) {
         PeerConnectionObserver observer = new PeerConnectionObserver(this,
-                id, configuration.sdpSemantics == PeerConnection.SdpSemantics.PLAN_B);
+                id, configuration.sdpSemantics == PeerConnection.SdpSemantics.UNIFIED_PLAN);
         PeerConnection peerConnection
                 = mFactory.createPeerConnection(configuration, observer);
 
@@ -537,13 +537,13 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
             return;
         }
 
-        String kind = track.kind();
-        if ("audio".equals(kind)) {
-            stream.addTrack((AudioTrack) track);
-        } else if ("video".equals(kind)) {
-            stream.addTrack((VideoTrack) track);
+            String kind = track.kind();
+            if ("audio".equals(kind)) {
+                stream.addTrack((AudioTrack) track);
+            } else if ("video".equals(kind)) {
+                stream.addTrack((VideoTrack) track);
+            }
         }
-    }
 
     @ReactMethod
     public void mediaStreamRemoveTrack(String streamId, String trackId) {
@@ -1174,7 +1174,7 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
                 callback.invoke(false, "invalid trackId and type");
                 return;
             }
-
+            
             applyTransceivers(id);
 
             WritableMap res = Arguments.createMap();
@@ -1270,20 +1270,30 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
         }
     }
 
+    private Map<String, VideoTrackClone> videoTrackClones = new HashMap<>();
     private void applyTransceivers(int id){
         PeerConnectionObserver pco = mPeerConnectionObservers.get(id);
         if (pco != null && pco.isUnifiedPlan) {
-            MediaStreamTrack track;
-            for(RtpTransceiver transceiver: pco.getPeerConnection().getTransceivers()){
-                track = transceiver.getReceiver().track();
+            Map<String, VideoTrackClone> toDispose = new HashMap<>(videoTrackClones);
+            for(RtpTransceiver transceiver: pco.getPeerConnection().getTransceivers()) {
+                MediaStreamTrack track = transceiver.getReceiver().track();
                 if(track != null){
-                    if(pco.remoteTracks.get(track.id()) == null){
-                        pco.remoteTracks.put(track.id(), track);
-                        if(transceiver.getMediaType() == MediaStreamTrack.MediaType.MEDIA_TYPE_VIDEO){
-                            pco.videoTrackAdapters.addAdapter(UUID.randomUUID().toString(), (VideoTrack) track);
+                    if(track.kind().equals(MediaStreamTrack.VIDEO_TRACK_KIND)){
+                        if(pco.remoteTracks.get(track.id()) == null){
+                            VideoTrackClone clone = new VideoTrackClone(track);
+                            videoTrackClones.put(track.id(), clone);
+                            pco.remoteTracks.put(track.id(), clone);
+                            pco.videoTrackAdapters.addAdapter(UUID.randomUUID().toString(), clone);
                         }
+                        toDispose.remove(track.id());
+                    }else{
+                        pco.remoteTracks.put(track.id(), track);
                     }
                 }
+            }
+            for (VideoTrackClone clone : toDispose.values()){
+                videoTrackClones.remove(clone.id());
+                clone.dispose();
             }
         } else {
             Log.d(TAG, "applyTransceivers() peerConnection is null");
