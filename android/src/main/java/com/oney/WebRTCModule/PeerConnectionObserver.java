@@ -502,6 +502,17 @@ class PeerConnectionObserver implements PeerConnection.Observer {
         Log.d(TAG, "onAddTrack");
     }
 
+    @Override
+    public void onTrack(RtpTransceiver transceiver) {
+        MediaStreamTrack track = transceiver.getReceiver().track();
+        if(track != null){
+            if(track.kind().equals(MediaStreamTrack.VIDEO_TRACK_KIND)){
+                videoTrackAdapters.addAdapter(UUID.randomUUID().toString(), (VideoTrack) track);
+            }
+            remoteTracks.put(track.id(), track);
+        }
+    }
+
     @Nullable
     private String peerConnectionStateString(PeerConnection.PeerConnectionState peerConnectionState) {
         switch (peerConnectionState) {
