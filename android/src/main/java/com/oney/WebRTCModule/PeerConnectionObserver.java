@@ -292,7 +292,10 @@ class PeerConnectionObserver implements PeerConnection.Observer {
         candidateParams.putString("sdpMid", candidate.sdpMid);
         candidateParams.putString("candidate", candidate.sdp);
         params.putMap("candidate", candidateParams);
-
+        WritableMap localDescriptionParams = Arguments.createMap();
+        localDescriptionParams.putString("type", peerConnection.getLocalDescription().type.canonicalForm());
+        localDescriptionParams.putString("sdp", peerConnection.getLocalDescription().description);
+        params.putMap("localDescription", localDescriptionParams);
         webRTCModule.sendEvent("peerConnectionGotICECandidate", params);
     }
 
@@ -320,6 +323,11 @@ class PeerConnectionObserver implements PeerConnection.Observer {
         WritableMap params = Arguments.createMap();
         params.putInt("id", id);
         params.putString("iceGatheringState", iceGatheringStateString(iceGatheringState));
+        WritableMap localDescriptionParams = Arguments.createMap();
+        localDescriptionParams.putString("type", peerConnection.getLocalDescription().type.canonicalForm());
+        localDescriptionParams.putString("sdp", peerConnection.getLocalDescription().description);
+        params.putMap("localDescription", localDescriptionParams);
+
         webRTCModule.sendEvent("peerConnectionIceGatheringChanged", params);
     }
 

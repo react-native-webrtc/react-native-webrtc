@@ -475,12 +475,24 @@ RCT_EXPORT_METHOD(peerConnectionGetStats:(nonnull NSString *)trackID
 
 - (void)peerConnection:(RTCPeerConnection *)peerConnection didChangeIceGatheringState:(RTCIceGatheringState)newState {
   [self.bridge.eventDispatcher sendDeviceEventWithName:@"peerConnectionIceGatheringChanged" body:
-   @{@"id": peerConnection.reactTag, @"iceGatheringState": [self stringForICEGatheringState:newState]}];
+   @{@"id": peerConnection.reactTag,
+     @"iceGatheringState": [self stringForICEGatheringState:newState],
+     @"localDescription": @{
+             @"type": [RTCSessionDescription stringForType:peerConnection.localDescription.type],
+             @"sdp": peerConnection.localDescription.sdp
+     }
+   }];
 }
 
 - (void)peerConnection:(RTCPeerConnection *)peerConnection didGenerateIceCandidate:(RTCIceCandidate *)candidate {
   [self.bridge.eventDispatcher sendDeviceEventWithName:@"peerConnectionGotICECandidate" body:
-   @{@"id": peerConnection.reactTag, @"candidate": @{@"candidate": candidate.sdp, @"sdpMLineIndex": @(candidate.sdpMLineIndex), @"sdpMid": candidate.sdpMid}}];
+   @{@"id": peerConnection.reactTag,
+     @"candidate": @{@"candidate": candidate.sdp, @"sdpMLineIndex": @(candidate.sdpMLineIndex), @"sdpMid": candidate.sdpMid},
+     @"localDescription": @{
+             @"type": [RTCSessionDescription stringForType:peerConnection.localDescription.type],
+             @"sdp": peerConnection.localDescription.sdp
+     }
+   }];
 }
 
 - (void)peerConnection:(RTCPeerConnection*)peerConnection didOpenDataChannel:(RTCDataChannel*)dataChannel {

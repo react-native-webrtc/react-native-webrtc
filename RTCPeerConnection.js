@@ -309,6 +309,7 @@ export default class RTCPeerConnection extends EventTarget(PEER_CONNECTION_EVENT
         if (ev.id !== this._peerConnectionId) {
           return;
         }
+        this.localDescription = new RTCSessionDescription(ev.localDescription)
         const candidate = new RTCIceCandidate(ev.candidate);
         const event = new RTCIceCandidateEvent('icecandidate', {candidate});
         this.dispatchEvent(event);
@@ -318,7 +319,7 @@ export default class RTCPeerConnection extends EventTarget(PEER_CONNECTION_EVENT
           return;
         }
         this.iceGatheringState = ev.iceGatheringState;
-
+        this.localDescription = new RTCSessionDescription(ev.localDescription)
         if (this.iceGatheringState === 'complete') {
           this.dispatchEvent(new RTCIceCandidateEvent('icecandidate', null));
         }
