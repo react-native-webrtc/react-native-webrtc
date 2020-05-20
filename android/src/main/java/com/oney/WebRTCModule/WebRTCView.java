@@ -18,6 +18,7 @@ import java.util.Objects;
 
 import org.webrtc.EglBase;
 import org.webrtc.MediaStream;
+import org.webrtc.MediaStreamTrack;
 import org.webrtc.RendererCommon;
 import org.webrtc.RendererCommon.RendererEvents;
 import org.webrtc.RendererCommon.ScalingType;
@@ -213,13 +214,24 @@ public class WebRTCView extends ViewGroup {
             ReactContext reactContext = (ReactContext) getContext();
             WebRTCModule module
                 = reactContext.getNativeModule(WebRTCModule.class);
+            MediaStreamTrack localTrack = module.getLocalTrack(streamURL);
             MediaStream stream = module.getStreamForReactTag(streamURL);
 
-            if (stream != null) {
+            if(localTrack != null){
+                videoTrack = (VideoTrack) localTrack;
+            } else if (stream != null) {
                 List<VideoTrack> videoTracks = stream.videoTracks;
 
                 if (!videoTracks.isEmpty()) {
                     videoTrack = videoTracks.get(0);
+                }
+            } else {
+                for (int i = 0, size = module.mPeerConnectionObservers.size(); i < size; i++) {
+                    PeerConnectionObserver pco = module.mPeerConnectionObservers.valueAt(i);
+                    videoTrack = (VideoTrack) pco.remoteTracks.get(streamURL);
+                    if (videoTrack != null) {
+                        break;
+                    }
                 }
             }
         }

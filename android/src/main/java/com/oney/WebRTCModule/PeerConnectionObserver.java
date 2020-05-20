@@ -505,16 +505,14 @@ class PeerConnectionObserver implements PeerConnection.Observer {
     @Override
     public void onAddTrack(final RtpReceiver receiver, final MediaStream[] mediaStreams) {
         Log.d(TAG, "onAddTrack");
-    }
-
-    @Override
-    public void onTrack(RtpTransceiver transceiver) {
-        MediaStreamTrack track = transceiver.getReceiver().track();
-        if(track != null){
-            if(track.kind().equals(MediaStreamTrack.VIDEO_TRACK_KIND)){
-                videoTrackAdapters.addAdapter(UUID.randomUUID().toString(), (VideoTrack) track);
+        if(isUnifiedPlan){
+            MediaStreamTrack track = receiver.track();
+            if(track != null){
+                if(track.kind().equals(MediaStreamTrack.VIDEO_TRACK_KIND)){
+                    videoTrackAdapters.addAdapter(UUID.randomUUID().toString(), (VideoTrack) track);
+                }
+                remoteTracks.put(track.id(), track);
             }
-            remoteTracks.put(track.id(), track);
         }
     }
 
