@@ -34,7 +34,7 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
     static final String TAG = WebRTCModule.class.getCanonicalName();
 
     PeerConnectionFactory mFactory;
-    private final SparseArray<PeerConnectionObserver> mPeerConnectionObservers;
+    final SparseArray<PeerConnectionObserver> mPeerConnectionObservers;
     final Map<String, MediaStream> localStreams;
 
     /**
