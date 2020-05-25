@@ -79,6 +79,7 @@ export default class RTCPeerConnection extends EventTarget(PEER_CONNECTION_EVENT
   _localStreams: Array<MediaStream> = [];
   _remoteStreams: Array<MediaStream> = [];
   _subscriptions: Array<any>;
+  _senders: Array<any> = [];
 
   /**
    * The RTCDataChannel.id allocator of this RTCPeerConnection.
@@ -397,5 +398,60 @@ export default class RTCPeerConnection extends EventTarget(PEER_CONNECTION_EVENT
         dataChannelDict);
     dataChannelIds.add(id);
     return new RTCDataChannel(this._peerConnectionId, label, dataChannelDict);
+  }
+
+  addTrack(track: MediaStreamTrack, stream: MediaStream) {
+    if (this.signalingState === 'closed') {
+      throw new Error(
+        'The RTCPeerConnection\'s signalingState is \'closed\'.',
+      )
+    }
+    const streams = [].slice.call(arguments, 1)
+    if (streams.length !== 1
+            || !streams[0].getTracks().find((t) => t === track)) {
+      // this is not fully correct but all we can manage without
+      // [[associated MediaStreams]] internal slot.
+      throw new Error(
+        'The addTrack polyfill only supports a single '
+            + ' stream which is associated with the specified track.',
+      )
+    }
+  
+    const alreadyExists = this.getSenders().find((s) => s.track === track)
+    if (alreadyExists) {
+      throw new Error('Track already exists.')
+    }
+  
+    const oldStream = this._localStreams[stream.id]
+    if (oldStream) {
+      // this is using odd Chrome behaviour, use with caution:
+      // https://bugs.chromium.org/p/webrtc/issues/detail?id=7815
+      // Note: we rely on the high-level addTrack/dtmf shim to
+      // create the sender with a dtmf sender.
+      oldStream.addTrack(track)
+  
+      // Trigger ONN async.
+      Promise.resolve().then(() => {
+        this.dispatchEvent(new RTCEvent('negotiationneeded'))
+      })
+    } else {
+      const newStream = new MediaStream([track])
+      this._localStreams[stream.id] = newStream
+      this._remoteStreams[newStream.id] = stream
+      this.addStream(newStream)
+    }
+
+    let sender = this.getSenders().find((s) => s.track === track)
+    if (!sender) {
+      sender = {
+        track,
+      }
+      this._senders.push(sender)
+    }
+    return sender
+  }
+
+  getSenders() {
+    return this._senders
   }
 }
