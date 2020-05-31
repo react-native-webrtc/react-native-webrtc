@@ -85,10 +85,8 @@ export default class MediaStream extends EventTarget(MEDIA_STREAM_EVENTS) {
       }
 
       DeviceEventEmitter.addListener('mediaStreamTrackMuteChanged', ev => {
-        console.warn("mediaStreamTrackMuteChanged", ev);
         
         const track = this.getTrackById(ev.trackId);
-        console.warn(track);
 
         if (track) {
           track.muted = ev.muted;
