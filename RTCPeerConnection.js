@@ -32,6 +32,14 @@ type RTCIceGatheringState =
 
 type RTCIceConnectionState =
   'new' |
+  'connecting' |
+  'connected' |
+  'disconnected' |
+  'failed' |
+  'closed';
+
+type RTCIceConnectionState =
+  'new' |
   'checking' |
   'connected' |
   'completed' |
@@ -62,6 +70,7 @@ export default class RTCPeerConnection extends EventTarget(PEER_CONNECTION_EVENT
 
   signalingState: RTCSignalingState = 'stable';
   iceGatheringState: RTCIceGatheringState = 'new';
+  connectionState: RTCPeerConnectionState = 'new';
   iceConnectionState: RTCIceConnectionState = 'new';
 
   onconnectionstatechange: ?Function;
@@ -262,6 +271,17 @@ export default class RTCPeerConnection extends EventTarget(PEER_CONNECTION_EVENT
         this.iceConnectionState = ev.iceConnectionState;
         this.dispatchEvent(new RTCEvent('iceconnectionstatechange'));
         if (ev.iceConnectionState === 'closed') {
+          // This PeerConnection is done, clean up event handlers.
+          this._unregisterEvents();
+        }
+      }),
+      DeviceEventEmitter.addListener('peerConnectionStateChanged', ev => {
+        if (ev.id !== this._peerConnectionId) {
+          return;
+        }
+        this.connectionState = ev.connectionState;
+        this.dispatchEvent(new RTCEvent('connectionstatechange'));
+        if (ev.connectionState === 'closed') {
           // This PeerConnection is done, clean up event handlers.
           this._unregisterEvents();
         }
