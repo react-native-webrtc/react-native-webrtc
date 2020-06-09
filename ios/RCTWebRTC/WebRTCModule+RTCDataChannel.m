@@ -81,8 +81,7 @@ RCT_EXPORT_METHOD(dataChannelSend:(nonnull NSNumber *)peerConnectionId
   NSDictionary *event = @{@"id": @(channel.channelId),
                           @"peerConnectionId": channel.peerConnectionId,
                           @"state": [self stringForDataChannelState:channel.readyState]};
-  [self.bridge.eventDispatcher sendDeviceEventWithName:@"dataChannelStateChanged"
-                                                  body:event];
+  [self sendEventWithName:kEventDataChannelStateChanged body:event];
 }
 
 // Called when a data buffer was successfully received.
@@ -111,8 +110,7 @@ RCT_EXPORT_METHOD(dataChannelSend:(nonnull NSNumber *)peerConnectionId
                           // unacceptable given that protection in such a
                           // scenario is extremely simple.
                           @"data": (data ? data : [NSNull null])};
-  [self.bridge.eventDispatcher sendDeviceEventWithName:@"dataChannelReceiveMessage"
-                                                  body:event];
+  [self sendEventWithName:kEventDataChannelReceiveMessage body:event];
 }
 
 @end
