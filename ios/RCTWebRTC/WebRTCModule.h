@@ -21,6 +21,7 @@
 #import <WebRTC/RTCVideoEncoderFactory.h>
 
 static NSString *const kEventPeerConnectionSignalingStateChanged = @"peerConnectionSignalingStateChanged";
+static NSString *const kEventPeerConnectionStateChanged = @"peerConnectionStateChanged";
 static NSString *const kEventPeerConnectionAddedStream = @"peerConnectionAddedStream";
 static NSString *const kEventPeerConnectionRemovedStream = @"peerConnectionRemovedStream";
 static NSString *const kEventPeerConnectionOnRenegotiationNeeded = @"peerConnectionOnRenegotiationNeeded";

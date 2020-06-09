@@ -101,6 +101,7 @@ RCT_EXPORT_MODULE();
 - (NSArray<NSString *> *)supportedEvents {
   return @[
     kEventPeerConnectionSignalingStateChanged,
+    kEventPeerConnectionStateChanged,
     kEventPeerConnectionAddedStream,
     kEventPeerConnectionRemovedStream,
     kEventPeerConnectionOnRenegotiationNeeded,
