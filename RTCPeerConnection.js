@@ -30,7 +30,7 @@ type RTCIceGatheringState =
   'gathering' |
   'complete';
 
-type RTCIceConnectionState =
+type RTCPeerConnectionState =
   'new' |
   'connecting' |
   'connected' |

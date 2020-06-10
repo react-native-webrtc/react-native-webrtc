@@ -482,7 +482,7 @@ RCT_EXPORT_METHOD(peerConnectionGetStats:(nonnull NSString *)trackID
 
 - (void)peerConnection:(RTCPeerConnection *)peerConnection didChangeConnectionState:(RTCPeerConnectionState)newState {
   [self.bridge.eventDispatcher sendDeviceEventWithName:@"peerConnectionStateChanged" body:
-   @{@"id": peerConnection.reactTag, @"connectionState": [self stringForICEConnectionState:newState]}];
+   @{@"id": peerConnection.reactTag, @"connectionState": [self stringForPeerConnectionState:newState]}];
 }
 
 - (void)peerConnection:(RTCPeerConnection *)peerConnection didChangeIceConnectionState:(RTCIceConnectionState)newState {
