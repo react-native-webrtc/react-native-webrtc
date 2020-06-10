@@ -1,10 +1,11 @@
 'use strict';
 
-import {NativeModules, DeviceEventEmitter} from 'react-native';
+import { NativeModules } from 'react-native';
 import base64 from 'base64-js';
 import EventTarget from 'event-target-shim';
 import MessageEvent from './MessageEvent';
 import RTCDataChannelEvent from './RTCDataChannelEvent';
+import EventEmitter from './EventEmitter';
 
 const {WebRTCModule} = NativeModules;
 
@@ -116,7 +117,7 @@ export default class RTCDataChannel extends EventTarget(DATA_CHANNEL_EVENTS) {
 
   _registerEvents() {
     this._subscriptions = [
-      DeviceEventEmitter.addListener('dataChannelStateChanged', ev => {
+      EventEmitter.addListener('dataChannelStateChanged', ev => {
         if (ev.peerConnectionId !== this._peerConnectionId
             || ev.id !== this.id) {
           return;
@@ -129,7 +130,7 @@ export default class RTCDataChannel extends EventTarget(DATA_CHANNEL_EVENTS) {
           this._unregisterEvents();
         }
       }),
-      DeviceEventEmitter.addListener('dataChannelReceiveMessage', ev => {
+      EventEmitter.addListener('dataChannelReceiveMessage', ev => {
         if (ev.peerConnectionId !== this._peerConnectionId
             || ev.id !== this.id) {
           return;
