@@ -14,23 +14,24 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
-@protocol RTCVideoRenderer;
-@class RTCPeerConnectionFactory;
-@class RTCVideoSource;
+@protocol RTC_OBJC_TYPE
+(RTCVideoRenderer);
+@class RTC_OBJC_TYPE(RTCPeerConnectionFactory);
+@class RTC_OBJC_TYPE(RTCVideoSource);
 
 RTC_OBJC_EXPORT
-@interface RTCVideoTrack : RTCMediaStreamTrack
+@interface RTC_OBJC_TYPE (RTCVideoTrack) : RTC_OBJC_TYPE(RTCMediaStreamTrack)
 
 /** The video source for this video track. */
-@property(nonatomic, readonly) RTCVideoSource *source;
+@property(nonatomic, readonly) RTC_OBJC_TYPE(RTCVideoSource) *source;
 
 - (instancetype)init NS_UNAVAILABLE;
 
 /** Register a renderer that will render all frames received on this track. */
-- (void)addRenderer:(id<RTCVideoRenderer>)renderer;
+- (void)addRenderer:(id<RTC_OBJC_TYPE(RTCVideoRenderer)>)renderer;
 
 /** Deregister a renderer. */
-- (void)removeRenderer:(id<RTCVideoRenderer>)renderer;
+- (void)removeRenderer:(id<RTC_OBJC_TYPE(RTCVideoRenderer)>)renderer;
 
 @end
 

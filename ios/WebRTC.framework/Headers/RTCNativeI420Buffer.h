@@ -17,7 +17,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 /** RTCI420Buffer implements the RTCI420Buffer protocol */
 RTC_OBJC_EXPORT
-@interface RTCI420Buffer : NSObject<RTCI420Buffer>
+@interface RTC_OBJC_TYPE (RTCI420Buffer) : NSObject<RTC_OBJC_TYPE(RTCI420Buffer)>
 @end
 
 NS_ASSUME_NONNULL_END

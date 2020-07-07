@@ -13,15 +13,15 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
-@class RTCAudioSource;
+@class RTC_OBJC_TYPE(RTCAudioSource);
 
 RTC_OBJC_EXPORT
-@interface RTCAudioTrack : RTCMediaStreamTrack
+@interface RTC_OBJC_TYPE (RTCAudioTrack) : RTC_OBJC_TYPE(RTCMediaStreamTrack)
 
 - (instancetype)init NS_UNAVAILABLE;
 
 /** The audio source for this audio track. */
-@property(nonatomic, readonly) RTCAudioSource *source;
+@property(nonatomic, readonly) RTC_OBJC_TYPE(RTCAudioSource) * source;
 
 @end
 

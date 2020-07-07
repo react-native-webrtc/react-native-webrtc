@@ -22,11 +22,12 @@ typedef NS_ENUM(NSInteger, RTCVideoRotation) {
   RTCVideoRotation_270 = 270,
 };
 
-@protocol RTCVideoFrameBuffer;
+@protocol RTC_OBJC_TYPE
+(RTCVideoFrameBuffer);
 
 // RTCVideoFrame is an ObjectiveC version of webrtc::VideoFrame.
 RTC_OBJC_EXPORT
-@interface RTCVideoFrame : NSObject
+@interface RTC_OBJC_TYPE (RTCVideoFrame) : NSObject
 
 /** Width without rotation applied. */
 @property(nonatomic, readonly) int width;
@@ -41,7 +42,7 @@ RTC_OBJC_EXPORT
 /** Timestamp 90 kHz. */
 @property(nonatomic, assign) int32_t timeStamp;
 
-@property(nonatomic, readonly) id<RTCVideoFrameBuffer> buffer;
+@property(nonatomic, readonly) id<RTC_OBJC_TYPE(RTCVideoFrameBuffer)> buffer;
 
 - (instancetype)init NS_UNAVAILABLE;
 - (instancetype) new NS_UNAVAILABLE;
@@ -71,14 +72,14 @@ RTC_OBJC_EXPORT
 
 /** Initialize an RTCVideoFrame from a frame buffer, rotation, and timestamp.
  */
-- (instancetype)initWithBuffer:(id<RTCVideoFrameBuffer>)frameBuffer
+- (instancetype)initWithBuffer:(id<RTC_OBJC_TYPE(RTCVideoFrameBuffer)>)frameBuffer
                       rotation:(RTCVideoRotation)rotation
                    timeStampNs:(int64_t)timeStampNs;
 
 /** Return a frame that is guaranteed to be I420, i.e. it is possible to access
  *  the YUV data on it.
  */
-- (RTCVideoFrame *)newI420VideoFrame;
+- (RTC_OBJC_TYPE(RTCVideoFrame) *)newI420VideoFrame;
 
 @end
 

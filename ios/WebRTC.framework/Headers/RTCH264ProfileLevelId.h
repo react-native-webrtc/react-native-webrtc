@@ -48,7 +48,7 @@ typedef NS_ENUM(NSUInteger, RTCH264Level) {
 };
 
 RTC_OBJC_EXPORT
-@interface RTCH264ProfileLevelId : NSObject
+@interface RTC_OBJC_TYPE (RTCH264ProfileLevelId) : NSObject
 
 @property(nonatomic, readonly) RTCH264Profile profile;
 @property(nonatomic, readonly) RTCH264Level level;

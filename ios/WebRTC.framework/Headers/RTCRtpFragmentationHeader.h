@@ -16,7 +16,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 /** Information for header. Corresponds to webrtc::RTPFragmentationHeader. */
 RTC_OBJC_EXPORT
-@interface RTCRtpFragmentationHeader : NSObject
+@interface RTC_OBJC_TYPE (RTCRtpFragmentationHeader) : NSObject
 
 @property(nonatomic, strong) NSArray<NSNumber *> *fragmentationOffset;
 @property(nonatomic, strong) NSArray<NSNumber *> *fragmentationLength;

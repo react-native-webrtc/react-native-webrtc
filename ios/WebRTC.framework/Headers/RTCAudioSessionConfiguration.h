@@ -23,7 +23,7 @@ RTC_EXTERN const double kRTCAudioSessionLowComplexityIOBufferDuration;
 
 // Struct to hold configuration values.
 RTC_OBJC_EXPORT
-@interface RTCAudioSessionConfiguration : NSObject
+@interface RTC_OBJC_TYPE (RTCAudioSessionConfiguration) : NSObject
 
 @property(nonatomic, strong) NSString *category;
 @property(nonatomic, assign) AVAudioSessionCategoryOptions categoryOptions;
@@ -41,7 +41,7 @@ RTC_OBJC_EXPORT
 /** Returns the configuration that WebRTC needs. */
 + (instancetype)webRTCConfiguration;
 /** Provide a way to override the default configuration. */
-+ (void)setWebRTCConfiguration:(RTCAudioSessionConfiguration *)configuration;
++ (void)setWebRTCConfiguration:(RTC_OBJC_TYPE(RTCAudioSessionConfiguration) *)configuration;
 
 @end
 

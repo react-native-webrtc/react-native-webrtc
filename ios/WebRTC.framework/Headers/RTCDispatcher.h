@@ -26,7 +26,7 @@ typedef NS_ENUM(NSInteger, RTCDispatcherQueueType) {
  *  shared dispatch queue.
  */
 RTC_OBJC_EXPORT
-@interface RTCDispatcher : NSObject
+@interface RTC_OBJC_TYPE (RTCDispatcher) : NSObject
 
 - (instancetype)init NS_UNAVAILABLE;
 

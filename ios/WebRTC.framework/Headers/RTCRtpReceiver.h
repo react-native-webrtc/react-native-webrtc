@@ -23,33 +23,36 @@ typedef NS_ENUM(NSInteger, RTCRtpMediaType) {
   RTCRtpMediaTypeData,
 };
 
-@class RTCRtpReceiver;
+@class RTC_OBJC_TYPE(RTCRtpReceiver);
 
 RTC_OBJC_EXPORT
-@protocol RTCRtpReceiverDelegate <NSObject>
+@protocol RTC_OBJC_TYPE
+(RTCRtpReceiverDelegate)<NSObject>
 
-/** Called when the first RTP packet is received.
- *
- *  Note: Currently if there are multiple RtpReceivers of the same media type,
- *  they will all call OnFirstPacketReceived at once.
- *
- *  For example, if we create three audio receivers, A/B/C, they will listen to
- *  the same signal from the underneath network layer. Whenever the first audio packet
- *  is received, the underneath signal will be fired. All the receivers A/B/C will be
- *  notified and the callback of the receiver's delegate will be called.
- *
- *  The process is the same for video receivers.
- */
-- (void)rtpReceiver:(RTCRtpReceiver *)rtpReceiver
-    didReceiveFirstPacketForMediaType:(RTCRtpMediaType)mediaType;
+    /** Called when the first RTP packet is received.
+     *
+     *  Note: Currently if there are multiple RtpReceivers of the same media type,
+     *  they will all call OnFirstPacketReceived at once.
+     *
+     *  For example, if we create three audio receivers, A/B/C, they will listen to
+     *  the same signal from the underneath network layer. Whenever the first audio packet
+     *  is received, the underneath signal will be fired. All the receivers A/B/C will be
+     *  notified and the callback of the receiver's delegate will be called.
+     *
+     *  The process is the same for video receivers.
+     */
+    - (void)rtpReceiver
+    : (RTC_OBJC_TYPE(RTCRtpReceiver) *)rtpReceiver didReceiveFirstPacketForMediaType
+    : (RTCRtpMediaType)mediaType;
 
 @end
 
 RTC_OBJC_EXPORT
-@protocol RTCRtpReceiver <NSObject>
+@protocol RTC_OBJC_TYPE
+(RTCRtpReceiver)<NSObject>
 
-/** A unique identifier for this receiver. */
-@property(nonatomic, readonly) NSString *receiverId;
+    /** A unique identifier for this receiver. */
+    @property(nonatomic, readonly) NSString *receiverId;
 
 /** The currently active RTCRtpParameters, as defined in
  *  https://www.w3.org/TR/webrtc/#idl-def-RTCRtpParameters.
@@ -58,22 +61,22 @@ RTC_OBJC_EXPORT
  *  but this API also applies them to receivers, similar to ORTC:
  *  http://ortc.org/wp-content/uploads/2016/03/ortc.html#rtcrtpparameters*.
  */
-@property(nonatomic, readonly) RTCRtpParameters *parameters;
+@property(nonatomic, readonly) RTC_OBJC_TYPE(RTCRtpParameters) * parameters;
 
 /** The RTCMediaStreamTrack associated with the receiver.
  *  Note: reading this property returns a new instance of
  *  RTCMediaStreamTrack. Use isEqual: instead of == to compare
  *  RTCMediaStreamTrack instances.
  */
-@property(nonatomic, readonly, nullable) RTCMediaStreamTrack *track;
+@property(nonatomic, readonly, nullable) RTC_OBJC_TYPE(RTCMediaStreamTrack) * track;
 
 /** The delegate for this RtpReceiver. */
-@property(nonatomic, weak) id<RTCRtpReceiverDelegate> delegate;
+@property(nonatomic, weak) id<RTC_OBJC_TYPE(RTCRtpReceiverDelegate)> delegate;
 
 @end
 
 RTC_OBJC_EXPORT
-@interface RTCRtpReceiver : NSObject <RTCRtpReceiver>
+@interface RTC_OBJC_TYPE (RTCRtpReceiver) : NSObject <RTC_OBJC_TYPE(RTCRtpReceiver)>
 
 - (instancetype)init NS_UNAVAILABLE;
 

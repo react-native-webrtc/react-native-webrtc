@@ -22,7 +22,7 @@ typedef void (^RTCCallbackLoggerMessageAndSeverityHandler)(NSString *message,
 // This class intercepts WebRTC logs and forwards them to a registered block.
 // This class is not threadsafe.
 RTC_OBJC_EXPORT
-@interface RTCCallbackLogger : NSObject
+@interface RTC_OBJC_TYPE (RTCCallbackLogger) : NSObject
 
 // The severity level to capture. The default is kRTCLoggingSeverityInfo.
 @property(nonatomic, assign) RTCLoggingSeverity severity;
