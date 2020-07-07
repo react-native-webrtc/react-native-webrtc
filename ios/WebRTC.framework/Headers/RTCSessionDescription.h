@@ -25,7 +25,7 @@ typedef NS_ENUM(NSInteger, RTCSdpType) {
 NS_ASSUME_NONNULL_BEGIN
 
 RTC_OBJC_EXPORT
-@interface RTCSessionDescription : NSObject
+@interface RTC_OBJC_TYPE (RTCSessionDescription) : NSObject
 
 /** The type of session description. */
 @property(nonatomic, readonly) RTCSdpType type;

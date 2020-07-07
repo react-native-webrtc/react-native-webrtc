@@ -14,8 +14,7 @@
 #import "RTCCryptoOptions.h"
 #import "RTCMacros.h"
 
-@class RTCIceServer;
-@class RTCIntervalRange;
+@class RTC_OBJC_TYPE(RTCIceServer);
 
 /**
  * Represents the ice transport policy. This exposes the same states in C++,
@@ -71,13 +70,18 @@ typedef NS_ENUM(NSInteger, RTCSdpSemantics) {
 NS_ASSUME_NONNULL_BEGIN
 
 RTC_OBJC_EXPORT
-@interface RTCConfiguration : NSObject
+@interface RTC_OBJC_TYPE (RTCConfiguration) : NSObject
+
+/** If true, allows DSCP codes to be set on outgoing packets, configured using
+ *  networkPriority field of RTCRtpEncodingParameters. Defaults to false.
+ */
+@property(nonatomic, assign) BOOL enableDscp;
 
 /** An array of Ice Servers available to be used by ICE. */
-@property(nonatomic, copy) NSArray<RTCIceServer *> *iceServers;
+@property(nonatomic, copy) NSArray<RTC_OBJC_TYPE(RTCIceServer) *> *iceServers;
 
 /** An RTCCertificate for 're' use. */
-@property(nonatomic, nullable) RTCCertificate *certificate;
+@property(nonatomic, nullable) RTC_OBJC_TYPE(RTCCertificate) * certificate;
 
 /** Which candidates the ICE agent is allowed to use. The W3C calls it
  * |iceTransportPolicy|, while in C++ it is called |type|. */
@@ -140,17 +144,22 @@ RTC_OBJC_EXPORT
  */
 @property(nonatomic, assign) BOOL shouldPresumeWritableWhenFullyRelayed;
 
+/* This flag is only effective when |continualGatheringPolicy| is
+ * RTCContinualGatheringPolicyGatherContinually.
+ *
+ * If YES, after the ICE transport type is changed such that new types of
+ * ICE candidates are allowed by the new transport type, e.g. from
+ * RTCIceTransportPolicyRelay to RTCIceTransportPolicyAll, candidates that
+ * have been gathered by the ICE transport but not matching the previous
+ * transport type and as a result not observed by PeerConnectionDelegateAdapter,
+ * will be surfaced to the delegate.
+ */
+@property(nonatomic, assign) BOOL shouldSurfaceIceCandidatesOnIceTransportTypeChanged;
+
 /** If set to non-nil, controls the minimal interval between consecutive ICE
  *  check packets.
  */
 @property(nonatomic, copy, nullable) NSNumber *iceCheckMinInterval;
-
-/** ICE Periodic Regathering
- *  If set, WebRTC will periodically create and propose candidates without
- *  starting a new ICE generation. The regathering happens continuously with
- *  interval specified in milliseconds by the uniform distribution [a, b].
- */
-@property(nonatomic, strong, nullable) RTCIntervalRange *iceRegatherIntervalRange;
 
 /** Configure the SDP semantics used by this PeerConnection. Note that the
  *  WebRTC 1.0 specification requires UnifiedPlan semantics. The
@@ -164,9 +173,9 @@ RTC_OBJC_EXPORT
  *
  *  UnifiedPlan will cause RTCPeerConnection to create offers and answers with
  *  multiple m= sections where each m= section maps to one RTCRtpSender and one
- *  RTCRtpReceiver (an RTCRtpTransceiver), either both audio or both video. This
- *  will also cause RTCPeerConnection to ignore all but the first a=ssrc lines
- *  that form a Plan B stream.
+ *  RTCRtpReceiver (an RTCRtpTransceiver), either both audio or both
+ *  video. This will also cause RTCPeerConnection) to ignore all but the first a=ssrc
+ *  lines that form a Plan B stream.
  *
  *  For users who wish to send multiple audio/video streams and need to stay
  *  interoperable with legacy WebRTC implementations or use legacy APIs,
@@ -181,6 +190,12 @@ RTC_OBJC_EXPORT
  *  workaround for crbug.com/835958
  */
 @property(nonatomic, assign) BOOL activeResetSrtpParams;
+
+/** If the remote side support mid-stream codec switches then allow encoder
+ *  switching to be performed.
+ */
+
+@property(nonatomic, assign) BOOL allowCodecSwitching;
 
 /**
  * If MediaTransportFactory is provided in PeerConnectionFactory, this flag informs PeerConnection
@@ -199,7 +214,7 @@ RTC_OBJC_EXPORT
  * frame encryption for native WebRTC. Setting this will overwrite any
  * options set through the PeerConnectionFactory (which is deprecated).
  */
-@property(nonatomic, nullable) RTCCryptoOptions *cryptoOptions;
+@property(nonatomic, nullable) RTC_OBJC_TYPE(RTCCryptoOptions) * cryptoOptions;
 
 /**
  * Time interval between audio RTCP reports.

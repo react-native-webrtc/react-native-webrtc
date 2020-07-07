@@ -17,7 +17,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 /** Extension of the I420 buffer with mutable data access */
 RTC_OBJC_EXPORT
-@protocol RTCMutableI420Buffer <RTCI420Buffer, RTCMutableYUVPlanarBuffer>
-@end
+@protocol RTC_OBJC_TYPE
+(RTCMutableI420Buffer)<RTC_OBJC_TYPE(RTCI420Buffer), RTC_OBJC_TYPE(RTCMutableYUVPlanarBuffer)> @end
 
 NS_ASSUME_NONNULL_END

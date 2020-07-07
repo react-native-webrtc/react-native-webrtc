@@ -21,78 +21,81 @@ extern NSInteger const kRTCAudioSessionErrorLockRequired;
 /** Unknown configuration error occurred. */
 extern NSInteger const kRTCAudioSessionErrorConfiguration;
 
-@class RTCAudioSession;
-@class RTCAudioSessionConfiguration;
+@class RTC_OBJC_TYPE(RTCAudioSession);
+@class RTC_OBJC_TYPE(RTCAudioSessionConfiguration);
 
 // Surfaces AVAudioSession events. WebRTC will listen directly for notifications
 // from AVAudioSession and handle them before calling these delegate methods,
 // at which point applications can perform additional processing if required.
 RTC_OBJC_EXPORT
-@protocol RTCAudioSessionDelegate <NSObject>
+@protocol RTC_OBJC_TYPE
+(RTCAudioSessionDelegate)<NSObject>
 
-@optional
+    @optional
 /** Called on a system notification thread when AVAudioSession starts an
  *  interruption event.
  */
-- (void)audioSessionDidBeginInterruption:(RTCAudioSession *)session;
+- (void)audioSessionDidBeginInterruption:(RTC_OBJC_TYPE(RTCAudioSession) *)session;
 
 /** Called on a system notification thread when AVAudioSession ends an
  *  interruption event.
  */
-- (void)audioSessionDidEndInterruption:(RTCAudioSession *)session
+- (void)audioSessionDidEndInterruption:(RTC_OBJC_TYPE(RTCAudioSession) *)session
                    shouldResumeSession:(BOOL)shouldResumeSession;
 
 /** Called on a system notification thread when AVAudioSession changes the
  *  route.
  */
-- (void)audioSessionDidChangeRoute:(RTCAudioSession *)session
+- (void)audioSessionDidChangeRoute:(RTC_OBJC_TYPE(RTCAudioSession) *)session
                             reason:(AVAudioSessionRouteChangeReason)reason
                      previousRoute:(AVAudioSessionRouteDescription *)previousRoute;
 
 /** Called on a system notification thread when AVAudioSession media server
  *  terminates.
  */
-- (void)audioSessionMediaServerTerminated:(RTCAudioSession *)session;
+- (void)audioSessionMediaServerTerminated:(RTC_OBJC_TYPE(RTCAudioSession) *)session;
 
 /** Called on a system notification thread when AVAudioSession media server
  *  restarts.
  */
-- (void)audioSessionMediaServerReset:(RTCAudioSession *)session;
+- (void)audioSessionMediaServerReset:(RTC_OBJC_TYPE(RTCAudioSession) *)session;
 
 // TODO(tkchin): Maybe handle SilenceSecondaryAudioHintNotification.
 
-- (void)audioSession:(RTCAudioSession *)session didChangeCanPlayOrRecord:(BOOL)canPlayOrRecord;
+- (void)audioSession:(RTC_OBJC_TYPE(RTCAudioSession) *)session
+    didChangeCanPlayOrRecord:(BOOL)canPlayOrRecord;
 
 /** Called on a WebRTC thread when the audio device is notified to begin
  *  playback or recording.
  */
-- (void)audioSessionDidStartPlayOrRecord:(RTCAudioSession *)session;
+- (void)audioSessionDidStartPlayOrRecord:(RTC_OBJC_TYPE(RTCAudioSession) *)session;
 
 /** Called on a WebRTC thread when the audio device is notified to stop
  *  playback or recording.
  */
-- (void)audioSessionDidStopPlayOrRecord:(RTCAudioSession *)session;
+- (void)audioSessionDidStopPlayOrRecord:(RTC_OBJC_TYPE(RTCAudioSession) *)session;
 
 /** Called when the AVAudioSession output volume value changes. */
-- (void)audioSession:(RTCAudioSession *)audioSession didChangeOutputVolume:(float)outputVolume;
+- (void)audioSession:(RTC_OBJC_TYPE(RTCAudioSession) *)audioSession
+    didChangeOutputVolume:(float)outputVolume;
 
 /** Called when the audio device detects a playout glitch. The argument is the
  *  number of glitches detected so far in the current audio playout session.
  */
-- (void)audioSession:(RTCAudioSession *)audioSession
+- (void)audioSession:(RTC_OBJC_TYPE(RTCAudioSession) *)audioSession
     didDetectPlayoutGlitch:(int64_t)totalNumberOfGlitches;
 
 /** Called when the audio session is about to change the active state.
  */
-- (void)audioSession:(RTCAudioSession *)audioSession willSetActive:(BOOL)active;
+- (void)audioSession:(RTC_OBJC_TYPE(RTCAudioSession) *)audioSession willSetActive:(BOOL)active;
 
 /** Called after the audio session sucessfully changed the active state.
  */
-- (void)audioSession:(RTCAudioSession *)audioSession didSetActive:(BOOL)active;
+- (void)audioSession:(RTC_OBJC_TYPE(RTCAudioSession) *)audioSession didSetActive:(BOOL)active;
 
 /** Called after the audio session failed to change the active state.
  */
-- (void)audioSession:(RTCAudioSession *)audioSession
+- (void)audioSession:(RTC_OBJC_TYPE(RTCAudioSession) *)audioSession
     failedToSetActive:(BOOL)active
                 error:(NSError *)error;
 
@@ -103,10 +106,11 @@ RTC_OBJC_EXPORT
  *  case of this is when CallKit activates the audio session for the application
  */
 RTC_OBJC_EXPORT
-@protocol RTCAudioSessionActivationDelegate <NSObject>
+@protocol RTC_OBJC_TYPE
+(RTCAudioSessionActivationDelegate)<NSObject>
 
-/** Called when the audio session is activated outside of the app by iOS. */
-- (void)audioSessionDidActivate:(AVAudioSession *)session;
+    /** Called when the audio session is activated outside of the app by iOS. */
+    - (void)audioSessionDidActivate : (AVAudioSession *)session;
 
 /** Called when the audio session is deactivated outside of the app by iOS. */
 - (void)audioSessionDidDeactivate:(AVAudioSession *)session;
@@ -121,7 +125,7 @@ RTC_OBJC_EXPORT
  *  activated only once. See |setActive:error:|.
  */
 RTC_OBJC_EXPORT
-@interface RTCAudioSession : NSObject <RTCAudioSessionActivationDelegate>
+@interface RTC_OBJC_TYPE (RTCAudioSession) : NSObject <RTC_OBJC_TYPE(RTCAudioSessionActivationDelegate)>
 
 /** Convenience property to access the AVAudioSession singleton. Callers should
  *  not call setters on AVAudioSession directly, but other method invocations
@@ -182,14 +186,23 @@ RTC_OBJC_EXPORT
 @property(readonly) NSTimeInterval IOBufferDuration;
 @property(readonly) NSTimeInterval preferredIOBufferDuration;
 
+/**
+ When YES, calls to -setConfiguration:error: and -setConfiguration:active:error: ignore errors in
+ configuring the audio session's "preferred" attributes (e.g. preferredInputNumberOfChannels).
+ Typically, configurations to preferred attributes are optimizations, and ignoring this type of
+ configuration error allows code flow to continue along the happy path when these optimization are
+ not available. The default value of this property is NO.
+ */
+@property(nonatomic) BOOL ignoresPreferredAttributeConfigurationErrors;
+
 /** Default constructor. */
 + (instancetype)sharedInstance;
 - (instancetype)init NS_UNAVAILABLE;
 
 /** Adds a delegate, which is held weakly. */
-- (void)addDelegate:(id<RTCAudioSessionDelegate>)delegate;
+- (void)addDelegate:(id<RTC_OBJC_TYPE(RTCAudioSessionDelegate)>)delegate;
 /** Removes an added delegate. */
-- (void)removeDelegate:(id<RTCAudioSessionDelegate>)delegate;
+- (void)removeDelegate:(id<RTC_OBJC_TYPE(RTCAudioSessionDelegate)>)delegate;
 
 /** Request exclusive access to the audio session for configuration. This call
  *  will block if the lock is held by another object.
@@ -228,19 +241,21 @@ RTC_OBJC_EXPORT
                       error:(NSError **)outError;
 @end
 
-@interface RTCAudioSession (Configuration)
+@interface RTC_OBJC_TYPE (RTCAudioSession)
+(Configuration)
 
-/** Applies the configuration to the current session. Attempts to set all
- *  properties even if previous ones fail. Only the last error will be
- *  returned.
- *  |lockForConfiguration| must be called first.
- */
-- (BOOL)setConfiguration:(RTCAudioSessionConfiguration *)configuration error:(NSError **)outError;
+    /** Applies the configuration to the current session. Attempts to set all
+     *  properties even if previous ones fail. Only the last error will be
+     *  returned.
+     *  |lockForConfiguration| must be called first.
+     */
+    - (BOOL)setConfiguration : (RTC_OBJC_TYPE(RTCAudioSessionConfiguration) *)configuration error
+    : (NSError **)outError;
 
 /** Convenience method that calls both setConfiguration and setActive.
  *  |lockForConfiguration| must be called first.
  */
-- (BOOL)setConfiguration:(RTCAudioSessionConfiguration *)configuration
+- (BOOL)setConfiguration:(RTC_OBJC_TYPE(RTCAudioSessionConfiguration) *)configuration
                   active:(BOOL)active
                    error:(NSError **)outError;
 

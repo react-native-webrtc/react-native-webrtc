@@ -21,20 +21,21 @@
 NS_ASSUME_NONNULL_BEGIN
 
 /** Callback block for encoder. */
-typedef BOOL (^RTCVideoEncoderCallback)(RTCEncodedImage *frame,
-                                        id<RTCCodecSpecificInfo> info,
-                                        RTCRtpFragmentationHeader *header);
+typedef BOOL (^RTCVideoEncoderCallback)(RTC_OBJC_TYPE(RTCEncodedImage) * frame,
+                                        id<RTC_OBJC_TYPE(RTCCodecSpecificInfo)> info,
+                                        RTC_OBJC_TYPE(RTCRtpFragmentationHeader) * header);
 
 /** Protocol for encoder implementations. */
 RTC_OBJC_EXPORT
-@protocol RTCVideoEncoder <NSObject>
+@protocol RTC_OBJC_TYPE
+(RTCVideoEncoder)<NSObject>
 
-- (void)setCallback:(RTCVideoEncoderCallback)callback;
-- (NSInteger)startEncodeWithSettings:(RTCVideoEncoderSettings *)settings
+    - (void)setCallback : (RTCVideoEncoderCallback)callback;
+- (NSInteger)startEncodeWithSettings:(RTC_OBJC_TYPE(RTCVideoEncoderSettings) *)settings
                        numberOfCores:(int)numberOfCores;
 - (NSInteger)releaseEncoder;
-- (NSInteger)encode:(RTCVideoFrame *)frame
-    codecSpecificInfo:(nullable id<RTCCodecSpecificInfo>)info
+- (NSInteger)encode:(RTC_OBJC_TYPE(RTCVideoFrame) *)frame
+    codecSpecificInfo:(nullable id<RTC_OBJC_TYPE(RTCCodecSpecificInfo)>)info
            frameTypes:(NSArray<NSNumber *> *)frameTypes;
 - (int)setBitrate:(uint32_t)bitrateKbit framerate:(uint32_t)framerate;
 - (NSString *)implementationName;
@@ -42,7 +43,7 @@ RTC_OBJC_EXPORT
 /** Returns QP scaling settings for encoder. The quality scaler adjusts the resolution in order to
  *  keep the QP from the encoded images within the given range. Returning nil from this function
  *  disables quality scaling. */
-- (nullable RTCVideoEncoderQpThresholds *)scalingSettings;
+- (nullable RTC_OBJC_TYPE(RTCVideoEncoderQpThresholds) *)scalingSettings;
 
 @end
 
