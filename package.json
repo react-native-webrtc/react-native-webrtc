@@ -7,10 +7,6 @@
   },
   "nativePackage": true,
   "description": "WebRTC for React Native",
-  "author": {
-    "name": "Oney",
-    "email": "appdevoney@gmail.com"
-  },
   "homepage": "https://github.com/react-native-webrtc/react-native-webrtc",
   "keywords": [
     "react-component",
