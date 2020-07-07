@@ -17,7 +17,7 @@ ANDROID_CPU_ABI_MAP = {
     'x64'   : 'x86_64'
 }
 ANDROID_BUILD_CPUS = ['arm', 'arm64', 'x86', 'x64']
-IOS_BUILD_ARCHS = ['arm64', 'arm','x64','x86']
+IOS_BUILD_ARCHS = ['arm64','x64']
 
 def build_gn_args(platform_args):
     return "--args='" + ' '.join(GN_COMMON_ARGS + platform_args) + "'"
@@ -32,7 +32,7 @@ GN_COMMON_ARGS = [
 _GN_IOS_ARGS = [
     'enable_dsyms=true',
     'enable_ios_bitcode=%s',
-    'ios_deployment_target="10.0"',
+    'ios_deployment_target="11.0"',
     'ios_enable_code_signing=false',
     'target_os="ios"',
     'use_xcode_clang=true'
