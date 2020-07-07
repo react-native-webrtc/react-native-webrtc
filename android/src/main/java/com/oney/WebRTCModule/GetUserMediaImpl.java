@@ -93,6 +93,12 @@ class GetUserMediaImpl {
         EglBase.Context eglContext = EglUtils.getRootEglBaseContext();
         SurfaceTextureHelper surfaceTextureHelper =
             SurfaceTextureHelper.create("CaptureThread", eglContext);
+
+        if (surfaceTextureHelper == null) {
+            Log.d(TAG, "Error creating SurfaceTextureHelper");
+            return null;
+        }
+
         VideoSource videoSource = pcFactory.createVideoSource(videoCapturer.isScreencast());
         videoCapturer.initialize(surfaceTextureHelper, reactContext, videoSource.getCapturerObserver());
 
