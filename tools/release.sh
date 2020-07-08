@@ -22,10 +22,8 @@ if git rev-parse "$version" >/dev/null 2>&1; then
 	exit 1
 fi
 
-# --- try to bump version of package.json, fail if duplicated.
-npm version "$version" --no-git-tag-version
-git_changes=$(git status --porcelain | grep package.json)
-if [ -z "${git_changes}" ]; then
+# --- try to bump version of package.json
+if ! npm version "$version" --no-git-tag-version --allow-same-version; then
 	echo "npm bump failed"
 	exit 1
 fi
