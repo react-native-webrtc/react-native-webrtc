@@ -22,8 +22,6 @@
 
 @implementation WebRTCModule
 
-@synthesize bridge = _bridge;
-
 + (BOOL)requiresMainQueueSetup
 {
     return NO;
@@ -98,6 +96,22 @@ RCT_EXPORT_MODULE();
 - (dispatch_queue_t)methodQueue
 {
   return _workerQueue;
+}
+
+- (NSArray<NSString *> *)supportedEvents {
+  return @[
+    kEventPeerConnectionSignalingStateChanged,
+    kEventPeerConnectionAddedStream,
+    kEventPeerConnectionRemovedStream,
+    kEventPeerConnectionOnRenegotiationNeeded,
+    kEventPeerConnectionIceConnectionChanged,
+    kEventPeerConnectionIceGatheringChanged,
+    kEventPeerConnectionGotICECandidate,
+    kEventPeerConnectionDidOpenDataChannel,
+    kEventDataChannelStateChanged,
+    kEventDataChannelReceiveMessage,
+    kEventMediaStreamTrackMuteChanged
+  ];
 }
 
 @end

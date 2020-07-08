@@ -1,7 +1,7 @@
 'use strict';
 
 import EventTarget from 'event-target-shim';
-import {DeviceEventEmitter, NativeModules} from 'react-native';
+import { NativeModules, NativeEventEmitter } from 'react-native';
 
 import MediaStream from './MediaStream';
 import MediaStreamEvent from './MediaStreamEvent';
@@ -14,6 +14,7 @@ import RTCIceCandidate from './RTCIceCandidate';
 import RTCIceCandidateEvent from './RTCIceCandidateEvent';
 import RTCEvent from './RTCEvent';
 import * as RTCUtil from './RTCUtil';
+import EventEmitter from './EventEmitter';
 
 const {WebRTCModule} = NativeModules;
 
@@ -249,13 +250,13 @@ export default class RTCPeerConnection extends EventTarget(PEER_CONNECTION_EVENT
 
   _registerEvents(): void {
     this._subscriptions = [
-      DeviceEventEmitter.addListener('peerConnectionOnRenegotiationNeeded', ev => {
+      EventEmitter.addListener('peerConnectionOnRenegotiationNeeded', ev => {
         if (ev.id !== this._peerConnectionId) {
           return;
         }
         this.dispatchEvent(new RTCEvent('negotiationneeded'));
       }),
-      DeviceEventEmitter.addListener('peerConnectionIceConnectionChanged', ev => {
+      EventEmitter.addListener('peerConnectionIceConnectionChanged', ev => {
         if (ev.id !== this._peerConnectionId) {
           return;
         }
@@ -266,14 +267,14 @@ export default class RTCPeerConnection extends EventTarget(PEER_CONNECTION_EVENT
           this._unregisterEvents();
         }
       }),
-      DeviceEventEmitter.addListener('peerConnectionSignalingStateChanged', ev => {
+      EventEmitter.addListener('peerConnectionSignalingStateChanged', ev => {
         if (ev.id !== this._peerConnectionId) {
           return;
         }
         this.signalingState = ev.signalingState;
         this.dispatchEvent(new RTCEvent('signalingstatechange'));
       }),
-      DeviceEventEmitter.addListener('peerConnectionAddedStream', ev => {
+      EventEmitter.addListener('peerConnectionAddedStream', ev => {
         if (ev.id !== this._peerConnectionId) {
           return;
         }
@@ -281,7 +282,7 @@ export default class RTCPeerConnection extends EventTarget(PEER_CONNECTION_EVENT
         this._remoteStreams.push(stream);
         this.dispatchEvent(new MediaStreamEvent('addstream', {stream}));
       }),
-      DeviceEventEmitter.addListener('peerConnectionRemovedStream', ev => {
+      EventEmitter.addListener('peerConnectionRemovedStream', ev => {
         if (ev.id !== this._peerConnectionId) {
           return;
         }
@@ -294,7 +295,7 @@ export default class RTCPeerConnection extends EventTarget(PEER_CONNECTION_EVENT
         }
         this.dispatchEvent(new MediaStreamEvent('removestream', {stream}));
       }),
-      DeviceEventEmitter.addListener('mediaStreamTrackMuteChanged', ev => {
+      EventEmitter.addListener('mediaStreamTrackMuteChanged', ev => {
         if (ev.peerConnectionId !== this._peerConnectionId) {
           return;
         }
@@ -305,7 +306,7 @@ export default class RTCPeerConnection extends EventTarget(PEER_CONNECTION_EVENT
           track.dispatchEvent(new MediaStreamTrackEvent(eventName, {track}));
         }
       }),
-      DeviceEventEmitter.addListener('peerConnectionGotICECandidate', ev => {
+      EventEmitter.addListener('peerConnectionGotICECandidate', ev => {
         if (ev.id !== this._peerConnectionId) {
           return;
         }
@@ -313,7 +314,7 @@ export default class RTCPeerConnection extends EventTarget(PEER_CONNECTION_EVENT
         const event = new RTCIceCandidateEvent('icecandidate', {candidate});
         this.dispatchEvent(event);
       }),
-      DeviceEventEmitter.addListener('peerConnectionIceGatheringChanged', ev => {
+      EventEmitter.addListener('peerConnectionIceGatheringChanged', ev => {
         if (ev.id !== this._peerConnectionId) {
           return;
         }
@@ -325,7 +326,7 @@ export default class RTCPeerConnection extends EventTarget(PEER_CONNECTION_EVENT
 
         this.dispatchEvent(new RTCEvent('icegatheringstatechange'));
       }),
-      DeviceEventEmitter.addListener('peerConnectionDidOpenDataChannel', ev => {
+      EventEmitter.addListener('peerConnectionDidOpenDataChannel', ev => {
         if (ev.id !== this._peerConnectionId) {
           return;
         }
