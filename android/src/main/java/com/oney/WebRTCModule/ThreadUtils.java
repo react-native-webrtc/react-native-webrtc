@@ -1,5 +1,7 @@
 package com.oney.WebRTCModule;
 
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -18,5 +20,13 @@ final class ThreadUtils {
      */
     public static void runOnExecutor(Runnable runnable) {
         executor.execute(runnable);
+    }
+
+    /**
+     * Runs the given {@link Runnable} on the executor and synchronously waits for it to finish.
+     * @param runnable
+     */
+    public  static <T> T runOnExecutorAndWait(Callable<T> callable) throws ExecutionException, InterruptedException {
+        return executor.submit(callable).get();
     }
 }

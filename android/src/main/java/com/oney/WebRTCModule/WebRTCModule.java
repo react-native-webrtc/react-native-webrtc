@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ExecutionException;
 
 import org.webrtc.*;
 import org.webrtc.audio.AudioDeviceModule;
@@ -403,6 +404,16 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
     }
 
     MediaStream getStreamForReactTag(String streamReactTag) {
+        try {
+            return ThreadUtils.runOnExecutorAndWait(() -> getStreamForReactTagAsync(streamReactTag));
+        } catch (Exception e) {
+            Log.d(TAG, "getStreamForReactTag() failed");
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    MediaStream getStreamForReactTagAsync(String streamReactTag) {
         MediaStream stream = localStreams.get(streamReactTag);
 
         if (stream == null) {
