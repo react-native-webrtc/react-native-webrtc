@@ -990,4 +990,9 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
             pco.dataChannelSend(dataChannelId, data, type);
         }
     }
+
+    @ReactMethod
+    public  void setDailyDefaultAudioMode() {
+        Log.d(TAG, "setDailyDefaultAudioMode()");
+    }
 }
