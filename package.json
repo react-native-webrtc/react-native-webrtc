@@ -1,17 +1,17 @@
 {
-  "name": "react-native-webrtc",
+  "name": "@daily-co/react-native-webrtc",
   "version": "1.75.3",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/react-native-webrtc/react-native-webrtc.git"
+    "url": "git+https://github.com/daily-co/react-native-webrtc.git"
   },
   "nativePackage": true,
-  "description": "WebRTC for React Native",
+  "description": "Daily.co fork of WebRTC for React Native",
   "author": {
     "name": "Oney",
     "email": "appdevoney@gmail.com"
   },
-  "homepage": "https://github.com/react-native-webrtc/react-native-webrtc",
+  "homepage": "https://github.com/daily-co/react-native-webrtc",
   "keywords": [
     "react-component",
     "react-native",
