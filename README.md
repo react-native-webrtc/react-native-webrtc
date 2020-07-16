@@ -1,6 +1,6 @@
 # react-native-webrtc
 
-**:warning: This is the Daily.co fork of `react-native-webrtc`, meant only for use with [`react-native-daily-js`, whose documentation you should refer to for usage information](https://www.npmjs.com/package/@daily-co/react-native-daily-js). If you're looking for [the standard `react-native-webrtc` useful for a variety of project, here it is](https://www.npmjs.com/package/react-native-webrtc).**
+**:warning: This is the Daily.co fork of `react-native-webrtc`, meant only for use with [`react-native-daily-js`, whose documentation you should refer to for usage information](https://www.npmjs.com/package/@daily-co/react-native-daily-js). If you're looking for [the standard `react-native-webrtc` useful for a variety of projects, here it is](https://www.npmjs.com/package/react-native-webrtc).**
 
 [![npm version](https://badge.fury.io/js/react-native-webrtc.svg)](https://badge.fury.io/js/react-native-webrtc)
 [![npm downloads](https://img.shields.io/npm/dm/react-native-webrtc.svg?maxAge=2592000)](https://img.shields.io/npm/dm/react-native-webrtc.svg?maxAge=2592000)
