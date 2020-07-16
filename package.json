@@ -8,6 +8,7 @@
   "nativePackage": true,
   "description": "Daily.co fork of WebRTC for React Native",
   "homepage": "https://github.com/daily-co/react-native-webrtc",
+  "types": "index.d.ts",
   "keywords": [
     "react-component",
     "react-native",
@@ -19,7 +20,9 @@
     "base64-js": "^1.1.2",
     "event-target-shim": "^1.0.5",
     "prop-types": "^15.5.10",
-    "uuid": "^3.3.2"
+    "uuid": "^3.3.2",
+    "@types/react": "*",
+    "@types/react-native": "*"
   },
   "peerDependencies": {
     "react-native": ">=0.40.0"
