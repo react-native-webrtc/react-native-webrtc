@@ -7,10 +7,6 @@
   },
   "nativePackage": true,
   "description": "Daily.co fork of WebRTC for React Native",
-  "author": {
-    "name": "Oney",
-    "email": "appdevoney@gmail.com"
-  },
   "homepage": "https://github.com/daily-co/react-native-webrtc",
   "keywords": [
     "react-component",
@@ -27,8 +23,5 @@
   },
   "peerDependencies": {
     "react-native": ">=0.40.0"
-  },
-  "bugs": {
-    "url": "https://github.com/react-native-webrtc/react-native-webrtc/issues"
   }
 }
