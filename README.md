@@ -15,17 +15,10 @@ Everyone is welcome to our [Discourse community](https://react-native-webrtc.dis
 
 ## WebRTC Revision
 
-| react-native-webrtc | WebRTC Version | arch(ios) | arch(android)  | npm published | notes |
-| :-------------: | :-------------:| :-----: | :-----: | :-----: | :-----: |
-| 1.75.2 | [M75](https://github.com/jitsi/webrtc/commit/0cd6ce4de669bed94ba47b88cb71b9be0341bb81) | x86_64<br>i386<br>armv7<br>arm64 | armeabi-v7a<br>arm64-v8a<br>x86<br>x86_64 | :heavy_check_mark: | |
-| 1.75.1 | [M75](https://github.com/jitsi/webrtc/commit/0cd6ce4de669bed94ba47b88cb71b9be0341bb81) | x86_64<br>i386<br>armv7<br>arm64 | armeabi-v7a<br>arm64-v8a<br>x86<br>x86_64 | :heavy_check_mark: | |
-| 1.75.0 | [M75](https://github.com/jitsi/webrtc/commit/0cd6ce4de669bed94ba47b88cb71b9be0341bb81) | x86_64<br>i386<br>armv7<br>arm64 | armeabi-v7a<br>arm64-v8a<br>x86<br>x86_64 | :heavy_check_mark: | |
-| 1.69.2 | [M69](https://github.com/jitsi/webrtc/tree/cb536cf7a368e77ec29a6779de7fbebf2c300b70) | x86_64<br>i386<br>armv7<br>arm64 | armeabi-v7a<br>arm64-v8a<br>x86<br>x86_64 | :heavy_check_mark: |  |
-| 1.69.1 | [M69](https://chromium.googlesource.com/external/webrtc/+/branch-heads/69)<br>[commit](https://chromium.googlesource.com/external/webrtc/+/9110a54a60d9e0c69128338fc250319ddb751b5a)<br>(24012)<br>(+16-24348) | x86_64<br>i386<br>armv7<br>arm64 | armeabi-v7a<br>arm64-v8a<br>x86<br>x86_64 | :heavy_check_mark: |  |
-| 1.69.0 | [M69](https://chromium.googlesource.com/external/webrtc/+/branch-heads/69)<br>[commit](https://chromium.googlesource.com/external/webrtc/+/9110a54a60d9e0c69128338fc250319ddb751b5a)<br>(24012)<br>(+16-24348) | x86_64<br>i386<br>armv7<br>arm64 | armeabi-v7a<br>x86 | :heavy_check_mark: |  |
-| master | [M75](https://github.com/jitsi/webrtc/commit/0cd6ce4de669bed94ba47b88cb71b9be0341bb81) | x86_64<br>i386<br>armv7<br>arm64 | armeabi-v7a<br>arm64-v8a<br>x86<br>x86_64 | :warning: | Please test! |
-
-Please see [wiki page](https://github.com/react-native-webrtc/react-native-webrtc/wiki) about revision history.
+* Currently used revision: [M84](https://github.com/jitsi/webrtc/commit/dc40d5cc81e8fe9aa1cd78a38ee8bb9e91ec49a0)
+* Supported architectures
+  * Android: armeabi-v7a, arm64-v8a, x86, x86_64
+  * iOS: arm64, x86_64
 
 ## Installation
 
@@ -147,16 +140,10 @@ it back to `true` will re-enable the camera.
 
 ## Related projects
 
-### react-native-incall-manager
+The [react-native-webrtc](https://github.com/react-native-webrtc) organization provides a number of packages which are useful when developing Real Time Communications applications.
 
-Use [react-native-incall-manager](https://github.com/react-native-webrtc/react-native-incall-manager) to keep screen on, mute microphone, etc.
+## Acknowledgements
 
-### react-native-callkeep
+Thanks to all [contributors](https://github.com/react-native-webrtc/react-native-webrtc/graphs/contributors) for helping with the project!
 
-Use [react-native-callkeep](https://github.com/react-native-webrtc/react-native-callkeep) to use callkit on iOS or connection service on Android to have native dialer with your webrtc application.
-
-## Sponsorship
-This repository doesn't have a plan to get sponsorship.(This can be discussed afterwards by collaborators). If you would like to pay bounty to fix some bugs or get some features, be free to open a issue that adds `[BOUNTY]` category in title. Add other bounty website link like [this](https://www.bountysource.com) will be better.
-
-## Creator
-This repository is originally created by [Wan Huang Yang](https://github.com/oney/).
+Special thanks to [Wan Huang Yang](https://github.com/oney/) for creating the first version of this package.
