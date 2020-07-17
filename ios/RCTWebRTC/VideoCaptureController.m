@@ -116,6 +116,7 @@
 
 -(void)switchCamera {
     _usingFrontCamera = !_usingFrontCamera;
+    _deviceId = NULL;
 
     [self startCapture];
 }
