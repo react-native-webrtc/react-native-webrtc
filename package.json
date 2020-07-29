@@ -5,6 +5,10 @@
     "type": "git",
     "url": "git+https://github.com/daily-co/react-native-webrtc.git"
   },
+  "scripts": {
+    "tag": "scripts/tag",
+    "prepublishOnly": "npm run tag"
+  },
   "nativePackage": true,
   "description": "Daily.co fork of WebRTC for React Native",
   "homepage": "https://github.com/daily-co/react-native-webrtc",
