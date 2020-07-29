@@ -6,7 +6,8 @@
     "url": "git+https://github.com/daily-co/react-native-webrtc.git"
   },
   "scripts": {
-    "prepublishOnly": "TAG_NAME=$(echo ${npm_package_name} | sed -E 's|^.+/||')-$(date -u +'%Y-%m-%d')-${npm_package_version} && git tag -a -m \"${npm_package_name} ${npm_package_version} published to npmjs\" ${TAG_NAME} HEAD && git push origin ${TAG_NAME}"
+    "tag": "scripts/tag",
+    "prepublishOnly": "npm run tag"
   },
   "nativePackage": true,
   "description": "Daily.co fork of WebRTC for React Native",

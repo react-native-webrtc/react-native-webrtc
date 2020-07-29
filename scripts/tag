@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+
+TAG_NAME=$(echo ${npm_package_name} | sed -E 's|^.+/||')-$(date -u +'%Y-%m-%d')-${npm_package_version} && \
+  git tag -a -m "${npm_package_name} ${npm_package_version} published to npmjs" ${TAG_NAME} HEAD && \
+  git push origin ${TAG_NAME}
