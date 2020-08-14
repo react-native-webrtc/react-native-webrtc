@@ -1,6 +1,9 @@
 package com.oney.WebRTCModule;
 
 import androidx.annotation.Nullable;
+
+import android.content.Context;
+import android.media.AudioManager;
 import android.util.Log;
 import android.util.SparseArray;
 
@@ -991,8 +994,23 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
         }
     }
 
+    /// Daily.co-specific functionality
+
+    private  DailyAudioManager dailyAudioManager;
+
     @ReactMethod
-    public  void setDailyDefaultAudioMode() {
-        Log.d(TAG, "setDailyDefaultAudioMode()");
+    public  void setDailyInCallAudioMode(boolean setInCallAudioMode) {
+        Log.d(TAG, "setDailyInCallAudioMode: " + setInCallAudioMode);
+        DailyAudioManager.Mode mode = setInCallAudioMode ?
+                DailyAudioManager.Mode.IN_CALL :
+                DailyAudioManager.Mode.NOT_IN_CALL;
+        if (dailyAudioManager == null) {
+            ReactApplicationContext reactContext = getReactApplicationContext();
+            AudioManager audioManager = (AudioManager) reactContext.getSystemService(Context.AUDIO_SERVICE);
+            dailyAudioManager = new DailyAudioManager(audioManager, mode);
+        }
+        else {
+            dailyAudioManager.setMode(mode);
+        }
     }
 }

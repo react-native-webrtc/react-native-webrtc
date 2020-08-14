@@ -14,29 +14,35 @@
 
 #pragma mark - setDailyDefaultAudioMode
 
-RCT_EXPORT_METHOD(setDailyDefaultAudioMode) {
-    RTCAudioSession *audioSession = RTCAudioSession.sharedInstance;
-    
-    if ([audioSession.category isEqualToString:AVAudioSessionCategoryPlayAndRecord] &&
-        [audioSession.mode isEqualToString:AVAudioSessionModeVideoChat]) {
-        return;
-    }
-    
-    [audioSession lockForConfiguration];
-    
-    RTCAudioSessionConfiguration *config = [[RTCAudioSessionConfiguration alloc] init];
-    config.category = AVAudioSessionCategoryPlayAndRecord;
-    config.mode = AVAudioSessionModeVideoChat;
-    config.categoryOptions = AVAudioSessionCategoryOptionAllowBluetooth;
-    
-    NSError *error;
-    [audioSession setConfiguration:config error:&error];
-    
-    [audioSession unlockForConfiguration];
-    
-    if (error) {
-        NSLog(@"[Daily] setDailyDefaultAudioMode error: %@", error);
-    }
+RCT_EXPORT_METHOD(setDailyInCallAudioMode:(BOOL)setInCallAudioMode) {
+  // For now it doesn't seem like we need to do anything to "unset" the in-call
+  // audio mode, so just return.
+  if (!setInCallAudioMode) {
+    return;
+  }
+  
+  RTCAudioSession *audioSession = RTCAudioSession.sharedInstance;
+  
+  if ([audioSession.category isEqualToString:AVAudioSessionCategoryPlayAndRecord] &&
+      [audioSession.mode isEqualToString:AVAudioSessionModeVideoChat]) {
+    return;
+  }
+  
+  [audioSession lockForConfiguration];
+  
+  RTCAudioSessionConfiguration *config = [[RTCAudioSessionConfiguration alloc] init];
+  config.category = AVAudioSessionCategoryPlayAndRecord;
+  config.mode = AVAudioSessionModeVideoChat;
+  config.categoryOptions = AVAudioSessionCategoryOptionAllowBluetooth;
+  
+  NSError *error;
+  [audioSession setConfiguration:config error:&error];
+  
+  [audioSession unlockForConfiguration];
+  
+  if (error) {
+    NSLog(@"[Daily] setDailyDefaultAudioMode error: %@", error);
+  }
 }
 
 @end
