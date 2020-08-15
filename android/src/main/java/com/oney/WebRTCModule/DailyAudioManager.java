@@ -136,7 +136,7 @@ public class DailyAudioManager {
                     break;
                 case AudioDeviceInfo.TYPE_WIRED_HEADPHONES:
                 case AudioDeviceInfo.TYPE_WIRED_HEADSET:
-                case AudioDeviceInfo.TYPE_USB_HEADSET: // TODO: can this be used in API level < 26?
+                case 22: // AudioDeviceInfo.TYPE_USB_HEADSET, which is defined only in API level 26
                     deviceTypes.add(DeviceType.HEADSET);
                     break;
             }
