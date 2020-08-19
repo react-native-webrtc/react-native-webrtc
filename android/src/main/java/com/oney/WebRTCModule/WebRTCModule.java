@@ -875,6 +875,7 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
               sdpMid = candidateMap.getString("sdpMid");
               sdpMLineIndex = candidateMap.getInt("stpMLineIndex");
           } catch (Exception e) {
+              Log.d("%s", String.valueOf(e));
               sdpMid = "0";
               sdpMLineIndex = 0;
           }
