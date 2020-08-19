@@ -24,7 +24,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ExecutionException;
 
 import org.webrtc.*;
 import org.webrtc.audio.AudioDeviceModule;
@@ -999,18 +998,29 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
     private  DailyAudioManager dailyAudioManager;
 
     @ReactMethod
-    public  void setDailyInCallAudioMode(boolean setInCallAudioMode) {
-        Log.d(TAG, "setDailyInCallAudioMode: " + setInCallAudioMode);
-        DailyAudioManager.Mode mode = setInCallAudioMode ?
-                DailyAudioManager.Mode.IN_CALL :
-                DailyAudioManager.Mode.NOT_IN_CALL;
+    public void setDailyAudioMode(String audioModeString) {
+        Log.d(TAG, "setDailyAudioMode: " + audioModeString);
+        DailyAudioManager.Mode audioMode;
+        switch (audioModeString) {
+            case "video":
+                audioMode = DailyAudioManager.Mode.VIDEO_CALL;
+                break;
+            case "voice":
+                audioMode = DailyAudioManager.Mode.VOICE_CALL;
+                break;
+            case "idle":
+                audioMode = DailyAudioManager.Mode.IDLE;
+                break;
+            default:
+                throw new IllegalArgumentException(audioModeString);
+        }
         if (dailyAudioManager == null) {
             ReactApplicationContext reactContext = getReactApplicationContext();
             AudioManager audioManager = (AudioManager) reactContext.getSystemService(Context.AUDIO_SERVICE);
-            dailyAudioManager = new DailyAudioManager(audioManager, mode);
+            dailyAudioManager = new DailyAudioManager(audioManager, audioMode);
         }
         else {
-            dailyAudioManager.setMode(mode);
+            dailyAudioManager.setMode(audioMode);
         }
     }
 }

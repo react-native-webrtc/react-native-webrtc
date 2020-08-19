@@ -14,14 +14,16 @@ public class DailyAudioManager {
     static final String TAG = DailyAudioManager.class.getCanonicalName();
 
     public enum Mode {
-        NOT_IN_CALL,
-        IN_CALL
+        IDLE,
+        VIDEO_CALL,
+        VOICE_CALL
     }
 
     private enum DeviceType {
         BLUETOOTH,
         HEADSET,
-        SPEAKER
+        SPEAKER,
+        EARPIECE
     }
 
     private AudioManager audioManager;
@@ -33,7 +35,7 @@ public class DailyAudioManager {
         public void onAudioDevicesAdded(AudioDeviceInfo[] addedDevices) {
             executor.execute(() -> {
                 Log.d(TAG, "onAudioDevicesAdded");
-                configureAudioForCurrentMode();
+                configureDevicesForCurrentMode();
             });
         }
 
@@ -41,7 +43,7 @@ public class DailyAudioManager {
         public void onAudioDevicesRemoved(AudioDeviceInfo[] removedDevices) {
             executor.execute(() -> {
                 Log.d(TAG, "onAudioDevicesRemoved");
-                configureAudioForCurrentMode();
+                configureDevicesForCurrentMode();
             });
         }
     };
@@ -49,7 +51,7 @@ public class DailyAudioManager {
     public DailyAudioManager(AudioManager audioManager, Mode initialMode) {
         this.audioManager = audioManager;
         this.mode = initialMode;
-        executor.execute(() -> configureAudioForCurrentMode());
+        executor.execute(() -> transitionToCurrentMode(null));
     }
 
     public void setMode(Mode mode) {
@@ -57,8 +59,9 @@ public class DailyAudioManager {
             if (mode == this.mode) {
                 return;
             }
+            Mode previousMode = this.mode;
             this.mode = mode;
-            configureAudioForCurrentMode();
+            transitionToCurrentMode(previousMode);
         });
     }
 
@@ -66,21 +69,23 @@ public class DailyAudioManager {
     /// Private methods should only be called in executor thread
     ///
 
-    private void configureAudioForCurrentMode() {
+    // Assumes that previousMode != this.mode, hence "transition"
+    private void transitionToCurrentMode(Mode previousMode) {
+        Log.d(TAG, "transitionToCurrentMode: " + mode);
         switch (mode) {
-            case NOT_IN_CALL:
-                Log.d(TAG, "configureAudioForCurrentMode: NOT in call");
-                configureNotInCallMode();
+            case IDLE:
+                transitionOutOfCallMode();
                 break;
-            case IN_CALL:
-                Log.d(TAG, "configureAudioForCurrentMode: in call");
-                configureInCallMode();
+            case VIDEO_CALL:
+            case VOICE_CALL:
+                transitionToCurrentCallMode(previousMode);
                 break;
         }
     }
 
-    // Does things in the reverse order of switchToInCallMode()
-    private void configureNotInCallMode() {
+    // Assumes that previousMode != this.mode, hence "transition"
+    // Does things in the reverse order of transitionToCurrentInCallMode()
+    private void transitionOutOfCallMode() {
         // Stop listening for device changes
         audioManager.unregisterAudioDeviceCallback(audioDeviceCallback);
 
@@ -94,29 +99,36 @@ public class DailyAudioManager {
         audioManager.setMode(AudioManager.MODE_NORMAL);
     }
 
-    // Does things in the reverse order of switchToNotInCallMode()
-    private void configureInCallMode() {
-        // Set audio mode
-        audioManager.setMode(AudioManager.MODE_IN_COMMUNICATION);
+    // Assumes that previousMode != this.mode, hence "transition"
+    // Does things in the reverse order of transitionOutOfCallMode()
+    private void transitionToCurrentCallMode(Mode previousMode) {
+        // Already in a call, so all we have to do is configure devices
+        if (previousMode == Mode.VIDEO_CALL || previousMode == Mode.VOICE_CALL) {
+            configureDevicesForCurrentMode();
+        }
+        else {
+            // Set audio mode
+            audioManager.setMode(AudioManager.MODE_IN_COMMUNICATION);
 
-        // Configure devices
-        configureDevicesForCurrentMode();
+            // Configure devices
+            configureDevicesForCurrentMode();
 
-        // Request audio focus
-        // TODO: do this soon, to play nicely with other apps
+            // Request audio focus
+            // TODO: do this soon, to play nicely with other apps
 
-        // Start listening for device changes
-        audioManager.registerAudioDeviceCallback(audioDeviceCallback, null);
+            // Start listening for device changes
+            audioManager.registerAudioDeviceCallback(audioDeviceCallback, null);
+        }
     }
 
     private void configureDevicesForCurrentMode() {
-        if (mode == Mode.NOT_IN_CALL) {
+        if (mode == Mode.IDLE) {
             audioManager.setSpeakerphoneOn(false);
             toggleBluetooth(false);
         }
         else {
             Set<DeviceType> availableDeviceTypes = getAvailableDeviceTypes();
-            DeviceType preferredDeviceType = getPreferredDeviceType(availableDeviceTypes);
+            DeviceType preferredDeviceType = getPreferredDeviceTypeForCurrentMode(availableDeviceTypes);
             Log.d(TAG, "configureDevicesForCurrentMode: preferring device type " + preferredDeviceType);
             audioManager.setSpeakerphoneOn(shouldSpeakerphoneBeOn(preferredDeviceType));
             toggleBluetooth(shouldBluetoothBeOn(preferredDeviceType));
@@ -134,6 +146,9 @@ public class DailyAudioManager {
                 case AudioDeviceInfo.TYPE_BUILTIN_SPEAKER:
                     deviceTypes.add(DeviceType.SPEAKER);
                     break;
+                    case AudioDeviceInfo.TYPE_BUILTIN_EARPIECE:
+                        deviceTypes.add(DeviceType.EARPIECE);
+                        break;
                 case AudioDeviceInfo.TYPE_WIRED_HEADPHONES:
                 case AudioDeviceInfo.TYPE_WIRED_HEADSET:
                 case 22: // AudioDeviceInfo.TYPE_USB_HEADSET, which is defined only in API level 26
@@ -144,15 +159,18 @@ public class DailyAudioManager {
         return  deviceTypes;
     }
 
-    private DeviceType getPreferredDeviceType(Set<DeviceType> availableDeviceTypes) {
+    private DeviceType getPreferredDeviceTypeForCurrentMode(Set<DeviceType> availableDeviceTypes) {
         if (availableDeviceTypes.contains(DeviceType.BLUETOOTH)) {
             return DeviceType.BLUETOOTH;
         }
         if (availableDeviceTypes.contains(DeviceType.HEADSET)) {
             return DeviceType.HEADSET;
         }
-        if (availableDeviceTypes.contains(DeviceType.SPEAKER)) {
+        if (mode == Mode.VIDEO_CALL && availableDeviceTypes.contains(DeviceType.SPEAKER)) {
             return DeviceType.SPEAKER;
+        }
+        if (mode == Mode.VOICE_CALL && availableDeviceTypes.contains(DeviceType.EARPIECE)) {
+            return  DeviceType.EARPIECE;
         }
         return null;
     }
