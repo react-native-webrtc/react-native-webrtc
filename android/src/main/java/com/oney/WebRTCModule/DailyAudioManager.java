@@ -146,9 +146,9 @@ public class DailyAudioManager {
                 case AudioDeviceInfo.TYPE_BUILTIN_SPEAKER:
                     deviceTypes.add(DeviceType.SPEAKER);
                     break;
-                    case AudioDeviceInfo.TYPE_BUILTIN_EARPIECE:
-                        deviceTypes.add(DeviceType.EARPIECE);
-                        break;
+                case AudioDeviceInfo.TYPE_BUILTIN_EARPIECE:
+                    deviceTypes.add(DeviceType.EARPIECE);
+                    break;
                 case AudioDeviceInfo.TYPE_WIRED_HEADPHONES:
                 case AudioDeviceInfo.TYPE_WIRED_HEADSET:
                 case 22: // AudioDeviceInfo.TYPE_USB_HEADSET, which is defined only in API level 26
