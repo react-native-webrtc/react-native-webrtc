@@ -10,6 +10,7 @@ import android.os.Build;
 import android.util.Log;
 
 import com.facebook.react.bridge.Arguments;
+import com.facebook.react.bridge.LifecycleEventListener;
 import com.facebook.react.bridge.ReactApplicationContext;
 import com.facebook.react.bridge.WritableMap;
 import com.facebook.react.modules.core.DeviceEventManagerModule;
@@ -60,6 +61,26 @@ public class DailyAudioManager implements AudioManager.OnAudioFocusChangeListene
     };
 
     public DailyAudioManager(ReactApplicationContext reactContext, Mode initialMode) {
+        reactContext.addLifecycleEventListener(new LifecycleEventListener() {
+            @Override
+            public void onHostResume() {
+                executor.execute(() -> {
+                    if (mode == Mode.VIDEO_CALL || mode == Mode.VOICE_CALL) {
+                        requestAudioFocus();
+                        configureDevicesForCurrentMode();
+                        sendAudioFocusChangeEvent(true);
+                    }
+                });
+            }
+
+            @Override
+            public void onHostPause() {
+            }
+
+            @Override
+            public void onHostDestroy() {
+            }
+        });
         this.audioManager = (AudioManager) reactContext.getSystemService(Context.AUDIO_SERVICE);
         this.eventEmitter = reactContext.getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter.class);
         this.mode = initialMode;
@@ -82,6 +103,7 @@ public class DailyAudioManager implements AudioManager.OnAudioFocusChangeListene
         executor.execute(() -> {
             switch (focusChange) {
                 case AudioManager.AUDIOFOCUS_GAIN:
+                    Log.d(TAG, "onAudioFocusChange: GAIN");
                     // Ensure devices are configured appropriately, in case they were messed up
                     // while we didn't have focus
                     configureDevicesForCurrentMode();
@@ -90,6 +112,7 @@ public class DailyAudioManager implements AudioManager.OnAudioFocusChangeListene
                 case AudioManager.AUDIOFOCUS_LOSS:
                 case AudioManager.AUDIOFOCUS_LOSS_TRANSIENT:
                 case AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK:
+                    Log.d(TAG, "onAudioFocusChange: LOSS");
                     sendAudioFocusChangeEvent(false);
                     break;
                 default:
@@ -158,7 +181,7 @@ public class DailyAudioManager implements AudioManager.OnAudioFocusChangeListene
                     .setAcceptsDelayedFocusGain(true)
                     .setOnAudioFocusChangeListener(this)
                     .build();
-            audioManager.requestAudioFocus(audioFocusRequest);
+            Log.d(TAG, "requestAudioFocus: " + audioManager.requestAudioFocus(audioFocusRequest));
         } else {
             audioManager.requestAudioFocus(this,
                     AudioManager.STREAM_VOICE_CALL,
