@@ -1016,8 +1016,7 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
         }
         if (dailyAudioManager == null) {
             ReactApplicationContext reactContext = getReactApplicationContext();
-            AudioManager audioManager = (AudioManager) reactContext.getSystemService(Context.AUDIO_SERVICE);
-            dailyAudioManager = new DailyAudioManager(audioManager, audioMode);
+            dailyAudioManager = new DailyAudioManager(reactContext, audioMode);
         }
         else {
             dailyAudioManager.setMode(audioMode);

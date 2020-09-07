@@ -1,16 +1,25 @@
 package com.oney.WebRTCModule;
 
+import android.content.Context;
+import android.media.AudioAttributes;
 import android.media.AudioDeviceCallback;
 import android.media.AudioDeviceInfo;
+import android.media.AudioFocusRequest;
 import android.media.AudioManager;
+import android.os.Build;
 import android.util.Log;
+
+import com.facebook.react.bridge.Arguments;
+import com.facebook.react.bridge.ReactApplicationContext;
+import com.facebook.react.bridge.WritableMap;
+import com.facebook.react.modules.core.DeviceEventManagerModule;
 
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-public class DailyAudioManager {
+public class DailyAudioManager implements AudioManager.OnAudioFocusChangeListener {
     static final String TAG = DailyAudioManager.class.getCanonicalName();
 
     public enum Mode {
@@ -27,8 +36,10 @@ public class DailyAudioManager {
     }
 
     private AudioManager audioManager;
+    private DeviceEventManagerModule.RCTDeviceEventEmitter eventEmitter;
     private Mode mode;
     private ExecutorService executor = Executors.newSingleThreadExecutor();
+    private AudioFocusRequest audioFocusRequest;
 
     private AudioDeviceCallback audioDeviceCallback = new AudioDeviceCallback() {
         @Override
@@ -48,8 +59,9 @@ public class DailyAudioManager {
         }
     };
 
-    public DailyAudioManager(AudioManager audioManager, Mode initialMode) {
-        this.audioManager = audioManager;
+    public DailyAudioManager(ReactApplicationContext reactContext, Mode initialMode) {
+        this.audioManager = (AudioManager) reactContext.getSystemService(Context.AUDIO_SERVICE);
+        this.eventEmitter = reactContext.getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter.class);
         this.mode = initialMode;
         executor.execute(() -> transitionToCurrentMode(null));
     }
@@ -62,6 +74,27 @@ public class DailyAudioManager {
             Mode previousMode = this.mode;
             this.mode = mode;
             transitionToCurrentMode(previousMode);
+        });
+    }
+
+    @Override
+    public void onAudioFocusChange(int focusChange) {
+        executor.execute(() -> {
+            switch (focusChange) {
+                case AudioManager.AUDIOFOCUS_GAIN:
+                    // Ensure devices are configured appropriately, in case they were messed up
+                    // while we didn't have focus
+                    configureDevicesForCurrentMode();
+                    sendAudioFocusChangeEvent(true);
+                    break;
+                case AudioManager.AUDIOFOCUS_LOSS:
+                case AudioManager.AUDIOFOCUS_LOSS_TRANSIENT:
+                case AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK:
+                    sendAudioFocusChangeEvent(false);
+                    break;
+                default:
+                    break;
+            }
         });
     }
 
@@ -90,13 +123,10 @@ public class DailyAudioManager {
         audioManager.unregisterAudioDeviceCallback(audioDeviceCallback);
 
         // Give up audio focus
-        // TODO: do this soon, to play nicely with other apps
+        abandonAudioFocus();
 
         // Configure devices
         configureDevicesForCurrentMode();
-
-        // Set audio mode
-        audioManager.setMode(AudioManager.MODE_NORMAL);
     }
 
     // Assumes that previousMode != this.mode, hence "transition"
@@ -105,40 +135,70 @@ public class DailyAudioManager {
         // Already in a call, so all we have to do is configure devices
         if (previousMode == Mode.VIDEO_CALL || previousMode == Mode.VOICE_CALL) {
             configureDevicesForCurrentMode();
-        }
-        else {
-            // Set audio mode
-            audioManager.setMode(AudioManager.MODE_IN_COMMUNICATION);
-
+        } else {
             // Configure devices
             configureDevicesForCurrentMode();
 
             // Request audio focus
-            // TODO: do this soon, to play nicely with other apps
+            requestAudioFocus();
 
             // Start listening for device changes
             audioManager.registerAudioDeviceCallback(audioDeviceCallback, null);
         }
     }
 
+    private void requestAudioFocus() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            AudioAttributes attributes = new AudioAttributes.Builder()
+                    .setUsage(AudioAttributes.USAGE_VOICE_COMMUNICATION)
+                    .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH)
+                    .build();
+            audioFocusRequest = new AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN)
+                    .setAudioAttributes(attributes)
+                    .setAcceptsDelayedFocusGain(true)
+                    .setOnAudioFocusChangeListener(this)
+                    .build();
+            audioManager.requestAudioFocus(audioFocusRequest);
+        } else {
+            audioManager.requestAudioFocus(this,
+                    AudioManager.STREAM_VOICE_CALL,
+                    AudioManager.AUDIOFOCUS_GAIN);
+        }
+    }
+
+    private void abandonAudioFocus() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            if (audioFocusRequest == null) {
+                Log.d(TAG, "abandonAudioFocus: expected audioFocusRequest to exist");
+                return;
+            }
+            audioManager.abandonAudioFocusRequest(audioFocusRequest);
+        } else {
+            audioManager.abandonAudioFocus(this);
+        }
+    }
+
     private void configureDevicesForCurrentMode() {
         if (mode == Mode.IDLE) {
+            audioManager.setMode(AudioManager.MODE_NORMAL);
             audioManager.setSpeakerphoneOn(false);
             toggleBluetooth(false);
-        }
-        else {
+            audioManager.setMicrophoneMute(true);
+        } else {
+            audioManager.setMode(AudioManager.MODE_IN_COMMUNICATION);
             Set<DeviceType> availableDeviceTypes = getAvailableDeviceTypes();
             DeviceType preferredDeviceType = getPreferredDeviceTypeForCurrentMode(availableDeviceTypes);
             Log.d(TAG, "configureDevicesForCurrentMode: preferring device type " + preferredDeviceType);
             audioManager.setSpeakerphoneOn(shouldSpeakerphoneBeOn(preferredDeviceType));
             toggleBluetooth(shouldBluetoothBeOn(preferredDeviceType));
+            audioManager.setMicrophoneMute(false);
         }
     }
 
     private Set<DeviceType> getAvailableDeviceTypes() {
         Set<DeviceType> deviceTypes = new HashSet<DeviceType>();
         AudioDeviceInfo[] devices = audioManager.getDevices(AudioManager.GET_DEVICES_ALL);
-        for (AudioDeviceInfo info: devices) {
+        for (AudioDeviceInfo info : devices) {
             switch (info.getType()) {
                 case AudioDeviceInfo.TYPE_BLUETOOTH_SCO:
                     deviceTypes.add(DeviceType.BLUETOOTH);
@@ -156,7 +216,7 @@ public class DailyAudioManager {
                     break;
             }
         }
-        return  deviceTypes;
+        return deviceTypes;
     }
 
     private DeviceType getPreferredDeviceTypeForCurrentMode(Set<DeviceType> availableDeviceTypes) {
@@ -170,7 +230,7 @@ public class DailyAudioManager {
             return DeviceType.SPEAKER;
         }
         if (mode == Mode.VOICE_CALL && availableDeviceTypes.contains(DeviceType.EARPIECE)) {
-            return  DeviceType.EARPIECE;
+            return DeviceType.EARPIECE;
         }
         return null;
     }
@@ -179,7 +239,7 @@ public class DailyAudioManager {
         return preferredDeviceType == DeviceType.SPEAKER;
     }
 
-    private  boolean shouldBluetoothBeOn(DeviceType preferredDeviceType) {
+    private boolean shouldBluetoothBeOn(DeviceType preferredDeviceType) {
         return preferredDeviceType == DeviceType.BLUETOOTH;
     }
 
@@ -187,10 +247,15 @@ public class DailyAudioManager {
         if (on) {
             audioManager.startBluetoothSco();
             audioManager.setBluetoothScoOn(true);
-        }
-        else {
+        } else {
             audioManager.setBluetoothScoOn(false);
             audioManager.stopBluetoothSco();
         }
+    }
+
+    private void sendAudioFocusChangeEvent(boolean hasFocus) {
+        WritableMap params = Arguments.createMap();
+        params.putBoolean("hasFocus", hasFocus);
+        eventEmitter.emit("EventAudioFocusChange", params);
     }
 }
