@@ -901,6 +901,51 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
     }
 
     @ReactMethod
+    public void peerConnectionSendDtmfTone(String dtmfTone, int duration, int interToneGap, int id, Callback cb) {
+        ThreadUtils.runOnExecutor(() ->
+            peerConnectionSendDtmfToneAsync(dtmfTone, duration, interToneGap, id, cb));
+    }
+
+    private void peerConnectionSendDtmfToneAsync(String dtmfTone, int duration, int interToneGap, int id, Callback cb) {
+        PeerConnection peerConnection = getPeerConnection(id);
+        RtpSender m_audioSender = null;
+        for (RtpSender sender : peerConnection.getSenders()) {
+            if (sender.track().kind().equals("audio")) {
+                m_audioSender = sender;
+            }
+        }
+        if (m_audioSender != null) {
+            DtmfSender dtmfSender = m_audioSender.dtmf();
+            boolean sent = dtmfSender.insertDtmf(dtmfTone, duration, interToneGap);
+            cb.invoke(true, sent);
+        } else {
+            cb.invoke(true, false);
+        }
+    }
+
+    @ReactMethod
+    public void peerConnectionCanInsertDtmf(int id, Callback cb) {
+        ThreadUtils.runOnExecutor(() ->
+            peerConnectionCanInsertDtmfAsync(id, cb));
+    }
+
+    private void peerConnectionCanInsertDtmfAsync(int id, Callback cb) {
+        PeerConnection peerConnection = getPeerConnection(id);
+        RtpSender m_audioSender = null;
+        for (RtpSender sender : peerConnection.getSenders()) {
+            if (sender.track().kind().equals("audio")) {
+                m_audioSender = sender;
+            }
+        }
+        if (m_audioSender != null) {
+            DtmfSender dtmfSender = m_audioSender.dtmf();
+            cb.invoke(true, dtmfSender.canInsertDtmf());
+        } else {
+            cb.invoke(true, false);
+        }
+    }
+
+    @ReactMethod
     public void peerConnectionClose(int id) {
         ThreadUtils.runOnExecutor(() -> peerConnectionCloseAsync(id));
     }
