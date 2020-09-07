@@ -7,6 +7,7 @@
   },
   "nativePackage": true,
   "description": "WebRTC for React Native",
+  "license": "MIT",
   "homepage": "https://github.com/react-native-webrtc/react-native-webrtc",
   "keywords": [
     "react-component",
