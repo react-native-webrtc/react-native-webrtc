@@ -181,7 +181,7 @@ public class DailyAudioManager implements AudioManager.OnAudioFocusChangeListene
                     .setAcceptsDelayedFocusGain(true)
                     .setOnAudioFocusChangeListener(this)
                     .build();
-            Log.d(TAG, "requestAudioFocus: " + audioManager.requestAudioFocus(audioFocusRequest));
+            audioManager.requestAudioFocus(audioFocusRequest);
         } else {
             audioManager.requestAudioFocus(this,
                     AudioManager.STREAM_VOICE_CALL,
