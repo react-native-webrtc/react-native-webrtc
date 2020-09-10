@@ -18,7 +18,7 @@ Everyone is welcome to our [Discourse community](https://react-native-webrtc.dis
 * Currently used revision: [M84](https://github.com/jitsi/webrtc/commit/dc40d5cc81e8fe9aa1cd78a38ee8bb9e91ec49a0)
 * Supported architectures
   * Android: armeabi-v7a, arm64-v8a, x86, x86_64
-  * iOS: arm64, x86_64
+  * iOS: arm64, x86_64 (for bitcode support, run [this script](https://github.com/react-native-webrtc/react-native-webrtc/blob/master/tools/downloadBitcode.sh))
 
 ## Installation
 
