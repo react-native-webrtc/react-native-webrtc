@@ -80,8 +80,8 @@ dependencies {
 
 ext {
   //...
-  compileSdkVersion 27
-  buildToolsVersion '27.0.3'
+  compileSdkVersion = 27
+  buildToolsVersion = '27.0.3'
   //...
 }
 ```
