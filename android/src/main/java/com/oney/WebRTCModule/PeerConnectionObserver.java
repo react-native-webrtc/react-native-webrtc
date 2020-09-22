@@ -11,6 +11,10 @@ import java.util.Map;
 import java.util.UUID;
 
 import android.support.annotation.Nullable;
+import android.os.Build;
+import android.os.Handler;
+import android.content.Context;
+import android.media.AudioManager;
 import android.util.Base64;
 import android.util.Log;
 import android.util.SparseArray;
@@ -472,6 +476,26 @@ class PeerConnectionObserver implements PeerConnection.Observer {
     @Override
     public void onAddTrack(final RtpReceiver receiver, final MediaStream[] mediaStreams) {
         Log.d(TAG, "onAddTrack");
+
+        if (android.os.Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
+            return;
+        }
+        
+        setSpeakerOn(true);
+        final Handler mHandler = new Handler();
+        // First call not always succeeds
+        mHandler.postDelayed(() -> setSpeakerOn(true), 500);
+    }
+
+    private void setSpeakerOn(boolean on) {
+        AudioManager audioManager = (AudioManager) webRTCModule.getCurrentActivityHack().getSystemService(Context.AUDIO_SERVICE);
+
+        boolean wasOn = audioManager.isSpeakerphoneOn();
+        if (wasOn == on) {
+            return;
+        }
+        audioManager.setMode(AudioManager.MODE_IN_CALL);
+        audioManager.setSpeakerphoneOn(true);
     }
 
     @Nullable

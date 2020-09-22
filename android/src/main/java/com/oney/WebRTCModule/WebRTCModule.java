@@ -1,5 +1,6 @@
 package com.oney.WebRTCModule;
 
+import android.app.Activity;
 import android.media.AudioAttributes;
 import android.support.annotation.Nullable;
 import android.util.Log;
@@ -73,6 +74,10 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
         localStreams = new HashMap<>();
 
         ThreadUtils.runOnExecutor(() -> initAsync(options));
+    }
+
+    public Activity getCurrentActivityHack() {
+        return super.getCurrentActivity();
     }
 
     /**
