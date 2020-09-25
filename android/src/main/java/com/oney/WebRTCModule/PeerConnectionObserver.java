@@ -488,20 +488,26 @@ class PeerConnectionObserver implements PeerConnection.Observer {
             return;
         }
 
-        setSpeakerOn(!isBluetoothHeadsetConnected());
+        setSpeakerOn(!isBluetoothHeadsetConnected() && !isWiredHeadsetConnected());
         startListeningHeadsetChanges();
     }
 
-    public static boolean isBluetoothHeadsetConnected() {
-        BluetoothAdapter mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
-        return mBluetoothAdapter != null && mBluetoothAdapter.isEnabled()
-            && mBluetoothAdapter.getProfileConnectionState(BluetoothHeadset.HEADSET) == BluetoothHeadset.STATE_CONNECTED;
+    public boolean isBluetoothHeadsetConnected() {
+        BluetoothAdapter bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
+        return bluetoothAdapter != null && bluetoothAdapter.isEnabled()
+            && bluetoothAdapter.getProfileConnectionState(BluetoothHeadset.HEADSET) == BluetoothHeadset.STATE_CONNECTED;
     }
 
-    public final BroadcastReceiver mReceiver = new BroadcastReceiver() {
+    public boolean isWiredHeadsetConnected() {
+        final Activity context = getContext();
+        AudioManager audioManager = (AudioManager) context.getSystemService(Context.AUDIO_SERVICE);
+        return audioManager.isWiredHeadsetOn();
+    }
+
+    public final BroadcastReceiver bluetoothReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
-            String action = intent.getAction();
+            final String action = intent.getAction();
             if (BluetoothDevice.ACTION_ACL_CONNECTED.equals(action)) {
                 setSpeakerOn(false);
             } else if (BluetoothDevice.ACTION_ACL_DISCONNECTED.equals(action)) {
@@ -510,12 +516,35 @@ class PeerConnectionObserver implements PeerConnection.Observer {
         }
     };
 
+    public final BroadcastReceiver plugReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            final String action = intent.getAction();
+            if (action.equals(Intent.ACTION_HEADSET_PLUG)) {
+                int state = intent.getIntExtra("state", -1);
+                switch (state) {
+                    case 0:
+                        setSpeakerOn(true);
+                        break;
+                    case 1:
+                        setSpeakerOn(false);
+                        break;
+                    default:
+                        Log.d(TAG, "I have no idea what the headset state is");
+                }
+            }
+        }
+    };
+
     private void startListeningHeadsetChanges() {
-        IntentFilter filter = new IntentFilter();
-        filter.addAction(BluetoothDevice.ACTION_ACL_CONNECTED);
-        filter.addAction(BluetoothDevice.ACTION_ACL_DISCONNECT_REQUESTED);
-        filter.addAction(BluetoothDevice.ACTION_ACL_DISCONNECTED);
-        getContext().registerReceiver(mReceiver, filter);
+        IntentFilter bluetoothFilter = new IntentFilter();
+        bluetoothFilter.addAction(BluetoothDevice.ACTION_ACL_CONNECTED);
+        bluetoothFilter.addAction(BluetoothDevice.ACTION_ACL_DISCONNECT_REQUESTED);
+        bluetoothFilter.addAction(BluetoothDevice.ACTION_ACL_DISCONNECTED);
+        getContext().registerReceiver(bluetoothReceiver, bluetoothFilter);
+
+        IntentFilter plugFilter = new IntentFilter(Intent.ACTION_HEADSET_PLUG);
+        getContext().registerReceiver(plugReceiver, plugFilter);
     }
 
     private void setSpeakerOn(boolean on) {
