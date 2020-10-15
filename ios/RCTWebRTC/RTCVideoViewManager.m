@@ -337,7 +337,7 @@ RCT_CUSTOM_VIEW_PROPERTY(streamURL, NSString *, RTCVideoView) {
         NSArray *videoTracks = stream ? stream.videoTracks : @[];
         RTCVideoTrack *videoTrack = [videoTracks firstObject];
         if (!videoTrack) {
-            RCTLogWarn(@"No video stream for react tag: %@", streamReactTag);
+            // RCTLogWarn(@"No video stream for react tag: %@", streamReactTag);
         } else {
             dispatch_async(dispatch_get_main_queue(), ^{
                 view.videoTrack = videoTrack;
