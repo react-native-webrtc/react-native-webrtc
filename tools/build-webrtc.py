@@ -23,6 +23,9 @@ def build_gn_args(platform_args):
     return "--args='" + ' '.join(GN_COMMON_ARGS + platform_args) + "'"
 
 GN_COMMON_ARGS = [
+    # Xcode 12 Clang consider warning as error by default 
+    # See https://bugs.chromium.org/p/webrtc/issues/detail?id=11729
+    'treat_warnings_as_errors=false',
     'is_component_build=false',
     'rtc_libvpx_build_vp9=true',
     'is_debug=%s',
