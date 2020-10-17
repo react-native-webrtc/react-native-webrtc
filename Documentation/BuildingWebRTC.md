@@ -46,6 +46,9 @@ cd
 
 Now the code is ready for building!
 
+Notice that since M79 chromium changed the branch naming scheme, for example M87 is WebRTC branch 4280.
+For a full list of branches, see: https://chromiumdash.appspot.com/branches
+
 ## Building
 
 ### iOS
