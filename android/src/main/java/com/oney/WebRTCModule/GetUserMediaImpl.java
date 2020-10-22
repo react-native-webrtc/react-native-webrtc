@@ -4,9 +4,12 @@ import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.media.projection.MediaProjectionManager;
+import android.os.Build;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.WindowManager;
+
+import androidx.annotation.RequiresApi;
 
 import com.facebook.react.bridge.Arguments;
 import com.facebook.react.bridge.BaseActivityEventListener;
@@ -18,12 +21,13 @@ import com.facebook.react.bridge.ReadableMap;
 import com.facebook.react.bridge.WritableArray;
 import com.facebook.react.bridge.WritableMap;
 
-import org.webrtc.*;
-
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 import java.util.function.BiConsumer;
+
+import org.webrtc.*;
 
 /**
  * The implementation of {@code getUserMedia} extracted into a separate file in
@@ -34,12 +38,12 @@ class GetUserMediaImpl {
      * The {@link Log} tag with which {@code GetUserMediaImpl} is to log.
      */
     private static final String TAG = WebRTCModule.TAG;
-    
+
     private static final int PERMISSION_REQUEST_CODE = (int) (Math.random() * Short.MAX_VALUE);
 
     private final CameraEnumerator cameraEnumerator;
     private final ReactApplicationContext reactContext;
- 
+
     /**
      * The application/library-specific private members of local
      * {@link MediaStreamTrack}s created by {@code GetUserMediaImpl} mapped by
@@ -74,7 +78,8 @@ class GetUserMediaImpl {
             cameraEnumerator = new Camera1Enumerator(false);
         }
 
-        reactContext.addActivityEventListener( new BaseActivityEventListener() {
+        reactContext.addActivityEventListener(new BaseActivityEventListener() {
+            @RequiresApi(api = Build.VERSION_CODES.N)
             @Override
             public void onActivityResult(Activity activity, int requestCode, int resultCode, Intent data) {
                 super.onActivityResult(activity, requestCode, resultCode, data);
@@ -112,7 +117,7 @@ class GetUserMediaImpl {
         WritableArray array = Arguments.createArray();
         String[] devices = cameraEnumerator.getDeviceNames();
 
-        for(int i = 0; i < devices.length; ++i) {
+        for (int i = 0; i < devices.length; ++i) {
             String deviceName = devices[i];
             boolean isFrontFacing;
             try {
@@ -122,7 +127,6 @@ class GetUserMediaImpl {
                 Log.e(TAG, "Failed to check the facing mode of camera");
                 continue;
             }
-            
             WritableMap params = Arguments.createMap();
             params.putString("facing", isFrontFacing ? "front" : "environment");
             params.putString("deviceId", "" + i);
@@ -155,6 +159,7 @@ class GetUserMediaImpl {
      * if audio permission was not granted, there will be no "audio" key in
      * the constraints map.
      */
+    @RequiresApi(api = Build.VERSION_CODES.N)
     void getUserMedia(
         final ReadableMap constraints,
         final Callback successCallback,
@@ -178,10 +183,10 @@ class GetUserMediaImpl {
             Log.d(TAG, "getUserMedia(video): " + videoConstraintsMap);
 
             CameraVideoCaptureController videoCaptureController = new CameraVideoCaptureController(
-                cameraEnumerator, 
+                cameraEnumerator,
                 videoConstraintsMap);
 
-            videoTrack = createVideoTrackNew(videoCaptureController);
+            videoTrack = createVideoTrack(videoCaptureController);
         }
 
         if (audioTrack == null && videoTrack == null) {
@@ -191,11 +196,14 @@ class GetUserMediaImpl {
             return;
         }
 
-        createStream(new MediaStreamTrack[]{audioTrack, videoTrack}, new BiConsumer<String, WritableArray>() {
-            @Override
-            public void accept(String streamId, WritableArray tracksInfo) {            
-                successCallback.invoke(streamId, tracksInfo);
+        createStream(new MediaStreamTrack[]{audioTrack, videoTrack}, (streamId, tracksInfo) -> {
+            WritableArray tracksInfoWritableArray = Arguments.createArray();
+
+            for (WritableMap trackInfo : tracksInfo) {
+                tracksInfoWritableArray.pushMap(trackInfo);
             }
+
+            successCallback.invoke(streamId, tracksInfoWritableArray);
         });
     }
 
@@ -246,25 +254,30 @@ class GetUserMediaImpl {
             mediaProjectionManager.createScreenCaptureIntent(), PERMISSION_REQUEST_CODE);
     }
 
+    @RequiresApi(api = Build.VERSION_CODES.N)
     private void createScreenStream() {
         VideoTrack track = createScreenTrack();
-        
-        createStream(new MediaStreamTrack[]{track}, new BiConsumer<String, WritableArray>() {
-            @Override
-            public void accept(String streamId, WritableArray tracksInfo) {            
-                promise.resolve(tracksInfo);
 
-                // Cleanup
-                mediaProjectionPermissionResultData = null;
-                promise = null;
-            }
+        createStream(new MediaStreamTrack[]{track}, (streamId, tracksInfo) -> {
+            WritableMap data = Arguments.createMap();
+
+            data.putString("streamId", streamId);
+            data.putMap("track", tracksInfo.get(0));
+
+            promise.resolve(data);
+
+            // Cleanup
+            mediaProjectionPermissionResultData = null;
+            promise = null;
         });
     }
 
-    private void createStream(VideoTrack[] tracks, BiConsumer<String, WritableArray> successCallback) {
+    @RequiresApi(api = Build.VERSION_CODES.N)
+    private void createStream(MediaStreamTrack[] tracks, BiConsumer<String, ArrayList<WritableMap>> successCallback) {
         String streamId = UUID.randomUUID().toString();
         MediaStream mediaStream = webRTCModule.mFactory.createLocalMediaStream(streamId);
-        WritableArray tracksInfo = Arguments.createArray();
+
+        ArrayList<WritableMap> tracksInfo = new ArrayList<>();
 
         for (MediaStreamTrack track : tracks) {
             if (track == null) {
@@ -286,13 +299,13 @@ class GetUserMediaImpl {
             trackInfo.putString("label", trackId);
             trackInfo.putString("readyState", track.state().toString());
             trackInfo.putBoolean("remote", false);
-            tracksInfo.pushMap(trackInfo);
+            tracksInfo.add(trackInfo);
         }
 
         Log.d(TAG, "MediaStream id: " + streamId);
         webRTCModule.localStreams.put(streamId, mediaStream);
 
-        successCallback(streamId, tracks);
+        successCallback.accept(streamId, tracksInfo);
     }
 
     private VideoTrack createScreenTrack() {
@@ -301,14 +314,14 @@ class GetUserMediaImpl {
         int height = displayMetrics.heightPixels;
         int fps = 30;
         ScreenVideoCaptureController videoCaptureController = new ScreenVideoCaptureController(width, height, fps, mediaProjectionPermissionResultData);
-        VideoTrack track = createVideoTrackNew(videoCaptureController);
+        VideoTrack track = createVideoTrack(videoCaptureController);
 
         return track;
     }
 
-    private VideoTrack createVideoTrackNew(AbstractVideoCaptureController videoCaptureController) {
+    private VideoTrack createVideoTrack(AbstractVideoCaptureController videoCaptureController) {
         videoCaptureController.initializeVideoCapturer();
-        
+
         VideoCapturer videoCapturer = videoCaptureController.videoCapturer;
         if (videoCapturer == null) {
             return null;
