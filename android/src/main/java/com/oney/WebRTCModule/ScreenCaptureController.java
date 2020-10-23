@@ -7,15 +7,15 @@ import android.util.Log;
 import org.webrtc.ScreenCapturerAndroid;
 import org.webrtc.VideoCapturer;
 
-public class ScreenVideoCaptureController extends AbstractVideoCaptureController {
+public class ScreenCaptureController extends AbstractVideoCaptureController {
     /**
-     * The {@link Log} tag with which {@code ScreenVideoCaptureController} is to log.
+     * The {@link Log} tag with which {@code ScreenCaptureController} is to log.
      */
-    private static final String TAG = ScreenVideoCaptureController.class.getSimpleName();
+    private static final String TAG = ScreenCaptureController.class.getSimpleName();
 
     private final Intent mediaProjectionPermissionResultData;
 
-    public ScreenVideoCaptureController(
+    public ScreenCaptureController(
         int width, 
         int height, 
         int fps, 
@@ -32,7 +32,7 @@ public class ScreenVideoCaptureController extends AbstractVideoCaptureController
             new MediaProjection.Callback() {
                 @Override
                 public void onStop() {
-                    Log.w(TAG, "User revoked permission to capture the screen.");
+                    Log.w(TAG, "Media projection stopped.");
                 }
             });
 

@@ -9,7 +9,7 @@ const { WebRTCModule } = NativeModules;
 
 export default function getDisplayMedia(constraints) {
     if (Platform.OS !== 'android') {
-        return Promise.reject(new TypeError());
+        return Promise.reject(new Error('Unsupported platform'));
     }
 
     if (!constraints || !constraints.video) {

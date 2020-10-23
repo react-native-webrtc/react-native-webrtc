@@ -11,12 +11,12 @@ import org.webrtc.VideoCapturer;
 import java.util.ArrayList;
 import java.util.List;
 
-public class CameraVideoCaptureController extends AbstractVideoCaptureController {
+public class CameraCaptureController extends AbstractVideoCaptureController {
     /**
-     * The {@link Log} tag with which {@code CameraVideoCaptureController} is to log.
+     * The {@link Log} tag with which {@code CameraCaptureController} is to log.
      */
     private static final String TAG
-        = CameraVideoCaptureController.class.getSimpleName();
+        = CameraCaptureController.class.getSimpleName();
 
     private boolean isFrontFacing;
 
@@ -31,7 +31,7 @@ public class CameraVideoCaptureController extends AbstractVideoCaptureController
      */
     private final CameraEventsHandler cameraEventsHandler = new CameraEventsHandler();
 
-    public CameraVideoCaptureController(CameraEnumerator cameraEnumerator, ReadableMap constraints) {
+    public CameraCaptureController(CameraEnumerator cameraEnumerator, ReadableMap constraints) {
         super(
              constraints.getInt("width"),
              constraints.getInt("height"), 

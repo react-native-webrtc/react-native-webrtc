@@ -53,7 +53,7 @@ class GetUserMediaImpl {
 
     private final WebRTCModule webRTCModule;
 
-    private Promise promise;
+    private Promise displayMediaPromise;
     private Intent mediaProjectionPermissionResultData;
 
     GetUserMediaImpl(WebRTCModule webRTCModule, ReactApplicationContext reactContext) {
@@ -85,8 +85,8 @@ class GetUserMediaImpl {
                 super.onActivityResult(activity, requestCode, resultCode, data);
                 if (requestCode == PERMISSION_REQUEST_CODE) {
                     if (resultCode != Activity.RESULT_OK) {
-                        promise.reject("DOMException", "NotAllowedError");
-                        promise = null;
+                        displayMediaPromise.reject("DOMException", "NotAllowedError");
+                        displayMediaPromise = null;
                         return;
                     }
 
@@ -182,11 +182,11 @@ class GetUserMediaImpl {
 
             Log.d(TAG, "getUserMedia(video): " + videoConstraintsMap);
 
-            CameraVideoCaptureController videoCaptureController = new CameraVideoCaptureController(
+            CameraCaptureController cameraCaptureController = new CameraCaptureController(
                 cameraEnumerator,
                 videoConstraintsMap);
 
-            videoTrack = createVideoTrack(videoCaptureController);
+            videoTrack = createVideoTrack(cameraCaptureController);
         }
 
         if (audioTrack == null && videoTrack == null) {
@@ -227,14 +227,14 @@ class GetUserMediaImpl {
 
     void switchCamera(String trackId) {
         TrackPrivate track = tracks.get(trackId);
-        if (track != null && track.videoCaptureController instanceof CameraVideoCaptureController) {
-            CameraVideoCaptureController videoCaptureController = (CameraVideoCaptureController) track.videoCaptureController;
-            videoCaptureController.switchCamera();
+        if (track != null && track.videoCaptureController instanceof CameraCaptureController) {
+            CameraCaptureController cameraCaptureController = (CameraCaptureController) track.videoCaptureController;
+            cameraCaptureController.switchCamera();
         }
     }
 
     public void getDisplayMedia(Promise promise) {
-        if (this.promise != null) {
+        if (this.displayMediaPromise != null) {
             promise.reject(new RuntimeException("Another operation is pending."));
             return;
         }
@@ -245,7 +245,7 @@ class GetUserMediaImpl {
             return;
         }
 
-        this.promise = promise;
+        this.displayMediaPromise = promise;
 
         MediaProjectionManager mediaProjectionManager =
             (MediaProjectionManager) currentActivity.getApplication().getSystemService(
@@ -264,11 +264,11 @@ class GetUserMediaImpl {
             data.putString("streamId", streamId);
             data.putMap("track", tracksInfo.get(0));
 
-            promise.resolve(data);
+            displayMediaPromise.resolve(data);
 
             // Cleanup
             mediaProjectionPermissionResultData = null;
-            promise = null;
+            displayMediaPromise = null;
         });
     }
 
@@ -313,8 +313,8 @@ class GetUserMediaImpl {
         int width = displayMetrics.widthPixels;
         int height = displayMetrics.heightPixels;
         int fps = 30;
-        ScreenVideoCaptureController videoCaptureController = new ScreenVideoCaptureController(width, height, fps, mediaProjectionPermissionResultData);
-        VideoTrack track = createVideoTrack(videoCaptureController);
+        ScreenCaptureController screenCaptureController = new ScreenCaptureController(width, height, fps, mediaProjectionPermissionResultData);
+        VideoTrack track = createVideoTrack(screenCaptureController);
 
         return track;
     }
