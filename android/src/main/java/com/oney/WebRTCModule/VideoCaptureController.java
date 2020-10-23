@@ -87,7 +87,12 @@ public class VideoCaptureController {
         }
     }
 
-    public void switchCamera() {
+    public interface SwitchCameraHandler {
+        // Called whether or not it succeeded
+        public void onSwitchCameraDone(String facingMode);
+    }
+
+    public void switchCamera(SwitchCameraHandler handler) {
         if (videoCapturer instanceof CameraVideoCapturer) {
             CameraVideoCapturer capturer = (CameraVideoCapturer) videoCapturer;
             String[] deviceNames = cameraEnumerator.getDeviceNames();
@@ -95,7 +100,7 @@ public class VideoCaptureController {
 
             // Nothing to switch to.
             if (deviceCount < 2) {
-                return;
+                handler.onSwitchCameraDone(facingMode());
             }
 
             // The usual case.
@@ -104,20 +109,25 @@ public class VideoCaptureController {
                     @Override
                     public void onCameraSwitchDone(boolean b) {
                         isFrontFacing = b;
+                        handler.onSwitchCameraDone(facingMode());
                     }
 
                     @Override
                     public void onCameraSwitchError(String s) {
                         Log.e(TAG, "Error switching camera: " + s);
+                        handler.onSwitchCameraDone(facingMode());
                     }
                 });
-                return;
             }
 
             // If we are here the device has more than 2 cameras. Cycle through them
             // and switch to the first one of the desired facing mode.
-            switchCamera(!isFrontFacing, deviceCount);
+            switchCamera(!isFrontFacing, deviceCount, handler);
         }
+    }
+
+    public String facingMode() {
+        return  isFrontFacing ? "user" : "environment";
     }
 
     /**
@@ -126,7 +136,7 @@ public class VideoCaptureController {
      * @param desiredFrontFacing - The desired front facing value.
      * @param tries - How many times to try switching.
      */
-    private void switchCamera(boolean desiredFrontFacing, int tries) {
+    private void switchCamera(boolean desiredFrontFacing, int tries, SwitchCameraHandler handler) {
         CameraVideoCapturer capturer = (CameraVideoCapturer) videoCapturer;
 
         capturer.switchCamera(new CameraVideoCapturer.CameraSwitchHandler() {
@@ -135,16 +145,18 @@ public class VideoCaptureController {
                 if (b != desiredFrontFacing) {
                     int newTries = tries-1;
                     if (newTries > 0) {
-                        switchCamera(desiredFrontFacing, newTries);
+                        switchCamera(desiredFrontFacing, newTries, handler);
                     }
                 } else {
                     isFrontFacing = desiredFrontFacing;
+                    handler.onSwitchCameraDone(facingMode());
                 }
             }
 
             @Override
             public void onCameraSwitchError(String s) {
                 Log.e(TAG, "Error switching camera: " + s);
+                handler.onSwitchCameraDone(facingMode());
             }
         });
     }

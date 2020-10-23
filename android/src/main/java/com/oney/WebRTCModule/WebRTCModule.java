@@ -9,6 +9,7 @@ import android.util.SparseArray;
 
 import com.facebook.react.bridge.Arguments;
 import com.facebook.react.bridge.Callback;
+import com.facebook.react.bridge.Promise;
 import com.facebook.react.bridge.ReactApplicationContext;
 import com.facebook.react.bridge.ReactContextBaseJavaModule;
 import com.facebook.react.bridge.ReactMethod;
@@ -634,11 +635,44 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
         getUserMediaImpl.mediaStreamTrackSetEnabled(id, enabled);
     }
 
+    private static final String SWITCH_CAMERA_ERROR = "SWITCH_CAMERA_ERROR";
+
     @ReactMethod
-    public void mediaStreamTrackSwitchCamera(String id) {
+    public void mediaStreamTrackSwitchCamera(String id, Promise promise) {
         MediaStreamTrack track = getLocalTrack(id);
         if (track != null) {
-            getUserMediaImpl.switchCamera(id);
+            try {
+                getUserMediaImpl.switchCamera(id, new VideoCaptureController.SwitchCameraHandler() {
+                    @Override
+                    public void onSwitchCameraDone(String facingMode) {
+                        promise.resolve(facingMode);
+                    }
+                });
+            }
+            catch (Exception e) {
+                promise.reject(SWITCH_CAMERA_ERROR, e);
+            }
+        }
+        else {
+            promise.reject(SWITCH_CAMERA_ERROR, "Local track not found when attempting to switch camera");
+        }
+    }
+
+    private static final String GET_CAMERA_FACING_MODE_ERROR = "GET_CAMERA_FACING_MODE_ERROR";
+
+    @ReactMethod
+    public void mediaStreamTrackGetCameraFacingMode(String id, Promise promise) {
+        MediaStreamTrack track = getLocalTrack(id);
+        if (track != null) {
+            try {
+                promise.resolve(getUserMediaImpl.getCameraFacingMode(id));
+            }
+            catch (Exception e) {
+                promise.reject(GET_CAMERA_FACING_MODE_ERROR, e);
+            }
+        }
+        else {
+            promise.reject(GET_CAMERA_FACING_MODE_ERROR, "Local track not found when attempting to get camera facing mode");
         }
     }
 
