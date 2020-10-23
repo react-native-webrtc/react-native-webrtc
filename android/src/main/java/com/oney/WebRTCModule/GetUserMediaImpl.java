@@ -4,12 +4,9 @@ import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.media.projection.MediaProjectionManager;
-import android.os.Build;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.WindowManager;
-
-import androidx.annotation.RequiresApi;
 
 import com.facebook.react.bridge.Arguments;
 import com.facebook.react.bridge.BaseActivityEventListener;
@@ -25,7 +22,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
-import java.util.function.BiConsumer;
 
 import org.webrtc.*;
 
@@ -79,7 +75,6 @@ class GetUserMediaImpl {
         }
 
         reactContext.addActivityEventListener(new BaseActivityEventListener() {
-            @RequiresApi(api = Build.VERSION_CODES.N)
             @Override
             public void onActivityResult(Activity activity, int requestCode, int resultCode, Intent data) {
                 super.onActivityResult(activity, requestCode, resultCode, data);
@@ -159,7 +154,6 @@ class GetUserMediaImpl {
      * if audio permission was not granted, there will be no "audio" key in
      * the constraints map.
      */
-    @RequiresApi(api = Build.VERSION_CODES.N)
     void getUserMedia(
         final ReadableMap constraints,
         final Callback successCallback,
@@ -254,7 +248,6 @@ class GetUserMediaImpl {
             mediaProjectionManager.createScreenCaptureIntent(), PERMISSION_REQUEST_CODE);
     }
 
-    @RequiresApi(api = Build.VERSION_CODES.N)
     private void createScreenStream() {
         VideoTrack track = createScreenTrack();
 
@@ -272,7 +265,6 @@ class GetUserMediaImpl {
         });
     }
 
-    @RequiresApi(api = Build.VERSION_CODES.N)
     private void createStream(MediaStreamTrack[] tracks, BiConsumer<String, ArrayList<WritableMap>> successCallback) {
         String streamId = UUID.randomUUID().toString();
         MediaStream mediaStream = webRTCModule.mFactory.createLocalMediaStream(streamId);
@@ -415,5 +407,9 @@ class GetUserMediaImpl {
                 disposed = true;
             }
         }
+    }
+
+    private interface BiConsumer<T, U> {
+        void accept(T t, U u);
     }
 }
