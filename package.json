@@ -10,7 +10,7 @@
     "prepublishOnly": "npm run tag"
   },
   "nativePackage": true,
-  "description": "Daily.co fork of WebRTC for React Native",
+  "description": "Daily fork of WebRTC for React Native",
   "homepage": "https://github.com/daily-co/react-native-webrtc",
   "types": "index.d.ts",
   "keywords": [
