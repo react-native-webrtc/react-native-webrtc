@@ -227,7 +227,7 @@ class GetUserMediaImpl {
         }
     }
 
-    public void getDisplayMedia(Promise promise) {
+    void getDisplayMedia(Promise promise) {
         if (this.displayMediaPromise != null) {
             promise.reject(new RuntimeException("Another operation is pending."));
             return;
