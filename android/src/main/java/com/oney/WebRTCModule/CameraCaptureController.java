@@ -11,24 +11,17 @@ import org.webrtc.VideoCapturer;
 import java.util.ArrayList;
 import java.util.List;
 
-public class VideoCaptureController {
+public class CameraCaptureController extends AbstractVideoCaptureController {
     /**
-     * The {@link Log} tag with which {@code VideoCaptureController} is to log.
+     * The {@link Log} tag with which {@code CameraCaptureController} is to log.
      */
     private static final String TAG
-        = VideoCaptureController.class.getSimpleName();
+        = CameraCaptureController.class.getSimpleName();
 
     private boolean isFrontFacing;
 
-    /**
-     * Values for width, height and fps (respectively) which will be
-     * used to open the camera at.
-     */
-    private final int width;
-    private final int height;
-    private final int fps;
-
-    private CameraEnumerator cameraEnumerator;
+    private final CameraEnumerator cameraEnumerator;
+    private final ReadableMap constraints;
 
     /**
      * The {@link CameraEventsHandler} used with
@@ -36,55 +29,16 @@ public class VideoCaptureController {
      * implementation does not do anything but logging unspecific to the camera
      * device's name anyway.
      */
-    private final CameraEventsHandler cameraEventsHandler
-        = new CameraEventsHandler();
+    private final CameraEventsHandler cameraEventsHandler = new CameraEventsHandler();
 
-    /**
-     * {@link VideoCapturer} which this controller manages.
-     */
-    private VideoCapturer videoCapturer;
+    public CameraCaptureController(CameraEnumerator cameraEnumerator, ReadableMap constraints) {
+        super(
+             constraints.getInt("width"),
+             constraints.getInt("height"), 
+             constraints.getInt("frameRate"));
 
-    public VideoCaptureController(CameraEnumerator cameraEnumerator, ReadableMap constraints) {
         this.cameraEnumerator = cameraEnumerator;
-
-        width = constraints.getInt("width");
-        height = constraints.getInt("height");
-        fps = constraints.getInt("frameRate");
-
-        String deviceId = ReactBridgeUtil.getMapStrValue(constraints, "deviceId");
-        String facingMode = ReactBridgeUtil.getMapStrValue(constraints, "facingMode");
-
-        videoCapturer = createVideoCapturer(deviceId, facingMode);
-    }
-
-    public void dispose() {
-        if (videoCapturer != null) {
-            videoCapturer.dispose();
-            videoCapturer = null;
-        }
-    }
-
-    public VideoCapturer getVideoCapturer() {
-        return videoCapturer;
-    }
-
-    public void startCapture() {
-        try {
-            videoCapturer.startCapture(width, height, fps);
-        } catch (RuntimeException e) {
-            // XXX This can only fail if we initialize the capturer incorrectly,
-            // which we don't. Thus, ignore any failures here since we trust
-            // ourselves.
-        }
-    }
-
-    public boolean stopCapture() {
-        try {
-            videoCapturer.stopCapture();
-            return true;
-        } catch (InterruptedException e) {
-            return false;
-        }
+        this.constraints = constraints;
     }
 
     public void switchCamera() {
@@ -118,6 +72,14 @@ public class VideoCaptureController {
             // and switch to the first one of the desired facing mode.
             switchCamera(!isFrontFacing, deviceCount);
         }
+    }
+
+    @Override
+    protected VideoCapturer createVideoCapturer() {
+        String deviceId = ReactBridgeUtil.getMapStrValue(this.constraints, "deviceId");
+        String facingMode = ReactBridgeUtil.getMapStrValue(this.constraints, "facingMode");
+
+        return createVideoCapturer(deviceId, facingMode);
     }
 
     /**
