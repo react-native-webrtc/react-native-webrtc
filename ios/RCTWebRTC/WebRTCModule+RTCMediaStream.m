@@ -228,13 +228,35 @@ RCT_EXPORT_METHOD(mediaStreamTrackSetEnabled:(nonnull NSString *)trackID : (BOOL
   }
 }
 
-RCT_EXPORT_METHOD(mediaStreamTrackSwitchCamera:(nonnull NSString *)trackID)
+RCT_EXPORT_METHOD(mediaStreamTrackSwitchCamera:(nonnull NSString *)trackID
+                  withResolver:(RCTPromiseResolveBlock)resolve
+                  rejecter:(RCTPromiseRejectBlock)reject)
 {
   RTCMediaStreamTrack *track = self.localTracks[trackID];
   if (track) {
     RTCVideoTrack *videoTrack = (RTCVideoTrack *)track;
-    [videoTrack.videoCaptureController switchCamera];
+    NSString *newFacingMode = [videoTrack.videoCaptureController switchCamera];
+    resolve(newFacingMode);
+    return;
   }
+  reject(@"switch_camera_error",
+         @"Local track not found when attempting to switch camera",
+         nil);
+}
+
+RCT_EXPORT_METHOD(mediaStreamTrackGetCameraFacingMode:(nonnull NSString *)trackID
+                  withResolver:(RCTPromiseResolveBlock)resolve
+                  rejecter:(RCTPromiseRejectBlock)reject)
+{
+  RTCMediaStreamTrack *track = self.localTracks[trackID];
+  if (track) {
+    RTCVideoTrack *videoTrack = (RTCVideoTrack *)track;
+    resolve([videoTrack.videoCaptureController facingMode]);
+    return;
+  }
+  reject(@"get_camera_facing_mode_error",
+         @"Local track not found when attempting to get camera facing mode",
+         nil);
 }
 
 #pragma mark - Helpers
