@@ -561,23 +561,6 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
             return;
         }
 
-        // Remove and dispose any tracks ourselves before calling stream.dispose().
-        // We need to remove the extra objects (TrackPrivate) we create.
-
-        List<AudioTrack> audioTracks = new ArrayList<>(stream.audioTracks);
-        for (AudioTrack track : audioTracks) {
-            track.setEnabled(false);
-            stream.removeTrack(track);
-            getUserMediaImpl.disposeTrack(track.id());
-        }
-
-        List<VideoTrack> videoTracks = new ArrayList<>(stream.videoTracks);
-        for (VideoTrack track : videoTracks) {
-            track.setEnabled(false);
-            stream.removeTrack(track);
-            getUserMediaImpl.disposeTrack(track.id());
-        }
-
         localStreams.remove(id);
 
         // MediaStream.dispose() may be called without an exception only if

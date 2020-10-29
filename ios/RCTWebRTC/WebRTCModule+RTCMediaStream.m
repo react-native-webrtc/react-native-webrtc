@@ -190,15 +190,6 @@ RCT_EXPORT_METHOD(mediaStreamRelease:(nonnull NSString *)streamID)
 {
   RTCMediaStream *stream = self.localStreams[streamID];
   if (stream) {
-    for (RTCVideoTrack *track in stream.videoTracks) {
-      track.isEnabled = NO;
-      [track.videoCaptureController stopCapture];
-      [self.localTracks removeObjectForKey:track.trackId];
-    }
-    for (RTCAudioTrack *track in stream.audioTracks) {
-      track.isEnabled = NO;
-      [self.localTracks removeObjectForKey:track.trackId];
-    }
     [self.localStreams removeObjectForKey:streamID];
   }
 }
