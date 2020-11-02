@@ -1,6 +1,6 @@
 {
   "name": "@daily-co/react-native-webrtc",
-  "version": "1.75.7",
+  "version": "1.75.8",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/daily-co/react-native-webrtc.git"
