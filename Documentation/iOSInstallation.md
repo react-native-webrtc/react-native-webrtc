@@ -3,8 +3,14 @@
 **If you used this module before, please remove `RCTWebRTC.xcodeproject`/`libjingle_peerconnection` and follow   instructions below.**
 
 `npm install react-native-webrtc --save`  
+## Appendix A - Autolinking
 
-## Step 1. Add Files Into Project
+(For React >= 0.60)
+
+Newer versions of React will auto-link modules, but installing via the podfile or following steps 2-4 will manually link the module as well. This will lead to an error.
+
+1. go to your root app folder
+2. unlink the module: 'npx react-native unlink react-native-webrtc'## Step 1. Add Files Into Project
 
 1-1.) in Xcode: Right click `Libraries` ➜ `Add Files to [project]`  
 1-2.) choose `node_modules/react-native-webrtc/ios/RCTWebRTC.xcodeproj` then `Add`  
@@ -86,7 +92,7 @@ libsqlite3.tbd
 <string>Microphone Permission</string>
 ```
 
-## Appendix A - CLEAN PROCESS
+## Appendix B - CLEAN PROCESS
 
 if you encounter any build time errors, like "linking library not found",  
 try the cleaning steps below, and do it again carefully with every steps.
@@ -98,7 +104,7 @@ try the cleaning steps below, and do it again carefully with every steps.
     * iOS: in xocde project, click `Product` -> `clean`    
 4. `npm install react-native-webrtc`  
   
-## Appendix B - Apple Store Submission
+## Appendix C - Apple Store Submission
 
 (ios only)
 
@@ -126,11 +132,4 @@ The script and example are here: https://github.com/react-native-webrtc/react-na
 4. delete files generated from `step 2` under `node_modules/react-native-webrtc/ios WebRTC.framework/` (e.g. with a command `rm node_modules/react-native-webrtc/ios/WebRTC.framework/WebRTC-*` from application root)
 5. you can check current arch use this command: `file node_modules/react-native-webrtc/ios/WebRTC.framework/WebRTC`
 
-## Appendix D - Autolinking
 
-(For React >= 0.60)
-
-Newer versions of React will auto-link modules, but installing via the podfile or following steps 2-4 will manually link the module as well. This will lead to an error.
-
-1. go to your root app folder
-2. unlink the module: 'npx react-native unlink react-native-webrtc'
