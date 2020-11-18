@@ -3,7 +3,7 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 46;
+	objectVersion = 52;
 	objects = {
 
 /* Begin PBXBuildFile section */
@@ -17,6 +17,7 @@
 		35A222701CB493C00015FD5C /* WebRTCModule.m in Sources */ = {isa = PBXBuildFile; fileRef = 35A222451CB493C00015FD5C /* WebRTCModule.m */; };
 		35EC07E61CB73DFE00F3D79C /* RCTConvert+WebRTC.m in Sources */ = {isa = PBXBuildFile; fileRef = 35EC07E51CB73DFE00F3D79C /* RCTConvert+WebRTC.m */; };
 		35EC083A1CB9AEE900F3D79C /* WebRTCModule+RTCDataChannel.m in Sources */ = {isa = PBXBuildFile; fileRef = 35EC08391CB9AEE900F3D79C /* WebRTCModule+RTCDataChannel.m */; };
+		DEFDBC27256574F500344B23 /* WebRTC.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = DEFDBC26256574F500344B23 /* WebRTC.xcframework */; platformFilter = ios; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -51,6 +52,7 @@
 		35EC07E51CB73DFE00F3D79C /* RCTConvert+WebRTC.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = "RCTConvert+WebRTC.m"; sourceTree = "<group>"; };
 		35EC08381CB9AEC400F3D79C /* WebRTCModule+RTCDataChannel.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "WebRTCModule+RTCDataChannel.h"; sourceTree = "<group>"; };
 		35EC08391CB9AEE900F3D79C /* WebRTCModule+RTCDataChannel.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = "WebRTCModule+RTCDataChannel.m"; sourceTree = "<group>"; };
+		DEFDBC26256574F500344B23 /* WebRTC.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; path = WebRTC.xcframework; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -58,6 +60,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				DEFDBC27256574F500344B23 /* WebRTC.xcframework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -69,6 +72,7 @@
 			children = (
 				35A222311CB493C00015FD5C /* RCTWebRTC */,
 				35A222201CB493700015FD5C /* Products */,
+				DEFDBC25256574F500344B23 /* Frameworks */,
 			);
 			sourceTree = "<group>";
 		};
@@ -103,6 +107,14 @@
 				35A222451CB493C00015FD5C /* WebRTCModule.m */,
 			);
 			path = RCTWebRTC;
+			sourceTree = "<group>";
+		};
+		DEFDBC25256574F500344B23 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				DEFDBC26256574F500344B23 /* WebRTC.xcframework */,
+			);
+			name = Frameworks;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -143,6 +155,7 @@
 			developmentRegion = English;
 			hasScannedForEncodings = 0;
 			knownRegions = (
+				English,
 				en,
 			);
 			mainGroup = 35A222161CB493700015FD5C;
@@ -179,7 +192,6 @@
 		35A222261CB493700015FD5C /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ALWAYS_SEARCH_USER_PATHS = NO;
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
 				CLANG_CXX_LIBRARY = "libc++";
 				CLANG_ENABLE_MODULES = YES;
@@ -212,8 +224,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 9.0;
-				MTL_ENABLE_DEBUG_INFO = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 11.0;
 				ONLY_ACTIVE_ARCH = YES;
 				SDKROOT = iphoneos;
 			};
@@ -222,7 +233,6 @@
 		35A222271CB493700015FD5C /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ALWAYS_SEARCH_USER_PATHS = NO;
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
 				CLANG_CXX_LIBRARY = "libc++";
 				CLANG_ENABLE_MODULES = YES;
@@ -249,8 +259,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 9.0;
-				MTL_ENABLE_DEBUG_INFO = NO;
+				IPHONEOS_DEPLOYMENT_TARGET = 11.0;
 				SDKROOT = iphoneos;
 				VALIDATE_PRODUCT = YES;
 			};
@@ -259,11 +268,7 @@
 		35A222291CB493700015FD5C /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				FRAMEWORK_SEARCH_PATHS = (
-					"$(inherited)",
-					"$(PROJECT_DIR)",
-				);
-				HEADER_SEARCH_PATHS = "$(BUILT_PRODUCTS_DIR)/usr/local/include/**";
+				FRAMEWORK_SEARCH_PATHS = "$(PROJECT_DIR)";
 				LIBRARY_SEARCH_PATHS = "$(inherited)";
 				OTHER_LDFLAGS = "-ObjC";
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -274,11 +279,7 @@
 		35A2222A1CB493700015FD5C /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				FRAMEWORK_SEARCH_PATHS = (
-					"$(inherited)",
-					"$(PROJECT_DIR)",
-				);
-				HEADER_SEARCH_PATHS = "$(BUILT_PRODUCTS_DIR)/usr/local/include/**";
+				FRAMEWORK_SEARCH_PATHS = "$(PROJECT_DIR)";
 				LIBRARY_SEARCH_PATHS = "$(inherited)";
 				OTHER_LDFLAGS = "-ObjC";
 				PRODUCT_NAME = "$(TARGET_NAME)";
