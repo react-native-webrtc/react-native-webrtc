@@ -11,8 +11,11 @@ THIS_DIR=$(cd -P "$(dirname "$(readlink "${BASH_SOURCE[0]}" || echo "${BASH_SOUR
 
 pushd ${THIS_DIR}/../ios
 
-# Cleanup
+# Cleanup (old)
 rm -rf WebRTC.framework WebRTC.dSYM
+
+# Cleanup (new)
+rm -rf WebRTC.xcframework WebRTC.dSYMs
 
 # Download
 echo "Downloading files..."
