@@ -32,6 +32,7 @@
 #import <WebRTC/RTCAudioSessionConfiguration.h>
 #import <WebRTC/RTCCameraVideoCapturer.h>
 #import <WebRTC/RTCFileVideoCapturer.h>
+#import <WebRTC/RTCNetworkMonitor.h>
 #import <WebRTC/RTCMTLVideoView.h>
 #import <WebRTC/RTCEAGLVideoView.h>
 #import <WebRTC/RTCVideoViewShading.h>
