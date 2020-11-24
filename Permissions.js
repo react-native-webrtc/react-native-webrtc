@@ -86,7 +86,7 @@ class Permissions {
                     granted => resolve(granted ? this.RESULT.GRANTED : this.RESULT.PROMPT),
                     () => resolve(this.RESULT.PROMPT));
             });
-        } else if (Platform.OS === 'ios') {
+        } else if (Platform.OS === 'ios' || Platform.OS === 'macos') {
             return WebRTCModule.checkPermission(permissionDesc.name);
         } else {
             return Promise.reject(new TypeError("Unsupported platform."));
@@ -112,7 +112,7 @@ class Permissions {
             this._lastReq
                 = this._lastReq.then(requestPermission, requestPermission);
             return this._lastReq;
-        } else if (Platform.OS === 'ios') {
+        } else if (Platform.OS === 'ios' || Platform.OS === 'macos') {
             return WebRTCModule.requestPermission(permissionDesc.name);
         } else {
             return Promise.reject(new TypeError("Unsupported platform."));
