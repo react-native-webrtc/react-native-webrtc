@@ -5,7 +5,9 @@
 //  Copyright © 2015 One. All rights reserved.
 //
 
+#if !TARGET_OS_OSX
 #import <UIKit/UIKit.h>
+#endif
 
 #import <React/RCTBridge.h>
 #import <React/RCTEventDispatcher.h>
