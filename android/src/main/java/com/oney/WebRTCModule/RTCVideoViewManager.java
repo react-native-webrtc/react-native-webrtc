@@ -1,6 +1,9 @@
 package com.oney.WebRTCModule;
 
+import java.util.Map;
+
 import com.facebook.react.uimanager.annotations.ReactProp;
+import com.facebook.react.common.MapBuilder;
 import com.facebook.react.uimanager.SimpleViewManager;
 import com.facebook.react.uimanager.ThemedReactContext;
 
@@ -18,6 +21,13 @@ public class RTCVideoViewManager extends SimpleViewManager<WebRTCView> {
     return new WebRTCView(context);
   }
 
+  @Override
+  public Map<String, Object> getExportedCustomDirectEventTypeConstants() {
+    return MapBuilder.of(
+            "onFirstFrame",
+            MapBuilder.of("registrationName", "onFirstFrame")
+    );
+  }
   /**
    * Sets the indicator which determines whether a specific {@link WebRTCView}
    * is to mirror the video specified by {@code streamURL} during its rendering.

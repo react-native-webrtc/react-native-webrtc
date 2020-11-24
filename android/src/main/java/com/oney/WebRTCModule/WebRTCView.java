@@ -24,6 +24,8 @@ import org.webrtc.RendererCommon.ScalingType;
 import org.webrtc.SurfaceViewRenderer;
 import org.webrtc.VideoTrack;
 
+import com.facebook.react.uimanager.events.RCTEventEmitter;
+
 public class WebRTCView extends ViewGroup {
     /**
      * The scaling type to be utilized by default.
@@ -286,6 +288,12 @@ public class WebRTCView extends ViewGroup {
     private void onFirstFrameRendered() {
         post(() -> {
             Log.d(TAG, "First frame rendered.");
+            ReactContext reactContext = (ReactContext) getContext();
+            reactContext.getJSModule(RCTEventEmitter.class).receiveEvent(
+                    getId(),
+                    "onFirstFrame",
+                    null
+            );
             surfaceViewRenderer.setBackgroundColor(Color.TRANSPARENT);
         });
     }

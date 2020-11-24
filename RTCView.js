@@ -65,6 +65,7 @@ const View = requireNativeComponent('RTCVideoView', RTCView, {nativeOnly: {
   importantForAccessibility: true,
   onLayout: true,
   nativeID: true,
+  onFirstFrame: true,
 }});
 
 export default View;
