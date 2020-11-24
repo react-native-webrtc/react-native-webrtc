@@ -15,6 +15,7 @@ import com.facebook.react.bridge.Promise;
 import com.facebook.react.bridge.ReactApplicationContext;
 import com.facebook.react.bridge.ReadableArray;
 import com.facebook.react.bridge.ReadableMap;
+import com.facebook.react.bridge.UiThreadUtil;
 import com.facebook.react.bridge.WritableArray;
 import com.facebook.react.bridge.WritableMap;
 
@@ -244,8 +245,19 @@ class GetUserMediaImpl {
         MediaProjectionManager mediaProjectionManager =
             (MediaProjectionManager) currentActivity.getApplication().getSystemService(
                 Context.MEDIA_PROJECTION_SERVICE);
-        currentActivity.startActivityForResult(
-            mediaProjectionManager.createScreenCaptureIntent(), PERMISSION_REQUEST_CODE);
+
+        if (mediaProjectionManager != null) {
+            UiThreadUtil.runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    currentActivity.startActivityForResult(
+                        mediaProjectionManager.createScreenCaptureIntent(), PERMISSION_REQUEST_CODE);
+                }
+            });
+
+        } else {
+            promise.reject(new RuntimeException("MediaProjectionManager is null."));
+        }
     }
 
     private void createScreenStream() {
