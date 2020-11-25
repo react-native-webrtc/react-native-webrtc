@@ -61,13 +61,11 @@ mediaDevices.enumerateDevices().then(sourceInfos => {
   mediaDevices.getUserMedia({
     audio: true,
     video: {
-      mandatory: {
-        minWidth: 500, // Provide your own width, height and frame rate here
-        minHeight: 300,
-        minFrameRate: 30
-      },
+      width: 640,
+      height: 480,
+      frameRate: 30
       facingMode: (isFront ? "user" : "environment"),
-      optional: (videoSourceId ? [{sourceId: videoSourceId}] : [])
+      deviceId: videoSourceId
     }
   })
   .then(stream => {
