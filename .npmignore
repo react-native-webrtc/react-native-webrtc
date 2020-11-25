@@ -1,2 +1,5 @@
 Documentation/
 examples/
+apple/WebRTC.xcframework
+apple/WebRTC.dSYMs
+
