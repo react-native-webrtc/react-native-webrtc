@@ -3,18 +3,15 @@
 set -euo pipefail
 
 # Files to be downloaded
-WEBRTC_BUILD="M84-1"
+WEBRTC_BUILD="M87-1"
 WEBRTC_FILE="https://dl.bintray.com/webrtc-builds/webrtc-builds/${WEBRTC_BUILD}/WebRTC.tar.xz"
 
 
 THIS_DIR=$(cd -P "$(dirname "$(readlink "${BASH_SOURCE[0]}" || echo "${BASH_SOURCE[0]}")")" && pwd)
 
-pushd ${THIS_DIR}/../ios
+pushd ${THIS_DIR}/../apple
 
-# Cleanup (old)
-rm -rf WebRTC.framework WebRTC.dSYM
-
-# Cleanup (new)
+# Cleanup
 rm -rf WebRTC.xcframework WebRTC.dSYMs
 
 # Download
