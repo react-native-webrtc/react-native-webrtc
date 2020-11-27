@@ -1,13 +1,17 @@
 package com.oney.WebRTCModule;
 
 import android.app.Activity;
+import android.content.Context;
 import android.media.AudioAttributes;
-import android.support.annotation.Nullable;
+import androidx.annotation.Nullable;
+
+import android.media.AudioManager;
 import android.util.Log;
 import android.util.SparseArray;
 
 import com.facebook.react.bridge.Arguments;
 import com.facebook.react.bridge.Callback;
+import com.facebook.react.bridge.Promise;
 import com.facebook.react.bridge.ReactApplicationContext;
 import com.facebook.react.bridge.ReactContextBaseJavaModule;
 import com.facebook.react.bridge.ReactMethod;
@@ -994,5 +998,31 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
     @ReactMethod
     public void useAudioOutput(int audioOutputAndroid) {
         WebRtcAudioTrack.setAudioTrackUsageAttribute(audioOutputAndroid);
+    }
+
+    void setSpeakerOn(boolean on) {
+        Activity context = getCurrentActivityHack();
+        context.setVolumeControlStream(AudioManager.STREAM_VOICE_CALL);
+        AudioManager audioManager = (AudioManager) context.getSystemService(Context.AUDIO_SERVICE);
+
+        boolean wasOn = audioManager.isSpeakerphoneOn();
+        if (wasOn == on) {
+            return;
+        }
+        audioManager.setSpeakerphoneOn(on);
+    }
+
+    @ReactMethod
+    public void startAudio(Promise promise) {
+        Log.d(TAG, "switch to ear speakers");
+        setSpeakerOn(false);
+        promise.resolve(Boolean.TRUE);
+    }
+
+    @ReactMethod
+    public void stopAudio(Promise promise) {
+        Log.d(TAG, "switch to loud speakers");
+        setSpeakerOn(true);
+        promise.resolve(Boolean.TRUE);
     }
 }
