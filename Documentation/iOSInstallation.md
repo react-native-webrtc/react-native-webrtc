@@ -4,6 +4,8 @@
 
 Starting with React Native 0.60 auto-linking works out of the box, so there are no extra steps.
 
+**IMPORTANT:** Make sure you are using CocoaPods 1.10 or higher.
+
 See a sample app in the `examples/GumTestApp` directory.
 
 ### Manual linking (using CocoaPods)
