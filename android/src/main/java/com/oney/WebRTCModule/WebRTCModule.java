@@ -868,20 +868,19 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
     }
 
     @ReactMethod
-    public void peerConnectionGetStats(String trackId, int id, Callback cb) {
+    public void peerConnectionGetStats(int peerConnectionId, Promise promise) {
         ThreadUtils.runOnExecutor(() ->
-            peerConnectionGetStatsAsync(trackId, id, cb));
+            peerConnectionGetStatsAsync(peerConnectionId, promise));
     }
 
-    private void peerConnectionGetStatsAsync(String trackId,
-                                             int id,
-                                             Callback cb) {
-        PeerConnectionObserver pco = mPeerConnectionObservers.get(id);
+    private void peerConnectionGetStatsAsync(int peerConnectionId,
+                                             Promise promise) {
+        PeerConnectionObserver pco = mPeerConnectionObservers.get(peerConnectionId);
         if (pco == null || pco.getPeerConnection() == null) {
             Log.d(TAG, "peerConnectionGetStats() peerConnection is null");
-            cb.invoke(false, "PeerConnection ID not found");
+            promise.reject(new Exception("PeerConnection ID not found"));
         } else {
-            pco.getStats(trackId, cb);
+            pco.getStats(promise);
         }
     }
 
