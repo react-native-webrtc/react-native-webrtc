@@ -21,7 +21,7 @@ IOS_ARCH_MAP = {
     'arm64': 'ios-arm64',
     'x64'  : 'ios-x86_64-simulator'
 }
-IOS_BUILD_ARCHS = ['arm64','x64']
+IOS_BUILD_ARCHS = ['arm64', 'x64']
 
 def build_gn_args(platform_args):
     return "--args='" + ' '.join(GN_COMMON_ARGS + platform_args) + "'"
@@ -102,7 +102,7 @@ def setup(target_dir, platform):
         print('Fetching WebRTC for %s...' % platform)
         sh('fetch --nohooks webrtc_%s' % platform, env)
 
-    # Run glient
+    # Run gclient
     sh('gclient sync', env)
 
     # Install dependencies
