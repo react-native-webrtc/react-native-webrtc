@@ -111,6 +111,24 @@ export default class RTCPeerConnection extends EventTarget(PEER_CONNECTION_EVENT
       this._localStreams.push(stream);
   }
 
+  sendDtmfTone(dtmfTone, duration = 200, interToneGap = 500) {
+    return new Promise((resolve, reject) => {
+      WebRTCModule.peerConnectionSendDtmfTone(dtmfTone, duration, interToneGap, this._peerConnectionId,
+        (successful, data) => {
+          resolve(data);
+        });
+    });
+  }
+
+  canInsertDtmf() {
+    return new Promise((resolve, reject) => {
+      WebRTCModule.peerConnectionCanInsertDtmf(this._peerConnectionId,
+        (successful, data) => {
+          resolve(data);
+        });
+    });
+  }
+
   removeStream(stream: MediaStream) {
       const index = this._localStreams.indexOf(stream);
       if (index === -1) {
