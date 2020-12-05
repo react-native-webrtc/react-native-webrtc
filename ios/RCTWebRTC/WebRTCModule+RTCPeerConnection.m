@@ -19,6 +19,7 @@
 #import <WebRTC/RTCIceCandidate.h>
 #import <WebRTC/RTCLegacyStatsReport.h>
 #import <WebRTC/RTCSessionDescription.h>
+#import <WebRTC/RTCRtpSender.h>
 
 #import "WebRTCModule.h"
 #import "WebRTCModule+RTCDataChannel.h"
@@ -101,6 +102,17 @@ RCT_EXPORT_METHOD(peerConnectionInit:(RTCConfiguration*)configuration
   peerConnection.videoTrackAdapters = [NSMutableDictionary new];
   peerConnection.webRTCModule = self;
   self.peerConnections[objectID] = peerConnection;
+}
+
+RCT_EXPORT_METHOD(peerConnectionSendDTMF:(nonnull NSString *)tone objectID:(nonnull NSNumber *)objectID)
+{
+  RTCPeerConnection *peerConnection = self.peerConnections[objectID];
+  if (!peerConnection) {
+    return;
+  }
+
+   RTCRtpSender *sender = peerConnection.senders[0];
+  [sender.dtmfSender insertDtmf:tone duration:0.1 interToneGap:0.5];
 }
 
 RCT_EXPORT_METHOD(peerConnectionSetConfiguration:(RTCConfiguration*)configuration objectID:(nonnull NSNumber *)objectID)

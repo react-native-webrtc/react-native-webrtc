@@ -102,6 +102,10 @@ export default class RTCPeerConnection extends EventTarget(PEER_CONNECTION_EVENT
     this._registerEvents();
   }
 
+  sendDTMF(tone) {
+    WebRTCModule.peerConnectionSendDTMF(tone, this._peerConnectionId);
+  }
+
   addStream(stream: MediaStream) {
       const index = this._localStreams.indexOf(stream);
       if (index !== -1) {
