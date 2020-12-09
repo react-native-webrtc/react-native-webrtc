@@ -202,34 +202,22 @@ export default class RTCPeerConnection extends EventTarget(PEER_CONNECTION_EVENT
     });
   }
 
-  getStats(track) {
-    // NOTE: This returns a Promise but the format of the results is still
-    // the "legacy" one. The native side (in Oobj-C) doesn't yet support the
-    // new format: https://bugs.chromium.org/p/webrtc/issues/detail?id=6872
-    return new Promise((resolve, reject) => {
-      WebRTCModule.peerConnectionGetStats(
-        (track && track.id) || '',
-        this._peerConnectionId,
-        (success, data) => {
-          if (success) {
-            // On both Android and iOS it is faster to construct a single
-            // JSON string representing the array of StatsReports and have it
-            // pass through the React Native bridge rather than the array of
-            // StatsReports. While the implementations do try to be faster in
-            // general, the stress is on being faster to pass through the React
-            // Native bridge which is a bottleneck that tends to be visible in
-            // the UI when there is congestion involving UI-related passing.
-            try {
-              const stats = JSON.parse(data);
-              resolve(stats);
-            } catch (e) {
-              reject(e);
-            }
-          } else {
-            reject(new Error(data));
-          }
+  getStats() {
+    return WebRTCModule.peerConnectionGetStats(this._peerConnectionId)
+        .then( data =>  {
+           /* On both Android and iOS it is faster to construct a single
+            JSON string representing the Map of StatsReports and have it
+            pass through the React Native bridge rather than the Map of
+            StatsReports. While the implementations do try to be faster in
+            general, the stress is on being faster to pass through the React
+            Native bridge which is a bottleneck that tends to be visible in
+            the UI when there is congestion involving UI-related passing.
+
+            TODO Implement the logic for filtering the stats based on 
+            the sender/receiver
+            */
+            return new Map(JSON.parse(data));
         });
-    });
   }
 
   getLocalStreams() {

@@ -17,8 +17,8 @@
 #import <WebRTC/RTCIceServer.h>
 #import <WebRTC/RTCMediaConstraints.h>
 #import <WebRTC/RTCIceCandidate.h>
-#import <WebRTC/RTCLegacyStatsReport.h>
 #import <WebRTC/RTCSessionDescription.h>
+#import <WebRTC/RTCStatisticsReport.h>
 
 #import "WebRTCModule.h"
 #import "WebRTCModule+RTCDataChannel.h"
@@ -172,11 +172,11 @@ RCT_EXPORT_METHOD(peerConnectionCreateOffer:(nonnull NSNumber *)objectID
       }];
 }
 
-RCT_EXPORT_METHOD(peerConnectionCreateAnswer:(nonnull NSNumber *)objectID
+RCT_EXPORT_METHOD(peerConnectionCreateAnswer:(nonnull NSNumber *)peerConnectionId
                                      options:(NSDictionary *)options
                                     callback:(RCTResponseSenderBlock)callback)
 {
-  RTCPeerConnection *peerConnection = self.peerConnections[objectID];
+  RTCPeerConnection *peerConnection = self.peerConnections[peerConnectionId];
   if (!peerConnection) {
     return;
   }
@@ -287,89 +287,97 @@ RCT_EXPORT_METHOD(peerConnectionClose:(nonnull NSNumber *)objectID)
   [dataChannels removeAllObjects];
 }
 
-RCT_EXPORT_METHOD(peerConnectionGetStats:(nonnull NSString *)trackID
-                                objectID:(nonnull NSNumber *)objectID
-                                callback:(RCTResponseSenderBlock)callback)
+RCT_EXPORT_METHOD(peerConnectionGetStats:(nonnull NSNumber *) objectID
+                                resolver:(RCTPromiseResolveBlock)resolve
+                                rejecter:(RCTPromiseRejectBlock)reject)
 {
   RTCPeerConnection *peerConnection = self.peerConnections[objectID];
   if (!peerConnection) {
-    callback(@[@(NO), @"PeerConnection ID not found"]);
+    reject(@"invalid_id", @"PeerConnection ID not found", nil);
     return;
   }
 
-  RTCMediaStreamTrack *track = nil;
-  if (!trackID
-      || !trackID.length
-      || (track = self.localTracks[trackID])
-      || (track = peerConnection.remoteTracks[trackID])) {
-    [peerConnection statsForTrack:track
-                 statsOutputLevel:RTCStatsOutputLevelStandard
-                completionHandler:^(NSArray<RTCLegacyStatsReport *> *stats) {
-                  callback(@[@(YES), [self statsToJSON:stats]]);
-                }];
-  } else {
-    callback(@[@(NO), @"Track not found"]);
-  }
+  [peerConnection statisticsWithCompletionHandler:^(RTCStatisticsReport *report) {
+    resolve([self statsToJSON:report]);
+  }];
 }
 
 /**
- * Constructs a JSON <tt>NSString</tt> representation of a specific array of
- * <tt>RTCLegacyStatsReport</tt>s.
+ * Constructs a JSON <tt>NSString</tt> representation of a specific
+ * <tt>RTCStatisticsReport</tt>s.
  * <p>
- * On iOS it is faster to (1) construct a single JSON <tt>NSString</tt>
- * representation of an array of <tt>RTCLegacyStatsReport</tt>s and (2) have it
- * pass through the React Native bridge rather than the array of
- * <tt>RTCLegacyStatsReport</tt>s.
  *
- * @param reports the array of <tt>RTCLegacyStatsReport</tt>s to represent in
- * JSON format
- * @return an <tt>NSString</tt> which represents the specified <tt>stats</tt> in
+ * @param <tt>RTCStatisticsReport</tt>s
+ * @return an <tt>NSString</tt> which represents the specified <tt>report</tt> in
  * JSON format
  */
-- (NSString *)statsToJSON:(NSArray<RTCLegacyStatsReport *> *)reports
+- (NSString *)statsToJSON:(RTCStatisticsReport *)report
 {
-  // XXX The initial capacity matters, of course, because it determines how many
-  // times the NSMutableString will have grow. But walking through the reports
-  // to compute an initial capacity which exactly matches the requirements of
-  // the reports is too much work without real-world bang here. A better
-  // approach is what the Android counterpart does i.e. cache the
-  // NSMutableString and preferably with a Java-like soft reference. If that is
-  // too much work, then an improvement should be caching the required capacity
-  // from the previous invocation of the method and using it as the initial
-  // capacity in the next invocation. As I didn't want to go even through that,
-  // choosing just about any initial capacity is OK because NSMutableCopy
-  // doesn't have too bad a strategy of growing.
-  NSMutableString *s = [NSMutableString stringWithCapacity:8 * 1024];
+  /* 
+  The initial capacity matters, of course, because it determines how many
+  times the NSMutableString will have grow. But walking through the reports
+  to compute an initial capacity which exactly matches the requirements of
+  the reports is too much work without real-world bang here. An improvement
+  should be caching the required capacity from the previous invocation of the 
+  method and using it as the initial capacity in the next invocation. 
+  As I didn't want to go even through that,choosing just about any initial 
+  capacity is OK because NSMutableCopy doesn't have too bad a strategy of growing.
+  */
+  NSMutableString *s = [NSMutableString stringWithCapacity:16 * 1024];
 
   [s appendString:@"["];
   BOOL firstReport = YES;
-  for (RTCLegacyStatsReport *report in reports) {
+  for (NSString *key in report.statistics.allKeys) {
     if (firstReport) {
       firstReport = NO;
     } else {
       [s appendString:@","];
     }
-    [s appendString:@"{\"id\":\""]; [s appendString:report.reportId];
-    [s appendString:@"\",\"type\":\""]; [s appendString:report.type];
-    [s appendString:@"\",\"timestamp\":"];
-    [s appendFormat:@"%f", report.timestamp];
-    [s appendString:@",\"values\":["];
-    __block BOOL firstValue = YES;
-    [report.values enumerateKeysAndObjectsUsingBlock:^(
-        NSString *key,
-        NSString *value,
-        BOOL *stop) {
-      if (firstValue) {
-        firstValue = NO;
-      } else {
+  
+    [s appendString:@"[\""];
+    [s appendString: key];
+    [s appendString:@"\",{"];
+
+    RTCStatistics *statistics = report.statistics[key];
+    [s appendString:@"\"timestamp\":\""];
+    [s appendFormat:@"%f", statistics.timestamp_us];
+    [s appendString:@"\",\"type\":\""]; 
+    [s appendString:statistics.type];
+    [s appendString:@"\",\"id\":\""];
+    [s appendString:statistics.id];
+    [s appendString:@"\""];
+
+    for (id key in statistics.values) {
         [s appendString:@","];
-      }
-      [s appendString:@"{\""]; [s appendString:key];
-      [s appendString:@"\":\""]; [s appendString:value];
-      [s appendString:@"\"}"];
-    }];
-    [s appendString:@"]}"];
-  }
+        [s appendString:@"\""];
+        [s appendString:key];
+        [s appendString:@"\":"];
+        NSObject *statisticsValue = [statistics.values objectForKey:key];
+        if ([statisticsValue isKindOfClass:[NSArray class]]) {
+            [s appendString:@"["];
+            BOOL firstValue = YES;
+            for (NSObject *value in statisticsValue) {
+              if(firstValue) {
+                firstValue = NO;
+              } else {
+                [s appendString:@","];
+              }
+
+              [s appendString:@"\""];
+              [s appendString:[NSString stringWithFormat:@"%@", value]];
+              [s appendString:@"\""];
+            }
+            [s appendString:@"]"];
+        } else {
+            [s appendString:@"\""];
+            [s appendString:[NSString stringWithFormat:@"%@", statisticsValue]];
+            [s appendString:@"\""];
+        }
+    }
+    
+    [s appendString:@"}]"];
+  } 
+
   [s appendString:@"]"];
 
   return s;
