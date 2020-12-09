@@ -17,7 +17,6 @@
 #import <WebRTC/RTCIceServer.h>
 #import <WebRTC/RTCMediaConstraints.h>
 #import <WebRTC/RTCIceCandidate.h>
-#import <WebRTC/RTCLegacyStatsReport.h>
 #import <WebRTC/RTCSessionDescription.h>
 #import <WebRTC/RTCStatisticsReport.h>
 
@@ -314,18 +313,17 @@ RCT_EXPORT_METHOD(peerConnectionGetStats:(nonnull NSNumber *) objectID
  */
 - (NSString *)statsToJSON:(RTCStatisticsReport *)report
 {
-  // XXX The initial capacity matters, of course, because it determines how many
-  // times the NSMutableString will have grow. But walking through the reports
-  // to compute an initial capacity which exactly matches the requirements of
-  // the reports is too much work without real-world bang here. A better
-  // approach is what the Android counterpart does i.e. cache the
-  // NSMutableString and preferably with a Java-like soft reference. If that is
-  // too much work, then an improvement should be caching the required capacity
-  // from the previous invocation of the method and using it as the initial
-  // capacity in the next invocation. As I didn't want to go even through that,
-  // choosing just about any initial capacity is OK because NSMutableCopy
-  // doesn't have too bad a strategy of growing.
-  NSMutableString *s = [NSMutableString stringWithCapacity:8 * 1024];
+  /* 
+  The initial capacity matters, of course, because it determines how many
+  times the NSMutableString will have grow. But walking through the reports
+  to compute an initial capacity which exactly matches the requirements of
+  the reports is too much work without real-world bang here. An improvement
+  should be caching the required capacity from the previous invocation of the 
+  method and using it as the initial capacity in the next invocation. 
+  As I didn't want to go even through that,choosing just about any initial 
+  capacity is OK because NSMutableCopy doesn't have too bad a strategy of growing.
+  */
+  NSMutableString *s = [NSMutableString stringWithCapacity:16 * 1024];
 
   [s appendString:@"["];
   BOOL firstReport = YES;
@@ -333,7 +331,7 @@ RCT_EXPORT_METHOD(peerConnectionGetStats:(nonnull NSNumber *) objectID
     if (firstReport) {
       firstReport = NO;
     } else {
-      [s appendString:@",\n"];
+      [s appendString:@","];
     }
   
     [s appendString:@"[\""];

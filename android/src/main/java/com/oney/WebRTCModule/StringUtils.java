@@ -28,30 +28,31 @@ public class StringUtils {
             if (firstKey) {
                 firstKey = false;
             } else {
-                builder.append(",\n");
+                builder.append(",");
             }
 
-            builder.append("[\"").append(key).append("\", { ");
+            builder.append("[\"").append(key).append("\",{");
 
             RTCStats stats = statsMap.get(key);
-
             builder
-                .append("\"timestamp\": \"")
+                .append("\"timestamp\":\"")
                 .append(stats.getTimestampUs())
-                .append("\", \"type\": \"")
+                .append("\",\"type\":\"")
                 .append(stats.getType())
-                .append("\", \"id\": \"")
+                .append("\",\"id\":\"")
                 .append(stats.getId())
                 .append("\"");
 
             for (Map.Entry<String, Object> entry : stats.getMembers().entrySet()) {
-                builder.append(", ");
-
-                builder.append('"').append(entry.getKey()).append("\": ");
+                builder
+                    .append(",")
+                    .append("\"")
+                    .append(entry.getKey())
+                    .append("\":");
                 appendValue(builder, entry.getValue());
             }
 
-            builder.append(" }\n]");
+            builder.append("}]");
         }
 
         builder.append("]");
@@ -62,19 +63,19 @@ public class StringUtils {
     private static void appendValue(StringBuilder builder, Object value) {
         if (value instanceof Object[]) {
             Object[] arrayValue = (Object[]) value;
-            builder.append('[');
+            builder.append("[");
 
             for (int i = 0; i < arrayValue.length; ++i) {
                 if (i != 0) {
-                    builder.append(", ");
+                    builder.append(",");
                 }
 
                 appendValue(builder, arrayValue[i]);
             }
 
-            builder.append(']');
+            builder.append("]");
         } else if (value instanceof String) {
-            builder.append('"').append(value).append('"');
+            builder.append("\"").append(value).append("\"");
         } else {
             builder.append(value);
         }
