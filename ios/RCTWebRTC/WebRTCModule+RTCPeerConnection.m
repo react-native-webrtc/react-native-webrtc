@@ -375,7 +375,7 @@ RCT_EXPORT_METHOD(peerConnectionGetStats:(nonnull NSNumber *) objectID
         }
     }
     
-    [s appendString:@" }]"];
+    [s appendString:@"}]"];
   } 
 
   [s appendString:@"]"];
