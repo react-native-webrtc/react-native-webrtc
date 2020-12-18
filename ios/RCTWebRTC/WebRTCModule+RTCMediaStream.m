@@ -129,7 +129,7 @@ RCT_EXPORT_METHOD(enumerateDevices:(RCTResponseSenderBlock)callback)
         } else if (device.position == AVCaptureDevicePositionFront) {
             position = @"front";
         }
-        NSString *label = "Unknown video device";
+        NSString *label = @"Unknown video device";
         if (device.localizedName != nil) {
             label = device.localizedName;
         }
@@ -146,7 +146,7 @@ RCT_EXPORT_METHOD(enumerateDevices:(RCTResponseSenderBlock)callback)
                                                                  mediaType:AVMediaTypeAudio
                                                                   position:AVCaptureDevicePositionUnspecified];
     for (AVCaptureDevice *device in audioDevicesSession.devices) {
-        NSString *label = "Unknown audio device";
+        NSString *label = @"Unknown audio device";
         if (device.localizedName != nil) {
             label = device.localizedName;
         }
