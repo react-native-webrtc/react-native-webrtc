@@ -19,6 +19,22 @@
   objc_setAssociatedObject(self, @selector(peerConnectionId), peerConnectionId, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
 }
 
+/**
+ * webrtc will update channelId internally:
+ * https://github.com/jitsi/webrtc/blob/f3736ed3d8d4e6660ad8b82a8deff7aca8389e5c/pc/data_channel.cc#L39
+ * https://github.com/jitsi/webrtc/blob/f3736ed3d8d4e6660ad8b82a8deff7aca8389e5c/pc/data_channel.cc#L58
+ * so with this property we can keep channelId passed from JS side
+ */
+- (NSNumber *)originDataChannelId
+{
+  return objc_getAssociatedObject(self, _cmd);
+}
+
+- (void)setOriginDataChannelId:(NSNumber *)originDataChannelId
+{
+  objc_setAssociatedObject(self, @selector(originDataChannelId), originDataChannelId, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+}
+
 @end
 
 @implementation WebRTCModule (RTCDataChannel)
@@ -33,6 +49,7 @@ RCT_EXPORT_METHOD(createDataChannel:(nonnull NSNumber *)peerConnectionId
       || dataChannel.readyState == RTCDataChannelStateOpen)) {
     dataChannel.peerConnectionId = peerConnectionId;
     NSNumber *dataChannelId = [NSNumber numberWithInteger:config.channelId];
+    dataChannel.originDataChannelId = dataChannelId;
     peerConnection.dataChannels[dataChannelId] = dataChannel;
     dataChannel.delegate = self;
   }
@@ -78,7 +95,8 @@ RCT_EXPORT_METHOD(dataChannelSend:(nonnull NSNumber *)peerConnectionId
 // Called when the data channel state has changed.
 - (void)dataChannelDidChangeState:(RTCDataChannel*)channel
 {
-  NSDictionary *event = @{@"id": @(channel.channelId),
+  // use originDataChannelId instead of channelId to keep the consistency with JS side
+  NSDictionary *event = @{@"id": channel.originDataChannelId,
                           @"peerConnectionId": channel.peerConnectionId,
                           @"state": [self stringForDataChannelState:channel.readyState]};
   [self sendEventWithName:kEventDataChannelStateChanged body:event];
@@ -102,7 +120,8 @@ RCT_EXPORT_METHOD(dataChannelSend:(nonnull NSNumber *)peerConnectionId
     data = [[NSString alloc] initWithData:buffer.data
                                  encoding:NSUTF8StringEncoding];
   }
-  NSDictionary *event = @{@"id": @(channel.channelId),
+  // use originDataChannelId instead of channelId to keep the consistency with JS side
+  NSDictionary *event = @{@"id": channel.originDataChannelId,
                           @"peerConnectionId": channel.peerConnectionId,
                           @"type": type,
                           // XXX NSDictionary will crash the process upon
