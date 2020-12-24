@@ -5,6 +5,7 @@ import EventTarget from 'event-target-shim';
 import MediaStreamErrorEvent from './MediaStreamErrorEvent';
 import type MediaStreamError from './MediaStreamError';
 import { deepClone } from './RTCUtil';
+import uuid from 'uuid';
 
 const {WebRTCModule} = NativeModules;
 
@@ -91,7 +92,18 @@ class MediaStreamTrack extends EventTarget(MEDIA_STREAM_TRACK_EVENTS) {
   }
 
   clone() {
-    throw new Error('Not implemented.');
+    const tClone = {};
+    //copy properties
+    Object.assign(tClone, track);
+    //according to the spec, need a new id
+    tClone.id = uuid.v4();
+    tClone.stop = track.stop.bind(tClone);
+    tClone.applyConstraints = track.applyConstraints.bind(tClone);
+    tClone.getCapabilities = track.getCapabilities.bind(tClone);
+    tClone.getConstraints = track.getConstraints.bind(tClone);
+    tClone.getSettings = track.getSettings.bind(tClone);
+
+    return tClone;
   }
 
   getCapabilities() {
