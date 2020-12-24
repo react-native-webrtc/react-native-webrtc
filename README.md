@@ -3,6 +3,13 @@
 [![npm version](https://badge.fury.io/js/react-native-webrtc.svg)](https://badge.fury.io/js/react-native-webrtc)
 [![npm downloads](https://img.shields.io/npm/dm/react-native-webrtc.svg?maxAge=2592000)](https://img.shields.io/npm/dm/react-native-webrtc.svg?maxAge=2592000)
 
+## Running Tests
+`npm install`
+
+`npm run test`
+
+#
+
 A WebRTC module for React Native.
 - Support iOS / macOS / Android.
 - Support Video / Audio / Data Channels.
