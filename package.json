@@ -27,7 +27,8 @@
     "react-native": ">=0.60.0"
   },
   "scripts": {
-    "postinstall": "cross-os darwin-extract"
+    "postinstall": "cross-os darwin-extract",
+    "test": "mocha"
   },
   "cross-os": {
     "darwin-extract": {
@@ -36,5 +37,8 @@
   },
   "bugs": {
     "url": "https://github.com/react-native-webrtc/react-native-webrtc/issues"
+  },
+  "devDependencies": {
+    "mocha": "^8.2.1"
   }
 }
