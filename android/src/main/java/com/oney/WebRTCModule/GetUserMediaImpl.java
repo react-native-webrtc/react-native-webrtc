@@ -263,18 +263,26 @@ class GetUserMediaImpl {
     private void createScreenStream() {
         VideoTrack track = createScreenTrack();
 
-        createStream(new MediaStreamTrack[]{track}, (streamId, tracksInfo) -> {
-            WritableMap data = Arguments.createMap();
+        if (track == null) {
+            displayMediaPromise.reject(new RuntimeException("ScreenTrack is null."));
+        } else {
+            createStream(new MediaStreamTrack[]{track}, (streamId, tracksInfo) -> {
+                WritableMap data = Arguments.createMap();
 
-            data.putString("streamId", streamId);
-            data.putMap("track", tracksInfo.get(0));
+                data.putString("streamId", streamId);
 
-            displayMediaPromise.resolve(data);
+                if (tracksInfo.size() == 0) {
+                    displayMediaPromise.reject(new RuntimeException("No ScreenTrackInfo found."));
+                } else {
+                    data.putMap("track", tracksInfo.get(0));
+                    displayMediaPromise.resolve(data);
+                }
+            });
+        }
 
-            // Cleanup
-            mediaProjectionPermissionResultData = null;
-            displayMediaPromise = null;
-        });
+        // Cleanup
+        mediaProjectionPermissionResultData = null;
+        displayMediaPromise = null;
     }
 
     private void createStream(MediaStreamTrack[] tracks, BiConsumer<String, ArrayList<WritableMap>> successCallback) {
@@ -318,9 +326,7 @@ class GetUserMediaImpl {
         int height = displayMetrics.heightPixels;
         int fps = 30;
         ScreenCaptureController screenCaptureController = new ScreenCaptureController(width, height, fps, mediaProjectionPermissionResultData);
-        VideoTrack track = createVideoTrack(screenCaptureController);
-
-        return track;
+        return createVideoTrack(screenCaptureController);
     }
 
     private VideoTrack createVideoTrack(AbstractVideoCaptureController videoCaptureController) {
