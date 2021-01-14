@@ -339,9 +339,9 @@ RCT_EXPORT_METHOD(peerConnectionGetStats:(nonnull NSNumber *) objectID
     [s appendString:@"\",{"];
 
     RTCStatistics *statistics = report.statistics[key];
-    [s appendString:@"\"timestamp\":\""];
-    [s appendFormat:@"%f", statistics.timestamp_us];
-    [s appendString:@"\",\"type\":\""]; 
+    [s appendString:@"\"timestamp\":"];
+    [s appendFormat:@"%f", statistics.timestamp_us / 1000.0];
+    [s appendString:@",\"type\":\""]; 
     [s appendString:statistics.type];
     [s appendString:@"\",\"id\":\""];
     [s appendString:statistics.id];
