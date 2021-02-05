@@ -64,7 +64,7 @@ mediaDevices.enumerateDevices().then(sourceInfos => {
     video: {
       width: 640,
       height: 480,
-      frameRate: 30
+      frameRate: 30,
       facingMode: (isFront ? "user" : "environment"),
       deviceId: videoSourceId
     }
