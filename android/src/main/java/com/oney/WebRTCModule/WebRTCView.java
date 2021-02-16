@@ -4,7 +4,9 @@ import android.annotation.SuppressLint;
 import android.content.Context;
 import android.graphics.Color;
 import android.graphics.Point;
+
 import androidx.core.view.ViewCompat;
+
 import android.view.View;
 import android.view.ViewGroup;
 import android.util.Log;
@@ -17,6 +19,7 @@ import java.util.List;
 import java.util.Objects;
 
 import org.webrtc.EglBase;
+import org.webrtc.Logging;
 import org.webrtc.MediaStream;
 import org.webrtc.RendererCommon;
 import org.webrtc.RendererCommon.RendererEvents;
@@ -69,6 +72,14 @@ public class WebRTCView extends ViewGroup {
         }
         IS_IN_LAYOUT = isInLayout;
     }
+
+    /**
+     * The number of instances for {@link SurfaceViewRenderer}, used for logging.
+     * When the renderer is initialized, it creates a new {@link javax.microedition.khronos.egl.EGLContext}
+     * which can throw an exception, probably due to memory limitations. We log the number of instances that can
+     * be created before the exception is thrown.
+     */
+    private static int surfaceViewRendererInstances;
 
     /**
      * The height of the last video frame rendered by
@@ -409,6 +420,7 @@ public class WebRTCView extends ViewGroup {
             }
 
             surfaceViewRenderer.release();
+            surfaceViewRendererInstances--;
             rendererAttached = false;
 
             // Since this WebRTCView is no longer rendering anything, make sure
@@ -602,7 +614,13 @@ public class WebRTCView extends ViewGroup {
                 return;
             }
 
-            surfaceViewRenderer.init(sharedContext, rendererEvents);
+            try {
+                surfaceViewRendererInstances++;
+                surfaceViewRenderer.init(sharedContext, rendererEvents);
+            } catch (Exception e) {
+                Logging.e(TAG, "Failed to initialize surfaceViewRenderer on instance " + surfaceViewRendererInstances, e);
+                surfaceViewRendererInstances--;
+            }
 
             try {
                 videoTrack.addSink(surfaceViewRenderer);
@@ -612,6 +630,7 @@ public class WebRTCView extends ViewGroup {
                 Log.e(TAG, "Failed to add renderer", tr);
 
                 surfaceViewRenderer.release();
+                surfaceViewRendererInstances--;
                 return;
             }
 
