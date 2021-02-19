@@ -535,9 +535,9 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
 
         String kind = track.kind();
         if ("audio".equals(kind)) {
-            stream.addTrack((AudioTrack) track);
+            stream.addTrack((AudioTrack)track);
         } else if ("video".equals(kind)) {
-            stream.addTrack((VideoTrack) track);
+            stream.addTrack((VideoTrack)track);
         }
     }
 
