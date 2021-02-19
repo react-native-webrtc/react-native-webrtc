@@ -1,6 +1,7 @@
 package com.oney.WebRTCModule;
 
 import androidx.annotation.Nullable;
+
 import android.util.Log;
 import android.util.SparseArray;
 
@@ -41,6 +42,8 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
         private VideoEncoderFactory videoEncoderFactory = null;
         private VideoDecoderFactory videoDecoderFactory = null;
         private AudioDeviceModule audioDeviceModule = null;
+        private Loggable injectableLogger = null;
+        private Logging.Severity loggingSeverity = null;
 
         public Options() {}
 
@@ -54,6 +57,14 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
 
         public void setVideoEncoderFactory(VideoEncoderFactory videoEncoderFactory) {
             this.videoEncoderFactory = videoEncoderFactory;
+        }
+
+        public void setInjectableLogger(Loggable logger) {
+            this.injectableLogger = logger;
+        }
+
+        public void setLoggingSeverity(Logging.Severity severity) {
+            this.loggingSeverity = severity;
         }
     }
 
@@ -76,19 +87,24 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
     private void initAsync(Options options) {
         ReactApplicationContext reactContext = getReactApplicationContext();
 
-        PeerConnectionFactory.initialize(
-            PeerConnectionFactory.InitializationOptions.builder(reactContext)
-                .createInitializationOptions());
-
         AudioDeviceModule adm = null;
         VideoEncoderFactory encoderFactory = null;
         VideoDecoderFactory decoderFactory = null;
+        Loggable injectableLogger = null;
+        Logging.Severity loggingSeverity = null;
 
         if (options != null) {
             adm = options.audioDeviceModule;
             encoderFactory = options.videoEncoderFactory;
             decoderFactory = options.videoDecoderFactory;
+            injectableLogger = options.injectableLogger;
+            loggingSeverity = options.loggingSeverity;
         }
+
+        PeerConnectionFactory.initialize(
+            PeerConnectionFactory.InitializationOptions.builder(reactContext)
+                .setInjectableLogger(injectableLogger, loggingSeverity)
+                .createInitializationOptions());
 
         if (encoderFactory == null || decoderFactory == null) {
             // Initialize EGL context required for HW acceleration.
