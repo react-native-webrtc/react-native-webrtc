@@ -100,13 +100,33 @@ class GetUserMediaImpl {
 
         String id = UUID.randomUUID().toString();
         PeerConnectionFactory pcFactory = webRTCModule.mFactory;
-        AudioSource audioSource = pcFactory.createAudioSource(webRTCModule.constraintsForOptions(audioConstraintsMap));
+        MediaConstraints peerConstraints = webRTCModule.constraintsForOptions(audioConstraintsMap);
+
+        //PeerConnectionFactory.createAudioSource will throw an error when mandatory constraints contain nulls.
+        //so, let's check for nulls
+        if(!hasValidMandatoryConstraints(peerConstraints)) {
+            Log.w(TAG, "Provided audio constraints produced invalid mandatory constraints. " +
+                    "Provided constraints: " + audioConstraintsMap);
+            return null;
+        }
+
+        AudioSource audioSource = pcFactory.createAudioSource(peerConstraints);
         AudioTrack track = pcFactory.createAudioTrack(id, audioSource);
         tracks.put(
             id,
             new TrackPrivate(track, audioSource, /* videoCapturer */ null));
 
         return track;
+    }
+
+    private boolean hasValidMandatoryConstraints(MediaConstraints peerConstraints) {
+        for (MediaConstraints.KeyValuePair kv: peerConstraints.mandatory) {
+            if(kv.getValue() == null) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     ReadableArray enumerateDevices() {
