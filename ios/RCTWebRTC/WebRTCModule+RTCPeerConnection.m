@@ -438,6 +438,37 @@ RCT_EXPORT_METHOD(peerConnectionGetStats:(nonnull NSString *)trackID
   }
 }
 
+RCT_EXPORT_METHOD(getTrackVolumes:(RCTResponseSenderBlock)callback)
+{
+    RTCMediaStreamTrack *track = nil;
+    __block int statsRemaining = self.peerConnections.count;
+    __block NSMutableArray *statsAll = [NSMutableArray new];
+
+    for(id key in self.peerConnections) {
+        RTCPeerConnection *peerConnection = self.peerConnections[key];
+
+        [peerConnection statsForTrack:track statsOutputLevel:RTCStatsOutputLevelStandard completionHandler:^(NSArray<RTCLegacyStatsReport *> *stats) {
+            for (RTCLegacyStatsReport *report in stats) {
+                if ([report.type isEqualToString:@"ssrc"]) {
+                    NSString *mediaType = report.values[@"mediaType"];
+                    NSString *googTrackId = report.values[@"googTrackId"];
+                    NSString *audioOutputLevel = report.values[@"audioOutputLevel"];
+
+                    if (mediaType != Nil && googTrackId != Nil && audioOutputLevel != Nil) {
+                        [statsAll addObject:@[googTrackId, audioOutputLevel]];
+                    }
+                }
+            }
+
+            statsRemaining--;
+
+            if (statsRemaining <= 0) {
+                callback(@[statsAll]);
+            }
+        }];
+    }
+}
+
 /**
  * Constructs a JSON <tt>NSString</tt> representation of a specific array of
  * <tt>RTCLegacyStatsReport</tt>s.
