@@ -1,10 +1,10 @@
 
 #import <WebRTC/RTCMediaStreamTrack.h>
 
-#import "VideoCaptureController.h"
+@class CaptureController;
 
 @interface RTCMediaStreamTrack (React)
 
-@property (strong, nonatomic) VideoCaptureController *videoCaptureController;
+@property (strong, nonatomic) CaptureController *captureController;
 
 @end

@@ -1,15 +1,16 @@
 #import <objc/runtime.h>
 
 #import "RTCMediaStreamTrack+React.h"
+#import "CaptureController.h"
 
 @implementation RTCMediaStreamTrack (React)
 
-- (VideoCaptureController *)videoCaptureController {
-    return objc_getAssociatedObject(self, @selector(videoCaptureController));
+- (CaptureController *)captureController {
+    return objc_getAssociatedObject(self, @selector(captureController));
 }
 
-- (void)setVideoCaptureController:(VideoCaptureController *)videoCaptureController {
-    objc_setAssociatedObject(self, @selector(videoCaptureController), videoCaptureController, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+- (void)setCaptureController:(CaptureController *)captureController {
+    objc_setAssociatedObject(self, @selector(captureController), captureController, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
 }
 
 @end

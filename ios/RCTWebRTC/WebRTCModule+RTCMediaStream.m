@@ -14,6 +14,10 @@
 #import "RTCMediaStreamTrack+React.h"
 #import "WebRTCModule+RTCPeerConnection.h"
 
+#import "ScreenCapturer.h"
+#import "ScreenCaptureController.h"
+#import "VideoCaptureController.h"
+
 @implementation WebRTCModule (RTCMediaStream)
 
 #pragma mark - getUserMedia
@@ -45,11 +49,59 @@
   VideoCaptureController *videoCaptureController
         = [[VideoCaptureController alloc] initWithCapturer:videoCapturer
                                             andConstraints:constraints[@"video"]];
-  videoTrack.videoCaptureController = videoCaptureController;
+  videoTrack.captureController = videoCaptureController;
   [videoCaptureController startCapture];
 #endif
 
   return videoTrack;
+}
+
+- (RTCVideoTrack *)createScreenCaptureVideoTrack {
+#if TARGET_IPHONE_SIMULATOR
+    return nil;
+#endif
+
+    RTCVideoSource *videoSource = [self.peerConnectionFactory videoSource];
+
+    NSString *trackUUID = [[NSUUID UUID] UUIDString];
+    RTCVideoTrack *videoTrack = [self.peerConnectionFactory videoTrackWithSource:videoSource trackId:trackUUID];
+
+    ScreenCapturer *screenCapturer = [[ScreenCapturer alloc] initWithDelegate:videoSource];
+    ScreenCaptureController *screenCaptureController = [[ScreenCaptureController alloc] initWithCapturer:screenCapturer];
+    videoTrack.captureController = screenCaptureController;
+    [screenCaptureController startCapture];
+
+    return videoTrack;
+}
+
+RCT_EXPORT_METHOD(getDisplayMedia:(RCTPromiseResolveBlock)resolve
+                         rejecter:(RCTPromiseRejectBlock)reject) {
+    RTCVideoTrack *videoTrack = [self createScreenCaptureVideoTrack];
+
+    if (videoTrack == nil) {
+        reject(@"DOMException", @"AbortError", nil);
+        return;
+    }
+
+    NSString *mediaStreamId = [[NSUUID UUID] UUIDString];
+    RTCMediaStream *mediaStream
+      = [self.peerConnectionFactory mediaStreamWithStreamId:mediaStreamId];
+    [mediaStream addVideoTrack:videoTrack];
+
+    NSString *trackId = videoTrack.trackId;
+    self.localTracks[trackId] = videoTrack;
+
+    NSDictionary *trackInfo = @{
+                                @"enabled": @(videoTrack.isEnabled),
+                                @"id": videoTrack.trackId,
+                                @"kind": videoTrack.kind,
+                                @"label": videoTrack.trackId,
+                                @"readyState": @"live",
+                                @"remote": @(NO)
+                                };
+
+    self.localStreams[mediaStreamId] = mediaStream;
+    resolve(@{ @"streamId": mediaStreamId, @"track": trackInfo });
 }
 
 /**
@@ -207,7 +259,7 @@ RCT_EXPORT_METHOD(mediaStreamTrackRelease:(nonnull NSString *)trackID)
     RTCMediaStreamTrack *track = self.localTracks[trackID];
     if (track) {
         track.isEnabled = NO;
-        [track.videoCaptureController stopCapture];
+        [track.captureController stopCapture];
         [self.localTracks removeObjectForKey:trackID];
     }
 }
@@ -217,11 +269,11 @@ RCT_EXPORT_METHOD(mediaStreamTrackSetEnabled:(nonnull NSString *)trackID : (BOOL
   RTCMediaStreamTrack *track = [self trackForId:trackID];
   if (track) {
     track.isEnabled = enabled;
-    if (track.videoCaptureController) {  // It could be a remote track!
+    if (track.captureController) {  // It could be a remote track!
       if (enabled) {
-        [track.videoCaptureController startCapture];
+        [track.captureController startCapture];
       } else {
-        [track.videoCaptureController stopCapture];
+        [track.captureController stopCapture];
       }
     }
   }
@@ -232,7 +284,7 @@ RCT_EXPORT_METHOD(mediaStreamTrackSwitchCamera:(nonnull NSString *)trackID)
   RTCMediaStreamTrack *track = self.localTracks[trackID];
   if (track) {
     RTCVideoTrack *videoTrack = (RTCVideoTrack *)track;
-    [videoTrack.videoCaptureController switchCamera];
+    [(VideoCaptureController *)videoTrack.captureController switchCamera];
   }
 }
 
