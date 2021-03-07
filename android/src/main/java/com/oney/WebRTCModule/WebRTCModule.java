@@ -960,6 +960,63 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
     }
 
     @ReactMethod
+    public void getTrackVolumes(final Callback callback) {
+        ThreadUtils.runOnExecutor(() -> getTrackVolumesAsync(callback));
+    }
+
+    private void getTrackVolumesAsync(final Callback callback) {
+        AtomicInteger statsRemaining = new AtomicInteger(mPeerConnectionObservers.size());
+        WritableArray result = Arguments.createArray();
+
+        for(int i = 0; i < mPeerConnectionObservers.size(); i++) {
+            PeerConnection connection = getPeerConnection(mPeerConnectionObservers.keyAt(i));
+            if (connection == null) {
+                statsRemaining.decrementAndGet();
+                continue;
+            }
+
+            connection.getStats(statsReports -> {
+                for (int j = 0; j < statsReports.length; ++j) {
+                    StatsReport report = statsReports[j];
+                    if (!report.type.equals("ssrc")) {
+                        continue;
+                    }
+
+                    StatsReport.Value mediaType = findReportValue(report.values, "mediaType");
+                    StatsReport.Value googTrackId = findReportValue(report.values, "googTrackId");
+                    StatsReport.Value audioOutputLevel = findReportValue(report.values, "audioOutputLevel");
+
+                    if (mediaType != null && googTrackId != null && audioOutputLevel != null) {
+                        WritableArray trackData = Arguments.createArray();
+                        trackData.pushString(googTrackId.value);
+                        trackData.pushString(audioOutputLevel.value);
+                        result.pushArray(trackData);
+                    }
+                }
+
+                statsRemaining.decrementAndGet();
+
+                if (statsRemaining.get() <= 0) {
+                    callback.invoke(result);
+                }
+            }, null);
+        }
+
+        if (statsRemaining.get() == 0) {
+            callback.invoke(result);
+        }
+    }
+
+    private StatsReport.Value findReportValue(StatsReport.Value[] values, String name) {
+        for (int i = 0; i < values.length; ++i) {
+            StatsReport.Value value = values[i];
+            if (value.name.equals(name)) {
+                return value;
+            }
+        }
+        return null;
+    }
+
     public void peerConnectionGetStats(int peerConnectionId, Promise promise) {
         ThreadUtils.runOnExecutor(() ->
             peerConnectionGetStatsAsync(peerConnectionId, promise));
