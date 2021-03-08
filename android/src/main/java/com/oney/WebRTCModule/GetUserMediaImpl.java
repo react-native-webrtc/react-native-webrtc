@@ -122,7 +122,7 @@ class GetUserMediaImpl {
             if (constraint.getValue() != null) {
                 valid.add(constraint);
             } else {
-                Log.w(TAG, String.format("constraint %s is null, ignoring it",
+                Log.d(TAG, String.format("constraint %s is null, ignoring it",
                         constraint.getKey()));
             }
         }
