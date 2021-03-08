@@ -104,11 +104,7 @@ class GetUserMediaImpl {
 
         //PeerConnectionFactory.createAudioSource will throw an error when mandatory constraints contain nulls.
         //so, let's check for nulls
-        if(!hasValidMandatoryConstraints(peerConstraints)) {
-            Log.w(TAG, "Provided audio constraints produced invalid mandatory constraints. " +
-                    "Provided constraints: " + audioConstraintsMap);
-            return null;
-        }
+        checkMandatoryConstraints(peerConstraints);
 
         AudioSource audioSource = pcFactory.createAudioSource(peerConstraints);
         AudioTrack track = pcFactory.createAudioTrack(id, audioSource);
@@ -119,14 +115,20 @@ class GetUserMediaImpl {
         return track;
     }
 
-    private boolean hasValidMandatoryConstraints(MediaConstraints peerConstraints) {
-        for (MediaConstraints.KeyValuePair kv: peerConstraints.mandatory) {
-            if(kv.getValue() == null) {
-                return false;
+    private void checkMandatoryConstraints(MediaConstraints peerConstraints) {
+        ArrayList<MediaConstraints.KeyValuePair> valid = new ArrayList<>(peerConstraints.mandatory.size());
+
+        for (MediaConstraints.KeyValuePair constraint : peerConstraints.mandatory) {
+            if (constraint.getValue() != null) {
+                valid.add(constraint);
+            } else {
+                Log.w(TAG, String.format("constraint %s is null, ignoring it",
+                        constraint.getKey()));
             }
         }
 
-        return true;
+        peerConstraints.mandatory.clear();
+        peerConstraints.mandatory.addAll(valid);
     }
 
     ReadableArray enumerateDevices() {
