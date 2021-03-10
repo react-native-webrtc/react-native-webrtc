@@ -42,7 +42,8 @@ _GN_IOS_ARGS = [
     'ios_deployment_target="11.0"',
     'ios_enable_code_signing=false',
     'target_os="ios"',
-    'use_xcode_clang=true'
+    'use_xcode_clang=true',
+    'rtc_include_tests=false'
 ]
 GN_IOS_ARGS = build_gn_args(_GN_IOS_ARGS)
 
