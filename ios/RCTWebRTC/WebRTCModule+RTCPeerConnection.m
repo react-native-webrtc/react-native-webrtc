@@ -450,12 +450,12 @@ RCT_EXPORT_METHOD(getTrackVolumes:(RCTResponseSenderBlock)callback)
         [peerConnection statsForTrack:track statsOutputLevel:RTCStatsOutputLevelStandard completionHandler:^(NSArray<RTCLegacyStatsReport *> *stats) {
             for (RTCLegacyStatsReport *report in stats) {
                 if ([report.type isEqualToString:@"ssrc"]) {
-                    NSString *mediaType = report.values[@"mediaType"];
                     NSString *googTrackId = report.values[@"googTrackId"];
                     NSString *audioOutputLevel = report.values[@"audioOutputLevel"];
+                    NSString *audioInputLevel = report.values[@"audioInputLevel"];
 
-                    if (mediaType != Nil && googTrackId != Nil && audioOutputLevel != Nil) {
-                        [statsAll addObject:@[googTrackId, audioOutputLevel]];
+                    if (googTrackId != Nil && (audioOutputLevel != Nil || audioInputLevel != Nil)) {
+                        [statsAll addObject:@[googTrackId, audioOutputLevel != Nil ? audioOutputLevel : audioInputLevel]];
                     }
                 }
             }
