@@ -944,6 +944,11 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
         AtomicInteger statsRemaining = new AtomicInteger(mPeerConnectionObservers.size());
         WritableArray result = Arguments.createArray();
 
+        if (mPeerConnectionObservers.size() == 0) {
+            callback.invoke(result);
+            return;
+        }
+
         for(int i = 0; i < mPeerConnectionObservers.size(); i++) {
             PeerConnection connection = getPeerConnection(mPeerConnectionObservers.keyAt(i));
             if (connection == null) {
@@ -958,14 +963,24 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
                         continue;
                     }
 
-                    StatsReport.Value mediaType = findReportValue(report.values, "mediaType");
-                    StatsReport.Value googTrackId = findReportValue(report.values, "googTrackId");
-                    StatsReport.Value audioOutputLevel = findReportValue(report.values, "audioOutputLevel");
+                    StatsReport.Value googTrackId = null;
+                    StatsReport.Value audioOutputLevel = null;
+                    StatsReport.Value audioInputLevel = null;
 
-                    if (mediaType != null && googTrackId != null && audioOutputLevel != null) {
+                    for (StatsReport.Value val : report.values) {
+                        if (val.name.equals("googTrackId")) {
+                            googTrackId = val;
+                        } else if (val.name.equals("audioOutputLevel")) {
+                            audioOutputLevel = val;
+                        } else if (val.name.equals("audioInputLevel")) {
+                            audioInputLevel = val;
+                        }
+                    }
+
+                    if (googTrackId != null && (audioOutputLevel != null || audioInputLevel != null)) {
                         WritableArray trackData = Arguments.createArray();
                         trackData.pushString(googTrackId.value);
-                        trackData.pushString(audioOutputLevel.value);
+                        trackData.pushString(audioOutputLevel != null ? audioOutputLevel.value : audioInputLevel.value);
                         result.pushArray(trackData);
                     }
                 }
@@ -977,20 +992,6 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
                 }
             }, null);
         }
-
-        if (statsRemaining.get() == 0) {
-            callback.invoke(result);
-        }
-    }
-
-    private StatsReport.Value findReportValue(StatsReport.Value[] values, String name) {
-        for (int i = 0; i < values.length; ++i) {
-            StatsReport.Value value = values[i];
-            if (value.name.equals(name)) {
-                return value;
-            }
-        }
-        return null;
     }
 
     @ReactMethod
