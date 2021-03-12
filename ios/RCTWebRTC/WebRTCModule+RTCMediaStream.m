@@ -61,7 +61,7 @@
     return nil;
 #endif
 
-    RTCVideoSource *videoSource = [self.peerConnectionFactory videoSource];
+    RTCVideoSource *videoSource = [self.peerConnectionFactory videoSourceForScreenCast:YES];
 
     NSString *trackUUID = [[NSUUID UUID] UUIDString];
     RTCVideoTrack *videoTrack = [self.peerConnectionFactory videoTrackWithSource:videoSource trackId:trackUUID];
