@@ -4,6 +4,7 @@
 @interface RTCDataChannel (React)
 
 @property (nonatomic, strong) NSNumber *peerConnectionId;
+@property (nonatomic, strong) NSNumber *originDataChannelId;
 
 @end
 
