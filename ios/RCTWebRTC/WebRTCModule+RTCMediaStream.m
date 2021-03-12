@@ -57,7 +57,7 @@
 }
 
 - (RTCVideoTrack *)createScreenCaptureVideoTrack {
-#if TARGET_IPHONE_SIMULATOR
+#if TARGET_IPHONE_SIMULATOR || TARGET_OS_OSX
     return nil;
 #endif
 
