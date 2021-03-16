@@ -4,7 +4,7 @@ set -euo pipefail
 
 THIS_DIR=$(cd -P "$(dirname "$(readlink "${BASH_SOURCE[0]}" || echo "${BASH_SOURCE[0]}")")" && pwd)
 PACKAGE_VERSION=$(cat ${THIS_DIR}/../package.json \
-  | grep version \
+  | grep "\"version\":" \
   | head -1 \
   | awk -F: '{ print $2 }' \
   | sed 's/[",]//g' \
