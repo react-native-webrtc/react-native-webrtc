@@ -9,7 +9,7 @@ PACKAGE_VERSION=$(cat ${THIS_DIR}/../package.json \
   | awk -F: '{ print $2 }' \
   | sed 's/[",]//g' \
   | tr -d '[[:space:]]')
-WEBRTC_DL="https://github.com/react-native-webrtc/react-native-webrtc/releases/download/v${PACKAGE_VERSION}/WebRTC.tar.xz"
+WEBRTC_DL="https://github.com/react-native-webrtc/react-native-webrtc/releases/download/${PACKAGE_VERSION}/WebRTC.tar.xz"
 
 
 pushd ${THIS_DIR}/../apple
