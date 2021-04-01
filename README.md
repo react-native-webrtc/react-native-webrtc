@@ -146,3 +146,4 @@ The [react-native-webrtc](https://github.com/react-native-webrtc) organization p
 Thanks to all [contributors](https://github.com/react-native-webrtc/react-native-webrtc/graphs/contributors) for helping with the project!
 
 Special thanks to [Wan Huang Yang](https://github.com/oney/) for creating the first version of this package.
+
