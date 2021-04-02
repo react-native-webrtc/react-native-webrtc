@@ -9,6 +9,7 @@ import MediaStream from './MediaStream';
 import MediaStreamTrack from './MediaStreamTrack';
 import mediaDevices from './MediaDevices';
 import permissions from './Permissions';
+import setPlaybackMode from "./setPlaybackMode";
 
 export {
   ScreenCapturePickerView,
@@ -20,7 +21,8 @@ export {
   MediaStreamTrack,
   mediaDevices,
   permissions,
-  registerGlobals
+  registerGlobals,
+  setPlaybackMode,
 };
 
 function registerGlobals() {
