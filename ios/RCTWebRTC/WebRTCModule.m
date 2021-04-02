@@ -117,4 +117,9 @@ RCT_EXPORT_MODULE();
   ];
 }
 
+RCT_EXPORT_METHOD(setPlaybackMode:(BOOL *) playbackOnly) {
+    RTCAudioSession* sharedInstance = [RTCAudioSession sharedInstance];
+    sharedInstance.isPlaybackOnly = playbackOnly;
+}
+
 @end
