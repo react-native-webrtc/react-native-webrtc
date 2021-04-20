@@ -82,6 +82,22 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
         mPeerConnectionObservers = new SparseArray<>();
         localStreams = new HashMap<>();
 
+
+        ThreadUtils.runOnExecutor(() -> initAsync(options));
+    }
+
+    public void addDecryptors() {
+        for (int i = 0, size = mPeerConnectionObservers.size(); i < size; i++) {
+            PeerConnectionObserver pco = mPeerConnectionObservers.valueAt(i);
+            pco.addDecryptors();
+        }
+    }
+
+    /**
+     * Invoked asynchronously to initialize this {@code WebRTCModule} instance.
+     */
+    private void initAsync(Options options) {
+        ReactApplicationContext reactContext = getReactApplicationContext();
         AudioDeviceModule adm = null;
         VideoEncoderFactory encoderFactory = null;
         VideoDecoderFactory decoderFactory = null;

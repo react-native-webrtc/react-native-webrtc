@@ -14,6 +14,7 @@ import com.facebook.react.bridge.WritableMap;
 
 import org.webrtc.AudioTrack;
 import org.webrtc.DataChannel;
+import org.webrtc.GCMFrameDecryptor;
 import org.webrtc.IceCandidate;
 import org.webrtc.MediaStream;
 import org.webrtc.MediaStreamTrack;
@@ -452,9 +453,24 @@ class PeerConnectionObserver implements PeerConnection.Observer {
         webRTCModule.sendEvent("peerConnectionSignalingStateChanged", params);
     }
 
+    List<RtpReceiver> receivers = new ArrayList<>();
+
     @Override
     public void onAddTrack(final RtpReceiver receiver, final MediaStream[] mediaStreams) {
         Log.d(TAG, "onAddTrack");
+        receivers.add(receiver);
+
+    }
+
+    private static boolean isAdded = false;
+
+    public void addDecryptors() {
+    if(!isAdded) {
+        isAdded = true;
+    }
+    for(RtpReceiver receiver : receivers) {
+           receiver.setFrameDecryptor(new GCMFrameDecryptor());
+        }
     }
 
     @Nullable
