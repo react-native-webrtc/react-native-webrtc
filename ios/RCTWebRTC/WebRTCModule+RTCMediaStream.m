@@ -17,6 +17,7 @@
 #import "ScreenCapturer.h"
 #import "ScreenCaptureController.h"
 #import "VideoCaptureController.h"
+#import "WebRTCFilter.h"
 
 @implementation WebRTCModule (RTCMediaStream)
 
@@ -45,9 +46,9 @@
   RTCVideoTrack *videoTrack = [self.peerConnectionFactory videoTrackWithSource:videoSource trackId:trackUUID];
 
 #if !TARGET_IPHONE_SIMULATOR
-  RTCCameraVideoCapturer *videoCapturer = [[RTCCameraVideoCapturer alloc] initWithDelegate:videoSource];
+  WebRTCFilter *filter = [[WebRTCFilter alloc] initWithDelegate:videoSource];
   VideoCaptureController *videoCaptureController
-        = [[VideoCaptureController alloc] initWithCapturer:videoCapturer
+        = [[VideoCaptureController alloc] initWithCapturer:filter
                                             andConstraints:constraints[@"video"]];
   videoTrack.captureController = videoCaptureController;
   [videoCaptureController startCapture];
