@@ -12,7 +12,7 @@
 - (CVPixelBufferRef)getNewPixelRef:(CMSampleBufferRef)sampleBuffer{
     CVImageBufferRef videoFrameBuffer = CMSampleBufferGetImageBuffer(sampleBuffer);
     CIImage *ciInput = [[CIImage alloc] initWithCVImageBuffer: videoFrameBuffer];
-    CIImage *processed = [self grayscaleImage:ciInput];
+    CIImage *processed = [self highPassSmoothing:ciInput];
     
     if(_context == nil){
         _context = [CIContext contextWithOptions:nil];
@@ -31,6 +31,13 @@
     [grayFilter setValue:@1.1 forKey:kCIInputContrastKey];
     [grayFilter setValue:inputImage forKey:kCIInputImageKey];
     return grayFilter.outputImage;
+}
+
+- (CIImage*) highPassSmoothing: (CIImage*) inputImage {
+    CIFilter *smoothFilter = [CIFilter filterWithName:@"YUCIHighPassSkinSmoothing"];
+    [smoothFilter setValue:inputImage forKey:kCIInputImageKey];
+    [smoothFilter setValue:@0 forKey:@"inputAmount"];
+    return smoothFilter.outputImage;
 }
 
 @end
