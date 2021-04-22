@@ -6,7 +6,6 @@ import android.content.Intent;
 import android.media.projection.MediaProjectionManager;
 import android.util.DisplayMetrics;
 import android.util.Log;
-import android.view.WindowManager;
 
 import com.facebook.react.bridge.Arguments;
 import com.facebook.react.bridge.BaseActivityEventListener;
@@ -343,11 +342,11 @@ class GetUserMediaImpl {
     }
 
     private VideoTrack createScreenTrack() {
-        DisplayMetrics displayMetrics = getDisplayMetrics();
+        DisplayMetrics displayMetrics = DisplayUtils.getDisplayMetrics(reactContext.getCurrentActivity());
         int width = displayMetrics.widthPixels;
         int height = displayMetrics.heightPixels;
-        int fps = 30;
-        ScreenCaptureController screenCaptureController = new ScreenCaptureController(width, height, fps, mediaProjectionPermissionResultData);
+        ScreenCaptureController screenCaptureController
+            = new ScreenCaptureController(reactContext.getCurrentActivity(), width, height, mediaProjectionPermissionResultData);
         return createVideoTrack(screenCaptureController);
     }
 
@@ -381,15 +380,6 @@ class GetUserMediaImpl {
         videoCaptureController.startCapture();
 
         return track;
-    }
-
-    private DisplayMetrics getDisplayMetrics() {
-        Activity currentActivity = this.reactContext.getCurrentActivity();
-        DisplayMetrics displayMetrics = new DisplayMetrics();
-        WindowManager windowManager =
-            (WindowManager) currentActivity.getApplication().getSystemService(Context.WINDOW_SERVICE);
-        windowManager.getDefaultDisplay().getRealMetrics(displayMetrics);
-        return displayMetrics;
     }
 
     /**
