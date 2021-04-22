@@ -31,10 +31,12 @@ public class ScreenCaptureController extends AbstractVideoCaptureController {
         this.orientatationListener = new OrientationEventListener(context) {
             @Override
             public void onOrientationChanged(int orientation) {
-                DisplayMetrics displayMetrics = DisplayUtils.getDisplayMetrics((Activity)context);
-                int width = displayMetrics.widthPixels;
-                int height = displayMetrics.heightPixels;
-                videoCapturer.changeCaptureFormat(width, height, DEFAULT_FPS);
+                if (videoCapturer != null) {
+                    DisplayMetrics displayMetrics = DisplayUtils.getDisplayMetrics((Activity) context);
+                    int width = displayMetrics.widthPixels;
+                    int height = displayMetrics.heightPixels;
+                    videoCapturer.changeCaptureFormat(width, height, DEFAULT_FPS);
+                }
             }
         };
 
@@ -51,6 +53,7 @@ public class ScreenCaptureController extends AbstractVideoCaptureController {
                 @Override
                 public void onStop() {
                     Log.w(TAG, "Media projection stopped.");
+                    orientatationListener.disable();
                 }
             });
 
