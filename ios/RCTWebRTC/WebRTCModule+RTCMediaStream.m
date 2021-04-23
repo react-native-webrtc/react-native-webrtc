@@ -151,14 +151,31 @@ RCT_EXPORT_METHOD(getUserMedia:(NSDictionary *)constraints
     NSString *trackId = track.trackId;
 
     self.localTracks[trackId] = track;
+    
+    NSDictionary *settings = @{};
+    if ([track.kind isEqualToString:@"video"]) {
+        RTCVideoTrack *videoTrack = (RTCVideoTrack *)track;
+        VideoCaptureController *vcc = (VideoCaptureController *)videoTrack.captureController;
+        AVCaptureDeviceFormat *format = vcc.selectedFormat;
+        CMVideoDimensions dimensions = CMVideoFormatDescriptionGetDimensions(format.formatDescription);
+        settings = @{
+            @"height": @(dimensions.height),
+            @"width": @(dimensions.width),
+            @"frameRate": @(3)
+        };
+    }
+
     [tracks addObject:@{
                         @"enabled": @(track.isEnabled),
                         @"id": trackId,
                         @"kind": track.kind,
                         @"label": trackId,
                         @"readyState": @"live",
-                        @"remote": @(NO)
+                        @"remote": @(NO),
+                        @"settings": settings
                         }];
+
+
   }
 
   self.localStreams[mediaStreamId] = mediaStream;

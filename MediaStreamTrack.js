@@ -21,6 +21,8 @@ type MediaStreamTrackState = "live" | "ended";
 class MediaStreamTrack extends EventTarget(MEDIA_STREAM_TRACK_EVENTS) {
   _constraints: Object;
   _enabled: boolean;
+  _settings: Object;
+
   id: string;
   kind: string;
   label: string;
@@ -39,6 +41,8 @@ class MediaStreamTrack extends EventTarget(MEDIA_STREAM_TRACK_EVENTS) {
 
     this._constraints = info.constraints || {};
     this._enabled = info.enabled;
+    this._settings = info.settings || {};
+
     this.id = info.id;
     this.kind = info.kind;
     this.label = info.label;
@@ -103,7 +107,7 @@ class MediaStreamTrack extends EventTarget(MEDIA_STREAM_TRACK_EVENTS) {
   }
 
   getSettings() {
-    throw new Error('Not implemented.');
+    return deepClone(this._settings);
   }
 
   release() {

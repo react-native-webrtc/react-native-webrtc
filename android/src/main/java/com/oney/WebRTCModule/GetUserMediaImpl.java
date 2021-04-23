@@ -332,6 +332,17 @@ class GetUserMediaImpl {
             trackInfo.putString("label", trackId);
             trackInfo.putString("readyState", track.state().toString());
             trackInfo.putBoolean("remote", false);
+
+            if (track instanceof VideoTrack) {
+                TrackPrivate tp = this.tracks.get(trackId);
+                AbstractVideoCaptureController vcc = tp.videoCaptureController;
+                WritableMap settings = Arguments.createMap();
+                settings.putInt("height", vcc.getHeight());
+                settings.putInt("width", vcc.getWidth());
+                settings.putInt("frameRate", vcc.getFrameRate());
+                trackInfo.putMap("settings", settings);
+            }
+
             tracksInfo.add(trackInfo);
         }
 

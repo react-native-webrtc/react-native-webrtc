@@ -14,6 +14,8 @@
     int _fps;
 }
 
+@dynamic frameRate;
+
 -(instancetype)initWithCapturer:(RTCCameraVideoCapturer *)capturer
                  andConstraints:(NSDictionary *)constraints {
     self = [super init];
@@ -79,6 +81,8 @@
         return;
     }
 
+    _selectedFormat = format;
+
     RCTLog(@"[VideoCaptureController] Capture will start");
 
     // Starting the capture happens on another thread. Wait for it.
@@ -119,6 +123,10 @@
     _deviceId = NULL;
 
     [self startCapture];
+}
+
+-(int)frameRate {
+    return _fps;
 }
 
 #pragma mark Private
