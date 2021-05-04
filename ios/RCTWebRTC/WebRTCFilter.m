@@ -7,19 +7,38 @@
 
 #import "WebRTCFilter.h"
 
+
+BOOL WEBRTC_FILTER_ENABLED = NO;
+@implementation RCTWebRTCFilterModule
+
+-(BOOL) isFilterEnabled {
+    return WEBRTC_FILTER_ENABLED;
+}
+
+RCT_EXPORT_MODULE()
+
+RCT_EXPORT_METHOD(setFilterEnabled:(BOOL *)enabled){
+    WEBRTC_FILTER_ENABLED = enabled;
+}
+
+@end
+
 @implementation WebRTCFilter
 
 - (CVPixelBufferRef)getNewPixelRef:(CMSampleBufferRef)sampleBuffer{
     CVImageBufferRef videoFrameBuffer = CMSampleBufferGetImageBuffer(sampleBuffer);
-    CIImage *ciInput = [[CIImage alloc] initWithCVImageBuffer: videoFrameBuffer];
-    CIImage *processed = [self highPassSmoothing:ciInput];
     
-    if(_context == nil){
-        _context = [CIContext contextWithOptions:nil];
+    if (WEBRTC_FILTER_ENABLED) {
+        CIImage *ciInput = [[CIImage alloc] initWithCVImageBuffer: videoFrameBuffer];
+        CIImage *processed = [self grayscaleImage:ciInput];
+        
+        if(_context == nil){
+            _context = [CIContext contextWithOptions:nil];
+        }
+        
+        [_context clearCaches];
+        [_context render:processed toCVPixelBuffer:videoFrameBuffer];
     }
-    
-    [_context clearCaches];
-    [_context render:processed toCVPixelBuffer:videoFrameBuffer];
     
     return videoFrameBuffer;
 }

@@ -10,9 +10,15 @@
 
 #import <Foundation/Foundation.h>
 #import <WebRTC/RTCCameraVideoCapturer.h>
+#import <React/RCTBridgeModule.h>
 
 @interface WebRTCFilter: RTCCameraVideoCapturer
 @property (retain, nonatomic) CIContext* context;
 @end
 
+@interface RCTWebRTCFilterModule: NSObject<RCTBridgeModule>
+
+- (BOOL)isFilterEnabled;
+
+@end
 #endif /* WebRTCFilterDelegate_h */
