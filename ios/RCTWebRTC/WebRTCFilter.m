@@ -30,7 +30,7 @@ RCT_EXPORT_METHOD(setFilterEnabled:(BOOL *)enabled){
     
     if (WEBRTC_FILTER_ENABLED) {
         CIImage *ciInput = [[CIImage alloc] initWithCVImageBuffer: videoFrameBuffer];
-        CIImage *processed = [self grayscaleImage:ciInput];
+        CIImage *processed = [self highPassSmoothing:ciInput];
         
         if(_context == nil){
             _context = [CIContext contextWithOptions:nil];
