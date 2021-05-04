@@ -10,6 +10,7 @@ import MediaStreamTrack from './MediaStreamTrack';
 import mediaDevices from './MediaDevices';
 import permissions from './Permissions';
 import setPlaybackMode from "./setPlaybackMode";
+import useWebRTCFilter from "./useWebRTCFilter";
 
 export {
   ScreenCapturePickerView,
@@ -23,6 +24,7 @@ export {
   permissions,
   registerGlobals,
   setPlaybackMode,
+  useWebRTCFilter,
 };
 
 function registerGlobals() {
