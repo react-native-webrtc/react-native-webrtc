@@ -21,4 +21,5 @@ Pod::Spec.new do |s|
   s.ios.vendored_frameworks   = 'apple/WebRTC.xcframework'
   s.macos.vendored_frameworks = 'apple/WebRTC.xcframework'
   s.dependency          'React-Core'
+  s.dependency          'YUCIHighPassSkinSmoothing'
 end
