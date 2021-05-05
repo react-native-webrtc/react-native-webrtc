@@ -414,7 +414,7 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
         mPeerConnectionObservers.put(id, observer);
     }
 
-    MediaStream getStreamForReactTag(String streamReactTag) {
+    public MediaStream getStreamForReactTag(String streamReactTag) {
         MediaStream stream = localStreams.get(streamReactTag);
 
         if (stream == null) {
