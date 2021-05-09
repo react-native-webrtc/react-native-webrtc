@@ -542,6 +542,7 @@ RCT_EXPORT_METHOD(peerConnectionGetStats:(nonnull NSNumber *) objectID
 
   NSNumber *dataChannelId = [NSNumber numberWithInteger:dataChannel.channelId];
   dataChannel.peerConnectionId = peerConnection.reactTag;
+  dataChannel.originDataChannelId = dataChannelId;
   peerConnection.dataChannels[dataChannelId] = dataChannel;
   // WebRTCModule implements the category RTCDataChannel i.e. the protocol
   // RTCDataChannelDelegate.
