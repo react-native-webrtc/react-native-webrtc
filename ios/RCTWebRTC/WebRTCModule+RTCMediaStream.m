@@ -286,7 +286,7 @@ RCT_EXPORT_METHOD(mediaStreamTrackSwitchCamera:(nonnull NSString *)trackID
   RTCMediaStreamTrack *track = self.localTracks[trackID];
   if (track) {
     RTCVideoTrack *videoTrack = (RTCVideoTrack *)track;
-    NSString *newFacingMode = [(VideoCaptureController *)videoTrack.videoCaptureController switchCamera];
+    NSString *newFacingMode = [(VideoCaptureController *)videoTrack.captureController switchCamera];
     resolve(newFacingMode);
     return;
   }
@@ -302,7 +302,7 @@ RCT_EXPORT_METHOD(mediaStreamTrackGetCameraFacingMode:(nonnull NSString *)trackI
   RTCMediaStreamTrack *track = self.localTracks[trackID];
   if (track) {
     RTCVideoTrack *videoTrack = (RTCVideoTrack *)track;
-    resolve([(VideoCaptureController *)videoTrack.videoCaptureController facingMode]);
+    resolve([(VideoCaptureController *)videoTrack.captureController facingMode]);
     return;
   }
   reject(@"get_camera_facing_mode_error",
