@@ -7,7 +7,7 @@ ios/RCTWebRTC.xcodeproj/project.xcworkspace
 .idea
 android/build
 android/*.iml
-*.tgz
+daily-co-*.tgz
 scripts
 
 Documentation/
