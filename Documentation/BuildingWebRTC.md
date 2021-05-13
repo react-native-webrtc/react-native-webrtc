@@ -34,21 +34,32 @@ python build-webrtc.py --setup --android ~/src/
 ## Selecting the branch
 
 Once the setup process has finished, the target branch must be selected, also
-adding any required cherry-picks. The following example shows how the M57 branch
+adding any required cherry-picks. The following example shows how the M87 branch
 was made:
 
 ```
 cd ~/src/build_webrtc/webrtc/ios/src/
-git checkout -b build-M57 refs/remotes/branch-heads/57
-git cherry-pick 0e22a4cfd3790d80ad1ae699891341fe322cb418
+git checkout -b build-M87 refs/remotes/branch-heads/4280
+#git cherry-pick ...
 cd
 ```
 
 Now the code is ready for building!
 
+Notice that since M79 chromium changed the branch naming scheme, for example M87 is WebRTC branch 4280.
+For a full list of branches, see: https://chromiumdash.appspot.com/branches
+
 ## Building
 
 ### iOS
+
+If you have switched branches, first run:
+
+```
+python build-webrtc.py --sync --ios ~/src/
+```
+
+Now build it:
 
 ```
 python build-webrtc.py --build --ios ~/src/
@@ -59,6 +70,14 @@ The build artifacts will be located in `~/src/build_webrtc/build/ios/`.
 ### Android
 
 **NOTE**: WebRTC for Android can only be built on Linux at the moment.
+
+If you have switched branches, first run:
+
+```
+python build-webrtc.py --sync --android ~/src/
+```
+
+Now build it:
 
 ```
 python build-webrtc.py --build --android ~/src/
@@ -74,4 +93,3 @@ example, to make a debug iOS build:
 ```
 python build-webrtc.py --build --ios --debug ~/src/
 ```
-

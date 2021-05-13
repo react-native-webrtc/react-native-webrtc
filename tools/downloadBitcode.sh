@@ -2,24 +2,25 @@
 
 set -euo pipefail
 
-# Files to be downloaded
-WEBRTC_BUILD="M75-1"
-WEBRTC_FRAMEWORK="https://dl.bintray.com/webrtc-builds/webrtc-builds/${WEBRTC_BUILD}/WebRTC.framework.tar.xz"
-WEBRTC_DSYM="https://dl.bintray.com/webrtc-builds/webrtc-builds/${WEBRTC_BUILD}/WebRTC.dSYM.tar.xz"
-
-
 THIS_DIR=$(cd -P "$(dirname "$(readlink "${BASH_SOURCE[0]}" || echo "${BASH_SOURCE[0]}")")" && pwd)
+PACKAGE_VERSION=$(cat ${THIS_DIR}/../package.json \
+  | grep version \
+  | head -1 \
+  | awk -F: '{ print $2 }' \
+  | sed 's/[",]//g' \
+  | tr -d '[[:space:]]')
+WEBRTC_DL="https://github.com/react-native-webrtc/react-native-webrtc/releases/download/${PACKAGE_VERSION}/WebRTC.tar.xz"
 
-pushd ${THIS_DIR}/../ios
+
+pushd ${THIS_DIR}/../apple
 
 # Cleanup
-rm -rf WebRTC.framework WebRTC.dSYM
+rm -rf WebRTC.xcframework WebRTC.dSYMs
 
 # Download
 echo "Downloading files..."
-curl -L -s ${WEBRTC_FRAMEWORK} | tar Jxf -
-curl -L -s ${WEBRTC_DSYM} | tar Jxf -
+echo $PACKAGE_VERSION
+curl -L -s ${WEBRTC_DL} | tar Jxf -
 echo "Done!"
 
 popd
-

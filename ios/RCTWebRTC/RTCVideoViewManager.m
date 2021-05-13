@@ -9,9 +9,15 @@
 #import <objc/runtime.h>
 
 #import <React/RCTLog.h>
+#if !TARGET_OS_OSX
 #import <WebRTC/RTCEAGLVideoView.h>
+#endif
 #import <WebRTC/RTCMediaStream.h>
+#if !TARGET_OS_OSX
 #import <WebRTC/RTCMTLVideoView.h>
+#else
+#import <WebRTC/RTCMTLNSVideoView.h>
+#endif
 #import <WebRTC/RTCVideoTrack.h>
 
 #import "RTCVideoViewManager.h"
@@ -44,7 +50,12 @@ typedef NS_ENUM(NSInteger, RTCVideoViewObjectFit) {
  * Implements an equivalent of {@code HTMLVideoElement} i.e. Web's video
  * element.
  */
+
+#if !TARGET_OS_OSX
 @interface RTCVideoView : UIView <RTCVideoViewDelegate>
+#else
+@interface RTCVideoView : NSView <RTCVideoViewDelegate>
+#endif
 
 /**
  * The indicator which determines whether this {@code RTCVideoView} is to mirror
@@ -66,7 +77,11 @@ typedef NS_ENUM(NSInteger, RTCVideoViewObjectFit) {
  * fits within this view so that the rendered video preserves the aspect ratio of
  * {@link #_videoSize}.
  */
+#if !TARGET_OS_OSX
 @property (nonatomic, readonly) __kindof UIView<RTCVideoRenderer> *videoView;
+#else
+@property (nonatomic, readonly) __kindof NSView<RTCVideoRenderer> *videoView;
+#endif
 
 /**
  * The {@link RTCVideoTrack}, if any, which this instance renders.
@@ -112,7 +127,11 @@ typedef NS_ENUM(NSInteger, RTCVideoViewObjectFit) {
       });
       _videoSize.height = 0;
       _videoSize.width = 0;
+#if !TARGET_OS_OSX
       [self setNeedsLayout];
+#else
+        self.needsLayout = YES;
+#endif
     }
   }
 }
@@ -126,19 +145,36 @@ typedef NS_ENUM(NSInteger, RTCVideoViewObjectFit) {
 - (instancetype)initWithFrame:(CGRect)frame {
   if (self = [super initWithFrame:frame]) {
 #if defined(RTC_SUPPORTS_METAL)
+#if !TARGET_OS_OSX
     RTCMTLVideoView *subview = [[RTCMTLVideoView alloc] initWithFrame:CGRectZero];
     subview.delegate = self;
     _videoView = subview;
 #else
+      RTCMTLNSVideoView *subview = [[RTCMTLNSVideoView alloc] initWithFrame:CGRectZero];
+      subview.wantsLayer = true;
+      subview.delegate = self;
+      _videoView = subview;
+#endif
+#else
+#if !TARGET_OS_OSX
     RTCEAGLVideoView *subview = [[RTCEAGLVideoView alloc] initWithFrame:CGRectZero];
     subview.delegate = self;
     _videoView = subview;
+#else
+            RTCMTLNSVideoView *subview = [[RTCMTLNSVideoView alloc] initWithFrame:CGRectZero];
+      subview.wantsLayer = true;
+            subview.delegate = self;
+            _videoView = subview;
+      #endif
 #endif
 
     _videoSize.height = 0;
     _videoSize.width = 0;
 
-    self.opaque = NO;
+
+    #if !TARGET_OS_OSX
+            self.opaque = NO;
+    #endif
     [self addSubview:self.videoView];
   }
   return self;
@@ -148,8 +184,17 @@ typedef NS_ENUM(NSInteger, RTCVideoViewObjectFit) {
  * Lays out the subview of this instance while preserving the aspect ratio of
  * the video it renders.
  */
+
+#if !TARGET_OS_OSX
 - (void)layoutSubviews {
+#else
+    - (void)layout {
+#endif
+#if !TARGET_OS_OSX
   UIView *subview = self.videoView;
+#else
+  NSView *subview = self.videoView;
+#endif
   if (!subview) {
     return;
   }
@@ -199,10 +244,9 @@ typedef NS_ENUM(NSInteger, RTCVideoViewObjectFit) {
     subview.frame = newValue;
   }
 
-  subview.transform
-    = self.mirror
-        ? CGAffineTransformMakeScale(-1.0, 1.0)
-        : CGAffineTransformIdentity;
+  [subview.layer setAffineTransform:self.mirror
+  ? CGAffineTransformMakeScale(-1.0, 1.0)
+                                   : CGAffineTransformIdentity];
 }
 
 /**
@@ -215,7 +259,12 @@ typedef NS_ENUM(NSInteger, RTCVideoViewObjectFit) {
 - (void)setMirror:(BOOL)mirror {
   if (_mirror != mirror) {
       _mirror = mirror;
-      [self setNeedsLayout];
+      
+      #if !TARGET_OS_OSX
+            [self setNeedsLayout];
+      #else
+            self.needsLayout = YES;
+      #endif
   }
 }
 
@@ -229,7 +278,12 @@ typedef NS_ENUM(NSInteger, RTCVideoViewObjectFit) {
 - (void)setObjectFit:(RTCVideoViewObjectFit)objectFit {
   if (_objectFit != objectFit) {
       _objectFit = objectFit;
-      [self setNeedsLayout];
+      
+      #if !TARGET_OS_OSX
+            [self setNeedsLayout];
+      #else
+            self.needsLayout = YES;
+      #endif
   }
 }
 
@@ -250,7 +304,12 @@ typedef NS_ENUM(NSInteger, RTCVideoViewObjectFit) {
       });
       _videoSize.height = 0;
       _videoSize.width = 0;
-      [self setNeedsLayout];
+      
+      #if !TARGET_OS_OSX
+            [self setNeedsLayout];
+      #else
+            self.needsLayout = YES;
+      #endif
     }
 
     _videoTrack = videoTrack;
@@ -284,7 +343,12 @@ typedef NS_ENUM(NSInteger, RTCVideoViewObjectFit) {
 - (void)videoView:(id<RTCVideoRenderer>)videoView didChangeVideoSize:(CGSize)size {
   if (videoView == self.videoView) {
     _videoSize = size;
-    [self setNeedsLayout];
+    
+    #if !TARGET_OS_OSX
+          [self setNeedsLayout];
+    #else
+          self.needsLayout = YES;
+    #endif
   }
 }
 
@@ -294,10 +358,16 @@ typedef NS_ENUM(NSInteger, RTCVideoViewObjectFit) {
 
 RCT_EXPORT_MODULE()
 
+#if !TARGET_OS_OSX
 - (UIView *)view {
+#else
+- (NSView *)view {
+#endif
   RTCVideoView *v = [[RTCVideoView alloc] init];
   v.module = [self.bridge moduleForName:@"WebRTCModule"];
+#if !TARGET_OS_OSX
   v.clipsToBounds = YES;
+#endif
   return v;
 }
 

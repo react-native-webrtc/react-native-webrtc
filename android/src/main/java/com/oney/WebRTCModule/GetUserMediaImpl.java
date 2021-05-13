@@ -1,15 +1,25 @@
 package com.oney.WebRTCModule;
 
+import android.app.Activity;
+import android.content.Context;
+import android.content.Intent;
+import android.media.projection.MediaProjectionManager;
+import android.util.DisplayMetrics;
 import android.util.Log;
+import android.view.WindowManager;
 
 import com.facebook.react.bridge.Arguments;
+import com.facebook.react.bridge.BaseActivityEventListener;
 import com.facebook.react.bridge.Callback;
+import com.facebook.react.bridge.Promise;
 import com.facebook.react.bridge.ReactApplicationContext;
 import com.facebook.react.bridge.ReadableArray;
 import com.facebook.react.bridge.ReadableMap;
+import com.facebook.react.bridge.UiThreadUtil;
 import com.facebook.react.bridge.WritableArray;
 import com.facebook.react.bridge.WritableMap;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -26,6 +36,8 @@ class GetUserMediaImpl {
      */
     private static final String TAG = WebRTCModule.TAG;
 
+    private static final int PERMISSION_REQUEST_CODE = (int) (Math.random() * Short.MAX_VALUE);
+
     private final CameraEnumerator cameraEnumerator;
     private final ReactApplicationContext reactContext;
 
@@ -37,6 +49,9 @@ class GetUserMediaImpl {
     private final Map<String, TrackPrivate> tracks = new HashMap<>();
 
     private final WebRTCModule webRTCModule;
+
+    private Promise displayMediaPromise;
+    private Intent mediaProjectionPermissionResultData;
 
     GetUserMediaImpl(WebRTCModule webRTCModule, ReactApplicationContext reactContext) {
         this.webRTCModule = webRTCModule;
@@ -59,6 +74,23 @@ class GetUserMediaImpl {
             Log.d(TAG, "Creating video capturer using Camera1 API.");
             cameraEnumerator = new Camera1Enumerator(false);
         }
+
+        reactContext.addActivityEventListener(new BaseActivityEventListener() {
+            @Override
+            public void onActivityResult(Activity activity, int requestCode, int resultCode, Intent data) {
+                super.onActivityResult(activity, requestCode, resultCode, data);
+                if (requestCode == PERMISSION_REQUEST_CODE) {
+                    if (resultCode != Activity.RESULT_OK) {
+                        displayMediaPromise.reject("DOMException", "NotAllowedError");
+                        displayMediaPromise = null;
+                        return;
+                    }
+
+                    mediaProjectionPermissionResultData = data;
+                    createScreenStream();
+                }
+            }
+        });
     }
 
     private AudioTrack createAudioTrack(ReadableMap constraints) {
@@ -68,7 +100,13 @@ class GetUserMediaImpl {
 
         String id = UUID.randomUUID().toString();
         PeerConnectionFactory pcFactory = webRTCModule.mFactory;
-        AudioSource audioSource = pcFactory.createAudioSource(webRTCModule.constraintsForOptions(audioConstraintsMap));
+        MediaConstraints peerConstraints = webRTCModule.constraintsForOptions(audioConstraintsMap);
+
+        //PeerConnectionFactory.createAudioSource will throw an error when mandatory constraints contain nulls.
+        //so, let's check for nulls
+        checkMandatoryConstraints(peerConstraints);
+
+        AudioSource audioSource = pcFactory.createAudioSource(peerConstraints);
         AudioTrack track = pcFactory.createAudioTrack(id, audioSource);
         tracks.put(
             id,
@@ -77,41 +115,27 @@ class GetUserMediaImpl {
         return track;
     }
 
-    private VideoTrack createVideoTrack(ReadableMap constraints) {
-        ReadableMap videoConstraintsMap = constraints.getMap("video");
+    private void checkMandatoryConstraints(MediaConstraints peerConstraints) {
+        ArrayList<MediaConstraints.KeyValuePair> valid = new ArrayList<>(peerConstraints.mandatory.size());
 
-        Log.d(TAG, "getUserMedia(video): " + videoConstraintsMap);
-
-        VideoCaptureController videoCaptureController
-            = new VideoCaptureController(cameraEnumerator, videoConstraintsMap);
-        VideoCapturer videoCapturer = videoCaptureController.getVideoCapturer();
-        if (videoCapturer == null) {
-            return null;
+        for (MediaConstraints.KeyValuePair constraint : peerConstraints.mandatory) {
+            if (constraint.getValue() != null) {
+                valid.add(constraint);
+            } else {
+                Log.d(TAG, String.format("constraint %s is null, ignoring it",
+                        constraint.getKey()));
+            }
         }
 
-        PeerConnectionFactory pcFactory = webRTCModule.mFactory;
-        EglBase.Context eglContext = EglUtils.getRootEglBaseContext();
-        SurfaceTextureHelper surfaceTextureHelper =
-            SurfaceTextureHelper.create("CaptureThread", eglContext);
-        VideoSource videoSource = pcFactory.createVideoSource(videoCapturer.isScreencast());
-        videoCapturer.initialize(surfaceTextureHelper, reactContext, videoSource.getCapturerObserver());
-
-        String id = UUID.randomUUID().toString();
-        VideoTrack track = pcFactory.createVideoTrack(id, videoSource);
-
-        track.setEnabled(true);
-        videoCaptureController.startCapture();
-
-        tracks.put(id, new TrackPrivate(track, videoSource, videoCaptureController));
-
-        return track;
+        peerConstraints.mandatory.clear();
+        peerConstraints.mandatory.addAll(valid);
     }
 
     ReadableArray enumerateDevices() {
         WritableArray array = Arguments.createArray();
         String[] devices = cameraEnumerator.getDeviceNames();
 
-        for(int i = 0; i < devices.length; ++i) {
+        for (int i = 0; i < devices.length; ++i) {
             String deviceName = devices[i];
             boolean isFrontFacing;
             try {
@@ -154,9 +178,9 @@ class GetUserMediaImpl {
      * the constraints map.
      */
     void getUserMedia(
-            final ReadableMap constraints,
-            final Callback successCallback,
-            final Callback errorCallback) {
+        final ReadableMap constraints,
+        final Callback successCallback,
+        final Callback errorCallback) {
         // TODO: change getUserMedia constraints format to support new syntax
         //   constraint format seems changed, and there is no mandatory any more.
         //   and has a new syntax/attrs to specify resolution
@@ -171,48 +195,33 @@ class GetUserMediaImpl {
         }
 
         if (constraints.hasKey("video")) {
-            videoTrack = createVideoTrack(constraints);
+            ReadableMap videoConstraintsMap = constraints.getMap("video");
+
+            Log.d(TAG, "getUserMedia(video): " + videoConstraintsMap);
+
+            CameraCaptureController cameraCaptureController = new CameraCaptureController(
+                cameraEnumerator,
+                videoConstraintsMap);
+
+            videoTrack = createVideoTrack(cameraCaptureController);
         }
 
         if (audioTrack == null && videoTrack == null) {
-             // Fail with DOMException with name AbortError as per:
-             // https://www.w3.org/TR/mediacapture-streams/#dom-mediadevices-getusermedia
-             errorCallback.invoke("DOMException","AbortError");
-             return;
+            // Fail with DOMException with name AbortError as per:
+            // https://www.w3.org/TR/mediacapture-streams/#dom-mediadevices-getusermedia
+            errorCallback.invoke("DOMException", "AbortError");
+            return;
         }
 
-        String streamId = UUID.randomUUID().toString();
-        MediaStream mediaStream
-            = webRTCModule.mFactory.createLocalMediaStream(streamId);
-        WritableArray tracks = Arguments.createArray();
+        createStream(new MediaStreamTrack[]{audioTrack, videoTrack}, (streamId, tracksInfo) -> {
+            WritableArray tracksInfoWritableArray = Arguments.createArray();
 
-        for (MediaStreamTrack track : new MediaStreamTrack[]{audioTrack, videoTrack}) {
-            if (track == null) {
-                continue;
+            for (WritableMap trackInfo : tracksInfo) {
+                tracksInfoWritableArray.pushMap(trackInfo);
             }
 
-            if (track instanceof AudioTrack) {
-                mediaStream.addTrack((AudioTrack) track);
-            } else {
-                mediaStream.addTrack((VideoTrack) track);
-            }
-
-            WritableMap track_ = Arguments.createMap();
-            String trackId = track.id();
-
-            track_.putBoolean("enabled", track.enabled());
-            track_.putString("id", trackId);
-            track_.putString("kind", track.kind());
-            track_.putString("label", trackId);
-            track_.putString("readyState", track.state().toString());
-            track_.putBoolean("remote", false);
-            tracks.pushMap(track_);
-        }
-
-        Log.d(TAG, "MediaStream id: " + streamId);
-        webRTCModule.localStreams.put(streamId, mediaStream);
-
-        successCallback.invoke(streamId, tracks);
+            successCallback.invoke(streamId, tracksInfoWritableArray);
+        });
     }
 
     void mediaStreamTrackSetEnabled(String trackId, final boolean enabled) {
@@ -233,24 +242,165 @@ class GetUserMediaImpl {
         }
     }
 
-    void switchCamera(String trackId, VideoCaptureController.SwitchCameraHandler handler) throws Exception {
+    void switchCamera(String trackId, CameraCaptureController.SwitchCameraHandler handler) throws Exception {
         TrackPrivate track = tracks.get(trackId);
-        if (track != null && track.videoCaptureController != null) {
-            track.videoCaptureController.switchCamera(handler);
-        }
-        else {
-            throw new Exception("Track not found when attempting to switch camera");
+        if (track != null && track.videoCaptureController instanceof CameraCaptureController) {
+            CameraCaptureController cameraCaptureController = (CameraCaptureController) track.videoCaptureController;
+            cameraCaptureController.switchCamera(handler);
         }
     }
 
     String getCameraFacingMode(String trackId) throws Exception {
         TrackPrivate track = tracks.get(trackId);
-        if (track != null && track.videoCaptureController != null) {
-            return track.videoCaptureController.facingMode();
+        if (track != null && track.videoCaptureController instanceof CameraCaptureController) {
+            CameraCaptureController cameraCaptureController = (CameraCaptureController) track.videoCaptureController;
+            return cameraCaptureController.facingMode();
         }
         else {
             throw new Exception("Track not found when attempting to get camera facing mode");
         }
+    }
+
+    void getDisplayMedia(Promise promise) {
+        if (this.displayMediaPromise != null) {
+            promise.reject(new RuntimeException("Another operation is pending."));
+            return;
+        }
+
+        Activity currentActivity = this.reactContext.getCurrentActivity();
+        if (currentActivity == null) {
+            promise.reject(new RuntimeException("No current Activity."));
+            return;
+        }
+
+        this.displayMediaPromise = promise;
+
+        MediaProjectionManager mediaProjectionManager =
+            (MediaProjectionManager) currentActivity.getApplication().getSystemService(
+                Context.MEDIA_PROJECTION_SERVICE);
+
+        if (mediaProjectionManager != null) {
+            UiThreadUtil.runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    currentActivity.startActivityForResult(
+                        mediaProjectionManager.createScreenCaptureIntent(), PERMISSION_REQUEST_CODE);
+                }
+            });
+
+        } else {
+            promise.reject(new RuntimeException("MediaProjectionManager is null."));
+        }
+    }
+
+    private void createScreenStream() {
+        VideoTrack track = createScreenTrack();
+
+        if (track == null) {
+            displayMediaPromise.reject(new RuntimeException("ScreenTrack is null."));
+        } else {
+            createStream(new MediaStreamTrack[]{track}, (streamId, tracksInfo) -> {
+                WritableMap data = Arguments.createMap();
+
+                data.putString("streamId", streamId);
+
+                if (tracksInfo.size() == 0) {
+                    displayMediaPromise.reject(new RuntimeException("No ScreenTrackInfo found."));
+                } else {
+                    data.putMap("track", tracksInfo.get(0));
+                    displayMediaPromise.resolve(data);
+                }
+            });
+        }
+
+        // Cleanup
+        mediaProjectionPermissionResultData = null;
+        displayMediaPromise = null;
+    }
+
+    private void createStream(MediaStreamTrack[] tracks, BiConsumer<String, ArrayList<WritableMap>> successCallback) {
+        String streamId = UUID.randomUUID().toString();
+        MediaStream mediaStream = webRTCModule.mFactory.createLocalMediaStream(streamId);
+
+        ArrayList<WritableMap> tracksInfo = new ArrayList<>();
+
+        for (MediaStreamTrack track : tracks) {
+            if (track == null) {
+                continue;
+            }
+
+            if (track instanceof AudioTrack) {
+                mediaStream.addTrack((AudioTrack) track);
+            } else {
+                mediaStream.addTrack((VideoTrack) track);
+            }
+
+            WritableMap trackInfo = Arguments.createMap();
+            String trackId = track.id();
+
+            trackInfo.putBoolean("enabled", track.enabled());
+            trackInfo.putString("id", trackId);
+            trackInfo.putString("kind", track.kind());
+            trackInfo.putString("label", trackId);
+            trackInfo.putString("readyState", track.state().toString());
+            trackInfo.putBoolean("remote", false);
+            tracksInfo.add(trackInfo);
+        }
+
+        Log.d(TAG, "MediaStream id: " + streamId);
+        webRTCModule.localStreams.put(streamId, mediaStream);
+
+        successCallback.accept(streamId, tracksInfo);
+    }
+
+    private VideoTrack createScreenTrack() {
+        DisplayMetrics displayMetrics = getDisplayMetrics();
+        int width = displayMetrics.widthPixels;
+        int height = displayMetrics.heightPixels;
+        int fps = 30;
+        ScreenCaptureController screenCaptureController = new ScreenCaptureController(width, height, fps, mediaProjectionPermissionResultData);
+        return createVideoTrack(screenCaptureController);
+    }
+
+    private VideoTrack createVideoTrack(AbstractVideoCaptureController videoCaptureController) {
+        videoCaptureController.initializeVideoCapturer();
+
+        VideoCapturer videoCapturer = videoCaptureController.videoCapturer;
+        if (videoCapturer == null) {
+            return null;
+        }
+
+        PeerConnectionFactory pcFactory = webRTCModule.mFactory;
+        EglBase.Context eglContext = EglUtils.getRootEglBaseContext();
+        SurfaceTextureHelper surfaceTextureHelper =
+            SurfaceTextureHelper.create("CaptureThread", eglContext);
+
+        if (surfaceTextureHelper == null) {
+            Log.d(TAG, "Error creating SurfaceTextureHelper");
+            return null;
+        }
+
+        VideoSource videoSource = pcFactory.createVideoSource(videoCapturer.isScreencast());
+        videoCapturer.initialize(surfaceTextureHelper, reactContext, videoSource.getCapturerObserver());
+
+        String id = UUID.randomUUID().toString();
+        VideoTrack track = pcFactory.createVideoTrack(id, videoSource);
+
+        track.setEnabled(true);
+        tracks.put(id, new TrackPrivate(track, videoSource, videoCaptureController));
+
+        videoCaptureController.startCapture();
+
+        return track;
+    }
+
+    private DisplayMetrics getDisplayMetrics() {
+        Activity currentActivity = this.reactContext.getCurrentActivity();
+        DisplayMetrics displayMetrics = new DisplayMetrics();
+        WindowManager windowManager =
+            (WindowManager) currentActivity.getApplication().getSystemService(Context.WINDOW_SERVICE);
+        windowManager.getDefaultDisplay().getRealMetrics(displayMetrics);
+        return displayMetrics;
     }
 
     /**
@@ -269,7 +419,7 @@ class GetUserMediaImpl {
          * The {@code VideoCapturer} from which {@link #mediaSource} was created
          * if {@link #track} is a {@link VideoTrack}.
          */
-        public final VideoCaptureController videoCaptureController;
+        public final AbstractVideoCaptureController videoCaptureController;
 
         /**
          * Whether this object has been disposed or not.
@@ -280,16 +430,16 @@ class GetUserMediaImpl {
          * Initializes a new {@code TrackPrivate} instance.
          *
          * @param track
-         * @param mediaSource the {@code MediaSource} from which the specified
-         * {@code code} was created
-         * @param videoCaptureController the {@code VideoCaptureController} from which the
-         * specified {@code mediaSource} was created if the specified
-         * {@code track} is a {@link VideoTrack}
+         * @param mediaSource            the {@code MediaSource} from which the specified
+         *                               {@code code} was created
+         * @param videoCaptureController the {@code AbstractVideoCaptureController} from which the
+         *                               specified {@code mediaSource} was created if the specified
+         *                               {@code track} is a {@link VideoTrack}
          */
         public TrackPrivate(
-                MediaStreamTrack track,
-                MediaSource mediaSource,
-                VideoCaptureController videoCaptureController) {
+            MediaStreamTrack track,
+            MediaSource mediaSource,
+            AbstractVideoCaptureController videoCaptureController) {
             this.track = track;
             this.mediaSource = mediaSource;
             this.videoCaptureController = videoCaptureController;
@@ -308,5 +458,9 @@ class GetUserMediaImpl {
                 disposed = true;
             }
         }
+    }
+
+    private interface BiConsumer<T, U> {
+        void accept(T t, U u);
     }
 }

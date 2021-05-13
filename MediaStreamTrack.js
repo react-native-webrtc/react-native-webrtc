@@ -3,8 +3,8 @@
 import {NativeModules} from 'react-native';
 import EventTarget from 'event-target-shim';
 import MediaStreamErrorEvent from './MediaStreamErrorEvent';
-
 import type MediaStreamError from './MediaStreamError';
+import { deepClone } from './RTCUtil';
 
 const {WebRTCModule} = NativeModules;
 
@@ -18,20 +18,13 @@ const MEDIA_STREAM_TRACK_EVENTS = [
 
 type MediaStreamTrackState = "live" | "ended";
 
-type SourceInfo = {
-  id: string;
-  label: string;
-  facing: string;
-  kind: string;
-};
-
 class MediaStreamTrack extends EventTarget(MEDIA_STREAM_TRACK_EVENTS) {
+  _constraints: Object;
   _enabled: boolean;
   id: string;
   kind: string;
   label: string;
   muted: boolean;
-  readonly: boolean; // how to decide?
   // readyState in java: INITIALIZING, LIVE, ENDED, FAILED
   readyState: MediaStreamTrackState;
   remote: boolean;
@@ -44,14 +37,15 @@ class MediaStreamTrack extends EventTarget(MEDIA_STREAM_TRACK_EVENTS) {
   constructor(info) {
     super();
 
-    let _readyState = info.readyState.toLowerCase();
+    this._constraints = info.constraints || {};
     this._enabled = info.enabled;
     this.id = info.id;
     this.kind = info.kind;
     this.label = info.label;
     this.muted = false;
-    this.readonly = true; // how to decide?
     this.remote = info.remote;
+
+    const _readyState = info.readyState.toLowerCase();
     this.readyState = (_readyState === "initializing"
                     || _readyState === "live") ? "live" : "ended";
   }
@@ -119,7 +113,7 @@ class MediaStreamTrack extends EventTarget(MEDIA_STREAM_TRACK_EVENTS) {
   }
 
   getConstraints() {
-    throw new Error('Not implemented.');
+    return deepClone(this._constraints);
   }
 
   getSettings() {

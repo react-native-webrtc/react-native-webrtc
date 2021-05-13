@@ -71,12 +71,13 @@ static const NSTimeInterval MUTE_DELAY = 1.5;
 }
 
 - (void)emitMuteEvent:(BOOL)muted {
-    [self.module.bridge.eventDispatcher
-        sendDeviceEventWithName:@"mediaStreamTrackMuteChanged"
-                   body:@{@"peerConnectionId": self.peerConnectionId,
-                          @"streamReactTag": self.streamReactTag,
-                          @"trackId": self.trackId,
-                          @"muted": @(muted)}];
+    [self.module sendEventWithName:kEventMediaStreamTrackMuteChanged
+                              body:@{
+                                @"peerConnectionId": self.peerConnectionId,
+                                @"streamReactTag": self.streamReactTag,
+                                @"trackId": self.trackId,
+                                @"muted": @(muted)
+                              }];
     RCTLog(@"[VideoTrackAdapter] %@ event for %@ %@ %@",
           muted ? @"Mute" : @"Unmute",
           self.peerConnectionId,

@@ -9,3 +9,8 @@ android/build
 android/*.iml
 *.tgz
 scripts
+
+Documentation/
+examples/
+apple/WebRTC.xcframework
+apple/WebRTC.dSYMs
