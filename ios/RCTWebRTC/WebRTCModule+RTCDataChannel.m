@@ -1,82 +1,99 @@
 #import <objc/runtime.h>
 
 #import <React/RCTBridge.h>
+#import <React/RCTBridgeModule.h>
 #import <React/RCTEventDispatcher.h>
 
 #import "WebRTCModule+RTCDataChannel.h"
 #import "WebRTCModule+RTCPeerConnection.h"
 #import <WebRTC/RTCDataChannelConfiguration.h>
 
-@implementation RTCDataChannel (React)
-
-- (NSNumber *)peerConnectionId
-{
-  return objc_getAssociatedObject(self, _cmd);
-}
-
-- (void)setPeerConnectionId:(NSNumber *)peerConnectionId
-{
-  objc_setAssociatedObject(self, @selector(peerConnectionId), peerConnectionId, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
-}
-
-/**
- * webrtc will update channelId internally:
- * https://github.com/jitsi/webrtc/blob/f3736ed3d8d4e6660ad8b82a8deff7aca8389e5c/pc/data_channel.cc#L39
- * https://github.com/jitsi/webrtc/blob/f3736ed3d8d4e6660ad8b82a8deff7aca8389e5c/pc/data_channel.cc#L58
- * so with this property we can keep channelId passed from JS side
- */
-- (NSNumber *)originDataChannelId
-{
-  return objc_getAssociatedObject(self, _cmd);
-}
-
-- (void)setOriginDataChannelId:(NSNumber *)originDataChannelId
-{
-  objc_setAssociatedObject(self, @selector(originDataChannelId), originDataChannelId, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
-}
-
-@end
 
 @implementation WebRTCModule (RTCDataChannel)
 
-RCT_EXPORT_METHOD(createDataChannel:(nonnull NSNumber *)peerConnectionId
-                              label:(NSString *)label
-                             config:(RTCDataChannelConfiguration *)config
+/*
+ * Thuis methos is implemented synchronously since we need to create the DataChannel on the spot
+ * and where is no good way to report an error at creation time.
+ */
+RCT_EXPORT_BLOCKING_SYNCHRONOUS_METHOD(createDataChannel:(nonnull NSNumber *)peerConnectionId
+                                                   label:(NSString *)label
+                                                  config:(RTCDataChannelConfiguration *)config)
 {
-  RTCPeerConnection *peerConnection = self.peerConnections[peerConnectionId];
-  RTCDataChannel *dataChannel = [peerConnection dataChannelForLabel:label configuration:config];
-  if (dataChannel != nil && (dataChannel.readyState == RTCDataChannelStateConnecting
-      || dataChannel.readyState == RTCDataChannelStateOpen)) {
-    dataChannel.peerConnectionId = peerConnectionId;
-    NSNumber *dataChannelId = [NSNumber numberWithInteger:config.channelId];
-    dataChannel.originDataChannelId = dataChannelId;
-    peerConnection.dataChannels[dataChannelId] = dataChannel;
-    dataChannel.delegate = self;
-  }
-})
+    __block id channelInfo;
+
+    dispatch_sync(self.workerQueue, ^{
+        RTCPeerConnection *peerConnection = self.peerConnections[peerConnectionId];
+        
+        if (peerConnection == nil) {
+            RCTLogWarn(@"PeerConnection %@ not found", peerConnectionId);
+            channelInfo = nil;
+            return;
+        }
+
+        RTCDataChannel *dataChannel = [peerConnection dataChannelForLabel:label configuration:config];
+        
+        if (dataChannel == nil) {
+            channelInfo = nil;
+            return;
+        }
+        
+        NSString *reactTag = [[NSUUID UUID] UUIDString];
+        DataChannelWrapper *dcw = [[DataChannelWrapper alloc] initWithChannel:dataChannel reactTag:reactTag];
+        dcw.pcId = peerConnectionId;
+        peerConnection.dataChannels[reactTag] = dcw;
+        dcw.delegate = self;
+
+        channelInfo = @{
+            @"peerConnectionId": peerConnectionId,
+            @"reactTag": reactTag,
+            @"label": dataChannel.label,
+            @"id": @(dataChannel.channelId),
+            @"ordered": @(dataChannel.isOrdered),
+            @"maxPacketLifeTime": @(dataChannel.maxPacketLifeTime),
+            @"maxRetransmits": @(dataChannel.maxRetransmits),
+            @"protocol": dataChannel.protocol,
+            @"negotiated": @(dataChannel.isNegotiated),
+            @"readyState": [self stringForDataChannelState:dataChannel.readyState]
+        };
+    });
+
+    return channelInfo;
+}
 
 RCT_EXPORT_METHOD(dataChannelClose:(nonnull NSNumber *)peerConnectionId
-                     dataChannelId:(nonnull NSNumber *)dataChannelId
+                     reactTag:(nonnull NSString *)tag
 {
-  RTCPeerConnection *peerConnection = self.peerConnections[peerConnectionId];
-  NSMutableDictionary *dataChannels = peerConnection.dataChannels;
-  RTCDataChannel *dataChannel = dataChannels[dataChannelId];
-  [dataChannel close];
-  [dataChannels removeObjectForKey:dataChannelId];
+    RTCPeerConnection *peerConnection = self.peerConnections[peerConnectionId];
+    DataChannelWrapper *dcw = peerConnection.dataChannels[tag];
+    if (dcw) {
+        [dcw.channel close];
+    }
+})
+
+RCT_EXPORT_METHOD(dataChannelDispose:(nonnull NSNumber *)peerConnectionId
+                            reactTag:(nonnull NSString *)tag
+{
+    RTCPeerConnection *peerConnection = self.peerConnections[peerConnectionId];
+    DataChannelWrapper *dcw = peerConnection.dataChannels[tag];
+    if (dcw) {
+        dcw.delegate = nil;
+        [peerConnection.dataChannels removeObjectForKey:tag];
+    }
 })
 
 RCT_EXPORT_METHOD(dataChannelSend:(nonnull NSNumber *)peerConnectionId
-                    dataChannelId:(nonnull NSNumber *)dataChannelId
+                         reactTag:(nonnull NSString *)tag
                              data:(NSString *)data
                              type:(NSString *)type
 {
-  RTCPeerConnection *peerConnection = self.peerConnections[peerConnectionId];
-  RTCDataChannel *dataChannel = peerConnection.dataChannels[dataChannelId];
-  NSData *bytes = [type isEqualToString:@"binary"] ?
-    [[NSData alloc] initWithBase64EncodedString:data options:0] :
-    [data dataUsingEncoding:NSUTF8StringEncoding];
-  RTCDataBuffer *buffer = [[RTCDataBuffer alloc] initWithData:bytes isBinary:[type isEqualToString:@"binary"]];
-  [dataChannel sendData:buffer];
+    RTCPeerConnection *peerConnection = self.peerConnections[peerConnectionId];
+    DataChannelWrapper *dcw = peerConnection.dataChannels[tag];
+    if (dcw) {
+        BOOL isBinary = [type isEqualToString:@"binary"];
+        NSData *bytes = isBinary ? [[NSData alloc] initWithBase64EncodedString:data options:0] : [data dataUsingEncoding:NSUTF8StringEncoding];
+        RTCDataBuffer *buffer = [[RTCDataBuffer alloc] initWithData:bytes isBinary:isBinary];
+        [dcw.channel sendData:buffer];
+    }
 })
 
 - (NSString *)stringForDataChannelState:(RTCDataChannelState)state
@@ -90,20 +107,21 @@ RCT_EXPORT_METHOD(dataChannelSend:(nonnull NSNumber *)peerConnectionId
   return nil;
 }
 
-#pragma mark - RTCDataChannelDelegate methods
+#pragma mark - DataChannelWrapperDelegate methods
 
 // Called when the data channel state has changed.
-- (void)dataChannelDidChangeState:(RTCDataChannel*)channel
+- (void)dataChannelDidChangeState:(DataChannelWrapper *)dcw
 {
-  // use originDataChannelId instead of channelId to keep the consistency with JS side
-  NSDictionary *event = @{@"id": channel.originDataChannelId,
-                          @"peerConnectionId": channel.peerConnectionId,
-                          @"state": [self stringForDataChannelState:channel.readyState]};
-  [self sendEventWithName:kEventDataChannelStateChanged body:event];
+    RTCDataChannel *channel = dcw.channel;
+    NSDictionary *event = @{@"reactTag": dcw.reactTag,
+                            @"peerConnectionId": dcw.pcId,
+                            @"id": @(channel.channelId),
+                            @"state": [self stringForDataChannelState:channel.readyState]};
+    [self sendEventWithName:kEventDataChannelStateChanged body:event];
 }
 
 // Called when a data buffer was successfully received.
-- (void)dataChannel:(RTCDataChannel *)channel didReceiveMessageWithBuffer:(RTCDataBuffer *)buffer
+- (void)dataChannel:(DataChannelWrapper *)dcw didReceiveMessageWithBuffer:(RTCDataBuffer *)buffer
 {
   NSString *type;
   NSString *data;
@@ -120,8 +138,8 @@ RCT_EXPORT_METHOD(dataChannelSend:(nonnull NSNumber *)peerConnectionId
     data = [[NSString alloc] initWithData:buffer.data
                                  encoding:NSUTF8StringEncoding];
   }
-  // use originDataChannelId instead of channelId to keep the consistency with JS side
-  NSDictionary *event = @{@"id": channel.originDataChannelId,
+  RTCDataChannel *channel = dcw.channel;
+  NSDictionary *event = @{@"reactTag": dcw.reactTag,
                           @"peerConnectionId": channel.peerConnectionId,
                           @"type": type,
                           // XXX NSDictionary will crash the process upon
