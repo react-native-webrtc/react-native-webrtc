@@ -38,7 +38,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
-		0BDDA6DF20C18B6B00B38B45 /* VideoCaptureController.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = VideoCaptureController.m; sourceTree = "<group>"; };
+		0BDDA6DF20C18B6B00B38B45 /* VideoCaptureController.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = VideoCaptureController.m; path = RCTWebRTC/VideoCaptureController.m; sourceTree = "<group>"; };
 		35A2221F1CB493700015FD5C /* libRCTWebRTC.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libRCTWebRTC.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		4EC498BA25B8777F00E76218 /* ScreenCapturePickerViewManager.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = ScreenCapturePickerViewManager.m; path = RCTWebRTC/ScreenCapturePickerViewManager.m; sourceTree = SOURCE_ROOT; };
 		4EC498BB25B8777F00E76218 /* ScreenCapturePickerViewManager.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = ScreenCapturePickerViewManager.h; path = RCTWebRTC/ScreenCapturePickerViewManager.h; sourceTree = SOURCE_ROOT; };
