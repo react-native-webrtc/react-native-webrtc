@@ -23,6 +23,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
 
 import org.webrtc.*;
 import org.webrtc.audio.AudioDeviceModule;
@@ -394,27 +396,24 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
         return conf;
     }
 
-    @ReactMethod
+    @ReactMethod(isBlockingSynchronousMethod = true)
     public void peerConnectionInit(ReadableMap configuration, int id) {
-        PeerConnection.RTCConfiguration rtcConfiguration
-            = parseRTCConfiguration(configuration);
+        PeerConnection.RTCConfiguration rtcConfiguration = parseRTCConfiguration(configuration);
 
-        ThreadUtils.runOnExecutor(() ->
-            peerConnectionInitAsync(rtcConfiguration, id));
+        try {
+            ThreadUtils.submitToExecutor(() -> {
+                PeerConnectionObserver observer = new PeerConnectionObserver(this, id);
+                PeerConnection peerConnection = mFactory.createPeerConnection(rtcConfiguration, observer);
+                observer.setPeerConnection(peerConnection);
+                mPeerConnectionObservers.put(id, observer);
+            }).get();
+        } catch (ExecutionException | InterruptedException e) {
+            e.printStackTrace();
+            throw new RuntimeException(e);
+        }
     }
 
-    private void peerConnectionInitAsync(
-            PeerConnection.RTCConfiguration configuration,
-            int id) {
-        PeerConnectionObserver observer = new PeerConnectionObserver(this, id);
-        PeerConnection peerConnection
-            = mFactory.createPeerConnection(configuration, observer);
-
-        observer.setPeerConnection(peerConnection);
-        mPeerConnectionObservers.put(id, observer);
-    }
-
-    public MediaStream getStreamForReactTag(String streamReactTag) {
+    MediaStream getStreamForReactTag(String streamReactTag) {
         MediaStream stream = localStreams.get(streamReactTag);
 
         if (stream == null) {
@@ -914,68 +913,75 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
         }
     }
 
-    @ReactMethod
-    public void createDataChannel(int peerConnectionId,
-                                  String label,
-                                  ReadableMap config) {
-        ThreadUtils.runOnExecutor(() ->
-            createDataChannelAsync(peerConnectionId, label, config));
-    }
-
-    private void createDataChannelAsync(int peerConnectionId,
-                                        String label,
-                                        ReadableMap config) {
-        // Forward to PeerConnectionObserver which deals with DataChannels
-        // because DataChannel is owned by PeerConnection.
-        PeerConnectionObserver pco
-            = mPeerConnectionObservers.get(peerConnectionId);
-        if (pco == null || pco.getPeerConnection() == null) {
-            Log.d(TAG, "createDataChannel() peerConnection is null");
-        } else {
-            pco.createDataChannel(label, config);
+    @ReactMethod(isBlockingSynchronousMethod = true)
+    public WritableMap createDataChannel(int peerConnectionId, String label, ReadableMap config) {
+        try {
+            return (WritableMap) ThreadUtils.submitToExecutor((Callable<Object>) () -> {
+                PeerConnectionObserver pco = mPeerConnectionObservers.get(peerConnectionId);
+                if (pco == null || pco.getPeerConnection() == null) {
+                    Log.d(TAG, "createDataChannel() peerConnection is null");
+                    return null;
+                } else {
+                    return pco.createDataChannel(label, config);
+                }
+            }).get();
+        } catch (ExecutionException | InterruptedException e) {
+            return null;
         }
     }
 
     @ReactMethod
-    public void dataChannelClose(int peerConnectionId, int dataChannelId) {
+    public void dataChannelClose(int peerConnectionId, String reactTag) {
         ThreadUtils.runOnExecutor(() ->
-            dataChannelCloseAsync(peerConnectionId, dataChannelId));
+            dataChannelCloseAsync(peerConnectionId, reactTag));
     }
 
-    private void dataChannelCloseAsync(int peerConnectionId,
-                                       int dataChannelId) {
+    private void dataChannelCloseAsync(int peerConnectionId, String reactTag) {
         // Forward to PeerConnectionObserver which deals with DataChannels
         // because DataChannel is owned by PeerConnection.
-        PeerConnectionObserver pco
-            = mPeerConnectionObservers.get(peerConnectionId);
+        PeerConnectionObserver pco = mPeerConnectionObservers.get(peerConnectionId);
         if (pco == null || pco.getPeerConnection() == null) {
             Log.d(TAG, "dataChannelClose() peerConnection is null");
-        } else {
-            pco.dataChannelClose(dataChannelId);
+            return;
         }
+
+        pco.dataChannelClose(reactTag);
+    }
+
+    @ReactMethod
+    public void dataChannelDispose(int peerConnectionId, String reactTag) {
+        ThreadUtils.runOnExecutor(() -> {
+            PeerConnectionObserver pco = mPeerConnectionObservers.get(peerConnectionId);
+            if (pco == null || pco.getPeerConnection() == null) {
+                Log.d(TAG, "dataChannelDispose() peerConnection is null");
+                return;
+            }
+
+            pco.dataChannelDispose(reactTag);
+        });
     }
 
     @ReactMethod
     public void dataChannelSend(int peerConnectionId,
-                                int dataChannelId,
+                                String reactTag,
                                 String data,
                                 String type) {
         ThreadUtils.runOnExecutor(() ->
-            dataChannelSendAsync(peerConnectionId, dataChannelId, data, type));
+            dataChannelSendAsync(peerConnectionId, reactTag, data, type));
     }
 
     private void dataChannelSendAsync(int peerConnectionId,
-                                      int dataChannelId,
+                                      String reactTag,
                                       String data,
                                       String type) {
         // Forward to PeerConnectionObserver which deals with DataChannels
         // because DataChannel is owned by PeerConnection.
-        PeerConnectionObserver pco
-            = mPeerConnectionObservers.get(peerConnectionId);
+        PeerConnectionObserver pco = mPeerConnectionObservers.get(peerConnectionId);
         if (pco == null || pco.getPeerConnection() == null) {
             Log.d(TAG, "dataChannelSend() peerConnection is null");
-        } else {
-            pco.dataChannelSend(dataChannelId, data, type);
+            return;
         }
+
+        pco.dataChannelSend(reactTag, data, type);
     }
 }
