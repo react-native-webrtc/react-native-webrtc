@@ -212,7 +212,7 @@ RCT_EXPORT_METHOD(peerConnectionCreateAnswer:(nonnull NSNumber *)peerConnectionI
 
 RCT_EXPORT_METHOD(peerConnectionSetLocalDescription:(RTCSessionDescription *)sdp objectID:(nonnull NSNumber *)objectID callback:(RCTResponseSenderBlock)callback)
 {
-  RTCPeerConnection *peerConnection = self.peerConnections[objectID];
+  RTCPeerConnection __weak *peerConnection = self.peerConnections[objectID];
   if (!peerConnection) {
     return;
   }
@@ -225,14 +225,18 @@ RCT_EXPORT_METHOD(peerConnectionSetLocalDescription:(RTCSessionDescription *)sdp
       };
       callback(@[@(NO), errorResponse]);
     } else {
-      callback(@[@(YES)]);
+      id newSdp = @{
+          @"type": [RTCSessionDescription stringForType:peerConnection.localDescription.type],
+          @"sdp": peerConnection.localDescription.sdp
+      };
+      callback(@[@(YES), newSdp]);
     }
   }];
 }
 
 RCT_EXPORT_METHOD(peerConnectionSetRemoteDescription:(RTCSessionDescription *)sdp objectID:(nonnull NSNumber *)objectID callback:(RCTResponseSenderBlock)callback)
 {
-  RTCPeerConnection *peerConnection = self.peerConnections[objectID];
+  RTCPeerConnection __weak *peerConnection = self.peerConnections[objectID];
   if (!peerConnection) {
     return;
   }
@@ -245,7 +249,11 @@ RCT_EXPORT_METHOD(peerConnectionSetRemoteDescription:(RTCSessionDescription *)sd
       };
       callback(@[@(NO), errorResponse]);
     } else {
-      callback(@[@(YES)]);
+      id newSdp = @{
+          @"type": [RTCSessionDescription stringForType:peerConnection.remoteDescription.type],
+          @"sdp": peerConnection.remoteDescription.sdp
+      };
+      callback(@[@(YES), newSdp]);
     }
   }];
 }
@@ -258,8 +266,12 @@ RCT_EXPORT_METHOD(peerConnectionAddICECandidate:(RTCIceCandidate*)candidate obje
   }
 
   [peerConnection addIceCandidate:candidate];
-  RCTLogTrace(@"addICECandidateresult: %@", candidate);
-  callback(@[@true]);
+
+  id newSdp = @{
+      @"type": [RTCSessionDescription stringForType:peerConnection.remoteDescription.type],
+      @"sdp": peerConnection.remoteDescription.sdp
+  };
+  callback(@[@true, newSdp]);
 }
 
 RCT_EXPORT_METHOD(peerConnectionClose:(nonnull NSNumber *)objectID)
@@ -461,12 +473,19 @@ RCT_EXPORT_METHOD(peerConnectionGetStats:(nonnull NSNumber *) objectID
   }
 
   peerConnection.remoteStreams[streamReactTag] = stream;
+
+  id newSdp = @{
+    @"type": [RTCSessionDescription stringForType:peerConnection.remoteDescription.type],
+    @"sdp": peerConnection.remoteDescription.sdp
+  };
+
   [self sendEventWithName:kEventPeerConnectionAddedStream
                      body:@{
                        @"id": peerConnection.reactTag,
                        @"streamId": stream.streamId,
                        @"streamReactTag": streamReactTag,
-                       @"tracks": tracks
+                       @"tracks": tracks,
+                       @"sdp": newSdp
                      }];
 }
 
@@ -494,10 +513,17 @@ RCT_EXPORT_METHOD(peerConnectionGetStats:(nonnull NSNumber *) objectID
     [peerConnection.remoteTracks removeObjectForKey:track.trackId];
   }
   [peerConnection.remoteStreams removeObjectForKey:streamReactTag];
+
+  id newSdp = @{
+    @"type": [RTCSessionDescription stringForType:peerConnection.remoteDescription.type],
+    @"sdp": peerConnection.remoteDescription.sdp
+  };
+
   [self sendEventWithName:kEventPeerConnectionRemovedStream
                      body:@{
                        @"id": peerConnection.reactTag,
-                       @"streamId": streamReactTag
+                       @"streamId": streamReactTag,
+                       @"sdp": newSdp
                      }];
 }
 
@@ -520,10 +546,18 @@ RCT_EXPORT_METHOD(peerConnectionGetStats:(nonnull NSNumber *) objectID
 }
 
 - (void)peerConnection:(RTCPeerConnection *)peerConnection didChangeIceGatheringState:(RTCIceGatheringState)newState {
+  id newSdp = @{};
+  if (newState == RTCIceGatheringStateComplete) {
+      newSdp = @{
+          @"type": [RTCSessionDescription stringForType:peerConnection.localDescription.type],
+          @"sdp": peerConnection.localDescription.sdp
+      };
+  }
   [self sendEventWithName:kEventPeerConnectionIceGatheringChanged
                      body:@{
                        @"id": peerConnection.reactTag,
-                       @"iceGatheringState": [self stringForICEGatheringState:newState]
+                       @"iceGatheringState": [self stringForICEGatheringState:newState],
+                       @"sdp": newSdp
                      }];
 }
 
@@ -535,6 +569,10 @@ RCT_EXPORT_METHOD(peerConnectionGetStats:(nonnull NSNumber *) objectID
                            @"candidate": candidate.sdp,
                            @"sdpMLineIndex": @(candidate.sdpMLineIndex),
                            @"sdpMid": candidate.sdpMid
+                       },
+                       @"sdp": @{
+                           @"type": [RTCSessionDescription stringForType:peerConnection.localDescription.type],
+                           @"sdp": peerConnection.localDescription.sdp
                        }
                      }];
 }

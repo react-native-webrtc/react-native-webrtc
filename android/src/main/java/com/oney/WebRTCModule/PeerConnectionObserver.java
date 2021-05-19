@@ -19,6 +19,7 @@ import org.webrtc.MediaStream;
 import org.webrtc.MediaStreamTrack;
 import org.webrtc.PeerConnection;
 import org.webrtc.RtpReceiver;
+import org.webrtc.SessionDescription;
 import org.webrtc.VideoTrack;
 
 import java.io.UnsupportedEncodingException;
@@ -242,6 +243,11 @@ class PeerConnectionObserver implements PeerConnection.Observer {
         candidateParams.putString("sdpMid", candidate.sdpMid);
         candidateParams.putString("candidate", candidate.sdp);
         params.putMap("candidate", candidateParams);
+        SessionDescription newSdp = peerConnection.getLocalDescription();
+        WritableMap newSdpMap = Arguments.createMap();
+        newSdpMap.putString("type", newSdp.type.canonicalForm());
+        newSdpMap.putString("sdp", newSdp.description);
+        params.putMap("sdp", newSdpMap);
 
         webRTCModule.sendEvent("peerConnectionGotICECandidate", params);
     }
@@ -256,7 +262,6 @@ class PeerConnectionObserver implements PeerConnection.Observer {
         WritableMap params = Arguments.createMap();
         params.putInt("id", id);
         params.putString("iceConnectionState", iceConnectionStateString(iceConnectionState));
-
         webRTCModule.sendEvent("peerConnectionIceConnectionChanged", params);
     }
 
@@ -279,6 +284,13 @@ class PeerConnectionObserver implements PeerConnection.Observer {
         WritableMap params = Arguments.createMap();
         params.putInt("id", id);
         params.putString("iceGatheringState", iceGatheringStateString(iceGatheringState));
+        if (iceGatheringState == PeerConnection.IceGatheringState.COMPLETE) {
+            SessionDescription newSdp = peerConnection.getLocalDescription();
+            WritableMap newSdpMap = Arguments.createMap();
+            newSdpMap.putString("type", newSdp.type.canonicalForm());
+            newSdpMap.putString("sdp", newSdp.description);
+            params.putMap("sdp", newSdpMap);
+        }
         webRTCModule.sendEvent("peerConnectionIceGatheringChanged", params);
     }
 
@@ -356,6 +368,12 @@ class PeerConnectionObserver implements PeerConnection.Observer {
         }
         params.putArray("tracks", tracks);
 
+        SessionDescription newSdp = peerConnection.getRemoteDescription();
+        WritableMap newSdpMap = Arguments.createMap();
+        newSdpMap.putString("type", newSdp.type.canonicalForm());
+        newSdpMap.putString("sdp", newSdp.description);
+        params.putMap("sdp", newSdpMap);
+
         webRTCModule.sendEvent("peerConnectionAddedStream", params);
     }
 
@@ -363,9 +381,7 @@ class PeerConnectionObserver implements PeerConnection.Observer {
     public void onRemoveStream(MediaStream mediaStream) {
         String streamReactTag = getReactTagForStream(mediaStream);
         if (streamReactTag == null) {
-            Log.w(TAG,
-                "onRemoveStream - no remote stream for id: "
-                    + mediaStream.getId());
+            Log.w(TAG, "onRemoveStream - no remote stream for id: " + mediaStream.getId());
             return;
         }
 
@@ -382,6 +398,13 @@ class PeerConnectionObserver implements PeerConnection.Observer {
         WritableMap params = Arguments.createMap();
         params.putInt("id", id);
         params.putString("streamId", streamReactTag);
+
+        SessionDescription newSdp = peerConnection.getRemoteDescription();
+        WritableMap newSdpMap = Arguments.createMap();
+        newSdpMap.putString("type", newSdp.type.canonicalForm());
+        newSdpMap.putString("sdp", newSdp.description);
+        params.putMap("sdp", newSdpMap);
+
         webRTCModule.sendEvent("peerConnectionRemovedStream", params);
     }
 

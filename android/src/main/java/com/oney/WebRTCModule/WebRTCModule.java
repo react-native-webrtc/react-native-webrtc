@@ -23,6 +23,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 
@@ -773,38 +774,40 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
                                                         int id,
                                                         final Callback callback) {
         PeerConnection peerConnection = getPeerConnection(id);
-
-        Log.d(TAG, "peerConnectionSetLocalDescription() start");
-        if (peerConnection != null) {
-            SessionDescription sdp = new SessionDescription(
-                SessionDescription.Type.fromCanonicalForm(sdpMap.getString("type")),
-                sdpMap.getString("sdp")
-            );
-
-            peerConnection.setLocalDescription(new SdpObserver() {
-                @Override
-                public void onCreateSuccess(SessionDescription sdp) {
-                }
-
-                @Override
-                public void onSetSuccess() {
-                    callback.invoke(true);
-                }
-
-                @Override
-                public void onCreateFailure(String s) {
-                }
-
-                @Override
-                public void onSetFailure(String s) {
-                    callback.invoke(false, s);
-                }
-            }, sdp);
-        } else {
+        if (peerConnection == null) {
             Log.d(TAG, "peerConnectionSetLocalDescription() peerConnection is null");
             callback.invoke(false, "peerConnection is null");
+            return;
         }
-        Log.d(TAG, "peerConnectionSetLocalDescription() end");
+
+        SessionDescription sdp = new SessionDescription(
+            SessionDescription.Type.fromCanonicalForm(Objects.requireNonNull(sdpMap.getString("type"))),
+            sdpMap.getString("sdp")
+        );
+
+        peerConnection.setLocalDescription(new SdpObserver() {
+            @Override
+            public void onCreateSuccess(SessionDescription sdp) {
+            }
+
+            @Override
+            public void onSetSuccess() {
+                SessionDescription newSdp = peerConnection.getLocalDescription();
+                WritableMap newSdpMap = Arguments.createMap();
+                newSdpMap.putString("type", newSdp.type.canonicalForm());
+                newSdpMap.putString("sdp", newSdp.description);
+                callback.invoke(true, newSdpMap);
+            }
+
+            @Override
+            public void onCreateFailure(String s) {
+            }
+
+            @Override
+            public void onSetFailure(String s) {
+                callback.invoke(false, s);
+            }
+        }, sdp);
     }
 
     @ReactMethod
@@ -819,66 +822,69 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
                                                          int id,
                                                          final Callback callback) {
         PeerConnection peerConnection = getPeerConnection(id);
-
-        Log.d(TAG, "peerConnectionSetRemoteDescription() start");
-        if (peerConnection != null) {
-            SessionDescription sdp = new SessionDescription(
-                SessionDescription.Type.fromCanonicalForm(sdpMap.getString("type")),
-                sdpMap.getString("sdp")
-            );
-
-            peerConnection.setRemoteDescription(new SdpObserver() {
-                @Override
-                public void onCreateSuccess(final SessionDescription sdp) {
-                }
-
-                @Override
-                public void onSetSuccess() {
-                    callback.invoke(true);
-                }
-
-                @Override
-                public void onCreateFailure(String s) {
-                }
-
-                @Override
-                public void onSetFailure(String s) {
-                    callback.invoke(false, s);
-                }
-            }, sdp);
-        } else {
+        if (peerConnection == null) {
             Log.d(TAG, "peerConnectionSetRemoteDescription() peerConnection is null");
             callback.invoke(false, "peerConnection is null");
+            return;
         }
-        Log.d(TAG, "peerConnectionSetRemoteDescription() end");
+
+        SessionDescription sdp = new SessionDescription(
+            SessionDescription.Type.fromCanonicalForm(sdpMap.getString("type")),
+            sdpMap.getString("sdp")
+        );
+
+        peerConnection.setRemoteDescription(new SdpObserver() {
+            @Override
+            public void onCreateSuccess(final SessionDescription sdp) {
+            }
+
+            @Override
+            public void onSetSuccess() {
+                SessionDescription newSdp = peerConnection.getRemoteDescription();
+                WritableMap newSdpMap = Arguments.createMap();
+                newSdpMap.putString("type", newSdp.type.canonicalForm());
+                newSdpMap.putString("sdp", newSdp.description);
+                callback.invoke(true, newSdpMap);
+            }
+
+            @Override
+            public void onCreateFailure(String s) {
+            }
+
+            @Override
+            public void onSetFailure(String s) {
+                callback.invoke(false, s);
+            }
+        }, sdp);
     }
 
     @ReactMethod
     public void peerConnectionAddICECandidate(ReadableMap candidateMap,
                                               int id,
                                               Callback callback) {
-        ThreadUtils.runOnExecutor(() ->
-            peerConnectionAddICECandidateAsync(candidateMap, id, callback));
-    }
+        ThreadUtils.runOnExecutor(() -> {
+            PeerConnection peerConnection = getPeerConnection(id);
+            if (peerConnection == null) {
+                Log.d(TAG, "peerConnectionAddICECandidate() peerConnection is null");
+                callback.invoke(false);
+                return;
+            }
 
-    private void peerConnectionAddICECandidateAsync(ReadableMap candidateMap,
-                                                    int id,
-                                                    Callback callback) {
-        boolean result = false;
-        PeerConnection peerConnection = getPeerConnection(id);
-        Log.d(TAG, "peerConnectionAddICECandidate() start");
-        if (peerConnection != null) {
             IceCandidate candidate = new IceCandidate(
                 candidateMap.getString("sdpMid"),
                 candidateMap.getInt("sdpMLineIndex"),
                 candidateMap.getString("candidate")
             );
-            result = peerConnection.addIceCandidate(candidate);
-        } else {
-            Log.d(TAG, "peerConnectionAddICECandidate() peerConnection is null");
-        }
-        callback.invoke(result);
-        Log.d(TAG, "peerConnectionAddICECandidate() end");
+
+            boolean success = peerConnection.addIceCandidate(candidate);
+            WritableMap newSdpMap = Arguments.createMap();
+            if (success) {
+                SessionDescription newSdp = peerConnection.getRemoteDescription();
+                newSdpMap.putString("type", newSdp.type.canonicalForm());
+                newSdpMap.putString("sdp", newSdp.description);
+            }
+            callback.invoke(success, newSdpMap);
+        });
     }
 
     @ReactMethod

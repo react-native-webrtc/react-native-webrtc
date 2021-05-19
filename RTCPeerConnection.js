@@ -165,7 +165,7 @@ export default class RTCPeerConnection extends EventTarget(PEER_CONNECTION_EVENT
         this._peerConnectionId,
         (successful, data) => {
           if (successful) {
-            this.localDescription = sessionDescription;
+            this.localDescription = new RTCSessionDescription(data);
             resolve();
           } else {
             reject(data);
@@ -181,7 +181,7 @@ export default class RTCPeerConnection extends EventTarget(PEER_CONNECTION_EVENT
         this._peerConnectionId,
         (successful, data) => {
           if (successful) {
-            this.remoteDescription = sessionDescription;
+            this.remoteDescription = new RTCSessionDescription(data);
             resolve();
           } else {
             reject(data);
@@ -191,13 +191,18 @@ export default class RTCPeerConnection extends EventTarget(PEER_CONNECTION_EVENT
   }
 
   addIceCandidate(candidate) {
+    if (!candidate || !candidate.candidate) {
+      // TODO: support end-of-candidates, native crashes at this time.
+      return Promise.resolve();
+    }
     return new Promise((resolve, reject) => {
       WebRTCModule.peerConnectionAddICECandidate(
         candidate.toJSON ? candidate.toJSON() : candidate,
         this._peerConnectionId,
-        (successful) => {
+        (successful, data) => {
           if (successful) {
-            resolve()
+            this.remoteDescription = new RTCSessionDescription(data);
+            resolve();
           } else {
             // XXX: This should be OperationError
             reject(new Error('Failed to add ICE candidate'));
@@ -292,6 +297,7 @@ export default class RTCPeerConnection extends EventTarget(PEER_CONNECTION_EVENT
         }
         const stream = new MediaStream(ev);
         this._remoteStreams.push(stream);
+        this.remoteDescription = new RTCSessionDescription(ev.sdp);
         this.dispatchEvent(new MediaStreamEvent('addstream', {stream}));
       }),
       EventEmitter.addListener('peerConnectionRemovedStream', ev => {
@@ -305,6 +311,7 @@ export default class RTCPeerConnection extends EventTarget(PEER_CONNECTION_EVENT
             this._remoteStreams.splice(index, 1);
           }
         }
+        this.remoteDescription = new RTCSessionDescription(ev.sdp);
         this.dispatchEvent(new MediaStreamEvent('removestream', {stream}));
       }),
       EventEmitter.addListener('mediaStreamTrackMuteChanged', ev => {
@@ -322,6 +329,7 @@ export default class RTCPeerConnection extends EventTarget(PEER_CONNECTION_EVENT
         if (ev.id !== this._peerConnectionId) {
           return;
         }
+        this.localDescription = new RTCSessionDescription(ev.sdp);
         const candidate = new RTCIceCandidate(ev.candidate);
         const event = new RTCIceCandidateEvent('icecandidate', {candidate});
         this.dispatchEvent(event);
@@ -333,6 +341,7 @@ export default class RTCPeerConnection extends EventTarget(PEER_CONNECTION_EVENT
         this.iceGatheringState = ev.iceGatheringState;
 
         if (this.iceGatheringState === 'complete') {
+          this.localDescription = new RTCSessionDescription(ev.sdp);
           this.dispatchEvent(new RTCIceCandidateEvent('icecandidate', null));
         }
 
