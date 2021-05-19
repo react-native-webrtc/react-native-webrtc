@@ -95,8 +95,10 @@ RCT_EXPORT_METHOD(dataChannelSend:(nonnull NSNumber *)peerConnectionId
 // Called when the data channel state has changed.
 - (void)dataChannelDidChangeState:(RTCDataChannel*)channel
 {
+  NSNumber *id = channel.originDataChannelId ?: @1;
+
   // use originDataChannelId instead of channelId to keep the consistency with JS side
-  NSDictionary *event = @{@"id": channel.originDataChannelId,
+  NSDictionary *event = @{@"id": id,
                           @"peerConnectionId": channel.peerConnectionId,
                           @"state": [self stringForDataChannelState:channel.readyState]};
   [self sendEventWithName:kEventDataChannelStateChanged body:event];
@@ -120,8 +122,11 @@ RCT_EXPORT_METHOD(dataChannelSend:(nonnull NSNumber *)peerConnectionId
     data = [[NSString alloc] initWithData:buffer.data
                                  encoding:NSUTF8StringEncoding];
   }
+
+  NSNumber *id = channel.originDataChannelId ?: @1;
+
   // use originDataChannelId instead of channelId to keep the consistency with JS side
-  NSDictionary *event = @{@"id": channel.originDataChannelId,
+  NSDictionary *event = @{@"id": id,
                           @"peerConnectionId": channel.peerConnectionId,
                           @"type": type,
                           // XXX NSDictionary will crash the process upon
