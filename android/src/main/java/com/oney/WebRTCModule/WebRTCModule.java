@@ -25,6 +25,9 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
 
 import org.webrtc.*;
 import org.webrtc.audio.AudioDeviceModule;
@@ -396,24 +399,21 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
         return conf;
     }
 
-    @ReactMethod
+    @ReactMethod(isBlockingSynchronousMethod = true)
     public void peerConnectionInit(ReadableMap configuration, int id) {
-        PeerConnection.RTCConfiguration rtcConfiguration
-            = parseRTCConfiguration(configuration);
+        PeerConnection.RTCConfiguration rtcConfiguration = parseRTCConfiguration(configuration);
 
-        ThreadUtils.runOnExecutor(() ->
-            peerConnectionInitAsync(rtcConfiguration, id));
-    }
-
-    private void peerConnectionInitAsync(
-            PeerConnection.RTCConfiguration configuration,
-            int id) {
-        PeerConnectionObserver observer = new PeerConnectionObserver(this, id);
-        PeerConnection peerConnection
-            = mFactory.createPeerConnection(configuration, observer);
-
-        observer.setPeerConnection(peerConnection);
-        mPeerConnectionObservers.put(id, observer);
+        try {
+            ThreadUtils.submitToExecutor(() -> {
+                PeerConnectionObserver observer = new PeerConnectionObserver(this, id);
+                PeerConnection peerConnection = mFactory.createPeerConnection(rtcConfiguration, observer);
+                observer.setPeerConnection(peerConnection);
+                mPeerConnectionObservers.put(id, observer);
+            }).get();
+        } catch (ExecutionException | InterruptedException e) {
+            e.printStackTrace();
+            throw new RuntimeException(e);
+        }
     }
 
     MediaStream getStreamForReactTag(String streamReactTag) {
@@ -819,38 +819,40 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
                                                         int id,
                                                         final Callback callback) {
         PeerConnection peerConnection = getPeerConnection(id);
-
-        Log.d(TAG, "peerConnectionSetLocalDescription() start");
-        if (peerConnection != null) {
-            SessionDescription sdp = new SessionDescription(
-                SessionDescription.Type.fromCanonicalForm(sdpMap.getString("type")),
-                sdpMap.getString("sdp")
-            );
-
-            peerConnection.setLocalDescription(new SdpObserver() {
-                @Override
-                public void onCreateSuccess(SessionDescription sdp) {
-                }
-
-                @Override
-                public void onSetSuccess() {
-                    callback.invoke(true);
-                }
-
-                @Override
-                public void onCreateFailure(String s) {
-                }
-
-                @Override
-                public void onSetFailure(String s) {
-                    callback.invoke(false, s);
-                }
-            }, sdp);
-        } else {
+        if (peerConnection == null) {
             Log.d(TAG, "peerConnectionSetLocalDescription() peerConnection is null");
             callback.invoke(false, "peerConnection is null");
+            return;
         }
-        Log.d(TAG, "peerConnectionSetLocalDescription() end");
+
+        SessionDescription sdp = new SessionDescription(
+            SessionDescription.Type.fromCanonicalForm(Objects.requireNonNull(sdpMap.getString("type"))),
+            sdpMap.getString("sdp")
+        );
+
+        peerConnection.setLocalDescription(new SdpObserver() {
+            @Override
+            public void onCreateSuccess(SessionDescription sdp) {
+            }
+
+            @Override
+            public void onSetSuccess() {
+                SessionDescription newSdp = peerConnection.getLocalDescription();
+                WritableMap newSdpMap = Arguments.createMap();
+                newSdpMap.putString("type", newSdp.type.canonicalForm());
+                newSdpMap.putString("sdp", newSdp.description);
+                callback.invoke(true, newSdpMap);
+            }
+
+            @Override
+            public void onCreateFailure(String s) {
+            }
+
+            @Override
+            public void onSetFailure(String s) {
+                callback.invoke(false, s);
+            }
+        }, sdp);
     }
 
     @ReactMethod
@@ -865,66 +867,69 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
                                                          int id,
                                                          final Callback callback) {
         PeerConnection peerConnection = getPeerConnection(id);
-
-        Log.d(TAG, "peerConnectionSetRemoteDescription() start");
-        if (peerConnection != null) {
-            SessionDescription sdp = new SessionDescription(
-                SessionDescription.Type.fromCanonicalForm(sdpMap.getString("type")),
-                sdpMap.getString("sdp")
-            );
-
-            peerConnection.setRemoteDescription(new SdpObserver() {
-                @Override
-                public void onCreateSuccess(final SessionDescription sdp) {
-                }
-
-                @Override
-                public void onSetSuccess() {
-                    callback.invoke(true);
-                }
-
-                @Override
-                public void onCreateFailure(String s) {
-                }
-
-                @Override
-                public void onSetFailure(String s) {
-                    callback.invoke(false, s);
-                }
-            }, sdp);
-        } else {
+        if (peerConnection == null) {
             Log.d(TAG, "peerConnectionSetRemoteDescription() peerConnection is null");
             callback.invoke(false, "peerConnection is null");
+            return;
         }
-        Log.d(TAG, "peerConnectionSetRemoteDescription() end");
+
+        SessionDescription sdp = new SessionDescription(
+            SessionDescription.Type.fromCanonicalForm(sdpMap.getString("type")),
+            sdpMap.getString("sdp")
+        );
+
+        peerConnection.setRemoteDescription(new SdpObserver() {
+            @Override
+            public void onCreateSuccess(final SessionDescription sdp) {
+            }
+
+            @Override
+            public void onSetSuccess() {
+                SessionDescription newSdp = peerConnection.getRemoteDescription();
+                WritableMap newSdpMap = Arguments.createMap();
+                newSdpMap.putString("type", newSdp.type.canonicalForm());
+                newSdpMap.putString("sdp", newSdp.description);
+                callback.invoke(true, newSdpMap);
+            }
+
+            @Override
+            public void onCreateFailure(String s) {
+            }
+
+            @Override
+            public void onSetFailure(String s) {
+                callback.invoke(false, s);
+            }
+        }, sdp);
     }
 
     @ReactMethod
     public void peerConnectionAddICECandidate(ReadableMap candidateMap,
                                               int id,
                                               Callback callback) {
-        ThreadUtils.runOnExecutor(() ->
-            peerConnectionAddICECandidateAsync(candidateMap, id, callback));
-    }
+        ThreadUtils.runOnExecutor(() -> {
+            PeerConnection peerConnection = getPeerConnection(id);
+            if (peerConnection == null) {
+                Log.d(TAG, "peerConnectionAddICECandidate() peerConnection is null");
+                callback.invoke(false);
+                return;
+            }
 
-    private void peerConnectionAddICECandidateAsync(ReadableMap candidateMap,
-                                                    int id,
-                                                    Callback callback) {
-        boolean result = false;
-        PeerConnection peerConnection = getPeerConnection(id);
-        Log.d(TAG, "peerConnectionAddICECandidate() start");
-        if (peerConnection != null) {
             IceCandidate candidate = new IceCandidate(
                 candidateMap.getString("sdpMid"),
                 candidateMap.getInt("sdpMLineIndex"),
                 candidateMap.getString("candidate")
             );
-            result = peerConnection.addIceCandidate(candidate);
-        } else {
-            Log.d(TAG, "peerConnectionAddICECandidate() peerConnection is null");
-        }
-        callback.invoke(result);
-        Log.d(TAG, "peerConnectionAddICECandidate() end");
+
+            boolean success = peerConnection.addIceCandidate(candidate);
+            WritableMap newSdpMap = Arguments.createMap();
+            if (success) {
+                SessionDescription newSdp = peerConnection.getRemoteDescription();
+                newSdpMap.putString("type", newSdp.type.canonicalForm());
+                newSdpMap.putString("sdp", newSdp.description);
+            }
+            callback.invoke(success, newSdpMap);
+        });
     }
 
     @ReactMethod
@@ -959,69 +964,76 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
         }
     }
 
-    @ReactMethod
-    public void createDataChannel(int peerConnectionId,
-                                  String label,
-                                  ReadableMap config) {
-        ThreadUtils.runOnExecutor(() ->
-            createDataChannelAsync(peerConnectionId, label, config));
-    }
-
-    private void createDataChannelAsync(int peerConnectionId,
-                                        String label,
-                                        ReadableMap config) {
-        // Forward to PeerConnectionObserver which deals with DataChannels
-        // because DataChannel is owned by PeerConnection.
-        PeerConnectionObserver pco
-            = mPeerConnectionObservers.get(peerConnectionId);
-        if (pco == null || pco.getPeerConnection() == null) {
-            Log.d(TAG, "createDataChannel() peerConnection is null");
-        } else {
-            pco.createDataChannel(label, config);
+    @ReactMethod(isBlockingSynchronousMethod = true)
+    public WritableMap createDataChannel(int peerConnectionId, String label, ReadableMap config) {
+        try {
+            return (WritableMap) ThreadUtils.submitToExecutor((Callable<Object>) () -> {
+                PeerConnectionObserver pco = mPeerConnectionObservers.get(peerConnectionId);
+                if (pco == null || pco.getPeerConnection() == null) {
+                    Log.d(TAG, "createDataChannel() peerConnection is null");
+                    return null;
+                } else {
+                    return pco.createDataChannel(label, config);
+                }
+            }).get();
+        } catch (ExecutionException | InterruptedException e) {
+            return null;
         }
     }
 
     @ReactMethod
-    public void dataChannelClose(int peerConnectionId, int dataChannelId) {
+    public void dataChannelClose(int peerConnectionId, String reactTag) {
         ThreadUtils.runOnExecutor(() ->
-            dataChannelCloseAsync(peerConnectionId, dataChannelId));
+            dataChannelCloseAsync(peerConnectionId, reactTag));
     }
 
-    private void dataChannelCloseAsync(int peerConnectionId,
-                                       int dataChannelId) {
+    private void dataChannelCloseAsync(int peerConnectionId, String reactTag) {
         // Forward to PeerConnectionObserver which deals with DataChannels
         // because DataChannel is owned by PeerConnection.
-        PeerConnectionObserver pco
-            = mPeerConnectionObservers.get(peerConnectionId);
+        PeerConnectionObserver pco = mPeerConnectionObservers.get(peerConnectionId);
         if (pco == null || pco.getPeerConnection() == null) {
             Log.d(TAG, "dataChannelClose() peerConnection is null");
-        } else {
-            pco.dataChannelClose(dataChannelId);
+            return;
         }
+
+        pco.dataChannelClose(reactTag);
+    }
+
+    @ReactMethod
+    public void dataChannelDispose(int peerConnectionId, String reactTag) {
+        ThreadUtils.runOnExecutor(() -> {
+            PeerConnectionObserver pco = mPeerConnectionObservers.get(peerConnectionId);
+            if (pco == null || pco.getPeerConnection() == null) {
+                Log.d(TAG, "dataChannelDispose() peerConnection is null");
+                return;
+            }
+
+            pco.dataChannelDispose(reactTag);
+        });
     }
 
     @ReactMethod
     public void dataChannelSend(int peerConnectionId,
-                                int dataChannelId,
+                                String reactTag,
                                 String data,
                                 String type) {
         ThreadUtils.runOnExecutor(() ->
-            dataChannelSendAsync(peerConnectionId, dataChannelId, data, type));
+            dataChannelSendAsync(peerConnectionId, reactTag, data, type));
     }
 
     private void dataChannelSendAsync(int peerConnectionId,
-                                      int dataChannelId,
+                                      String reactTag,
                                       String data,
                                       String type) {
         // Forward to PeerConnectionObserver which deals with DataChannels
         // because DataChannel is owned by PeerConnection.
-        PeerConnectionObserver pco
-            = mPeerConnectionObservers.get(peerConnectionId);
+        PeerConnectionObserver pco = mPeerConnectionObservers.get(peerConnectionId);
         if (pco == null || pco.getPeerConnection() == null) {
             Log.d(TAG, "dataChannelSend() peerConnection is null");
-        } else {
-            pco.dataChannelSend(dataChannelId, data, type);
+            return;
         }
+
+        pco.dataChannelSend(reactTag, data, type);
     }
 
     /// Daily-specific functionality

@@ -27,12 +27,12 @@
 
 @implementation RTCPeerConnection (React)
 
-- (NSMutableDictionary<NSNumber *, RTCDataChannel *> *)dataChannels
+- (NSMutableDictionary<NSString *, DataChannelWrapper *> *)dataChannels
 {
   return objc_getAssociatedObject(self, _cmd);
 }
 
-- (void)setDataChannels:(NSMutableDictionary<NSNumber *, RTCDataChannel *> *)dataChannels
+- (void)setDataChannels:(NSMutableDictionary<NSString *, DataChannelWrapper *> *)dataChannels
 {
   objc_setAssociatedObject(self, @selector(dataChannels), dataChannels, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
 }
@@ -81,26 +81,33 @@
 
 @implementation WebRTCModule (RTCPeerConnection)
 
-RCT_EXPORT_METHOD(peerConnectionInit:(RTCConfiguration*)configuration
-                            objectID:(nonnull NSNumber *)objectID)
+/*
+ * This method is synchronous and blocking. This is done so we can implement createDataChannel
+ * in the same way (synchronous) since the peer connection needs to exist before.
+ */
+RCT_EXPORT_BLOCKING_SYNCHRONOUS_METHOD(peerConnectionInit:(RTCConfiguration*)configuration
+                                                 objectID:(nonnull NSNumber *)objectID)
 {
-  NSDictionary *optionalConstraints = @{ @"DtlsSrtpKeyAgreement" : @"true" };
-  RTCMediaConstraints* constraints =
-      [[RTCMediaConstraints alloc] initWithMandatoryConstraints:nil
-                                            optionalConstraints:optionalConstraints];
-  RTCPeerConnection *peerConnection
-    = [self.peerConnectionFactory
-      peerConnectionWithConfiguration:configuration
-			  constraints:constraints
-                             delegate:self];
+    dispatch_sync(self.workerQueue, ^{
+        NSDictionary *optionalConstraints = @{ @"DtlsSrtpKeyAgreement" : @"true" };
+        RTCMediaConstraints* constraints =
+            [[RTCMediaConstraints alloc] initWithMandatoryConstraints:nil
+                                                  optionalConstraints:optionalConstraints];
+          RTCPeerConnection *peerConnection
+            = [self.peerConnectionFactory peerConnectionWithConfiguration:configuration
+                                                              constraints:constraints
+                                                                 delegate:self];
+          peerConnection.dataChannels = [NSMutableDictionary new];
+          peerConnection.reactTag = objectID;
+          peerConnection.remoteStreams = [NSMutableDictionary new];
+          peerConnection.remoteTracks = [NSMutableDictionary new];
+          peerConnection.videoTrackAdapters = [NSMutableDictionary new];
+          peerConnection.webRTCModule = self;
 
-  peerConnection.dataChannels = [NSMutableDictionary new];
-  peerConnection.reactTag = objectID;
-  peerConnection.remoteStreams = [NSMutableDictionary new];
-  peerConnection.remoteTracks = [NSMutableDictionary new];
-  peerConnection.videoTrackAdapters = [NSMutableDictionary new];
-  peerConnection.webRTCModule = self;
-  self.peerConnections[objectID] = peerConnection;
+          self.peerConnections[objectID] = peerConnection;
+    });
+
+    return nil;
 }
 
 RCT_EXPORT_METHOD(peerConnectionSetConfiguration:(RTCConfiguration*)configuration objectID:(nonnull NSNumber *)objectID)
@@ -205,7 +212,7 @@ RCT_EXPORT_METHOD(peerConnectionCreateAnswer:(nonnull NSNumber *)peerConnectionI
 
 RCT_EXPORT_METHOD(peerConnectionSetLocalDescription:(RTCSessionDescription *)sdp objectID:(nonnull NSNumber *)objectID callback:(RCTResponseSenderBlock)callback)
 {
-  RTCPeerConnection *peerConnection = self.peerConnections[objectID];
+  RTCPeerConnection __weak *peerConnection = self.peerConnections[objectID];
   if (!peerConnection) {
     return;
   }
@@ -218,14 +225,18 @@ RCT_EXPORT_METHOD(peerConnectionSetLocalDescription:(RTCSessionDescription *)sdp
       };
       callback(@[@(NO), errorResponse]);
     } else {
-      callback(@[@(YES)]);
+      id newSdp = @{
+          @"type": [RTCSessionDescription stringForType:peerConnection.localDescription.type],
+          @"sdp": peerConnection.localDescription.sdp
+      };
+      callback(@[@(YES), newSdp]);
     }
   }];
 }
 
 RCT_EXPORT_METHOD(peerConnectionSetRemoteDescription:(RTCSessionDescription *)sdp objectID:(nonnull NSNumber *)objectID callback:(RCTResponseSenderBlock)callback)
 {
-  RTCPeerConnection *peerConnection = self.peerConnections[objectID];
+  RTCPeerConnection __weak *peerConnection = self.peerConnections[objectID];
   if (!peerConnection) {
     return;
   }
@@ -238,7 +249,11 @@ RCT_EXPORT_METHOD(peerConnectionSetRemoteDescription:(RTCSessionDescription *)sd
       };
       callback(@[@(NO), errorResponse]);
     } else {
-      callback(@[@(YES)]);
+      id newSdp = @{
+          @"type": [RTCSessionDescription stringForType:peerConnection.remoteDescription.type],
+          @"sdp": peerConnection.remoteDescription.sdp
+      };
+      callback(@[@(YES), newSdp]);
     }
   }];
 }
@@ -251,8 +266,12 @@ RCT_EXPORT_METHOD(peerConnectionAddICECandidate:(RTCIceCandidate*)candidate obje
   }
 
   [peerConnection addIceCandidate:candidate];
-  RCTLogTrace(@"addICECandidateresult: %@", candidate);
-  callback(@[@true]);
+
+  id newSdp = @{
+      @"type": [RTCSessionDescription stringForType:peerConnection.remoteDescription.type],
+      @"sdp": peerConnection.remoteDescription.sdp
+  };
+  callback(@[@true, newSdp]);
 }
 
 RCT_EXPORT_METHOD(peerConnectionClose:(nonnull NSNumber *)objectID)
@@ -270,21 +289,21 @@ RCT_EXPORT_METHOD(peerConnectionClose:(nonnull NSNumber *)objectID)
   }
 
   [peerConnection close];
-  [self.peerConnections removeObjectForKey:objectID];
 
   // Clean up peerConnection's streams and tracks
   [peerConnection.remoteStreams removeAllObjects];
   [peerConnection.remoteTracks removeAllObjects];
 
   // Clean up peerConnection's dataChannels.
-  NSMutableDictionary<NSNumber *, RTCDataChannel *> *dataChannels
-    = peerConnection.dataChannels;
-  for (NSNumber *dataChannelId in dataChannels) {
-    dataChannels[dataChannelId].delegate = nil;
+  NSMutableDictionary<NSString *, DataChannelWrapper *> *dataChannels = peerConnection.dataChannels;
+  for (NSString *tag in dataChannels) {
+    dataChannels[tag].delegate = nil;
     // There is no need to close the RTCDataChannel because it is owned by the
     // RTCPeerConnection and the latter will close the former.
   }
   [dataChannels removeAllObjects];
+
+  [self.peerConnections removeObjectForKey:objectID];
 }
 
 RCT_EXPORT_METHOD(peerConnectionGetStats:(nonnull NSNumber *) objectID
@@ -454,12 +473,19 @@ RCT_EXPORT_METHOD(peerConnectionGetStats:(nonnull NSNumber *) objectID
   }
 
   peerConnection.remoteStreams[streamReactTag] = stream;
+
+  id newSdp = @{
+    @"type": [RTCSessionDescription stringForType:peerConnection.remoteDescription.type],
+    @"sdp": peerConnection.remoteDescription.sdp
+  };
+
   [self sendEventWithName:kEventPeerConnectionAddedStream
                      body:@{
                        @"id": peerConnection.reactTag,
                        @"streamId": stream.streamId,
                        @"streamReactTag": streamReactTag,
-                       @"tracks": tracks
+                       @"tracks": tracks,
+                       @"sdp": newSdp
                      }];
 }
 
@@ -487,10 +513,17 @@ RCT_EXPORT_METHOD(peerConnectionGetStats:(nonnull NSNumber *) objectID
     [peerConnection.remoteTracks removeObjectForKey:track.trackId];
   }
   [peerConnection.remoteStreams removeObjectForKey:streamReactTag];
+
+  id newSdp = @{
+    @"type": [RTCSessionDescription stringForType:peerConnection.remoteDescription.type],
+    @"sdp": peerConnection.remoteDescription.sdp
+  };
+
   [self sendEventWithName:kEventPeerConnectionRemovedStream
                      body:@{
                        @"id": peerConnection.reactTag,
-                       @"streamId": streamReactTag
+                       @"streamId": streamReactTag,
+                       @"sdp": newSdp
                      }];
 }
 
@@ -513,10 +546,18 @@ RCT_EXPORT_METHOD(peerConnectionGetStats:(nonnull NSNumber *) objectID
 }
 
 - (void)peerConnection:(RTCPeerConnection *)peerConnection didChangeIceGatheringState:(RTCIceGatheringState)newState {
+  id newSdp = @{};
+  if (newState == RTCIceGatheringStateComplete) {
+      newSdp = @{
+          @"type": [RTCSessionDescription stringForType:peerConnection.localDescription.type],
+          @"sdp": peerConnection.localDescription.sdp
+      };
+  }
   [self sendEventWithName:kEventPeerConnectionIceGatheringChanged
                      body:@{
                        @"id": peerConnection.reactTag,
-                       @"iceGatheringState": [self stringForICEGatheringState:newState]
+                       @"iceGatheringState": [self stringForICEGatheringState:newState],
+                       @"sdp": newSdp
                      }];
 }
 
@@ -528,29 +569,38 @@ RCT_EXPORT_METHOD(peerConnectionGetStats:(nonnull NSNumber *) objectID
                            @"candidate": candidate.sdp,
                            @"sdpMLineIndex": @(candidate.sdpMLineIndex),
                            @"sdpMid": candidate.sdpMid
+                       },
+                       @"sdp": @{
+                           @"type": [RTCSessionDescription stringForType:peerConnection.localDescription.type],
+                           @"sdp": peerConnection.localDescription.sdp
                        }
                      }];
 }
 
 - (void)peerConnection:(RTCPeerConnection*)peerConnection didOpenDataChannel:(RTCDataChannel*)dataChannel {
-  // XXX RTP data channels are not defined by the WebRTC standard, have been
-  // deprecated in Chromium, and Google have decided (in 2015) to no longer
-  // support them (in the face of multiple reported issues of breakages).
-  if (-1 == dataChannel.channelId) {
-    return;
-  }
+    NSString *reactTag = [[NSUUID UUID] UUIDString];
+    DataChannelWrapper *dcw = [[DataChannelWrapper alloc] initWithChannel:dataChannel reactTag:reactTag];
+    dcw.pcId = peerConnection.reactTag;
+    peerConnection.dataChannels[reactTag] = dcw;
+    dcw.delegate = self;
 
-  NSNumber *dataChannelId = [NSNumber numberWithInteger:dataChannel.channelId];
-  dataChannel.peerConnectionId = peerConnection.reactTag;
-  peerConnection.dataChannels[dataChannelId] = dataChannel;
-  // WebRTCModule implements the category RTCDataChannel i.e. the protocol
-  // RTCDataChannelDelegate.
-  dataChannel.delegate = self;
-
-  NSDictionary *body = @{@"id": peerConnection.reactTag,
-                        @"dataChannel": @{@"id": dataChannelId,
-                                          @"label": dataChannel.label}};
-  [self sendEventWithName:kEventPeerConnectionDidOpenDataChannel body:body];
+    NSDictionary *dataChannelInfo = @{
+        @"peerConnectionId": peerConnection.reactTag,
+        @"reactTag": reactTag,
+        @"label": dataChannel.label,
+        @"id": @(dataChannel.channelId),
+        @"ordered": @(dataChannel.isOrdered),
+        @"maxPacketLifeTime": @(dataChannel.maxPacketLifeTime),
+        @"maxRetransmits": @(dataChannel.maxRetransmits),
+        @"protocol": dataChannel.protocol,
+        @"negotiated": @(dataChannel.isNegotiated),
+        @"readyState": [self stringForDataChannelState:dataChannel.readyState]
+      };
+    NSDictionary *body = @{
+        @"id": peerConnection.reactTag,
+        @"dataChannel": dataChannelInfo
+    };
+    [self sendEventWithName:kEventPeerConnectionDidOpenDataChannel body:body];
 }
 
 - (void)peerConnection:(nonnull RTCPeerConnection *)peerConnection didRemoveIceCandidates:(nonnull NSArray<RTCIceCandidate *> *)candidates {

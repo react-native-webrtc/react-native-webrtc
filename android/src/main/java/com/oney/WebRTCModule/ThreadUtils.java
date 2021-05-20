@@ -4,6 +4,7 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 final class ThreadUtils {
     /**
@@ -28,5 +29,23 @@ final class ThreadUtils {
      */
     public  static <T> T runOnExecutorAndWait(Callable<T> callable) throws ExecutionException, InterruptedException {
         return executor.submit(callable).get();
+    }
+
+    /**
+     * Submits the given {@link Callable} to be run on the executor.
+     * @param callable
+     * @return Future.
+     */
+    public static <T> Future<T> submitToExecutor(Callable<T> callable) {
+        return executor.submit(callable);
+    }
+
+    /**
+     * Submits the given {@link Runnable} to be run on the executor.
+     * @param runnable
+     * @return Future.
+     */
+    public static Future<?> submitToExecutor(Runnable runnable) {
+        return executor.submit(runnable);
     }
 }

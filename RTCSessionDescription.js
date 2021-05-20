@@ -5,10 +5,19 @@ export default class RTCSessionDescription {
   type: string;
 
   constructor(info = {type: null, sdp: ''}) {
-    this.sdp = info.sdp;
-    this.type = info.type;
+    this._sdp = info.sdp;
+    this._type = info.type;
   }
+
+  get sdp() {
+    return this._sdp;
+  }
+
+  get type() {
+    return this._type;
+  }
+
   toJSON() {
-    return {sdp: this.sdp, type: this.type};
+    return {sdp: this._sdp, type: this._type};
   }
 }

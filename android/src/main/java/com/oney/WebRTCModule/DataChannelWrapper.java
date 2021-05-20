@@ -1,6 +1,6 @@
 package com.oney.WebRTCModule;
 
-import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 
 import androidx.annotation.Nullable;
 import android.util.Base64;
@@ -10,26 +10,34 @@ import com.facebook.react.bridge.WritableMap;
 
 import org.webrtc.DataChannel;
 
-class DataChannelObserver implements DataChannel.Observer {
+class DataChannelWrapper implements DataChannel.Observer {
 
-    private final int mId;
+    private final String reactTag;
     private final DataChannel mDataChannel;
     private final int peerConnectionId;
     private final WebRTCModule webRTCModule;
 
-    DataChannelObserver(
+    DataChannelWrapper(
             WebRTCModule webRTCModule,
             int peerConnectionId,
-            int id,
+            String reactTag,
             DataChannel dataChannel) {
         this.webRTCModule = webRTCModule;
         this.peerConnectionId = peerConnectionId;
-        mId = id;
+        this.reactTag = reactTag;
         mDataChannel = dataChannel;
     }
 
+    public DataChannel getDataChannel() {
+        return mDataChannel;
+    }
+
+    public String getReactTag() {
+        return reactTag;
+    }
+
     @Nullable
-    private String dataChannelStateString(DataChannel.State dataChannelState) {
+    public String dataChannelStateString(DataChannel.State dataChannelState) {
         switch (dataChannelState) {
         case CONNECTING:
             return "connecting";
@@ -45,12 +53,13 @@ class DataChannelObserver implements DataChannel.Observer {
 
     @Override
     public void onBufferedAmountChange(long amount) {
+        // TODO.
     }
 
     @Override
     public void onMessage(DataChannel.Buffer buffer) {
         WritableMap params = Arguments.createMap();
-        params.putInt("id", mId);
+        params.putString("reactTag", reactTag);
         params.putInt("peerConnectionId", peerConnectionId);
 
         byte[] bytes;
@@ -68,7 +77,7 @@ class DataChannelObserver implements DataChannel.Observer {
             data = Base64.encodeToString(bytes, Base64.NO_WRAP);
         } else {
             type = "text";
-            data = new String(bytes, Charset.forName("UTF-8"));
+            data = new String(bytes, StandardCharsets.UTF_8);
         }
         params.putString("type", type);
         params.putString("data", data);
@@ -79,8 +88,9 @@ class DataChannelObserver implements DataChannel.Observer {
     @Override
     public void onStateChange() {
         WritableMap params = Arguments.createMap();
-        params.putInt("id", mId);
+        params.putString("reactTag", reactTag);
         params.putInt("peerConnectionId", peerConnectionId);
+        params.putInt("id", mDataChannel.id());
         params.putString("state", dataChannelStateString(mDataChannel.state()));
         webRTCModule.sendEvent("dataChannelStateChanged", params);
     }

@@ -1,13 +1,14 @@
 #import "WebRTCModule.h"
-#import <WebRTC/RTCDataChannel.h>
+#import "DataChannelWrapper.h"
 
 @interface RTCDataChannel (React)
 
 @property (nonatomic, strong) NSNumber *peerConnectionId;
-@property (nonatomic, strong) NSNumber *originDataChannelId;
 
 @end
 
-@interface WebRTCModule (RTCDataChannel) <RTCDataChannelDelegate>
+@interface WebRTCModule (RTCDataChannel) <DataChannelWrapperDelegate>
+
+- (NSString *)stringForDataChannelState:(RTCDataChannelState)state;
 
 @end

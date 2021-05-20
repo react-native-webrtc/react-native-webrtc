@@ -1,7 +1,7 @@
 'use strict';
 
 import EventTarget from 'event-target-shim';
-import { NativeModules, NativeEventEmitter } from 'react-native';
+import { NativeModules } from 'react-native';
 
 import MediaStream from './MediaStream';
 import MediaStreamEvent from './MediaStreamEvent';
@@ -16,7 +16,7 @@ import RTCEvent from './RTCEvent';
 import * as RTCUtil from './RTCUtil';
 import EventEmitter from './EventEmitter';
 
-const {WebRTCModule} = NativeModules;
+const { WebRTCModule } = NativeModules;
 
 type RTCSignalingState =
   'stable' |
@@ -47,6 +47,15 @@ type RTCIceConnectionState =
   'failed' |
   'disconnected' |
   'closed';
+
+type RTCDataChannelInit = {
+    ordered?: boolean;
+    maxPacketLifeTime?: number;
+    maxRetransmits?: number;
+    protocol?: string;
+    negotiated?: boolean;
+    id?: number;
+};
 
 const PEER_CONNECTION_EVENTS = [
   'connectionstatechange',
@@ -89,11 +98,6 @@ export default class RTCPeerConnection extends EventTarget(PEER_CONNECTION_EVENT
   _localStreams: Array<MediaStream> = [];
   _remoteStreams: Array<MediaStream> = [];
   _subscriptions: Array<any>;
-
-  /**
-   * The RTCDataChannel.id allocator of this RTCPeerConnection.
-   */
-  _dataChannelIds: Set = new Set();
 
   constructor(configuration) {
     super();
@@ -161,7 +165,7 @@ export default class RTCPeerConnection extends EventTarget(PEER_CONNECTION_EVENT
         this._peerConnectionId,
         (successful, data) => {
           if (successful) {
-            this.localDescription = sessionDescription;
+            this.localDescription = new RTCSessionDescription(data);
             resolve();
           } else {
             reject(data);
@@ -177,7 +181,7 @@ export default class RTCPeerConnection extends EventTarget(PEER_CONNECTION_EVENT
         this._peerConnectionId,
         (successful, data) => {
           if (successful) {
-            this.remoteDescription = sessionDescription;
+            this.remoteDescription = new RTCSessionDescription(data);
             resolve();
           } else {
             reject(data);
@@ -187,13 +191,18 @@ export default class RTCPeerConnection extends EventTarget(PEER_CONNECTION_EVENT
   }
 
   addIceCandidate(candidate) {
+    if (!candidate || !candidate.candidate) {
+      // TODO: support end-of-candidates, native crashes at this time.
+      return Promise.resolve();
+    }
     return new Promise((resolve, reject) => {
       WebRTCModule.peerConnectionAddICECandidate(
         candidate.toJSON ? candidate.toJSON() : candidate,
         this._peerConnectionId,
-        (successful) => {
+        (successful, data) => {
           if (successful) {
-            resolve()
+            this.remoteDescription = new RTCSessionDescription(data);
+            resolve();
           } else {
             // XXX: This should be OperationError
             reject(new Error('Failed to add ICE candidate'));
@@ -288,6 +297,7 @@ export default class RTCPeerConnection extends EventTarget(PEER_CONNECTION_EVENT
         }
         const stream = new MediaStream(ev);
         this._remoteStreams.push(stream);
+        this.remoteDescription = new RTCSessionDescription(ev.sdp);
         this.dispatchEvent(new MediaStreamEvent('addstream', {stream}));
       }),
       EventEmitter.addListener('peerConnectionRemovedStream', ev => {
@@ -301,6 +311,7 @@ export default class RTCPeerConnection extends EventTarget(PEER_CONNECTION_EVENT
             this._remoteStreams.splice(index, 1);
           }
         }
+        this.remoteDescription = new RTCSessionDescription(ev.sdp);
         this.dispatchEvent(new MediaStreamEvent('removestream', {stream}));
       }),
       EventEmitter.addListener('mediaStreamTrackMuteChanged', ev => {
@@ -318,6 +329,7 @@ export default class RTCPeerConnection extends EventTarget(PEER_CONNECTION_EVENT
         if (ev.id !== this._peerConnectionId) {
           return;
         }
+        this.localDescription = new RTCSessionDescription(ev.sdp);
         const candidate = new RTCIceCandidate(ev.candidate);
         const event = new RTCIceCandidateEvent('icecandidate', {candidate});
         this.dispatchEvent(event);
@@ -329,6 +341,7 @@ export default class RTCPeerConnection extends EventTarget(PEER_CONNECTION_EVENT
         this.iceGatheringState = ev.iceGatheringState;
 
         if (this.iceGatheringState === 'complete') {
+          this.localDescription = new RTCSessionDescription(ev.sdp);
           this.dispatchEvent(new RTCIceCandidateEvent('icecandidate', null));
         }
 
@@ -338,26 +351,7 @@ export default class RTCPeerConnection extends EventTarget(PEER_CONNECTION_EVENT
         if (ev.id !== this._peerConnectionId) {
           return;
         }
-        const evDataChannel = ev.dataChannel;
-        const id = evDataChannel.id;
-        // XXX RTP data channels are not defined by the WebRTC standard, have
-        // been deprecated in Chromium, and Google have decided (in 2015) to no
-        // longer support them (in the face of multiple reported issues of
-        // breakages).
-        if (typeof id !== 'number' || id === -1) {
-          return;
-        }
-        const channel
-          = new RTCDataChannel(
-              this._peerConnectionId,
-              evDataChannel.label,
-              evDataChannel);
-        // XXX webrtc::PeerConnection checked that id was not in use in its own
-        // SID allocator before it invoked us. Additionally, its own SID
-        // allocator is the authority on ResourceInUse. Consequently, it is
-        // (pretty) safe to update our RTCDataChannel.id allocator without
-        // checking for ResourceInUse.
-        this._dataChannelIds.add(id);
+        const channel = new RTCDataChannel(ev.dataChannel);
         this.dispatchEvent(new RTCDataChannelEvent('datachannel', {channel}));
       })
     ];
@@ -375,35 +369,22 @@ export default class RTCPeerConnection extends EventTarget(PEER_CONNECTION_EVENT
    * instance such as id
    */
   createDataChannel(label: string, dataChannelDict?: ?RTCDataChannelInit) {
-    let id;
-    const dataChannelIds = this._dataChannelIds;
     if (dataChannelDict && 'id' in dataChannelDict) {
-      id = dataChannelDict.id;
+      const id = dataChannelDict.id;
       if (typeof id !== 'number') {
         throw new TypeError('DataChannel id must be a number: ' + id);
       }
-      if (dataChannelIds.has(id)) {
-        throw new ResourceInUse('DataChannel id already in use: ' + id);
-      }
-    } else {
-      // Allocate a new id.
-      // TODO Remembering the last used/allocated id and then incrementing it to
-      // generate the next id to use will surely be faster. However, I want to
-      // reuse ids (in the future) as the RTCDataChannel.id space is limited to
-      // unsigned short by the standard:
-      // https://www.w3.org/TR/webrtc/#dom-datachannel-id. Additionally, 65535
-      // is reserved due to SCTP INIT and INIT-ACK chunks only allowing a
-      // maximum of 65535 streams to be negotiated (as defined by the WebRTC
-      // Data Channel Establishment Protocol).
-      for (id = 1; id < 65535 && dataChannelIds.has(id); ++id);
-      // TODO Throw an error if no unused id is available.
-      dataChannelDict = Object.assign({id}, dataChannelDict);
     }
-    WebRTCModule.createDataChannel(
+
+    const channelInfo = WebRTCModule.createDataChannel(
         this._peerConnectionId,
         label,
         dataChannelDict);
-    dataChannelIds.add(id);
-    return new RTCDataChannel(this._peerConnectionId, label, dataChannelDict);
+
+    if (channelInfo === null) {
+      throw new TypeError('Failed to create new DataChannel');
+    }
+
+    return new RTCDataChannel(channelInfo);
   }
 }

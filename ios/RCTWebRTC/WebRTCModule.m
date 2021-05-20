@@ -75,6 +75,7 @@
                                             QOS_CLASS_USER_INITIATED, -1);
     _workerQueue = dispatch_queue_create("WebRTCModule.queue", attributes);
   }
+
   return self;
 }
 

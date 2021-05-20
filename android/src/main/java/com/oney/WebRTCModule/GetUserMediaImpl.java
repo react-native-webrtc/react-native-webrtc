@@ -6,7 +6,6 @@ import android.content.Intent;
 import android.media.projection.MediaProjectionManager;
 import android.util.DisplayMetrics;
 import android.util.Log;
-import android.view.WindowManager;
 
 import com.facebook.react.bridge.Arguments;
 import com.facebook.react.bridge.BaseActivityEventListener;
@@ -344,6 +343,17 @@ class GetUserMediaImpl {
             trackInfo.putString("label", trackId);
             trackInfo.putString("readyState", track.state().toString());
             trackInfo.putBoolean("remote", false);
+
+            if (track instanceof VideoTrack) {
+                TrackPrivate tp = this.tracks.get(trackId);
+                AbstractVideoCaptureController vcc = tp.videoCaptureController;
+                WritableMap settings = Arguments.createMap();
+                settings.putInt("height", vcc.getHeight());
+                settings.putInt("width", vcc.getWidth());
+                settings.putInt("frameRate", vcc.getFrameRate());
+                trackInfo.putMap("settings", settings);
+            }
+
             tracksInfo.add(trackInfo);
         }
 
@@ -354,11 +364,11 @@ class GetUserMediaImpl {
     }
 
     private VideoTrack createScreenTrack() {
-        DisplayMetrics displayMetrics = getDisplayMetrics();
+        DisplayMetrics displayMetrics = DisplayUtils.getDisplayMetrics(reactContext.getCurrentActivity());
         int width = displayMetrics.widthPixels;
         int height = displayMetrics.heightPixels;
-        int fps = 30;
-        ScreenCaptureController screenCaptureController = new ScreenCaptureController(width, height, fps, mediaProjectionPermissionResultData);
+        ScreenCaptureController screenCaptureController
+            = new ScreenCaptureController(reactContext.getCurrentActivity(), width, height, mediaProjectionPermissionResultData);
         return createVideoTrack(screenCaptureController);
     }
 
@@ -392,15 +402,6 @@ class GetUserMediaImpl {
         videoCaptureController.startCapture();
 
         return track;
-    }
-
-    private DisplayMetrics getDisplayMetrics() {
-        Activity currentActivity = this.reactContext.getCurrentActivity();
-        DisplayMetrics displayMetrics = new DisplayMetrics();
-        WindowManager windowManager =
-            (WindowManager) currentActivity.getApplication().getSystemService(Context.WINDOW_SERVICE);
-        windowManager.getDefaultDisplay().getRealMetrics(displayMetrics);
-        return displayMetrics;
     }
 
     /**
