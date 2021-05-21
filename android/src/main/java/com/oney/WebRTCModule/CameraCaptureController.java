@@ -55,6 +55,7 @@ public class CameraCaptureController extends AbstractVideoCaptureController {
             // Nothing to switch to.
             if (deviceCount < 2) {
                 handler.onSwitchCameraDone(facingMode());
+                return;
             }
 
             // The usual case.
