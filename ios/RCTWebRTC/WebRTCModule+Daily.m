@@ -16,10 +16,80 @@ NSString *const AUDIO_MODE_VOICE_CALL = @"voice";
 NSString *const AUDIO_MODE_IDLE = @"idle";
 
 @interface WebRTCModule (Daily)
+
 @property (nonatomic, strong) NSTimer *audioModeRetryTimer;
+
+// Expects to only be accessed on captureSessionQueue
+@property (nonatomic, strong) AVCaptureSession *captureSession;
+@property (nonatomic, strong, readonly) dispatch_queue_t captureSessionQueue;
+
 @end
 
 @implementation WebRTCModule (Daily)
+
+#pragma mark - enableNoOpRecordingEnsuringBackgroundContinuity
+
+- (AVCaptureSession *)captureSession {
+  return objc_getAssociatedObject(self, @selector(captureSession));
+}
+
+- (void)setCaptureSession:(AVCaptureSession *)captureSession {
+  objc_setAssociatedObject(self, @selector(captureSession), captureSession, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+}
+
+- (dispatch_queue_t)captureSessionQueue {
+  dispatch_queue_t queue = objc_getAssociatedObject(self, @selector(captureSessionQueue));
+  if (!queue) {
+    queue = dispatch_queue_create("com.daily.noopcapturesession", DISPATCH_QUEUE_SERIAL);
+    objc_setAssociatedObject(self, @selector(captureSessionQueue), queue, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+  }
+  return queue;
+}
+
+RCT_EXPORT_METHOD(enableNoOpRecordingEnsuringBackgroundContinuity:(BOOL)enable) {
+  dispatch_async(self.captureSessionQueue, ^{
+    if (enable) {
+      if (self.captureSession) {
+        return;
+      }
+      AVCaptureSession *captureSession = [self configuredCaptureSession];
+      [captureSession startRunning];
+      self.captureSession = captureSession;
+    }
+    else {
+      [self.captureSession stopRunning];
+      self.captureSession = nil;
+    }
+  });
+}
+
+// Expects to be invoked from captureSessionQueue
+- (AVCaptureSession *)configuredCaptureSession {
+  AVCaptureSession *captureSession = [[AVCaptureSession alloc] init];
+  AVCaptureDevice *audioDevice = [AVCaptureDevice defaultDeviceWithMediaType:AVMediaTypeAudio];
+  if (!audioDevice) {
+    return nil;
+  }
+  NSError *inputError;
+  AVCaptureDeviceInput *audioInput = [AVCaptureDeviceInput deviceInputWithDevice:audioDevice error:&inputError];
+  if (inputError) {
+    return nil;
+  }
+  if ([captureSession canAddInput:audioInput]) {
+    [captureSession addInput:audioInput];
+  }
+  else {
+    return nil;
+  }
+  AVCaptureAudioDataOutput *audioOutput = [[AVCaptureAudioDataOutput alloc] init];
+  if ([captureSession canAddOutput:audioOutput]) {
+    [captureSession addOutput:audioOutput];
+  }
+  else {
+    return nil;
+  }
+  return captureSession;
+}
 
 #pragma mark - setDailyAudioMode
 
@@ -62,6 +132,15 @@ RCT_EXPORT_METHOD(setDailyAudioMode:(NSString *)audioMode) {
                               forMode:NSRunLoopCommonModes];
     return;
   }
+  
+  // We know the WebRTC audioSession is now active. Stop our own no-op recording
+  // no-op recording session to keep if from interfering with the audioSession
+  // (which it would otherwise reliably do when audioSession was in "voice"
+  // audio mode for some reason)
+  dispatch_async(self.captureSessionQueue, ^{
+    [self.captureSession stopRunning];
+    self.captureSession = nil;
+  });
   
   [self applyAudioMode:audioMode toSession:audioSession];
 }
