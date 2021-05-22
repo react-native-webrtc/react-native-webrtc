@@ -133,10 +133,10 @@ RCT_EXPORT_METHOD(setDailyAudioMode:(NSString *)audioMode) {
     return;
   }
   
-  // We know the WebRTC audioSession is now active. Stop our own no-op recording
-  // no-op recording session to keep if from interfering with the audioSession
-  // (which it would otherwise reliably do when audioSession was in "voice"
-  // audio mode for some reason)
+  // We know the WebRTC audioSession is now active. Stop our own no-op
+  // recording session to keep if from interfering with the audioSession (which
+  // it would otherwise reliably do when audioSession was in "voice" audio mode
+  // for some reason)
   dispatch_async(self.captureSessionQueue, ^{
     [self.captureSession stopRunning];
     self.captureSession = nil;
