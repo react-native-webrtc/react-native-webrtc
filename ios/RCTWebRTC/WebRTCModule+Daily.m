@@ -27,6 +27,13 @@ NSString *const AUDIO_MODE_IDLE = @"idle";
 
 @implementation WebRTCModule (Daily)
 
+// Note: enableNoOpRecordingEnsuringBackgroundContinuity doesn't actually
+// need access to react-native-webrtc internals, so it *could* technically live
+// in react-native-daily-js. I'm choosing to keep it here, though, since during
+// the course of investigating audio issues the interaction between this
+// mechanism and WebRTC audio handling has featured prominently, so I can easily
+// imagine needing to do something involving both someday.
+
 #pragma mark - enableNoOpRecordingEnsuringBackgroundContinuity
 
 - (AVCaptureSession *)captureSession {
@@ -66,6 +73,9 @@ RCT_EXPORT_METHOD(enableNoOpRecordingEnsuringBackgroundContinuity:(BOOL)enable) 
 // Expects to be invoked from captureSessionQueue
 - (AVCaptureSession *)configuredCaptureSession {
   AVCaptureSession *captureSession = [[AVCaptureSession alloc] init];
+  // Don't automatically configure application audio session, to prevent
+  // configuration "thrashing" once WebRTC audio unit takes the reins.
+  captureSession.automaticallyConfiguresApplicationAudioSession = NO;
   AVCaptureDevice *audioDevice = [AVCaptureDevice defaultDeviceWithMediaType:AVMediaTypeAudio];
   if (!audioDevice) {
     return nil;
@@ -133,15 +143,6 @@ RCT_EXPORT_METHOD(setDailyAudioMode:(NSString *)audioMode) {
     return;
   }
   
-  // We know the WebRTC audioSession is now active. Stop our own no-op
-  // recording session to keep if from interfering with the audioSession (which
-  // it would otherwise reliably do when audioSession was in "voice" audio mode
-  // for some reason)
-  dispatch_async(self.captureSessionQueue, ^{
-    [self.captureSession stopRunning];
-    self.captureSession = nil;
-  });
-  
   [self applyAudioMode:audioMode toSession:audioSession];
 }
 
@@ -166,6 +167,14 @@ RCT_EXPORT_METHOD(setDailyAudioMode:(NSString *)audioMode) {
   NSError *error;
   [audioSession setConfiguration:config error:&error];
   
+//  NSString *inputName = audioSession.currentRoute.inputs.firstObject.portName ? audioSession.currentRoute.inputs.firstObject.portName : @"nil";
+//  NSString *outputName = audioSession.currentRoute.outputs.firstObject.portName ? audioSession.currentRoute.outputs.firstObject.portName : @"nil";
+  
+//  NSLog(@"[pk] input count: %@", @(audioSession.currentRoute.inputs.count));
+//  NSLog(@"[pk] input name: %@", inputName);
+//  NSLog(@"[pk] output count: %@", @(audioSession.currentRoute.outputs.count));
+//  NSLog(@"[pk] output name: %@", outputName);
+//  NSLog(@"[pk] we still active? %@", @(audioSession.isActive));
   [audioSession unlockForConfiguration];
   
   if (error) {
