@@ -15,7 +15,7 @@ NSString *const AUDIO_MODE_VIDEO_CALL = @"video";
 NSString *const AUDIO_MODE_VOICE_CALL = @"voice";
 NSString *const AUDIO_MODE_IDLE = @"idle";
 
-@interface WebRTCModule (Daily)
+@interface WebRTCModule (Daily) <RTCAudioSessionDelegate>
 
 @property (nonatomic, strong) NSTimer *audioModeRetryTimer;
 
@@ -26,13 +26,6 @@ NSString *const AUDIO_MODE_IDLE = @"idle";
 @end
 
 @implementation WebRTCModule (Daily)
-
-// Note: enableNoOpRecordingEnsuringBackgroundContinuity doesn't actually
-// need access to react-native-webrtc internals, so it *could* technically live
-// in react-native-daily-js. I'm choosing to keep it here, though, since during
-// the course of investigating audio issues the interaction between this
-// mechanism and WebRTC audio handling has featured prominently, so I can easily
-// imagine needing to do something involving both someday.
 
 #pragma mark - enableNoOpRecordingEnsuringBackgroundContinuity
 
@@ -53,7 +46,25 @@ NSString *const AUDIO_MODE_IDLE = @"idle";
   return queue;
 }
 
+- (void)audioSession:(RTCAudioSession *)audioSession willSetActive:(BOOL)active {
+  // Stop audio recording before RTCAudioSession becomes active, to defend
+  // against the capture session interfering with WebRTC-managed audio session.
+  dispatch_sync(self.captureSessionQueue, ^{
+    [self.captureSession stopRunning];
+    self.captureSession = nil;
+  });
+}
+
 RCT_EXPORT_METHOD(enableNoOpRecordingEnsuringBackgroundContinuity:(BOOL)enable) {
+  // Listen for RTCAudioSession becoming active, so we can stop recording.
+  // We only need to record until WebRTC audio unit spins up, to keep the app
+  // alive in the background. Recording for longer is wasteful and seems to
+  // interfere with the WebRTC-managed audio session's activation.
+  [RTCAudioSession.sharedInstance removeDelegate:self];
+  if (enable) {
+    [RTCAudioSession.sharedInstance addDelegate:self];
+  }
+  
   dispatch_async(self.captureSessionQueue, ^{
     if (enable) {
       if (self.captureSession) {
