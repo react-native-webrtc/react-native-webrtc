@@ -9,6 +9,8 @@ PACKAGE_VERSION=$(cat "${THIS_DIR}/../package.json" \
   | awk -F: '{ print $2 }' \
   | sed 's/[",]//g' \
   | tr -d '[[:space:]]')
+# Trim "-daily.x" out of the package version
+PACKAGE_VERSION=$(echo $PACKAGE_VERSION | sed 's/-daily\..*//g')
 WEBRTC_DL="https://github.com/react-native-webrtc/react-native-webrtc/releases/download/${PACKAGE_VERSION}/WebRTC.tar.xz"
 
 

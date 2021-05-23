@@ -178,14 +178,6 @@ RCT_EXPORT_METHOD(setDailyAudioMode:(NSString *)audioMode) {
   NSError *error;
   [audioSession setConfiguration:config error:&error];
   
-//  NSString *inputName = audioSession.currentRoute.inputs.firstObject.portName ? audioSession.currentRoute.inputs.firstObject.portName : @"nil";
-//  NSString *outputName = audioSession.currentRoute.outputs.firstObject.portName ? audioSession.currentRoute.outputs.firstObject.portName : @"nil";
-  
-//  NSLog(@"[pk] input count: %@", @(audioSession.currentRoute.inputs.count));
-//  NSLog(@"[pk] input name: %@", inputName);
-//  NSLog(@"[pk] output count: %@", @(audioSession.currentRoute.outputs.count));
-//  NSLog(@"[pk] output name: %@", outputName);
-//  NSLog(@"[pk] we still active? %@", @(audioSession.isActive));
   [audioSession unlockForConfiguration];
   
   if (error) {
