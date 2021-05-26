@@ -7,7 +7,7 @@ A WebRTC module for React Native.
 - Support iOS / macOS / Android.
 - Support Video / Audio / Data Channels.
 
-**NOTE** for Expo users: this plugin doesn't work unless you eject.
+> 🚨 Expo: This package is not available in the [Expo Go](https://expo.io/client) app. Learn how you can use it with [custom dev clients](https://github.com/react-native-webrtc/react-native-webrtc/blob/master/Documentation/ExpoInstallation.md).
 
 ## Community
 

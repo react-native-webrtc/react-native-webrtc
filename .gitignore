@@ -10,3 +10,4 @@ Podfile.lock
 WebRTC.xcframework
 WebRTC.dSYMs
 
+/plugin/build
