@@ -1,7 +1,6 @@
 # Expo installation
 
-This package cannot be used in the [Expo Go](https://expo.io/client) app, but it can be used with custom managed apps.
-Just add the [config plugin](https://docs.expo.io/guides/config-plugins/) to the [`plugins`](https://docs.expo.io/versions/latest/config/app/#plugins) array of your `app.json` or `app.config.js`:
+> This package cannot be used in the "Expo Go" app because [it requires custom native code](https://docs.expo.io/workflow/customizing/).
 
 First install the package with yarn, npm, or [`expo install`](https://docs.expo.io/workflow/expo-cli/#expo-install).
 
@@ -9,7 +8,7 @@ First install the package with yarn, npm, or [`expo install`](https://docs.expo.
 expo install react-native-webrtc
 ```
 
-Then add the prebuild [config plugin](https://docs.expo.io/guides/config-plugins/) to the [`plugins`](https://docs.expo.io/versions/latest/config/app/#plugins) array of your `app.json` or `app.config.js`:
+After installing this npm package, add the [config plugin](https://docs.expo.io/guides/config-plugins/) to the [`plugins`](https://docs.expo.io/versions/latest/config/app/#plugins) array of your `app.json` or `app.config.js`:
 
 ```json
 {
@@ -19,15 +18,7 @@ Then add the prebuild [config plugin](https://docs.expo.io/guides/config-plugins
 }
 ```
 
-Then rebuild the native app:
-
-- Run `expo prebuild`
-  - This will apply the config plugin using [prebuilding](https://expo.fyi/prebuilding).
-- Rebuild the app
-  - `yarn android` -- Build on Android.
-  - `yarn ios` -- Build on iOS, this requires a MacOS computer (see [EAS build](https://docs.expo.io/build/introduction/) for more options).
-
-> If the project doesn't build correctly with `yarn ios` or `yarn android`, please file an issue and try setting the project up manually.
+Next, rebuild your app as described in the ["Adding custom native code"](https://docs.expo.io/workflow/customizing/) guide.
 
 ## API
 
