@@ -138,9 +138,8 @@ RCT_EXPORT_METHOD(dataChannelSend:(nonnull NSNumber *)peerConnectionId
     data = [[NSString alloc] initWithData:buffer.data
                                  encoding:NSUTF8StringEncoding];
   }
-  RTCDataChannel *channel = dcw.channel;
   NSDictionary *event = @{@"reactTag": dcw.reactTag,
-                          @"peerConnectionId": channel.peerConnectionId,
+                          @"peerConnectionId": dcw.pcId,
                           @"type": type,
                           // XXX NSDictionary will crash the process upon
                           // attempting to insert nil. Such behavior is
