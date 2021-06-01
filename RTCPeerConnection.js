@@ -262,8 +262,16 @@ export default class RTCPeerConnection extends EventTarget(PEER_CONNECTION_EVENT
     return this._localStreams.slice();
   }
 
+  getReceivers() {
+    return this.getTransceivers().map(t => t.receiver)
+  }
+
   getRemoteStreams() {
     return this._remoteStreams.slice();
+  }
+
+  getSenders() {
+    return this.getTransceivers().map(t => t.sender)
   }
 
   getTransceivers() {
