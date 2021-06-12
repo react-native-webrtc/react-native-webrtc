@@ -3,3 +3,7 @@ examples/
 apple/WebRTC.xcframework
 apple/WebRTC.dSYMs
 
+# Plugin
+/plugin/src
+/plugin/jest.config.js
+/plugin/tsconfig.json
