@@ -1,0 +1,67 @@
+{
+  "name": "event-target-shim",
+  "version": "1.1.1",
+  "description": "An implementation of W3C EventTarget interface.",
+  "main": "lib/event-target.js",
+  "files": [
+    "dist",
+    "lib"
+  ],
+  "scripts": {
+    "preversion": "npm run build",
+    "postversion": "git push && git push --tags",
+    "clean": "rimraf coverage dist",
+    "lint": "eslint lib test",
+    "build": "npm-run-all clean lint test build:*",
+    "build:dist": "mkdirp dist && browserify lib/event-target.js --standalone event-target-shim > dist/event-target-shim.js",
+    "build:dist-min": "uglifyjs dist/event-target-shim.js --compress --mangle > dist/event-target-shim.min.js",
+    "test": "npm-run-all clean lint && karma start karma.conf.js --single-run",
+    "watch": "karma start karma.conf.js --watch",
+    "travis": "istanbul cover node_modules/mocha/bin/_mocha --report lcovonly -- test/**/*.js --require scripts/power-assert",
+    "coveralls": "cat ./coverage/lcov.info | coveralls"
+  },
+  "devDependencies": {
+    "browserify": "^12.0.1",
+    "browserify-istanbul": "^0.2.1",
+    "coveralls": "^2.11.4",
+    "eslint": "^1.10.2",
+    "eslint-config-mysticatea": "^1.9.0",
+    "eslint-plugin-mysticatea": "^1.0.3",
+    "eslint-plugin-node": "^0.2.0",
+    "espower-loader": "^1.0.0",
+    "espowerify": "^1.0.0",
+    "istanbul": "^0.4.1",
+    "karma": "^0.13.15",
+    "karma-browserify": "^4.2.1",
+    "karma-chrome-launcher": "^0.2.1",
+    "karma-coverage": "^0.5.3",
+    "karma-firefox-launcher": "^0.1.6",
+    "karma-growl-reporter": "^0.1.1",
+    "karma-ie-launcher": "^0.2.0",
+    "karma-mocha": "^0.2.1",
+    "mkdirp": "^0.5.1",
+    "mocha": "^2.2.5",
+    "npm-run-all": "^1.2.5",
+    "power-assert": "^1.2.0",
+    "rimraf": "^2.3.4",
+    "spy": "^0.1.3",
+    "uglify-js": "^2.6.1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/mysticatea/event-target-shim.git"
+  },
+  "keywords": [
+    "w3c",
+    "eventtarget",
+    "event",
+    "events",
+    "shim"
+  ],
+  "author": "Toru Nagashima",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/mysticatea/event-target-shim/issues"
+  },
+  "homepage": "https://github.com/mysticatea/event-target-shim"
+}
