@@ -51,7 +51,7 @@ class MediaStreamTrack extends EventTarget(MEDIA_STREAM_TRACK_EVENTS) {
 
     const _readyState = info.readyState.toLowerCase();
     this.readyState = (_readyState === "initializing"
-                    || _readyState === "live") ? "live" : "ended";
+      || _readyState === "live") ? "live" : "ended";
   }
 
   get enabled(): boolean {
@@ -95,7 +95,17 @@ class MediaStreamTrack extends EventTarget(MEDIA_STREAM_TRACK_EVENTS) {
   }
 
   clone() {
-    throw new Error('Not implemented.');
+    const info = {
+      constraints: this._constraints,
+      enabled: this._enabled,
+      settings: this._settings,
+      id: this.id = info.id,
+      kind: this.kind = info.kind,
+      label: this.label = info.label,
+      muted: this.muted = false,
+      remote: this.remote = info.remote,
+    }
+    return new MediaStreamTrack(info);
   }
 
   getCapabilities() {
