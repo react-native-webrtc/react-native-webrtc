@@ -118,7 +118,7 @@ export default class MediaStream extends EventTarget(MEDIA_STREAM_EVENTS) {
   }
 
   clone() {
-    throw new Error('Not implemented.');
+    return new MediaStream(this)
   }
 
   toURL() {
