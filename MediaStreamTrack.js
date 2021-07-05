@@ -50,8 +50,7 @@ class MediaStreamTrack extends EventTarget(MEDIA_STREAM_TRACK_EVENTS) {
     this.remote = info.remote;
 
     const _readyState = info.readyState.toLowerCase();
-    this.readyState = (_readyState === "initializing"
-      || _readyState === "live") ? "live" : "ended";
+    this.readyState = (_readyState === "initializing" || _readyState === "live") ? "live" : "ended";
   }
 
   get enabled(): boolean {
