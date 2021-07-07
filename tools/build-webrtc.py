@@ -71,7 +71,8 @@ _GN_MACOS_ARGS = [
 GN_MACOS_ARGS = build_gn_args(_GN_APPLE_COMMON + _GN_MACOS_ARGS)
 
 _GN_ANDROID_ARGS = [
-    'target_os="android"'
+    'target_os="android"',
+    'strip_debug_info=%s',
 ]
 GN_ANDROID_ARGS = build_gn_args(_GN_ANDROID_ARGS)
 
@@ -202,7 +203,7 @@ def build(target_dir, platform, debug):
     else:
         for cpu in ANDROID_BUILD_CPUS:
             gn_out_dir = 'out/%s-%s' % (build_type, cpu)
-            gn_args = GN_ANDROID_ARGS % (str(debug).lower(), cpu)
+            gn_args = GN_ANDROID_ARGS % (str(debug).lower(), cpu, str(not debug).lower())
             gn_cmd = 'gn gen %s %s' % (gn_out_dir, gn_args)
             sh(gn_cmd, env)
 
