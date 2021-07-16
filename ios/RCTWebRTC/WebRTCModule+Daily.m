@@ -17,7 +17,7 @@ NSString *const AUDIO_MODE_IDLE = @"idle";
 
 @interface WebRTCModule (Daily) <RTCAudioSessionDelegate>
 
-@property (nonatomic, strong) NSTimer *audioModeRetryTimer;
+@property (nonatomic, strong) NSString *audioMode;
 
 // Expects to only be accessed on captureSessionQueue
 @property (nonatomic, strong) AVCaptureSession *captureSession;
@@ -114,15 +114,22 @@ RCT_EXPORT_METHOD(enableNoOpRecordingEnsuringBackgroundContinuity:(BOOL)enable) 
 
 #pragma mark - setDailyAudioMode
 
-- (void)setAudioModeRetryTimer:(NSTimer *)audioModeRetryTimer {
+- (void)setAudioMode:(NSString *)audioMode {
   objc_setAssociatedObject(self,
-                           @selector(audioModeRetryTimer),
-                           audioModeRetryTimer,
+                           @selector(audioMode),
+                           audioMode,
                            OBJC_ASSOCIATION_RETAIN_NONATOMIC);
 }
 
-- (NSTimer *)audioModeRetryTimer {
-  return  objc_getAssociatedObject(self, @selector(audioModeRetryTimer));
+- (NSString *)audioMode {
+  return  objc_getAssociatedObject(self, @selector(audioMode));
+}
+
+- (void)audioSession:(RTCAudioSession *)audioSession didSetActive:(BOOL)active {
+  // The audio session has become active either for the first time or again
+  // after being reset by WebRTC's audio module (for example, after a Wifi -> LTE
+  // switch), so (re-)apply the currently chosen audio mode to the session.
+  [self applyAudioMode:self.audioMode toSession:audioSession];
 }
 
 RCT_EXPORT_METHOD(setDailyAudioMode:(NSString *)audioMode) {
@@ -132,32 +139,23 @@ RCT_EXPORT_METHOD(setDailyAudioMode:(NSString *)audioMode) {
     return;
   }
   
-  // Cancel retry timer (if any) for setting the in-call audio mode
-  [self.audioModeRetryTimer invalidate];
+  self.audioMode = audioMode;
   
+  // Apply the chosen audio mode right away if the audio session is already
+  // active. Otherwise, it will be applied when the session becomes active.
+  RTCAudioSession *audioSession = RTCAudioSession.sharedInstance;
+  if (audioSession.isActive) {
+    [self applyAudioMode:audioMode toSession:audioSession];
+  }
+}
+
+- (void)applyAudioMode:(NSString *)audioMode toSession:(RTCAudioSession *)audioSession {
   // Do nothing if we're attempting to "unset" the in-call audio mode (for now
   // it doesn't seem like there's anything to do).
   if ([audioMode isEqualToString:AUDIO_MODE_IDLE]) {
     return;
   }
   
-  RTCAudioSession *audioSession = RTCAudioSession.sharedInstance;
-  
-  // If audioSession isn't active, configuring it won't work.
-  // Instead, schedule a timer to try again.
-  if (!audioSession.isActive) {
-    self.audioModeRetryTimer = [NSTimer timerWithTimeInterval:1 repeats:NO block:^(NSTimer * _Nonnull timer) {
-      [self setDailyAudioMode:audioMode];
-    }];
-    [[NSRunLoop mainRunLoop] addTimer:self.audioModeRetryTimer
-                              forMode:NSRunLoopCommonModes];
-    return;
-  }
-  
-  [self applyAudioMode:audioMode toSession:audioSession];
-}
-
-- (void)applyAudioMode:(NSString *)audioMode toSession:(RTCAudioSession *)audioSession {
   [audioSession lockForConfiguration];
   
   RTCAudioSessionConfiguration *config = [[RTCAudioSessionConfiguration alloc] init];
