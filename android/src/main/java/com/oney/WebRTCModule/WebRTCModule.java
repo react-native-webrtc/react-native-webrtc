@@ -533,7 +533,13 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
             return;
         }
 
-        String kind = track.kind();
+        String kind = null;
+        try{
+            kind =  track.kind();
+        }catch (IllegalStateException ex){
+            Log.e(TAG, "mediaStreamAddTrack() error", ex);
+        }
+
         if ("audio".equals(kind)) {
             stream.addTrack((AudioTrack)track);
         } else if ("video".equals(kind)) {
@@ -556,7 +562,13 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
             return;
         }
 
-        String kind = track.kind();
+        String kind = null;
+        try{
+            kind =  track.kind();
+        }catch (IllegalStateException ex){
+            Log.e(TAG, "mediaStreamRemoveTrack() error", ex);
+        }
+
         if ("audio".equals(kind)) {
             stream.removeTrack((AudioTrack)track);
         } else if ("video".equals(kind)) {
