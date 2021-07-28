@@ -52,6 +52,7 @@ GN_COMMON_ARGS = [
 
 _GN_APPLE_COMMON = [
     'enable_dsyms=true',
+    'rtc_enable_objc_symbol_export=true',
     'rtc_include_tests=false'
 ]
 
