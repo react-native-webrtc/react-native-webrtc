@@ -5,11 +5,12 @@
 //  Created by Alex-Dan Bumbu on 20/01/2021.
 //
 
+#if !TARGET_OS_OSX
+
 #import <ReplayKit/ReplayKit.h>
 #import <React/RCTUIManager.h>
 
 #import "ScreenCapturePickerViewManager.h"
-//#import "WebRTCModule.h"
 
 NSString* const kRTCScreenSharingExtension = @"RTCScreenSharingExtension";
 
@@ -63,3 +64,5 @@ RCT_EXPORT_METHOD(show:(nonnull NSNumber *)reactTag) {
 }
 
 @end
+
+#endif // !TARGET_OS_OSX
