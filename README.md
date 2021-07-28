@@ -141,6 +141,8 @@ it back to `true` will re-enable the camera.
 
 The [react-native-webrtc](https://github.com/react-native-webrtc) organization provides a number of packages which are useful when developing Real Time Communications applications.
 
+The [react-native-webrtc-web-shim](https://github.com/react-native-webrtc/react-native-webrtc-web-shim) project provides a shim for react-native-web support, allowing you to use [(almost)](https://github.com/react-native-webrtc/react-native-webrtc-web-shim/tree/main#setup) the same code in react-native-web as in react-native.
+
 ## Acknowledgements
 
 Thanks to all [contributors](https://github.com/react-native-webrtc/react-native-webrtc/graphs/contributors) for helping with the project!
