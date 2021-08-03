@@ -375,7 +375,7 @@ RCT_EXPORT_METHOD(peerConnectionGetStats:(nonnull NSNumber *) objectID
         if ([statisticsValue isKindOfClass:[NSArray class]]) {
             [s appendString:@"["];
             BOOL firstValue = YES;
-            for (NSObject *value in statisticsValue) {
+            for (NSObject *value in (NSArray *)statisticsValue) {
               if(firstValue) {
                 firstValue = NO;
               } else {
