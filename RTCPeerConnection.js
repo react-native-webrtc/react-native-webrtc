@@ -158,20 +158,12 @@ export default class RTCPeerConnection extends EventTarget(PEER_CONNECTION_EVENT
     WebRTCModule.peerConnectionSetConfiguration(configuration, this._peerConnectionId);
   }
 
-  setLocalDescription(sessionDescription: RTCSessionDescription) {
-    return new Promise((resolve, reject) => {
-      WebRTCModule.peerConnectionSetLocalDescription(
-        sessionDescription.toJSON ? sessionDescription.toJSON() : sessionDescription,
-        this._peerConnectionId,
-        (successful, data) => {
-          if (successful) {
-            this.localDescription = new RTCSessionDescription(data);
-            resolve();
-          } else {
-            reject(data);
-          }
-      });
-    });
+  async setLocalDescription(sessionDescription: ?RTCSessionDescription) {
+    const desc = sessionDescription ?
+      (sessionDescription.toJSON ? sessionDescription.toJSON() : sessionDescription) : null;
+    const newSdp = await WebRTCModule.peerConnectionSetLocalDescription(this._peerConnectionId, desc);
+
+    this.localDescription = new RTCSessionDescription(newSdp);
   }
 
   setRemoteDescription(sessionDescription: RTCSessionDescription) {
@@ -232,6 +224,10 @@ export default class RTCPeerConnection extends EventTarget(PEER_CONNECTION_EVENT
 
   close() {
     WebRTCModule.peerConnectionClose(this._peerConnectionId);
+  }
+
+  restartIce() {
+    WebRTCModule.peerConnectionRestartIce(this._peerConnectionId);
   }
 
   _getTrack(streamReactTag, trackId): MediaStreamTrack {
@@ -361,7 +357,7 @@ export default class RTCPeerConnection extends EventTarget(PEER_CONNECTION_EVENT
    * values with which to initialize corresponding attributes of the new
    * instance such as id
    */
-  createDataChannel(label: string, dataChannelDict?: ?RTCDataChannelInit) {
+  createDataChannel(label: string, dataChannelDict: ?RTCDataChannelInit) {
     if (dataChannelDict && 'id' in dataChannelDict) {
       const id = dataChannelDict.id;
       if (typeof id !== 'number') {
