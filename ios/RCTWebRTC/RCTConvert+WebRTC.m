@@ -90,6 +90,9 @@
 {
   RTCConfiguration *config = [[RTCConfiguration alloc] init];
 
+  // Required for perfect negotiation.
+  config.enableImplicitRollback = YES;
+
   if (!json) {
     return config;
   }

@@ -210,28 +210,37 @@ RCT_EXPORT_METHOD(peerConnectionCreateAnswer:(nonnull NSNumber *)peerConnectionI
        }];
 }
 
-RCT_EXPORT_METHOD(peerConnectionSetLocalDescription:(RTCSessionDescription *)sdp objectID:(nonnull NSNumber *)objectID callback:(RCTResponseSenderBlock)callback)
+RCT_EXPORT_METHOD(peerConnectionSetLocalDescription:(nonnull NSNumber *)objectID
+                                               desc:(RTCSessionDescription *)desc
+                                           resolver:(RCTPromiseResolveBlock)resolve
+                                           rejecter:(RCTPromiseRejectBlock)reject)
 {
-  RTCPeerConnection __weak *peerConnection = self.peerConnections[objectID];
+  RTCPeerConnection *peerConnection = self.peerConnections[objectID];
   if (!peerConnection) {
+    reject(@"E_INVALID", @"PeerConnection not found", nil);
     return;
   }
 
-  [peerConnection setLocalDescription:sdp completionHandler: ^(NSError *error) {
-    if (error) {
-      id errorResponse = @{
-        @"name": @"SetLocalDescriptionFailed",
-        @"message": error.localizedDescription ?: [NSNull null]
-      };
-      callback(@[@(NO), errorResponse]);
-    } else {
-      id newSdp = @{
-          @"type": [RTCSessionDescription stringForType:peerConnection.localDescription.type],
-          @"sdp": peerConnection.localDescription.sdp
-      };
-      callback(@[@(YES), newSdp]);
-    }
-  }];
+  __weak RTCPeerConnection *weakPc = peerConnection;
+
+  RTCSetSessionDescriptionCompletionHandler handler = ^(NSError *error) {
+      if (error) {
+          reject(@"E_OPERATION_ERROR", error.localizedDescription, nil);
+      } else {
+        RTCPeerConnection *strongPc = weakPc;
+        id newSdp = @{
+            @"type": [RTCSessionDescription stringForType:strongPc.localDescription.type],
+            @"sdp": strongPc.localDescription.sdp
+        };
+        resolve(newSdp);
+      }
+  };
+
+  if (desc == nil) {
+    [peerConnection setLocalDescriptionWithCompletionHandler:handler];
+  } else {
+    [peerConnection setLocalDescription:desc completionHandler:handler];
+  }
 }
 
 RCT_EXPORT_METHOD(peerConnectionSetRemoteDescription:(RTCSessionDescription *)sdp objectID:(nonnull NSNumber *)objectID callback:(RCTResponseSenderBlock)callback)
@@ -330,6 +339,16 @@ RCT_EXPORT_METHOD(peerConnectionGetStats:(nonnull NSNumber *) objectID
   [peerConnection statisticsWithCompletionHandler:^(RTCStatisticsReport *report) {
     resolve([self statsToJSON:report]);
   }];
+}
+
+RCT_EXPORT_METHOD(peerConnectionRestartIce:(nonnull NSNumber *)objectID)
+{
+  RTCPeerConnection *peerConnection = self.peerConnections[objectID];
+  if (!peerConnection) {
+    return;
+  }
+
+  [peerConnection restartIce];
 }
 
 /**
