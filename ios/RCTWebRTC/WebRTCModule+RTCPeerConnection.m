@@ -258,20 +258,31 @@ RCT_EXPORT_METHOD(peerConnectionSetRemoteDescription:(RTCSessionDescription *)sd
   }];
 }
 
-RCT_EXPORT_METHOD(peerConnectionAddICECandidate:(RTCIceCandidate*)candidate objectID:(nonnull NSNumber *)objectID callback:(RCTResponseSenderBlock)callback)
+RCT_EXPORT_METHOD(peerConnectionAddICECandidate:(nonnull NSNumber *)objectID
+                                      candidate:(RTCIceCandidate*)candidate
+                                       resolver:(RCTPromiseResolveBlock)resolve
+                                       rejecter:(RCTPromiseRejectBlock)reject)
 {
   RTCPeerConnection *peerConnection = self.peerConnections[objectID];
   if (!peerConnection) {
+    reject(@"E_INVALID", @"PeerConnection not found", nil);
     return;
   }
 
-  [peerConnection addIceCandidate:candidate];
-
-  id newSdp = @{
-      @"type": [RTCSessionDescription stringForType:peerConnection.remoteDescription.type],
-      @"sdp": peerConnection.remoteDescription.sdp
-  };
-  callback(@[@true, newSdp]);
+  __weak RTCPeerConnection *weakPc = peerConnection;
+  [peerConnection addIceCandidate:candidate
+                completionHandler:^(NSError *error) {
+                  if (error) {
+                      reject(@"E_OPERATION_ERROR", @"addIceCandidate failed", error);
+                  } else {
+                      RTCPeerConnection *strongPc = weakPc;
+                      id newSdp = @{
+                          @"type": [RTCSessionDescription stringForType:strongPc.remoteDescription.type],
+                          @"sdp": strongPc.remoteDescription.sdp
+                      };
+                      resolve(newSdp);
+                  }
+                }];
 }
 
 RCT_EXPORT_METHOD(peerConnectionClose:(nonnull NSNumber *)objectID)

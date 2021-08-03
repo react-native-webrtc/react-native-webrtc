@@ -190,25 +190,18 @@ export default class RTCPeerConnection extends EventTarget(PEER_CONNECTION_EVENT
     });
   }
 
-  addIceCandidate(candidate) {
+  async addIceCandidate(candidate) {
     if (!candidate || !candidate.candidate) {
-      // TODO: support end-of-candidates, native crashes at this time.
-      return Promise.resolve();
+      // XXX end-of cantidates is not implemented: https://bugs.chromium.org/p/webrtc/issues/detail?id=9218
+      return;
     }
-    return new Promise((resolve, reject) => {
-      WebRTCModule.peerConnectionAddICECandidate(
-        candidate.toJSON ? candidate.toJSON() : candidate,
+
+    const newSdp = await WebRTCModule.peerConnectionAddICECandidate(
         this._peerConnectionId,
-        (successful, data) => {
-          if (successful) {
-            this.remoteDescription = new RTCSessionDescription(data);
-            resolve();
-          } else {
-            // XXX: This should be OperationError
-            reject(new Error('Failed to add ICE candidate'));
-          }
-      });
-    });
+        candidate.toJSON ? candidate.toJSON() : candidate
+    );
+
+    this.remoteDescription = new RTCSessionDescription(newSdp);
   }
 
   getStats() {

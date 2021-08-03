@@ -859,14 +859,19 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
     }
 
     @ReactMethod
-    public void peerConnectionAddICECandidate(ReadableMap candidateMap,
-                                              int id,
-                                              Callback callback) {
+    public void peerConnectionAddICECandidate(int pcId,
+                                              ReadableMap candidateMap,
+                                              Promise promise) {
         ThreadUtils.runOnExecutor(() -> {
-            PeerConnection peerConnection = getPeerConnection(id);
+            PeerConnection peerConnection = getPeerConnection(pcId);
             if (peerConnection == null) {
                 Log.d(TAG, "peerConnectionAddICECandidate() peerConnection is null");
-                callback.invoke(false);
+                promise.reject(new Exception("PeerConnection not found"));
+                return;
+            }
+
+            if (!(candidateMap.hasKey("sdpMid") && candidateMap.hasKey("sdpMLineIndex") && candidateMap.hasKey("sdpMid"))) {
+                promise.reject("E_TYPE_ERROR", "Invalid argument");
                 return;
             }
 
@@ -876,14 +881,21 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
                 candidateMap.getString("candidate")
             );
 
-            boolean success = peerConnection.addIceCandidate(candidate);
-            WritableMap newSdpMap = Arguments.createMap();
-            if (success) {
-                SessionDescription newSdp = peerConnection.getRemoteDescription();
-                newSdpMap.putString("type", newSdp.type.canonicalForm());
-                newSdpMap.putString("sdp", newSdp.description);
-            }
-            callback.invoke(success, newSdpMap);
+            peerConnection.addIceCandidate(candidate, new AddIceObserver() {
+                @Override
+                public void onAddSuccess() {
+                    WritableMap newSdpMap = Arguments.createMap();
+                    SessionDescription newSdp = peerConnection.getRemoteDescription();
+                    newSdpMap.putString("type", newSdp.type.canonicalForm());
+                    newSdpMap.putString("sdp", newSdp.description);
+                    promise.resolve(newSdpMap);
+                }
+
+                @Override
+                public void onAddFailure(String s) {
+                    promise.reject("E_OPERATION_ERROR", s);
+                }
+            });
         });
     }
 
