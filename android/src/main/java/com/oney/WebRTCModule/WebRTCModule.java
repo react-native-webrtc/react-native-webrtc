@@ -1037,7 +1037,7 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
         }
         final StringBuilder result = new StringBuilder();
         EasyrtcSingleFrameCapturer.toDataUrl( activity, mediaStream, 80, result, () -> {
-            p.resolve( result );
+            p.resolve( result.toString() );
         } );
     }
 }
