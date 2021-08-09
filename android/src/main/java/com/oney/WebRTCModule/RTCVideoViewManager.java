@@ -19,6 +19,14 @@ public class RTCVideoViewManager extends SimpleViewManager<WebRTCView> {
   }
 
   /**
+   * camera identifier for js events
+  */
+  @ReactProp(name = "name")
+  public void setName(WebRTCView view, String name) {
+    view.setName(name);
+  }
+
+  /**
    * Sets the indicator which determines whether a specific {@link WebRTCView}
    * is to mirror the video specified by {@code streamURL} during its rendering.
    * For more details, refer to the documentation of the {@code mirror} property

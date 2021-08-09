@@ -11,7 +11,11 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.util.Log;
 
+import com.facebook.react.bridge.WritableMap;
 import com.facebook.react.bridge.ReactContext;
+import com.facebook.react.bridge.ReactApplicationContext;
+import com.facebook.react.bridge.Arguments;
+import com.facebook.react.modules.core.DeviceEventManagerModule;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -177,6 +181,11 @@ public class WebRTCView extends ViewGroup {
      */
     private VideoTrack videoTrack;
 
+    /**
+     * name of camera
+     */
+    private String name;
+
     public WebRTCView(Context context) {
         super(context);
 
@@ -298,6 +307,13 @@ public class WebRTCView extends ViewGroup {
         post(() -> {
             Log.d(TAG, "First frame rendered.");
             surfaceViewRenderer.setBackgroundColor(Color.TRANSPARENT);
+            WritableMap params = Arguments.createMap();
+            params.putString("name", "videoLoaded");
+            params.putString("camera", this.name);
+            ReactContext reactContext = (ReactContext) getContext();
+            WebRTCModule module
+                = reactContext.getNativeModule(WebRTCModule.class);
+            module.jsEvent("jsEvent", params);
         });
     }
 
@@ -332,6 +348,15 @@ public class WebRTCView extends ViewGroup {
             // The onFrameResolutionChanged method call executes on the
             // surfaceViewRenderer's render Thread.
             post(requestSurfaceViewRendererLayoutRunnable);
+            WritableMap params = Arguments.createMap();
+            params.putString("name", "onFrameResolutionChanged");
+            params.putString("camera", this.name);
+            params.putInt("videoHeight", videoHeight);
+            params.putInt("videoWidth", videoWidth);
+            ReactContext reactContext = (ReactContext) getContext();
+            WebRTCModule module
+                = reactContext.getNativeModule(WebRTCModule.class);
+            module.jsEvent("jsEvent", params);
         }
     }
 
@@ -450,6 +475,15 @@ public class WebRTCView extends ViewGroup {
             onLayout(
                 /* changed */ false,
                 getLeft(), getTop(), getRight(), getBottom());
+        }
+    }
+
+    /**
+    * camera identifier for js events
+    */
+    public void setName(string name) {
+        if (this.name != name) {
+            this.name = name;
         }
     }
 

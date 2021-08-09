@@ -146,6 +146,12 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
         return "WebRTCModule";
     }
 
+    public void jsEvent(String name, @Nullable WritableMap params) {
+        getReactApplicationContext()
+            .getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter.class)
+            .emit(name, params);
+    }
+
     private PeerConnection getPeerConnection(int id) {
         PeerConnectionObserver pco = mPeerConnectionObservers.get(id);
         return (pco == null) ? null : pco.getPeerConnection();
