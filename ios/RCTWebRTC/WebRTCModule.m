@@ -26,6 +26,7 @@
 @implementation WebRTCModule {
   RCTPromiseResolveBlock _resolveBlock;
   RTCVideoTrack *_frameTrack;
+  int _quality;
 }
 
 + (BOOL)requiresMainQueueSetup
@@ -107,6 +108,7 @@ RCT_EXPORT_MODULE();
 
 RCT_REMAP_METHOD(captureFrame,
     captureFrame:(nonnull NSString *)streamID
+    quality:(nonnull int *)quality
     resolver:(RCTPromiseResolveBlock)resolve
         rejecter:(RCTPromiseRejectBlock)reject)
 {
@@ -117,6 +119,7 @@ RCT_REMAP_METHOD(captureFrame,
     }
 
     _resolveBlock = resolve;
+    _quality = quality;
     _frameTrack = stream.videoTracks.firstObject;
     [_frameTrack addRenderer:self];
 }
@@ -149,7 +152,8 @@ RCT_REMAP_METHOD(captureFrame,
                              CVPixelBufferGetHeight(bufferRef))];
 
         UIImage *uiImage = [UIImage imageWithCGImage:videoImage];
-        NSString *base64 = [UIImageJPEGRepresentation(uiImage, 0.8) base64EncodedStringWithOptions:(NSDataBase64EncodingOptions)0];
+        float qFloat = _quality;
+        NSString *base64 = [UIImageJPEGRepresentation(uiImage, (qFloat / 10)) base64EncodedStringWithOptions:(NSDataBase64EncodingOptions)0];
         _resolveBlock( base64 );
         _resolveBlock = nil;
         [_frameTrack removeRenderer:self];
