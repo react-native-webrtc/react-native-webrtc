@@ -200,7 +200,8 @@ class GetUserMediaImpl {
 
             CameraCaptureController cameraCaptureController = new CameraCaptureController(
                 cameraEnumerator,
-                videoConstraintsMap);
+                videoConstraintsMap,
+                reactContext);
 
             videoTrack = createVideoTrack(cameraCaptureController);
         }

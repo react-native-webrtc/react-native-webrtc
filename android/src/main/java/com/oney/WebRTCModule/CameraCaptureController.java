@@ -3,6 +3,7 @@ package com.oney.WebRTCModule;
 import android.util.Log;
 
 import com.facebook.react.bridge.ReadableMap;
+import com.facebook.react.bridge.ReactApplicationContext;
 
 import org.webrtc.CameraEnumerator;
 import org.webrtc.CameraVideoCapturer;
@@ -29,15 +30,17 @@ public class CameraCaptureController extends AbstractVideoCaptureController {
      * implementation does not do anything but logging unspecific to the camera
      * device's name anyway.
      */
-    private final CameraEventsHandler cameraEventsHandler = new CameraEventsHandler();
+    private final CameraEventsHandler cameraEventsHandler;
 
-    public CameraCaptureController(CameraEnumerator cameraEnumerator, ReadableMap constraints) {
+    public CameraCaptureController(CameraEnumerator cameraEnumerator, ReadableMap constraints, ReactApplicationContext reactContext) {
         super(
-             constraints.getInt("width"),
-             constraints.getInt("height"), 
-             constraints.getInt("frameRate"));
+            constraints.getInt("width"),
+            constraints.getInt("height"), 
+            constraints.getInt("frameRate"));
 
         this.cameraEnumerator = cameraEnumerator;
+        cameraEventsHandler = new CameraEventsHandler(reactContext);
+
         this.constraints = constraints;
     }
 
