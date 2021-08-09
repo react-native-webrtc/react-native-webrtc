@@ -481,7 +481,7 @@ public class WebRTCView extends ViewGroup {
     /**
     * camera identifier for js events
     */
-    public void setName(string name) {
+    public void setName(String name) {
         if (this.name != name) {
             this.name = name;
         }
