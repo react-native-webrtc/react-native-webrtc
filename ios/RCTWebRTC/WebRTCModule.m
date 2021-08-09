@@ -120,8 +120,10 @@ RCT_REMAP_METHOD(captureFrame,
 
     _resolveBlock = resolve;
     _quality = quality;
-    _frameTrack = stream.videoTracks.firstObject;
-    [_frameTrack addRenderer:self];
+    if (!_frameTrack) {
+      _frameTrack = stream.videoTracks.firstObject;
+      [_frameTrack addRenderer:self];
+    }
 }
 
 /** The size of the frame. */
@@ -134,7 +136,7 @@ RCT_REMAP_METHOD(captureFrame,
 - (void)renderFrame:(nullable RTCVideoFrame *)frame
 {
     if( !_resolveBlock ) {
-        [_frameTrack removeRenderer:self];
+        // [_frameTrack removeRenderer:self];
         return;
     }
     NSObject *buffer = (id) frame.buffer;
@@ -156,8 +158,8 @@ RCT_REMAP_METHOD(captureFrame,
         NSString *base64 = [UIImageJPEGRepresentation(uiImage, (qFloat / 10)) base64EncodedStringWithOptions:(NSDataBase64EncodingOptions)0];
         _resolveBlock( base64 );
         _resolveBlock = nil;
-        [_frameTrack removeRenderer:self];
-        _frameTrack = nil;
+        // [_frameTrack removeRenderer:self];
+        // _frameTrack = nil;
         CGImageRelease(videoImage);
     }
 };
