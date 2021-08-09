@@ -27,6 +27,14 @@ public class RTCVideoViewManager extends SimpleViewManager<WebRTCView> {
   }
 
   /**
+   * screenshot request
+  */
+  @ReactProp(name = "screenshotRequest")
+  public void setScreenshotRequest(WebRTCView view, String screenshotRequest) {
+    view.setScreenshotRequest(screenshotRequest);
+  }
+
+  /**
    * Sets the indicator which determines whether a specific {@link WebRTCView}
    * is to mirror the video specified by {@code streamURL} during its rendering.
    * For more details, refer to the documentation of the {@code mirror} property

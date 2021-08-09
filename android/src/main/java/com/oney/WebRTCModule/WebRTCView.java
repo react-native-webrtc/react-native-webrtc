@@ -1,5 +1,7 @@
 package com.oney.WebRTCModule;
 
+import android.graphics.Bitmap;
+import android.util.Base64;
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.graphics.Color;
@@ -21,7 +23,9 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.List;
 import java.util.Objects;
+import java.io.ByteArrayOutputStream;
 
+import org.webrtc.EglRenderer;
 import org.webrtc.EglBase;
 import org.webrtc.Logging;
 import org.webrtc.MediaStream;
@@ -176,6 +180,8 @@ public class WebRTCView extends ViewGroup {
      */
     private final SurfaceViewRenderer surfaceViewRenderer;
 
+    private boolean isTakingScreenshot = false;
+
     /**
      * The {@code VideoTrack}, if any, rendered by this {@code WebRTCView}.
      */
@@ -185,6 +191,11 @@ public class WebRTCView extends ViewGroup {
      * name of camera
      */
     private String name;
+
+    /**
+     * screenshot request
+    */
+    private String screenshotRequest;
 
     public WebRTCView(Context context) {
         super(context);
@@ -479,11 +490,79 @@ public class WebRTCView extends ViewGroup {
     }
 
     /**
-    * camera identifier for js events
+     * camera identifier for js events
     */
     public void setName(String name) {
         if (this.name != name) {
             this.name = name;
+        }
+    }
+
+    /**
+     * screenshot request
+    */
+    public void setScreenshotRequest(String screenshotRequest) {
+        if (isTakingScreenshot) {
+            return;
+        }
+        if (screenshotRequest == null || screenshotRequest.isEmpty() || screenshotRequest == "") {
+            this.screenshotRequest = "";
+            return;
+        }
+
+        if (this.screenshotRequest != screenshotRequest) {
+            isTakingScreenshot = true;
+            this.screenshotRequest = screenshotRequest;
+            String camName = this.name;
+            int quality = 0;
+            try {
+                quality = Integer.parseInt(screenshotRequest);
+            }
+            catch (NumberFormatException e)
+            {
+                quality = 80;
+            }
+            final int _quality = quality;
+            try {
+                surfaceViewRenderer.addFrameListener(new EglRenderer.FrameListener() {
+                    @Override
+                    public void onFrame(Bitmap bitmap) {
+                        ThreadUtils.runOnExecutor(() -> {
+                            surfaceViewRenderer.removeFrameListener(this);
+                            try {
+                                ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();  
+                                bitmap.compress(Bitmap.CompressFormat.JPEG, _quality, byteArrayOutputStream);
+                                byte[] byteArray = byteArrayOutputStream .toByteArray();
+                                String encoded = Base64.encodeToString(byteArray, Base64.DEFAULT);
+
+                                WritableMap params = Arguments.createMap();
+                                params.putString("name", "screenshot");
+                                params.putString("camera", camName);
+                                params.putString("base64", encoded);
+                                ReactContext reactContext = (ReactContext) getContext();
+                                WebRTCModule module
+                                    = reactContext.getNativeModule(WebRTCModule.class);
+                                module.jsEvent("jsEvent", params);
+                            } catch (Exception e) {
+                                WritableMap params = Arguments.createMap();
+                                params.putString("name", "screenshot");
+                                params.putString("camera", camName);
+                                params.putString("error", String.format("failed: %s", e.getMessage()));
+                                module.jsEvent("jsEvent", params);
+                            } finally {
+                                isTakingScreenshot = false;
+                            }
+                        });
+                    }
+                }, 1);
+            } catch (Exception e) {
+                isTakingScreenshot = false;
+                WritableMap params = Arguments.createMap();
+                params.putString("name", "screenshot");
+                params.putString("camera", camName);
+                params.putString("error", String.format("failed: %s", e.getMessage()));
+                module.jsEvent("jsEvent", params);
+            }
         }
     }
 
