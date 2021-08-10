@@ -107,7 +107,7 @@ Rendering RTCView.
 | objectFit                      | string           | 'contain'           | Can be contain or cover                                                                                                | 
 | streamURL                      | string           | ''                  | This is mandatory                                                                                                                      |
 | zOrder                         | number           | 0                   | Similarly to zIndex                                                                                              |
-
+| onFirstFrame | function | noop | iOS: Is invoked when first video frame is received
 
 ### Custom APIs
 
