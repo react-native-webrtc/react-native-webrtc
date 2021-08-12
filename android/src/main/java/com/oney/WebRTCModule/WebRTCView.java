@@ -529,6 +529,9 @@ public class WebRTCView extends ViewGroup {
                     public void onFrame(Bitmap bitmap) {
                         ThreadUtils.runOnExecutor(() -> {
                             surfaceViewRenderer.removeFrameListener(this);
+                            ReactContext reactContext = (ReactContext) getContext();
+                            WebRTCModule module
+                                = reactContext.getNativeModule(WebRTCModule.class);
                             try {
                                 ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();  
                                 bitmap.compress(Bitmap.CompressFormat.JPEG, _quality, byteArrayOutputStream);
@@ -539,9 +542,6 @@ public class WebRTCView extends ViewGroup {
                                 params.putString("name", "screenshot");
                                 params.putString("camera", camName);
                                 params.putString("base64", encoded);
-                                ReactContext reactContext = (ReactContext) getContext();
-                                WebRTCModule module
-                                    = reactContext.getNativeModule(WebRTCModule.class);
                                 module.jsEvent("jsEvent", params);
                             } catch (Exception e) {
                                 WritableMap params = Arguments.createMap();
@@ -561,6 +561,9 @@ public class WebRTCView extends ViewGroup {
                 params.putString("name", "screenshot");
                 params.putString("camera", camName);
                 params.putString("error", String.format("failed: %s", e.getMessage()));
+                ReactContext reactContext = (ReactContext) getContext();
+                WebRTCModule module
+                    = reactContext.getNativeModule(WebRTCModule.class);
                 module.jsEvent("jsEvent", params);
             }
         }
