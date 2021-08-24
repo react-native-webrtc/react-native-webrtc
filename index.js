@@ -36,6 +36,9 @@ function registerGlobals() {
 	navigator.mediaDevices.getUserMedia =
 		mediaDevices.getUserMedia.bind(mediaDevices);
 
+	navigator.mediaDevices.getDisplayMedia =
+		mediaDevices.getDisplayMedia.bind(mediaDevices);
+
 	navigator.mediaDevices.enumerateDevices =
 		mediaDevices.enumerateDevices.bind(mediaDevices);
 
