@@ -7,11 +7,7 @@ import MediaStreamError from './MediaStreamError';
 
 const { WebRTCModule } = NativeModules;
 
-export default function getDisplayMedia(constraints) {
-    if (!constraints || !constraints.video) {
-        return Promise.reject(new TypeError());
-    }
-
+export default function getDisplayMedia() {
     return new Promise((resolve, reject) => {
         WebRTCModule.getDisplayMedia()
             .then(data => {
