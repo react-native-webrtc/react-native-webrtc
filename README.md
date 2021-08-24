@@ -116,6 +116,7 @@ Rendering RTCView.
 By calling this method the JavaScript global namespace gets "polluted" with the following additions:
 
 * `navigator.mediaDevices.getUserMedia()`
+* `navigator.mediaDevices.getDisplayMedia()`
 * `navigator.mediaDevices.enumerateDevices()`
 * `window.RTCPeerConnection`
 * `window.RTCIceCandidate`
