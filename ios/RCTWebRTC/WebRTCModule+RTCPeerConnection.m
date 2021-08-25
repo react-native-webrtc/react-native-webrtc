@@ -157,7 +157,7 @@ RCT_EXPORT_METHOD(peerConnectionAddTransceiver:(nonnull NSNumber *)objectID
     if (!peerConnection) {
       return;
     }
-    
+
     RTCRtpTransceiverInit *init = [RTCRtpTransceiverInit new];
     init.direction = RTCRtpTransceiverDirectionSendRecv;
     if ([options objectForKey:@"init"] != nil) {
@@ -169,7 +169,7 @@ RCT_EXPORT_METHOD(peerConnectionAddTransceiver:(nonnull NSNumber *)objectID
             init.streamIds = [initOpt objectForKey: @"streamIds"];
         }
     }
-    
+
     RTCRtpTransceiver *transceiver;
     if ([options objectForKey:@"type"] != nil) {
         NSString* type = [options objectForKey:@"type"];
@@ -487,14 +487,14 @@ RCT_EXPORT_METHOD(getTrackVolumes:(RCTResponseSenderBlock)callback)
  */
 - (NSString *)statsToJSON:(RTCStatisticsReport *)report
 {
-  /* 
+  /*
   The initial capacity matters, of course, because it determines how many
   times the NSMutableString will have grow. But walking through the reports
   to compute an initial capacity which exactly matches the requirements of
   the reports is too much work without real-world bang here. An improvement
-  should be caching the required capacity from the previous invocation of the 
-  method and using it as the initial capacity in the next invocation. 
-  As I didn't want to go even through that,choosing just about any initial 
+  should be caching the required capacity from the previous invocation of the
+  method and using it as the initial capacity in the next invocation.
+  As I didn't want to go even through that,choosing just about any initial
   capacity is OK because NSMutableCopy doesn't have too bad a strategy of growing.
   */
   NSMutableString *s = [NSMutableString stringWithCapacity:16 * 1024];
@@ -507,7 +507,7 @@ RCT_EXPORT_METHOD(getTrackVolumes:(RCTResponseSenderBlock)callback)
     } else {
       [s appendString:@","];
     }
-  
+
     [s appendString:@"[\""];
     [s appendString: key];
     [s appendString:@"\",{"];
@@ -515,7 +515,7 @@ RCT_EXPORT_METHOD(getTrackVolumes:(RCTResponseSenderBlock)callback)
     RTCStatistics *statistics = report.statistics[key];
     [s appendString:@"\"timestamp\":"];
     [s appendFormat:@"%f", statistics.timestamp_us / 1000.0];
-    [s appendString:@",\"type\":\""]; 
+    [s appendString:@",\"type\":\""];
     [s appendString:statistics.type];
     [s appendString:@"\",\"id\":\""];
     [s appendString:statistics.id];
@@ -548,9 +548,9 @@ RCT_EXPORT_METHOD(getTrackVolumes:(RCTResponseSenderBlock)callback)
             [s appendString:@"\""];
         }
     }
-    
+
     [s appendString:@"}]"];
-  } 
+  }
 
   [s appendString:@"]"];
 
@@ -624,8 +624,22 @@ RCT_EXPORT_METHOD(getTrackVolumes:(RCTResponseSenderBlock)callback)
     } else if ([direction isEqualToString:@"inactive"]) {
         return RTCRtpTransceiverDirectionInactive;
     }
-    
+
     return RTCRtpTransceiverDirectionSendRecv;
+}
+
+- (NSDictionary *)extractReceiver:(RTCRtpReceiver *)receiver {
+    return @{
+        @"id": receiver.receiverId,
+        @"track": @{
+            @"id": receiver.track.trackId,
+            @"kind": receiver.track.kind,
+            @"label": receiver.track.trackId,
+            @"enabled": @(receiver.track.isEnabled),
+            @"remote": @(YES),
+            @"readyState": @"live"
+        }
+    };
 }
 
 - (NSDictionary *)extractTransceiver:(RTCRtpTransceiver *)transceiver {
@@ -636,17 +650,7 @@ RCT_EXPORT_METHOD(getTrackVolumes:(RCTResponseSenderBlock)callback)
     }
     [res setValue:[self stringForTransceiverDirection: transceiver.direction] forKey:@"direction"];
     [res setValue: (transceiver.isStopped ? @YES : @NO) forKey:@"isStopped"];
-    [res setValue:@{
-        @"id": transceiver.receiver.receiverId,
-        @"track": @{
-                @"id": transceiver.receiver.track.trackId,
-                @"kind": transceiver.receiver.track.kind,
-                @"label": transceiver.receiver.track.trackId,
-                @"enabled": @(transceiver.receiver.track.isEnabled),
-                @"remote": @(YES),
-                @"readyState": @"live"
-        }
-    } forKey: @"receiver"];
+    [res setValue: [self extractReceiver:transceiver.receiver] forKey: @"receiver"];
     return res;
 }
 
@@ -662,6 +666,27 @@ RCT_EXPORT_METHOD(getTrackVolumes:(RCTResponseSenderBlock)callback)
     return res;
 }
 
+- (NSMutableArray *)extractTracks:(RTCPeerConnection *)peerConnection stream:(RTCMediaStream *)stream streamReactTag:(NSString*)streamReactTag {
+    NSMutableArray *tracks = [NSMutableArray array];
+    for (RTCVideoTrack *track in stream.videoTracks) {
+        peerConnection.remoteTracks[track.trackId] = track;
+
+        // Only add to adapter if it doesn't exist there already. Warnings will be
+        // thrown without this conditional
+        if ([peerConnection.videoTrackAdapters objectForKey:track.trackId] == nil) {
+            [peerConnection addVideoTrackAdapter:streamReactTag track:track];
+        }
+
+        [tracks addObject:@{@"id": track.trackId, @"kind": track.kind, @"label": track.trackId, @"enabled": @(track.isEnabled), @"remote": @(YES), @"readyState": @"live"}];
+    }
+
+    for (RTCAudioTrack *track in stream.audioTracks) {
+        peerConnection.remoteTracks[track.trackId] = track;
+        [tracks addObject:@{@"id": track.trackId, @"kind": track.kind, @"label": track.trackId, @"enabled": @(track.isEnabled), @"remote": @(YES), @"readyState": @"live"}];
+    }
+    return tracks;
+}
+
 #pragma mark - RTCPeerConnectionDelegate methods
 
 - (void)peerConnection:(RTCPeerConnection *)peerConnection didChangeSignalingState:(RTCSignalingState)newState {
@@ -673,17 +698,8 @@ RCT_EXPORT_METHOD(getTrackVolumes:(RCTResponseSenderBlock)callback)
 }
 
 - (void)peerConnection:(RTCPeerConnection *)peerConnection didAddStream:(RTCMediaStream *)stream {
-  NSString *streamReactTag = [[NSUUID UUID] UUIDString];
-  NSMutableArray *tracks = [NSMutableArray array];
-  for (RTCVideoTrack *track in stream.videoTracks) {
-    peerConnection.remoteTracks[track.trackId] = track;
-    [peerConnection addVideoTrackAdapter:streamReactTag track:track];
-    [tracks addObject:@{@"id": track.trackId, @"kind": track.kind, @"label": track.trackId, @"enabled": @(track.isEnabled), @"remote": @(YES), @"readyState": @"live"}];
-  }
-  for (RTCAudioTrack *track in stream.audioTracks) {
-    peerConnection.remoteTracks[track.trackId] = track;
-    [tracks addObject:@{@"id": track.trackId, @"kind": track.kind, @"label": track.trackId, @"enabled": @(track.isEnabled), @"remote": @(YES), @"readyState": @"live"}];
-  }
+  NSString *streamReactTag = stream.streamId;
+  NSMutableArray *tracks = [self extractTracks:peerConnection stream:stream streamReactTag:streamReactTag];
 
   peerConnection.remoteStreams[streamReactTag] = stream;
 
@@ -738,6 +754,31 @@ RCT_EXPORT_METHOD(getTrackVolumes:(RCTResponseSenderBlock)callback)
                        @"streamId": streamReactTag,
                        @"sdp": newSdp
                      }];
+}
+
+- (void)peerConnection:(RTCPeerConnection *)peerConnection didAddReceiver:(nonnull RTCRtpReceiver *)rtpReceiver streams:(nonnull NSArray<RTCMediaStream *> *)mediaStreams {
+    NSMutableArray *streams = [NSMutableArray array];
+    for (RTCMediaStream *stream in mediaStreams) {
+        NSMutableArray *tracks = [self extractTracks:peerConnection stream:stream streamReactTag:stream.streamId];
+        [streams addObject:@{@"streamId": stream.streamId, @"streamReactTag": stream.streamId, @"tracks": tracks}];
+    }
+
+    [self sendEventWithName:kEventPeerConnectionAddedReceiver
+        body:@{
+            @"id": peerConnection.reactTag,
+            @"receiver": [self extractReceiver:rtpReceiver],
+            @"streams": streams
+        }
+    ];
+}
+
+- (void)peerConnection:(RTCPeerConnection *)peerConnection didStartReceivingOnTransceiver:(nonnull RTCRtpTransceiver *)transceiver {
+    [self sendEventWithName:kEventPeerConnectionStartedReceivingOnTransceiver
+        body:@{
+            @"id": peerConnection.reactTag,
+            @"transceiver": [self extractTransceiver: transceiver],
+        }
+    ];
 }
 
 - (void)peerConnectionShouldNegotiate:(RTCPeerConnection *)peerConnection {

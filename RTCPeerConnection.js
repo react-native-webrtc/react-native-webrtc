@@ -66,6 +66,7 @@ const PEER_CONNECTION_EVENTS = [
   'icegatheringstatechange',
   'negotiationneeded',
   'signalingstatechange',
+  'track',
   // Peer-to-peer Data API:
   'datachannel',
   // old:
@@ -91,6 +92,8 @@ export default class RTCPeerConnection extends EventTarget(PEER_CONNECTION_EVENT
   onicegatheringstatechange: ?Function;
   onnegotiationneeded: ?Function;
   onsignalingstatechange: ?Function;
+
+  ontrack: ?Function;
 
   onaddstream: ?Function;
   onremovestream: ?Function;
@@ -251,7 +254,7 @@ export default class RTCPeerConnection extends EventTarget(PEER_CONNECTION_EVENT
             Native bridge which is a bottleneck that tends to be visible in
             the UI when there is congestion involving UI-related passing.
 
-            TODO Implement the logic for filtering the stats based on 
+            TODO Implement the logic for filtering the stats based on
             the sender/receiver
             */
             return new Map(JSON.parse(data));
@@ -314,7 +317,7 @@ export default class RTCPeerConnection extends EventTarget(PEER_CONNECTION_EVENT
         this._getTransceiver(transceiver);
       }
       // Restore Order
-      this._transceivers = 
+      this._transceivers =
         this._transceivers.map((t, i) => this._transceivers.find((t2) => t2.id === state.transceivers[i].id));
     }
   }
@@ -369,6 +372,23 @@ export default class RTCPeerConnection extends EventTarget(PEER_CONNECTION_EVENT
         this._remoteStreams.push(stream);
         this.remoteDescription = new RTCSessionDescription(ev.sdp);
         this.dispatchEvent(new MediaStreamEvent('addstream', {stream}));
+      }),
+      EventEmitter.addListener('peerConnectionStartedReceivingOnTransceiver', ev => {
+        if (ev.id !== this._peerConnectionId) {
+          return;
+        }
+        this._getTransceiver(ev.transceiver);
+      }),
+      EventEmitter.addListener('peerConnectionAddedReceiver', ev => {
+        if (ev.id !== this._peerConnectionId) {
+          return;
+        }
+        if (!ev.streams.length || !ev.receiver) {
+          return;
+        }
+        const streams = ev.streams;
+        const track = ev.receiver.track;
+        this.dispatchEvent(new MediaStreamTrackEvent("track", { track, streams }));
       }),
       EventEmitter.addListener('peerConnectionRemovedStream', ev => {
         if (ev.id !== this._peerConnectionId) {
