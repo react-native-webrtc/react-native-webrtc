@@ -443,7 +443,8 @@ export default class RTCPeerConnection extends EventTarget(PEER_CONNECTION_EVENT
         }
         const channel = new RTCDataChannel(ev.dataChannel);
         this.dispatchEvent(new RTCDataChannelEvent('datachannel', {channel}));
-      })
+      }),
+      EventEmitter.addListener('peerConnectionOnRenegotiationNeeded', ev => {}),
     ];
   }
 
