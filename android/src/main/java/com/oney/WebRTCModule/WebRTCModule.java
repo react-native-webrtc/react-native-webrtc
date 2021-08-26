@@ -106,6 +106,7 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
 
         PeerConnectionFactory.initialize(
             PeerConnectionFactory.InitializationOptions.builder(reactContext)
+                .setNativeLibraryLoader(new LibraryLoader())
                 .setInjectableLogger(injectableLogger, loggingSeverity)
                 .createInitializationOptions());
 
