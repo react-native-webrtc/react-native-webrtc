@@ -85,7 +85,7 @@ export default class MediaStream extends EventTarget(MEDIA_STREAM_EVENTS) {
       }
 
       DeviceEventEmitter.addListener('mediaStreamTrackMuteChanged', ev => {
-        
+
         const track = this.getTrackById(ev.trackId);
 
         if (track) {
@@ -128,6 +128,13 @@ export default class MediaStream extends EventTarget(MEDIA_STREAM_EVENTS) {
 
   getVideoTracks(): Array<MediaStreamTrack> {
     return this._tracks.filter(track => track.kind === 'video');
+  }
+
+  setVolume(volume: number): void {
+    const audioTracks = this.getAudioTracks();
+    audioTracks.forEach((track) => {
+      WebRTCModule.mediaStreamTrackSetVolume(track.id, volume);
+    })
   }
 
   clone() {

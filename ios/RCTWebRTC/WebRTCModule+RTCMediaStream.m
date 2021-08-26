@@ -7,6 +7,7 @@
 
 #import <objc/runtime.h>
 
+#import <WebRTC/RTCAudioSource.h>
 #import <WebRTC/RTCCameraVideoCapturer.h>
 #import <WebRTC/RTCVideoTrack.h>
 #import <WebRTC/RTCMediaConstraints.h>
@@ -151,7 +152,7 @@ RCT_EXPORT_METHOD(getUserMedia:(NSDictionary *)constraints
     NSString *trackId = track.trackId;
 
     self.localTracks[trackId] = track;
-    
+
     NSDictionary *settings = @{};
     if ([track.kind isEqualToString:@"video"]) {
         RTCVideoTrack *videoTrack = (RTCVideoTrack *)track;
@@ -302,6 +303,21 @@ RCT_EXPORT_METHOD(mediaStreamTrackSwitchCamera:(nonnull NSString *)trackID)
   if (track) {
     RTCVideoTrack *videoTrack = (RTCVideoTrack *)track;
     [(VideoCaptureController *)videoTrack.captureController switchCamera];
+  }
+}
+
+RCT_EXPORT_METHOD(mediaStreamTrackSetVolume:(nonnull NSString *)trackID : (double)volume)
+{
+  for (NSNumber *peerConnectionId in self.peerConnections) {
+    RTCPeerConnection *peerConnection = self.peerConnections[peerConnectionId];
+    for (NSString *reactTag in peerConnection.remoteStreams) {
+      RTCMediaStream *stream = peerConnection.remoteStreams[reactTag];
+      for (RTCAudioTrack *track in stream.audioTracks) {
+        if ([track.trackId isEqualToString:trackID]) {
+          track.source.volume = volume;
+        }
+      }
+    }
   }
 }
 
