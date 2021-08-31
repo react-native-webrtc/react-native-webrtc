@@ -171,27 +171,6 @@ public class WebRTCView extends ViewGroup {
         surfaceViewRenderer.clearImage();
     }
 
-    /**
-     * Gets the {@link VideoTrack}, if any, (to be) rendered by this
-     * {@code WebRTCView}.
-     *
-     * @return The {@code VideoTrack} (to be) rendered by this
-     * {@code WebRTCView}.
-     */
-    private VideoTrack getVideoTrack() {
-        VideoTrack videoTrack = this.videoTrack;
-
-        // XXX If WebRTCModule#mediaStreamTrackRelease has already been invoked
-        // on videoTrack, then it is no longer safe to call methods (e.g.
-        // addRenderer, removeRenderer) on videoTrack.
-        if (videoTrack != null
-                && videoTrack != getVideoTrackForStreamURL(this.streamURL)) {
-            videoTrack = null;
-        }
-
-        return videoTrack;
-    }
-
     private VideoTrack getVideoTrackForStreamURL(String streamURL) {
         VideoTrack videoTrack = null;
 
@@ -360,7 +339,7 @@ public class WebRTCView extends ViewGroup {
             // (e.g. addSink, removeSink) on videoTrack. It is OK to
             // skip the removeSink invocation in such a case because
             // VideoTrack#dispose() has performed it already.
-            VideoTrack videoTrack = getVideoTrack();
+            VideoTrack videoTrack = this.videoTrack;
 
             if (videoTrack != null) {
                 try {
@@ -550,13 +529,10 @@ public class WebRTCView extends ViewGroup {
      * all preconditions for the start of rendering are met.
      */
     private void tryAddRendererToVideoTrack() {
-        VideoTrack videoTrack;
+        VideoTrack videoTrack = this.videoTrack;
 
         if (!rendererAttached
-                // XXX If WebRTCModule#mediaStreamTrackRelease has already been
-                // invoked on videoTrack, then it is no longer safe to call
-                // methods (e.g. addRenderer, removeRenderer) on videoTrack.
-                && (videoTrack = getVideoTrack()) != null
+                && videoTrack != null
                 && ViewCompat.isAttachedToWindow(this)) {
             EglBase.Context sharedContext = EglUtils.getRootEglBaseContext();
 
@@ -575,6 +551,9 @@ public class WebRTCView extends ViewGroup {
                 surfaceViewRendererInstances--;
             }
 
+            // XXX If WebRTCModule#mediaStreamTrackRelease has already been
+            // invoked on videoTrack, then it is no longer safe to call
+            // methods (e.g. addSink, removeSink) on videoTrack.
             try {
                 videoTrack.addSink(surfaceViewRenderer);
             } catch (Throwable tr) {
