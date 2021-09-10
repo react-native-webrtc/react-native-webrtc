@@ -126,7 +126,8 @@ export default class MediaStream extends EventTarget(MEDIA_STREAM_EVENTS) {
   }
 
   release(releaseTracks = true) {
-    for (const track of this._tracks) {
+    const tracks = [ ...this._tracks ];
+    for (const track of tracks) {
       this.removeTrack(track);
       if (releaseTracks) {
         track.release();
