@@ -16,6 +16,7 @@
     "android",
     "webrtc"
   ],
+  "main": "src/index.js",
   "dependencies": {
     "base64-js": "^1.1.2",
     "cross-os": "^1.3.0",
