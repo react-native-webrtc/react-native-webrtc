@@ -1,14 +1,14 @@
 {
   "name": "react-native-webrtc",
-  "version": "1.89.3",
+  "version": "1.89.3-playback+daily.1",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/react-native-webrtc/react-native-webrtc.git"
+    "url": "git+https://github.com/daily-co/react-native-webrtc.git"
   },
   "nativePackage": true,
-  "description": "WebRTC for React Native",
+  "description": "Playabck form of WebRTC for React Native",
   "license": "MIT",
-  "homepage": "https://github.com/react-native-webrtc/react-native-webrtc",
+  "homepage": "https://github.com/playback-sports/react-native-webrtc",
   "keywords": [
     "react-component",
     "react-native",

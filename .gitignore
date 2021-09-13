@@ -10,3 +10,5 @@ Podfile.lock
 WebRTC.xcframework
 WebRTC.dSYMs
 
+android/*.iml
+*.tgz

@@ -1,7 +1,6 @@
 package com.oney.WebRTCModule;
 
 import androidx.annotation.Nullable;
-
 import android.util.Log;
 import android.util.SparseArray;
 
@@ -453,6 +452,16 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
     }
 
     MediaStream getStreamForReactTag(String streamReactTag) {
+        try {
+            return ThreadUtils.runOnExecutorAndWait(() -> getStreamForReactTagAsync(streamReactTag));
+        } catch (Exception e) {
+            Log.d(TAG, "getStreamForReactTag() failed");
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    MediaStream getStreamForReactTagAsync(String streamReactTag) {
         MediaStream stream = localStreams.get(streamReactTag);
 
         if (stream == null) {
@@ -1254,7 +1263,7 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
                 callback.invoke(false, "invalid trackId and type");
                 return;
             }
-            
+
             WritableMap res = Arguments.createMap();
             res.putString("id", transceiverId);
             res.putMap("state", this.serializeState(id));
@@ -1346,5 +1355,10 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
             Log.d(TAG, "peerConnectionTransceiverSetDirection() peerConnection is null");
             callback.invoke(false, "peerConnection is null");
         }
+    }
+
+    @ReactMethod
+    public  void setDailyDefaultAudioMode() {
+        Log.d(TAG, "setDailyDefaultAudioMode()");
     }
 }

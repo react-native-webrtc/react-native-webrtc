@@ -39,4 +39,12 @@ final class ThreadUtils {
     public static Future<?> submitToExecutor(Runnable runnable) {
         return executor.submit(runnable);
     }
+
+    /**
+     * Runs the given {@link Runnable} on the executor and synchronously waits for it to finish.
+     * @param runnable
+     */
+    public  static <T> T runOnExecutorAndWait(Callable<T> callable) throws ExecutionException, InterruptedException {
+        return executor.submit(callable).get();
+    }
 }
