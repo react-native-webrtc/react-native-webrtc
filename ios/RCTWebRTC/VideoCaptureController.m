@@ -140,12 +140,15 @@
 - (void)observeValueForKeyPath:(NSString *)keyPath ofObject:(id)object change:(NSDictionary<NSKeyValueChangeKey,id> *)change context:(void *)context {
     if (@available(iOS 11.1, *)) {
         if ([object isKindOfClass:[AVCaptureDevice class]] && [keyPath isEqualToString:@"systemPressureState"]) {
+            AVCaptureDevice *device = (AVCaptureDevice *)object;
             AVCaptureSystemPressureLevel pressureLevel = ((AVCaptureSystemPressureState *)change[NSKeyValueChangeNewKey]).level;
             if (pressureLevel == AVCaptureSystemPressureLevelSerious || pressureLevel == AVCaptureSystemPressureLevelCritical) {
                 RCTLogWarn(@"[VideoCaptureController] Reached elevated system pressure level: %@. Throttling frame rate.", pressureLevel);
-                
-                AVCaptureDevice *device = (AVCaptureDevice *)object;
                 [self throttleFrameRateForDevice:device];
+            }
+            else if (pressureLevel == AVCaptureSystemPressureLevelNominal) {
+                RCTLogWarn(@"[VideoCaptureController] Restored normal system pressure level. Resetting frame rate to default.");
+                [self resetFrameRateForDevice:device];
             }
         }
     }
@@ -224,6 +227,21 @@
     
     device.activeVideoMinFrameDuration = CMTimeMake(1, 20);
     device.activeVideoMaxFrameDuration = CMTimeMake(1, 15);
+    
+    [device unlockForConfiguration];
+}
+
+- (void)resetFrameRateForDevice:(AVCaptureDevice *)device {
+    NSError *error = nil;
+    
+    [device lockForConfiguration:&error];
+    if (error) {
+        RCTLog(@"[VideoCaptureController] Could not lock device for configuration: %@", error);
+        return;
+    }
+    
+    device.activeVideoMinFrameDuration = kCMTimeInvalid;
+    device.activeVideoMaxFrameDuration = kCMTimeInvalid;
     
     [device unlockForConfiguration];
 }
