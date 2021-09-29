@@ -335,7 +335,15 @@ public class WebRTCView extends ViewGroup {
     private void removeRendererFromVideoTrack() {
         if (rendererAttached) {
             if (videoTrack != null) {
-                videoTrack.removeSink(surfaceViewRenderer);
+                // XXX If WebRTCModule#mediaStreamTrackRelease has already been
+                // invoked on videoTrack, then it is no longer safe to call removeSink
+                // on the instance, it will throw IllegalStateException.
+                try {
+                    videoTrack.removeSink(surfaceViewRenderer);
+                } catch (Throwable tr) {
+                    // Releasing streams happens in the WebRTC thread, thus we might (briefly) hold
+                    // a reference to a released stream. Just ignore the error and move on.
+                }
             }
 
             surfaceViewRenderer.release();
@@ -538,7 +546,7 @@ public class WebRTCView extends ViewGroup {
 
             // XXX If WebRTCModule#mediaStreamTrackRelease has already been
             // invoked on videoTrack, then it is no longer safe to call addSink
-            // the instance, it will throw IllegalStateException.
+            // on the instance, it will throw IllegalStateException.
             try {
                 videoTrack.addSink(surfaceViewRenderer);
             } catch (Throwable tr) {
