@@ -56,6 +56,10 @@
     return self;
 }
 
+- (void)dealloc {
+    self.device = NULL;
+}
+
 - (void)startCapture {
     if (self.deviceId) {
         self.device = [AVCaptureDevice deviceWithUniqueID:self.deviceId];
