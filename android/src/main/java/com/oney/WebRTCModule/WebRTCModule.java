@@ -1023,4 +1023,14 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
 
         pco.dataChannelSend(reactTag, data, type);
     }
+
+    @ReactMethod
+    public void addListener(String eventName) {
+        // Keep: Required for RN built in Event Emitter Calls.
+    }
+
+    @ReactMethod
+    public void removeListeners(Integer count) {
+        // Keep: Required for RN built in Event Emitter Calls.
+    }
 }
