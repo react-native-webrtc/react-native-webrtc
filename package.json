@@ -27,7 +27,8 @@
     "react-native": ">=0.60.0"
   },
   "scripts": {
-    "postinstall": "cross-os darwin-extract"
+    "postinstall": "cross-os darwin-extract",
+    "prepare": "husky install"
   },
   "cross-os": {
     "darwin-extract": {
@@ -36,5 +37,13 @@
   },
   "bugs": {
     "url": "https://github.com/react-native-webrtc/react-native-webrtc/issues"
+  },
+  "devDependencies": {
+    "husky": "7.0.2",
+    "lint-staged": "11.2.3",
+    "prettier": "2.4.1"
+  },
+  "lint-staged": {
+    "**/*": "prettier --write --ignore-unknown"
   }
 }

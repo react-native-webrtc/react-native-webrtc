@@ -11,40 +11,37 @@ import mediaDevices from './MediaDevices';
 import permissions from './Permissions';
 
 export {
-  ScreenCapturePickerView,
-  RTCPeerConnection,
-  RTCIceCandidate,
-  RTCSessionDescription,
-  RTCView,
-  MediaStream,
-  MediaStreamTrack,
-  mediaDevices,
-  permissions,
-  registerGlobals
+    ScreenCapturePickerView,
+    RTCPeerConnection,
+    RTCIceCandidate,
+    RTCSessionDescription,
+    RTCView,
+    MediaStream,
+    MediaStreamTrack,
+    mediaDevices,
+    permissions,
+    registerGlobals
 };
 
 function registerGlobals() {
-	// Should not happen. React Native has a global navigator object.
-	if (typeof navigator !== 'object') {
-		throw new Error('navigator is not an object');
-	}
+    // Should not happen. React Native has a global navigator object.
+    if (typeof navigator !== 'object') {
+        throw new Error('navigator is not an object');
+    }
 
-	if (!navigator.mediaDevices) {
-		navigator.mediaDevices = {};
-	}
+    if (!navigator.mediaDevices) {
+        navigator.mediaDevices = {};
+    }
 
-	navigator.mediaDevices.getUserMedia =
-		mediaDevices.getUserMedia.bind(mediaDevices);
+    navigator.mediaDevices.getUserMedia = mediaDevices.getUserMedia.bind(mediaDevices);
 
-	navigator.mediaDevices.getDisplayMedia =
-		mediaDevices.getDisplayMedia.bind(mediaDevices);
+    navigator.mediaDevices.getDisplayMedia = mediaDevices.getDisplayMedia.bind(mediaDevices);
 
-	navigator.mediaDevices.enumerateDevices =
-		mediaDevices.enumerateDevices.bind(mediaDevices);
+    navigator.mediaDevices.enumerateDevices = mediaDevices.enumerateDevices.bind(mediaDevices);
 
-	global.RTCPeerConnection     = RTCPeerConnection;
-	global.RTCIceCandidate       = RTCIceCandidate;
-	global.RTCSessionDescription = RTCSessionDescription;
-	global.MediaStream           = MediaStream;
-	global.MediaStreamTrack      = MediaStreamTrack;
+    global.RTCPeerConnection = RTCPeerConnection;
+    global.RTCIceCandidate = RTCIceCandidate;
+    global.RTCSessionDescription = RTCSessionDescription;
+    global.MediaStream = MediaStream;
+    global.MediaStreamTrack = MediaStreamTrack;
 }

@@ -9,8 +9,8 @@ const { WebRTCModule } = NativeModules;
 
 export default function getDisplayMedia() {
     return new Promise((resolve, reject) => {
-        WebRTCModule.getDisplayMedia()
-            .then(data => {
+        WebRTCModule.getDisplayMedia().then(
+            data => {
                 const { streamId, track } = data;
 
                 const info = {
@@ -22,8 +22,10 @@ export default function getDisplayMedia() {
                 const stream = new MediaStream(info);
 
                 resolve(stream);
-            }, error => {
+            },
+            error => {
                 reject(new MediaStreamError(error));
-            });
+            }
+        );
     });
 }

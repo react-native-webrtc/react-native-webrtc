@@ -1,7 +1,5 @@
 'use strict';
 
-import {
-  requireNativeComponent,
-} from 'react-native';
+import { requireNativeComponent } from 'react-native';
 
-export default requireNativeComponent('ScreenCapturePickerView');;
+export default requireNativeComponent('ScreenCapturePickerView');
