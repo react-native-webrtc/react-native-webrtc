@@ -2,7 +2,7 @@
 
 import { NativeModules } from 'react-native';
 import base64 from 'base64-js';
-import EventTarget from 'event-target-shim';
+import { defineCustomEventTarget } from 'event-target-shim';
 import MessageEvent from './MessageEvent';
 import RTCDataChannelEvent from './RTCDataChannelEvent';
 import EventEmitter from './EventEmitter';
@@ -24,7 +24,7 @@ const DATA_CHANNEL_EVENTS = [
   'error',
 ];
 
-export default class RTCDataChannel extends EventTarget(DATA_CHANNEL_EVENTS) {
+export default class RTCDataChannel extends defineCustomEventTarget(...DATA_CHANNEL_EVENTS) {
   _peerConnectionId: number;
   _reactTag: string;
 
@@ -40,12 +40,6 @@ export default class RTCDataChannel extends EventTarget(DATA_CHANNEL_EVENTS) {
   binaryType: 'arraybuffer' = 'arraybuffer'; // we only support 'arraybuffer'
   bufferedAmount: number = 0;
   bufferedAmountLowThreshold: number = 0;
-
-  onopen: ?Function;
-  onmessage: ?Function;
-  onbufferedamountlow: ?Function;
-  onerror: ?Function;
-  onclose: ?Function;
 
   constructor(info) {
     super();

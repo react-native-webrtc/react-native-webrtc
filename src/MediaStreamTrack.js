@@ -1,7 +1,7 @@
 'use strict';
 
 import {NativeModules} from 'react-native';
-import EventTarget from 'event-target-shim';
+import { defineCustomEventTarget } from 'event-target-shim';
 import MediaStreamErrorEvent from './MediaStreamErrorEvent';
 import type MediaStreamError from './MediaStreamError';
 import { deepClone } from './RTCUtil';
@@ -12,13 +12,11 @@ const MEDIA_STREAM_TRACK_EVENTS = [
   'ended',
   'mute',
   'unmute',
-  // see: https://www.w3.org/TR/mediacapture-streams/#constrainable-interface
-  'overconstrained',
 ];
 
 type MediaStreamTrackState = "live" | "ended";
 
-class MediaStreamTrack extends EventTarget(MEDIA_STREAM_TRACK_EVENTS) {
+class MediaStreamTrack extends defineCustomEventTarget(...MEDIA_STREAM_TRACK_EVENTS) {
   _constraints: Object;
   _enabled: boolean;
   _settings: Object;
@@ -30,11 +28,6 @@ class MediaStreamTrack extends EventTarget(MEDIA_STREAM_TRACK_EVENTS) {
   // readyState in java: INITIALIZING, LIVE, ENDED, FAILED
   readyState: MediaStreamTrackState;
   remote: boolean;
-
-  onended: ?Function;
-  onmute: ?Function;
-  onunmute: ?Function;
-  overconstrained: ?Function;
 
   constructor(info) {
     super();

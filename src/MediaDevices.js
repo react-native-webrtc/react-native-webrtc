@@ -1,7 +1,7 @@
 'use strict';
 
 import {NativeModules} from 'react-native';
-import EventTarget from 'event-target-shim';
+import { defineCustomEventTarget } from 'event-target-shim';
 
 import getDisplayMedia from './getDisplayMedia';
 import getUserMedia from './getUserMedia';
@@ -12,9 +12,7 @@ const MEDIA_DEVICES_EVENTS = [
     'devicechange'
 ];
 
-class MediaDevices extends EventTarget(MEDIA_DEVICES_EVENTS) {
-    // TODO: implement.
-    ondevicechange: ?Function;
+class MediaDevices extends defineCustomEventTarget(...MEDIA_DEVICES_EVENTS) {
 
     /**
      * W3C "Media Capture and Streams" compatible {@code enumerateDevices}

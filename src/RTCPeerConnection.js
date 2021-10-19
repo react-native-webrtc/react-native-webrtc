@@ -1,6 +1,6 @@
 'use strict';
 
-import EventTarget from 'event-target-shim';
+import { defineCustomEventTarget } from 'event-target-shim';
 import { NativeModules } from 'react-native';
 
 import MediaStream from './MediaStream';
@@ -65,16 +65,14 @@ const PEER_CONNECTION_EVENTS = [
   'icegatheringstatechange',
   'negotiationneeded',
   'signalingstatechange',
-  // Peer-to-peer Data API:
   'datachannel',
-  // old:
   'addstream',
   'removestream',
 ];
 
 let nextPeerConnectionId = 0;
 
-export default class RTCPeerConnection extends EventTarget(PEER_CONNECTION_EVENTS) {
+export default class RTCPeerConnection extends defineCustomEventTarget(...PEER_CONNECTION_EVENTS) {
   localDescription: RTCSessionDescription;
   remoteDescription: RTCSessionDescription;
 
@@ -82,17 +80,6 @@ export default class RTCPeerConnection extends EventTarget(PEER_CONNECTION_EVENT
   iceGatheringState: RTCIceGatheringState = 'new';
   connectionState: RTCPeerConnectionState = 'new';
   iceConnectionState: RTCIceConnectionState = 'new';
-
-  onconnectionstatechange: ?Function;
-  onicecandidate: ?Function;
-  onicecandidateerror: ?Function;
-  oniceconnectionstatechange: ?Function;
-  onicegatheringstatechange: ?Function;
-  onnegotiationneeded: ?Function;
-  onsignalingstatechange: ?Function;
-
-  onaddstream: ?Function;
-  onremovestream: ?Function;
 
   _peerConnectionId: number;
   _localStreams: Array<MediaStream> = [];

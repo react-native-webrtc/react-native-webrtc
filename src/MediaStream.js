@@ -1,7 +1,7 @@
 'use strict';
 
 import {NativeModules} from 'react-native';
-import EventTarget from 'event-target-shim';
+import { defineCustomEventTarget } from 'event-target-shim';
 import uuid from 'uuid';
 
 import MediaStreamTrack from './MediaStreamTrack';
@@ -15,14 +15,9 @@ const MEDIA_STREAM_EVENTS = [
   'removetrack',
 ];
 
-export default class MediaStream extends EventTarget(MEDIA_STREAM_EVENTS) {
+export default class MediaStream extends defineCustomEventTarget(...MEDIA_STREAM_EVENTS) {
   id: string;
   active: boolean = true;
-
-  onactive: ?Function;
-  oninactive: ?Function;
-  onaddtrack: ?Function;
-  onremovetrack: ?Function;
 
   _tracks: Array<MediaStreamTrack> = [];
 
