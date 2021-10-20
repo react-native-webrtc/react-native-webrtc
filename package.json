@@ -18,22 +18,17 @@
   ],
   "main": "src/index.js",
   "dependencies": {
-    "base64-js": "1.5.1",
-    "cross-os": "1.4.0",
+    "base64-js": "1.5.1", 
     "event-target-shim": "6.0.2",
+    "tar": "6.1.11",
     "uuid": "3.4.0"
   },
   "peerDependencies": {
     "react-native": ">=0.60.0"
   },
   "scripts": {
-    "postinstall": "cross-os darwin-extract",
+    "postinstall": "node tools/downloadWebRTC.js",
     "prepare": "husky install"
-  },
-  "cross-os": {
-    "darwin-extract": {
-      "darwin": "tar -zxf apple/WebRTC.xcframework.tgz -C apple"
-    }
   },
   "bugs": {
     "url": "https://github.com/react-native-webrtc/react-native-webrtc/issues"
@@ -45,5 +40,10 @@
   },
   "lint-staged": {
     "**/*": "prettier --write --ignore-unknown"
+  },
+  "webrtc-builds": {
+    "android": "https://github.com/jitsi/webrtc/releases/download/v94.0.0/android-webrtc.tgz",
+    "ios": "https://github.com/jitsi/webrtc/releases/download/v94.0.0/WebRTC.xcframework.tgz",
+    "ios-bitcode": "https://github.com/jitsi/webrtc/releases/download/v94.0.0/WebRTC.xcframework-bitcode.tgz"
   }
 }
