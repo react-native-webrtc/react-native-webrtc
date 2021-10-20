@@ -9,3 +9,5 @@ WebRTC.xcframework
 WebRTC.dSYMs
 examples/GumTestApp/package-lock.json
 examples/GumTestApp_macOS/package-lock.json
+*.jar
+*.tgz
