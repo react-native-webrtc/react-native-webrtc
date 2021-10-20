@@ -58,7 +58,7 @@ _GN_APPLE_COMMON = [
 
 _GN_IOS_ARGS = [
     'enable_ios_bitcode=true',
-    'ios_deployment_target="11.0"',
+    'ios_deployment_target="12.0"',
     'ios_enable_code_signing=false',
     'target_os="ios"',
     'use_xcode_clang=true',
