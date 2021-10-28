@@ -1,4 +1,3 @@
-'use strict';
 
 import { defineCustomEventTarget } from 'event-target-shim';
 import { NativeModules } from 'react-native';

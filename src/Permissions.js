@@ -1,4 +1,3 @@
-'use strict';
 
 import { NativeModules, PermissionsAndroid, Platform } from 'react-native';
 

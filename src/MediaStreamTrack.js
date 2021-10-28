@@ -1,9 +1,7 @@
-'use strict';
 
 import { NativeModules } from 'react-native';
 import { defineCustomEventTarget } from 'event-target-shim';
-import MediaStreamErrorEvent from './MediaStreamErrorEvent';
-import type MediaStreamError from './MediaStreamError';
+
 import { deepClone } from './RTCUtil';
 
 const { WebRTCModule } = NativeModules;

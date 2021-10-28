@@ -1,4 +1,3 @@
-'use strict';
 
 const DEFAULT_AUDIO_CONSTRAINTS = {};
 
