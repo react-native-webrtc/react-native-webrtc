@@ -1,4 +1,3 @@
-'use strict';
 
 import ScreenCapturePickerView from './ScreenCapturePickerView';
 import RTCPeerConnection from './RTCPeerConnection';
@@ -34,9 +33,7 @@ function registerGlobals() {
     }
 
     navigator.mediaDevices.getUserMedia = mediaDevices.getUserMedia.bind(mediaDevices);
-
     navigator.mediaDevices.getDisplayMedia = mediaDevices.getDisplayMedia.bind(mediaDevices);
-
     navigator.mediaDevices.enumerateDevices = mediaDevices.enumerateDevices.bind(mediaDevices);
 
     global.RTCPeerConnection = RTCPeerConnection;

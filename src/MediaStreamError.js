@@ -1,4 +1,3 @@
-'use strict';
 
 export default class MediaStreamError {
     name: string;

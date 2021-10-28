@@ -1,4 +1,3 @@
-'use strict';
 
 import { NativeModules } from 'react-native';
 import base64 from 'base64-js';
