@@ -19,10 +19,12 @@ import org.webrtc.MediaStream;
 import org.webrtc.MediaStreamTrack;
 import org.webrtc.PeerConnection;
 import org.webrtc.RtpReceiver;
+import org.webrtc.SessionDescription;
 import org.webrtc.VideoTrack;
 
 import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -33,8 +35,7 @@ import java.util.UUID;
 class PeerConnectionObserver implements PeerConnection.Observer {
     private final static String TAG = WebRTCModule.TAG;
 
-    private final SparseArray<DataChannel> dataChannels
-        = new SparseArray<DataChannel>();
+    private final Map<String, DataChannelWrapper> dataChannels;
     private final int id;
     private PeerConnection peerConnection;
     final List<MediaStream> localStreams;
@@ -46,9 +47,10 @@ class PeerConnectionObserver implements PeerConnection.Observer {
     PeerConnectionObserver(WebRTCModule webRTCModule, int id) {
         this.webRTCModule = webRTCModule;
         this.id = id;
-        this.localStreams = new ArrayList<MediaStream>();
-        this.remoteStreams = new HashMap<String, MediaStream>();
-        this.remoteTracks = new HashMap<String, MediaStreamTrack>();
+        this.dataChannels = new HashMap<>();
+        this.localStreams = new ArrayList<>();
+        this.remoteStreams = new HashMap<>();
+        this.remoteTracks = new HashMap<>();
         this.videoTrackAdapters = new VideoTrackAdapter(webRTCModule, id);
     }
 
@@ -119,6 +121,13 @@ class PeerConnectionObserver implements PeerConnection.Observer {
             }
         }
 
+        // Remove DataChannel observers
+        for (DataChannelWrapper dcw : dataChannels.values()) {
+            DataChannel dataChannel = dcw.getDataChannel();
+            dataChannel.close();
+            dataChannel.unregisterObserver();
+        }
+
         // At this point there should be no local MediaStreams in the associated
         // PeerConnection. Call dispose() to free all remaining resources held
         // by the PeerConnection instance (RtpReceivers, RtpSenders, etc.)
@@ -126,13 +135,10 @@ class PeerConnectionObserver implements PeerConnection.Observer {
 
         remoteStreams.clear();
         remoteTracks.clear();
-
-        // Unlike on iOS, we cannot unregister the DataChannel.Observer
-        // instance on Android. At least do whatever else we do on iOS.
         dataChannels.clear();
     }
 
-    void createDataChannel(String label, ReadableMap config) {
+    WritableMap createDataChannel(String label, ReadableMap config) {
         DataChannel.Init init = new DataChannel.Init();
         if (config != null) {
             if (config.hasKey("id")) {
@@ -155,46 +161,70 @@ class PeerConnectionObserver implements PeerConnection.Observer {
             }
         }
         DataChannel dataChannel = peerConnection.createDataChannel(label, init);
-        int dataChannelId = init.id;
-        if (-1 != dataChannelId) {
-            dataChannels.put(dataChannelId, dataChannel);
-            registerDataChannelObserver(dataChannelId, dataChannel);
+        if (dataChannel == null) {
+            return null;
         }
+        final String reactTag  = UUID.randomUUID().toString();
+        DataChannelWrapper dcw = new DataChannelWrapper(webRTCModule, id, reactTag, dataChannel);
+        dataChannels.put(reactTag, dcw);
+        dataChannel.registerObserver(dcw);
+
+        WritableMap info = Arguments.createMap();
+        info.putInt("peerConnectionId", id);
+        info.putString("reactTag", reactTag);
+        info.putString("label", dataChannel.label());
+        info.putInt("id", dataChannel.id());
+        info.putBoolean("ordered", init.ordered);
+        info.putInt("maxPacketLifeTime", init.maxRetransmitTimeMs);
+        info.putInt("maxRetransmits", init.maxRetransmits);
+        info.putString("protocol", init.protocol);
+        info.putBoolean("negotiated", init.negotiated);
+        info.putString("readyState", dcw.dataChannelStateString(dataChannel.state()));
+        return info;
     }
 
-    void dataChannelClose(int dataChannelId) {
-        DataChannel dataChannel = dataChannels.get(dataChannelId);
-        if (dataChannel != null) {
-            dataChannel.close();
-            dataChannels.remove(dataChannelId);
-        } else {
+    void dataChannelClose(String reactTag) {
+        DataChannelWrapper dcw = dataChannels.get(reactTag);
+        if (dcw == null) {
             Log.d(TAG, "dataChannelClose() dataChannel is null");
+            return;
         }
+
+        DataChannel dataChannel = dcw.getDataChannel();
+        dataChannel.close();
     }
 
-    void dataChannelSend(int dataChannelId, String data, String type) {
-        DataChannel dataChannel = dataChannels.get(dataChannelId);
-        if (dataChannel != null) {
-            byte[] byteArray;
-            if (type.equals("text")) {
-                try {
-                    byteArray = data.getBytes("UTF-8");
-                } catch (UnsupportedEncodingException e) {
-                    Log.d(TAG, "Could not encode text string as UTF-8.");
-                    return;
-                }
-            } else if (type.equals("binary")) {
-                byteArray = Base64.decode(data, Base64.NO_WRAP);
-            } else {
-                Log.e(TAG, "Unsupported data type: " + type);
-                return;
-            }
-            ByteBuffer byteBuffer = ByteBuffer.wrap(byteArray);
-            DataChannel.Buffer buffer = new DataChannel.Buffer(byteBuffer, type.equals("binary"));
-            dataChannel.send(buffer);
-        } else {
-            Log.d(TAG, "dataChannelSend() dataChannel is null");
+    void dataChannelDispose(String reactTag) {
+        DataChannelWrapper dcw = dataChannels.get(reactTag);
+        if (dcw == null) {
+            Log.d(TAG, "dataChannelDispose() dataChannel is null");
+            return;
         }
+
+        DataChannel dataChannel = dcw.getDataChannel();
+        dataChannel.unregisterObserver();
+        dataChannels.remove(reactTag);
+    }
+
+    void dataChannelSend(String reactTag, String data, String type) {
+        DataChannelWrapper dcw = dataChannels.get(reactTag);
+        if (dcw == null) {
+            Log.d(TAG, "dataChannelSend() dataChannel is null");
+            return;
+        }
+
+        byte[] byteArray;
+        if (type.equals("text")) {
+            byteArray = data.getBytes(StandardCharsets.UTF_8);
+        } else if (type.equals("binary")) {
+            byteArray = Base64.decode(data, Base64.NO_WRAP);
+        } else {
+            Log.e(TAG, "Unsupported data type: " + type);
+            return;
+        }
+        ByteBuffer byteBuffer = ByteBuffer.wrap(byteArray);
+        DataChannel.Buffer buffer = new DataChannel.Buffer(byteBuffer, type.equals("binary"));
+        dcw.getDataChannel().send(buffer);
     }
 
     void getStats(Promise promise) {
@@ -213,6 +243,11 @@ class PeerConnectionObserver implements PeerConnection.Observer {
         candidateParams.putString("sdpMid", candidate.sdpMid);
         candidateParams.putString("candidate", candidate.sdp);
         params.putMap("candidate", candidateParams);
+        SessionDescription newSdp = peerConnection.getLocalDescription();
+        WritableMap newSdpMap = Arguments.createMap();
+        newSdpMap.putString("type", newSdp.type.canonicalForm());
+        newSdpMap.putString("sdp", newSdp.description);
+        params.putMap("sdp", newSdpMap);
 
         webRTCModule.sendEvent("peerConnectionGotICECandidate", params);
     }
@@ -227,7 +262,6 @@ class PeerConnectionObserver implements PeerConnection.Observer {
         WritableMap params = Arguments.createMap();
         params.putInt("id", id);
         params.putString("iceConnectionState", iceConnectionStateString(iceConnectionState));
-
         webRTCModule.sendEvent("peerConnectionIceConnectionChanged", params);
     }
 
@@ -250,6 +284,13 @@ class PeerConnectionObserver implements PeerConnection.Observer {
         WritableMap params = Arguments.createMap();
         params.putInt("id", id);
         params.putString("iceGatheringState", iceGatheringStateString(iceGatheringState));
+        if (iceGatheringState == PeerConnection.IceGatheringState.COMPLETE) {
+            SessionDescription newSdp = peerConnection.getLocalDescription();
+            WritableMap newSdpMap = Arguments.createMap();
+            newSdpMap.putString("type", newSdp.type.canonicalForm());
+            newSdpMap.putString("sdp", newSdp.description);
+            params.putMap("sdp", newSdpMap);
+        }
         webRTCModule.sendEvent("peerConnectionIceGatheringChanged", params);
     }
 
@@ -327,6 +368,12 @@ class PeerConnectionObserver implements PeerConnection.Observer {
         }
         params.putArray("tracks", tracks);
 
+        SessionDescription newSdp = peerConnection.getRemoteDescription();
+        WritableMap newSdpMap = Arguments.createMap();
+        newSdpMap.putString("type", newSdp.type.canonicalForm());
+        newSdpMap.putString("sdp", newSdp.description);
+        params.putMap("sdp", newSdpMap);
+
         webRTCModule.sendEvent("peerConnectionAddedStream", params);
     }
 
@@ -334,9 +381,7 @@ class PeerConnectionObserver implements PeerConnection.Observer {
     public void onRemoveStream(MediaStream mediaStream) {
         String streamReactTag = getReactTagForStream(mediaStream);
         if (streamReactTag == null) {
-            Log.w(TAG,
-                "onRemoveStream - no remote stream for id: "
-                    + mediaStream.getId());
+            Log.w(TAG, "onRemoveStream - no remote stream for id: " + mediaStream.getId());
             return;
         }
 
@@ -353,35 +398,43 @@ class PeerConnectionObserver implements PeerConnection.Observer {
         WritableMap params = Arguments.createMap();
         params.putInt("id", id);
         params.putString("streamId", streamReactTag);
+
+        SessionDescription newSdp = peerConnection.getRemoteDescription();
+        WritableMap newSdpMap = Arguments.createMap();
+        newSdpMap.putString("type", newSdp.type.canonicalForm());
+        newSdpMap.putString("sdp", newSdp.description);
+        params.putMap("sdp", newSdpMap);
+
         webRTCModule.sendEvent("peerConnectionRemovedStream", params);
     }
 
     @Override
     public void onDataChannel(DataChannel dataChannel) {
-        final int dataChannelId = dataChannel.id();
-        if (-1 == dataChannelId) {
-            return;
-        }
+        final String reactTag  = UUID.randomUUID().toString();
+        DataChannelWrapper dcw = new DataChannelWrapper(webRTCModule, id, reactTag, dataChannel);
+        dataChannels.put(reactTag, dcw);
+        dataChannel.registerObserver(dcw);
 
-        WritableMap dataChannelParams = Arguments.createMap();
-        dataChannelParams.putInt("id", dataChannelId);
-        dataChannelParams.putString("label", dataChannel.label());
+        WritableMap info = Arguments.createMap();
+        info.putInt("peerConnectionId", id);
+        info.putString("reactTag", reactTag);
+        info.putString("label", dataChannel.label());
+        info.putInt("id", dataChannel.id());
+
+        // TODO: These values are not gettable from a DataChannel instance.
+        info.putBoolean("ordered", true);
+        info.putInt("maxPacketLifeTime", -1);
+        info.putInt("maxRetransmits", -1);
+        info.putString("protocol", "");
+
+        info.putBoolean("negotiated", false);
+        info.putString("readyState", dcw.dataChannelStateString(dataChannel.state()));
+
         WritableMap params = Arguments.createMap();
         params.putInt("id", id);
-        params.putMap("dataChannel", dataChannelParams);
-
-        dataChannels.put(dataChannelId, dataChannel);
-        registerDataChannelObserver(dataChannelId, dataChannel);
+        params.putMap("dataChannel", info);
 
         webRTCModule.sendEvent("peerConnectionDidOpenDataChannel", params);
-    }
-
-    private void registerDataChannelObserver(int dcId, DataChannel dataChannel) {
-        // DataChannel.registerObserver implementation does not allow to
-        // unregister, so the observer is registered here and is never
-        // unregistered
-        dataChannel.registerObserver(
-            new DataChannelObserver(webRTCModule, id, dcId, dataChannel));
     }
 
     @Override

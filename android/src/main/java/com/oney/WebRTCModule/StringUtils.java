@@ -35,9 +35,9 @@ public class StringUtils {
 
             RTCStats stats = statsMap.get(key);
             builder
-                .append("\"timestamp\":\"")
-                .append(stats.getTimestampUs())
-                .append("\",\"type\":\"")
+                .append("\"timestamp\":")
+                .append(stats.getTimestampUs() / 1000.0)
+                .append(",\"type\":\"")
                 .append(stats.getType())
                 .append("\",\"id\":\"")
                 .append(stats.getId())

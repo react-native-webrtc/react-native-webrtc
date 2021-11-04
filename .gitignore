@@ -1,5 +1,3 @@
-# Dependency directory
-# https://www.npmjs.org/doc/misc/npm-faq.html#should-i-check-my-node_modules-folder-into-git
 node_modules
 xcuserdata
 project.xcworkspace
@@ -9,4 +7,5 @@ android/build
 Podfile.lock
 WebRTC.xcframework
 WebRTC.dSYMs
-
+examples/GumTestApp/package-lock.json
+examples/GumTestApp_macOS/package-lock.json
