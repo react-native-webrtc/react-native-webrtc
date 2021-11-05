@@ -5,7 +5,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
-final class ThreadUtils {
+public final class ThreadUtils {
     /**
      * Thread which will be used to call all WebRTC PeerConnection APIs. They
      * they don't run on the calling thread anyway, we are deferring the calls

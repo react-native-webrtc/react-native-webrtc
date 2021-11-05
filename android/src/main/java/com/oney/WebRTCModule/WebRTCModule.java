@@ -540,7 +540,11 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
             return;
         }
 
-        String kind = track.kind();
+        String kind = null;
+        try{
+            kind = track.kind();
+        } catch(Exception ex) { Log.e(TAG, ex); }
+
         if ("audio".equals(kind)) {
             stream.addTrack((AudioTrack)track);
         } else if ("video".equals(kind)) {
@@ -563,7 +567,11 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
             return;
         }
 
-        String kind = track.kind();
+        String kind = null;
+        try{
+            kind = track.kind();
+        } catch(Exception ex) { Log.e(TAG, ex); }
+
         if ("audio".equals(kind)) {
             stream.removeTrack((AudioTrack)track);
         } else if ("video".equals(kind)) {
@@ -922,6 +930,21 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
         } else {
             pco.getStats(promise);
         }
+    }
+
+    @SuppressWarnings("unused")
+    public java.util.Collection<AudioTrack> getAudioTracks() {
+        java.util.Set<AudioTrack> audioTracks = new java.util.HashSet<>(localStreams.size());
+
+        for (MediaStream stream : localStreams.values()) {
+            for (AudioTrack track : stream.audioTracks) {
+                if (track != null) {
+                    audioTracks.add(track);
+                }
+            }
+        }
+
+        return audioTracks;
     }
 
     @ReactMethod
