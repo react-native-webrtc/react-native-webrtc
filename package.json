@@ -1,5 +1,5 @@
 {
-  "name": "react-native-webrtc-livelyvideo",
+  "name": "@livelyvideomobile/react-native-webrtc",
   "version": "1.92.2",
   "repository": {
     "type": "git",
