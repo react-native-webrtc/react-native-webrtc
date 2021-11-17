@@ -543,7 +543,7 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
         String kind = null;
         try{
             kind = track.kind();
-        } catch(Exception ex) { Log.e(TAG, ex); }
+        } catch(Exception ex) { Log.e(TAG, ex.getMessage(), ex); }
 
         if ("audio".equals(kind)) {
             stream.addTrack((AudioTrack)track);
@@ -570,7 +570,7 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
         String kind = null;
         try{
             kind = track.kind();
-        } catch(Exception ex) { Log.e(TAG, ex); }
+        } catch(Exception ex) { Log.e(TAG, ex.getMessage(), ex); }
 
         if ("audio".equals(kind)) {
             stream.removeTrack((AudioTrack)track);
