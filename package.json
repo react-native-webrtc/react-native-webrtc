@@ -1,6 +1,6 @@
 {
   "name": "react-native-webrtc",
-  "version": "1.92.2",
+  "version": "1.94.0",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/react-native-webrtc/react-native-webrtc.git"
@@ -18,7 +18,7 @@
   ],
   "main": "src/index.js",
   "dependencies": {
-    "base64-js": "1.5.1", 
+    "base64-js": "1.5.1",
     "event-target-shim": "6.0.2",
     "tar": "6.1.11",
     "uuid": "3.4.0"
