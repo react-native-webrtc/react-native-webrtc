@@ -433,8 +433,6 @@ RCT_EXPORT_METHOD(peerConnectionRestartIce:(nonnull NSNumber *)objectID)
     
       [s appendString:@"]"];
     } else if ([statisticsValue isKindOfClass:[NSDictionary class]]) {
-        NSDictionary* dictionaryValue = (NSDictionary*)statisticsValue;
-        
         NSError *error;
         NSData *jsonData = [NSJSONSerialization dataWithJSONObject:statisticsValue
                                                            options:NSJSONWritingPrettyPrinted
