@@ -74,6 +74,26 @@ public class StringUtils {
             }
 
             builder.append("]");
+        } else if (value instanceof Map) {
+            try {
+                Map<String, Object> mapValue = (Map) value;
+
+                boolean firstKey = true;
+                builder.append("{");
+
+                for (Map.Entry<String, Object> entry : mapValue.entrySet()) {
+                    if (firstKey) {
+                        firstKey = false;
+                    } else {
+                        builder.append(",");
+                    }
+                    builder.append("\"").append(entry.getKey()).append("\":");
+                    appendValue(builder, entry.getValue());
+                }
+                builder.append("}");
+            } catch (ClassCastException e) {
+                builder.append(value);
+            }
         } else if (value instanceof String) {
             builder.append("\"").append(value).append("\"");
         } else {
