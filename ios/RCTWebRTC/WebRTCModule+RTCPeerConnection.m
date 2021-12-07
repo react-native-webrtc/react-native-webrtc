@@ -402,26 +402,7 @@ RCT_EXPORT_METHOD(peerConnectionRestartIce:(nonnull NSNumber *)objectID)
         [s appendString:key];
         [s appendString:@"\":"];
         NSObject *statisticsValue = [statistics.values objectForKey:key];
-        if ([statisticsValue isKindOfClass:[NSArray class]]) {
-            [s appendString:@"["];
-            BOOL firstValue = YES;
-            for (NSObject *value in (NSArray *)statisticsValue) {
-              if(firstValue) {
-                firstValue = NO;
-              } else {
-                [s appendString:@","];
-              }
-
-              [s appendString:@"\""];
-              [s appendString:[NSString stringWithFormat:@"%@", value]];
-              [s appendString:@"\""];
-            }
-            [s appendString:@"]"];
-        } else {
-            [s appendString:@"\""];
-            [s appendString:[NSString stringWithFormat:@"%@", statisticsValue]];
-            [s appendString:@"\""];
-        }
+        [s appendString:[self appendValue:statisticsValue]];
     }
     
     [s appendString:@"}]"];
@@ -429,6 +410,50 @@ RCT_EXPORT_METHOD(peerConnectionRestartIce:(nonnull NSNumber *)objectID)
 
   [s appendString:@"]"];
 
+  return s;
+}
+
+- (NSString *)appendValue:(NSObject*) statisticsValue {
+    NSMutableString *s = [NSMutableString stringWithCapacity:16 * 1024];
+
+    if ([statisticsValue isKindOfClass:[NSArray class]]) {
+        [s appendString:@"["];
+        BOOL firstValue = YES;
+        for (NSObject *element in (NSArray *)statisticsValue) {
+            if(firstValue) {
+                firstValue = NO;
+            } else {
+                [s appendString:@","];
+            }
+
+            [s appendString:@"\""];
+            [s appendString:[NSString stringWithFormat:@"%@", element]];
+            [s appendString:@"\""];
+      }
+    
+      [s appendString:@"]"];
+    } else if ([statisticsValue isKindOfClass:[NSDictionary class]]) {
+        NSDictionary* dictionaryValue = (NSDictionary*)statisticsValue;
+        
+        NSError *error;
+        NSData *jsonData = [NSJSONSerialization dataWithJSONObject:statisticsValue
+                                                           options:NSJSONWritingPrettyPrinted
+                                                           error:&error];
+
+        if (! jsonData) {
+            [s appendString:@"\""];
+            [s appendString:[NSString stringWithFormat:@"%@", statisticsValue]];
+            [s appendString:@"\""];
+        } else {
+            NSString *jsonString = [[NSString alloc] initWithData:jsonData encoding:NSUTF8StringEncoding];
+            [s appendString:jsonString];
+        }
+    } else {
+        [s appendString:@"\""];
+        [s appendString:[NSString stringWithFormat:@"%@", statisticsValue]];
+        [s appendString:@"\""];
+    }
+    
   return s;
 }
 
