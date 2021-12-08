@@ -402,7 +402,7 @@ RCT_EXPORT_METHOD(peerConnectionRestartIce:(nonnull NSNumber *)objectID)
         [s appendString:key];
         [s appendString:@"\":"];
         NSObject *statisticsValue = [statistics.values objectForKey:key];
-        [self appendValue:statisticsValue :s];
+        [self appendValue:statisticsValue toString:s];
     }
 
     [s appendString:@"}]"];
@@ -413,7 +413,7 @@ RCT_EXPORT_METHOD(peerConnectionRestartIce:(nonnull NSNumber *)objectID)
   return s;
 }
 
-- (void)appendValue:(NSObject*) statisticsValue :(NSMutableString*) s {
+- (void)appendValue:(NSObject *)statisticsValue toString:(NSMutableString *)s {
     if ([statisticsValue isKindOfClass:[NSArray class]]) {
         [s appendString:@"["];
         BOOL firstValue = YES;
