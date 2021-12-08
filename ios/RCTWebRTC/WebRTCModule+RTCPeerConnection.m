@@ -402,9 +402,9 @@ RCT_EXPORT_METHOD(peerConnectionRestartIce:(nonnull NSNumber *)objectID)
         [s appendString:key];
         [s appendString:@"\":"];
         NSObject *statisticsValue = [statistics.values objectForKey:key];
-        [s appendString:[self appendValue:statisticsValue]];
+        [self appendValue:statisticsValue :s];
     }
-    
+
     [s appendString:@"}]"];
   } 
 
@@ -413,9 +413,7 @@ RCT_EXPORT_METHOD(peerConnectionRestartIce:(nonnull NSNumber *)objectID)
   return s;
 }
 
-- (NSString *)appendValue:(NSObject*) statisticsValue {
-    NSMutableString *s = [NSMutableString stringWithCapacity:16 * 1024];
-
+- (void)appendValue:(NSObject*) statisticsValue :(NSMutableString*) s {
     if ([statisticsValue isKindOfClass:[NSArray class]]) {
         [s appendString:@"["];
         BOOL firstValue = YES;
@@ -435,10 +433,10 @@ RCT_EXPORT_METHOD(peerConnectionRestartIce:(nonnull NSNumber *)objectID)
     } else if ([statisticsValue isKindOfClass:[NSDictionary class]]) {
         NSError *error;
         NSData *jsonData = [NSJSONSerialization dataWithJSONObject:statisticsValue
-                                                           options:NSJSONWritingPrettyPrinted
+                                                           options:0
                                                            error:&error];
 
-        if (! jsonData) {
+        if (!jsonData) {
             [s appendString:@"\""];
             [s appendString:[NSString stringWithFormat:@"%@", statisticsValue]];
             [s appendString:@"\""];
@@ -451,8 +449,6 @@ RCT_EXPORT_METHOD(peerConnectionRestartIce:(nonnull NSNumber *)objectID)
         [s appendString:[NSString stringWithFormat:@"%@", statisticsValue]];
         [s appendString:@"\""];
     }
-    
-  return s;
 }
 
 - (NSString *)stringForPeerConnectionState:(RTCPeerConnectionState)state {

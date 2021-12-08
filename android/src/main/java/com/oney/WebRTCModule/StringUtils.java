@@ -1,5 +1,7 @@
 package com.oney.WebRTCModule;
 
+import android.util.Log;
+
 import org.webrtc.PeerConnection;
 import org.webrtc.RTCStats;
 import org.webrtc.RTCStatsReport;
@@ -7,6 +9,8 @@ import org.webrtc.RTCStatsReport;
 import java.util.Map;
 
 public class StringUtils {
+    private static final String TAG = StringUtils.class.getSimpleName();
+
     /**
      * Constructs a JSON <tt>String</tt> representation of a specific array of
      * <tt>RTCStatsReport</tt>s (produced by {@link PeerConnection#getStats}).
@@ -92,7 +96,7 @@ public class StringUtils {
                 }
                 builder.append("}");
             } catch (ClassCastException e) {
-                builder.append(value);
+                Log.e(TAG, "Error parsing stats value " + value);
             }
         } else if (value instanceof String) {
             builder.append("\"").append(value).append("\"");
