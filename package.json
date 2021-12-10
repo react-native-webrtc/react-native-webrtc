@@ -1,6 +1,6 @@
 {
   "name": "@daily-co/react-native-webrtc",
-  "version": "1.89.2-daily.3",
+  "version": "1.94.1-daily.1",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/daily-co/react-native-webrtc.git"
@@ -17,12 +17,12 @@
     "android",
     "webrtc"
   ],
+  "main": "src/index.js",
   "dependencies": {
-    "base64-js": "^1.1.2",
-    "cross-os": "^1.3.0",
-    "event-target-shim": "^1.0.5",
-    "prop-types": "^15.5.10",
-    "uuid": "^3.3.2",
+    "base64-js": "1.5.1",
+    "event-target-shim": "6.0.2",
+    "tar": "6.1.11",
+    "uuid": "3.4.0",
     "@types/react": "*",
     "@types/react-native": "*"
   },
@@ -32,14 +32,24 @@
   "scripts": {
     "tag": "scripts/tag",
     "prepublishOnly": "npm run tag",
-    "postinstall": "cross-os darwin-extract"
-  },
-  "cross-os": {
-    "darwin-extract": {
-      "darwin": "tar -zxf apple/WebRTC.xcframework.tgz -C apple"
-    }
+    "postinstall": "node tools/downloadWebRTC.js",
+    "prepare": "husky install"
   },
   "bugs": {
     "url": "https://github.com/daily-co/react-native-webrtc/issues"
+    "url": "https://github.com/react-native-webrtc/react-native-webrtc/issues"
+  },
+  "devDependencies": {
+    "husky": "7.0.2",
+    "lint-staged": "11.2.3",
+    "prettier": "2.4.1"
+  },
+  "lint-staged": {
+    "**/*": "prettier --write --ignore-unknown"
+  },
+  "webrtc-builds": {
+    "android": "https://github.com/jitsi/webrtc/releases/download/v94.0.0/android-webrtc.tgz",
+    "ios": "https://github.com/jitsi/webrtc/releases/download/v94.0.0/WebRTC.xcframework.tgz",
+    "ios-bitcode": "https://github.com/jitsi/webrtc/releases/download/v94.0.0/WebRTC.xcframework-bitcode.tgz"
   }
 }
