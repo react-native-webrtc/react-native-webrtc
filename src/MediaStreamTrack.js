@@ -73,7 +73,21 @@ class MediaStreamTrack extends defineCustomEventTarget(...MEDIA_STREAM_TRACK_EVE
         if (this.kind !== 'video') {
             throw new Error('Only implemented for video tracks');
         }
-        WebRTCModule.mediaStreamTrackSwitchCamera(this.id);
+        return WebRTCModule.mediaStreamTrackSwitchCamera(this.id);
+    }
+
+    /**
+     * Private / custom API for retrieving the current camera facing mode.
+     * Returns "user" or "environment".
+     */
+    _getCameraFacingMode() {
+        if (this.remote) {
+            throw new Error('Not implemented for remote tracks');
+        }
+        if (this.kind !== 'video') {
+            throw new Error('Only implemented for video tracks');
+        }
+        return WebRTCModule.mediaStreamTrackGetCameraFacingMode(this.id);
     }
 
     applyConstraints() {
