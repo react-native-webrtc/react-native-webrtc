@@ -415,17 +415,12 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
     }
 
     MediaStream getStreamForReactTag(String streamReactTag) {
+        // This function _only_ gets called from WebRTCView, in the UI thread.
+        // Hence make sure we run this code in the executor or we run at the risk
+        // of being out of sync.
         try {
-            return ThreadUtils.runOnExecutorAndWait(() -> getStreamForReactTagAsync(streamReactTag));
-        } catch (Exception e) {
-            Log.d(TAG, "getStreamForReactTag() failed");
-            e.printStackTrace();
-        }
-        return null;
-    }
-
-    MediaStream getStreamForReactTagAsync(String streamReactTag) {
-        MediaStream stream = localStreams.get(streamReactTag);
+            return (MediaStream) ThreadUtils.submitToExecutor((Callable<Object>) () -> {
+                MediaStream stream = localStreams.get(streamReactTag);
 
                 if (stream != null) {
                     return stream;
