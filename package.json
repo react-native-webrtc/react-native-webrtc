@@ -37,7 +37,6 @@
   },
   "bugs": {
     "url": "https://github.com/daily-co/react-native-webrtc/issues"
-    "url": "https://github.com/react-native-webrtc/react-native-webrtc/issues"
   },
   "devDependencies": {
     "husky": "7.0.2",

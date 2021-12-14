@@ -75,10 +75,15 @@ public class DailyAudioManager implements AudioManager.OnAudioFocusChangeListene
 
             @Override
             public void onHostPause() {
+                Log.d(TAG, "onHostPause");
             }
 
             @Override
             public void onHostDestroy() {
+                Log.d(TAG, "onHostDestroy");
+                executor.execute(() -> {
+                    DailyAudioManager.this.setMode(Mode.IDLE);
+                });
             }
         });
         this.audioManager = (AudioManager) reactContext.getSystemService(Context.AUDIO_SERVICE);
@@ -190,6 +195,7 @@ public class DailyAudioManager implements AudioManager.OnAudioFocusChangeListene
     }
 
     private void abandonAudioFocus() {
+        Log.d(TAG, "abandonAudioFocus");
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             if (audioFocusRequest == null) {
                 Log.d(TAG, "abandonAudioFocus: expected audioFocusRequest to exist");
@@ -202,11 +208,11 @@ public class DailyAudioManager implements AudioManager.OnAudioFocusChangeListene
     }
 
     private void configureDevicesForCurrentMode() {
+        Log.d(TAG, "configureDevicesForCurrentMode => " + mode);
         if (mode == Mode.IDLE) {
             audioManager.setMode(AudioManager.MODE_NORMAL);
             audioManager.setSpeakerphoneOn(false);
             toggleBluetooth(false);
-            audioManager.setMicrophoneMute(true);
         } else {
             audioManager.setMode(AudioManager.MODE_IN_COMMUNICATION);
             Set<DeviceType> availableDeviceTypes = getAvailableDeviceTypes();
