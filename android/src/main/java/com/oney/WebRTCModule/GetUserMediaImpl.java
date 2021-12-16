@@ -109,7 +109,7 @@ class GetUserMediaImpl {
         AudioTrack track = pcFactory.createAudioTrack(id, audioSource);
         tracks.put(
             id,
-            new TrackPrivate(track, audioSource, /* videoCapturer */ null));
+            new TrackPrivate(track, audioSource, /* videoCapturer */ null, null));
 
         return track;
     }
@@ -381,7 +381,7 @@ class GetUserMediaImpl {
         VideoTrack track = pcFactory.createVideoTrack(id, videoSource);
 
         track.setEnabled(true);
-        tracks.put(id, new TrackPrivate(track, videoSource, videoCaptureController));
+        tracks.put(id, new TrackPrivate(track, videoSource, videoCaptureController, surfaceTextureHelper));
 
         videoCaptureController.startCapture();
 
@@ -405,6 +405,8 @@ class GetUserMediaImpl {
          * if {@link #track} is a {@link VideoTrack}.
          */
         public final AbstractVideoCaptureController videoCaptureController;
+        
+        private final SurfaceTextureHelper surfaceTextureHelper;
 
         /**
          * Whether this object has been disposed or not.
@@ -424,10 +426,12 @@ class GetUserMediaImpl {
         public TrackPrivate(
             MediaStreamTrack track,
             MediaSource mediaSource,
-            AbstractVideoCaptureController videoCaptureController) {
+            AbstractVideoCaptureController videoCaptureController,
+            SurfaceTextureHelper surfaceTextureHelper) {
             this.track = track;
             this.mediaSource = mediaSource;
             this.videoCaptureController = videoCaptureController;
+            this.surfaceTextureHelper = surfaceTextureHelper;
             this.disposed = false;
         }
 
@@ -438,6 +442,18 @@ class GetUserMediaImpl {
                         videoCaptureController.dispose();
                     }
                 }
+                
+                /*
+                 * As per webrtc library documentation - The caller still has ownership of {@code
+                 * surfaceTextureHelper} and is responsible for making sure surfaceTextureHelper.dispose() is
+                 * called. This also means that the caller can reuse the SurfaceTextureHelper to initialize a new
+                 * VideoCapturer once the previous VideoCapturer has been disposed. */
+                
+                if(surfaceTextureHelper != null) {
+                    surfaceTextureHelper.stopListening();
+                    surfaceTextureHelper.dispose();
+                }
+                
                 mediaSource.dispose();
                 track.dispose();
                 disposed = true;
