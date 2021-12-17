@@ -209,20 +209,12 @@ export class RTCSessionDescription extends RTCSessionDescriptionType {
     toJSON(): RTCSessionDescriptionType;
 }
 
-export interface MandatoryMedia {
-    minWidth: number;
-    minHeight: number;
-    minFrameRate: number;
-}
-
-export interface MediaSources {
-    sourceId: string;
-}
-
 export interface MediaTrackConstraints {
-    mandatory: MandatoryMedia;
-    facingMode: "user" | "environment";
-    optional: MediaSources[];
+    width?: number;
+    height?: number;
+    frameRate?: number;
+    facingMode?: "user" | "environment";
+    deviceId?: string;
 }
 
 export interface MediaStreamConstraints {
