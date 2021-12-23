@@ -107,9 +107,11 @@ class GetUserMediaImpl {
 
         AudioSource audioSource = pcFactory.createAudioSource(peerConstraints);
         AudioTrack track = pcFactory.createAudioTrack(id, audioSource);
+        
+        // surfaceTextureHelper is initialized for videoTrack only, so its null here.
         tracks.put(
             id,
-            new TrackPrivate(track, audioSource, /* videoCapturer */ null, null));
+            new TrackPrivate(track, audioSource, /* videoCapturer */ null, /* surfaceTextureHelper */ null));
 
         return track;
     }
