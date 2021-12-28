@@ -126,27 +126,31 @@ RCT_EXPORT_METHOD(enableNoOpRecordingEnsuringBackgroundContinuity:(BOOL)enable) 
 }
 
 - (void)audioSession:(RTCAudioSession *)audioSession didSetActive:(BOOL)active {
-  // The audio session has become active either for the first time or again
-  // after being reset by WebRTC's audio module (for example, after a Wifi -> LTE
-  // switch), so (re-)apply the currently chosen audio mode to the session.
-  [self applyAudioMode:self.audioMode toSession:audioSession];
+  dispatch_async(self.captureSessionQueue, ^{
+    // The audio session has become active either for the first time or again
+    // after being reset by WebRTC's audio module (for example, after a Wifi -> LTE
+    // switch), so (re-)apply the currently chosen audio mode to the session.
+    [self applyAudioMode:self.audioMode toSession:audioSession];
+  });
 }
 
 RCT_EXPORT_METHOD(setDailyAudioMode:(NSString *)audioMode) {
-  // Validate input
-  if (![@[AUDIO_MODE_VIDEO_CALL, AUDIO_MODE_VOICE_CALL, AUDIO_MODE_IDLE] containsObject:audioMode]) {
-    NSLog(@"[Daily] invalid argument to setDailyAudioMode: %@", audioMode);
-    return;
-  }
-  
-  self.audioMode = audioMode;
-  
-  // Apply the chosen audio mode right away if the audio session is already
-  // active. Otherwise, it will be applied when the session becomes active.
-  RTCAudioSession *audioSession = RTCAudioSession.sharedInstance;
-  if (audioSession.isActive) {
-    [self applyAudioMode:audioMode toSession:audioSession];
-  }
+  dispatch_async(self.captureSessionQueue, ^{
+    // Validate input
+    if (![@[AUDIO_MODE_VIDEO_CALL, AUDIO_MODE_VOICE_CALL, AUDIO_MODE_IDLE] containsObject:audioMode]) {
+      NSLog(@"[Daily] invalid argument to setDailyAudioMode: %@", audioMode);
+      return;
+    }
+
+    self.audioMode = audioMode;
+
+    // Apply the chosen audio mode right away if the audio session is already
+    // active. Otherwise, it will be applied when the session becomes active.
+    RTCAudioSession *audioSession = RTCAudioSession.sharedInstance;
+    if (audioSession.isActive) {
+      [self applyAudioMode:audioMode toSession:audioSession];
+    }
+  });
 }
 
 - (void)applyAudioMode:(NSString *)audioMode toSession:(RTCAudioSession *)audioSession {
