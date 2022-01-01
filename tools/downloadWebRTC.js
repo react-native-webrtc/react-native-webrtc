@@ -68,7 +68,7 @@ async function download(url, filePath) {
 
     items.push({
         url: builds['android'],
-        dstFileName: 'android-webrtc.tgz',
+        dstFileName: 'libwebrtc.aar',
         dstDir: `${__dirname}/../android/libs/`
     });
 
