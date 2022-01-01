@@ -88,13 +88,14 @@ async function download(url, filePath) {
 
         await download(url, dstPath);
 
-        tar.extract({
-            file: dstPath,
-            cwd: dstDir,
-            sync: true,
-            strict: true
-        });
-
+        if(dstPath.endsWith("tgz") || dstPath.endsWith("tar.gz")){
+            tar.extract({
+                file: dstPath,
+                cwd: dstDir,
+                sync: true,
+                strict: true
+            });
+        }
         console.log('Done!');
     }
 })();
