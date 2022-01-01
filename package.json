@@ -1,6 +1,6 @@
 {
   "name": "@zhumi/react-native-webrtc",
-  "version": "1.94.4",
+  "version": "1.97.1",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/zhangshaoju1987/react-native-webrtc.git"
@@ -28,7 +28,8 @@
   },
   "scripts": {
     "postinstall": "node tools/downloadWebRTC.js",
-    "prepare": "husky install"
+    "prepare": "husky install",
+    "publish":"npm publish --access public"
   },
   "bugs": {
     "url": "https://github.com/zhangshaoju1987/react-native-webrtc/issues"
