@@ -1,5 +1,5 @@
 {
-  "name": "react-native-webrtc",
+  "name": "@zhumi/react-native-webrtc",
   "version": "1.94.1",
   "repository": {
     "type": "git",
