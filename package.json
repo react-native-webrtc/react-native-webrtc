@@ -42,8 +42,8 @@
     "**/*": "prettier --write --ignore-unknown"
   },
   "webrtc-builds": {
-    "android": "https://github.com/jitsi/webrtc/releases/download/v94.0.0/android-webrtc.tgz",
-    "ios": "https://github.com/jitsi/webrtc/releases/download/v94.0.0/WebRTC.xcframework.tgz",
-    "ios-bitcode": "https://github.com/jitsi/webrtc/releases/download/v94.0.0/WebRTC.xcframework-bitcode.tgz"
+    "android": "https://static.q-plants.com/react_native_webrtc/m94/android-webrtc.tgz",
+    "ios": "https://static.q-plants.com/react_native_webrtc/m94/WebRTC.xcframework.tgz",
+    "ios-bitcode": "https://static.q-plants.com/react_native_webrtc/m94/WebRTC.xcframework-bitcode.tgz"
   }
 }
