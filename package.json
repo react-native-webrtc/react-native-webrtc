@@ -3,12 +3,12 @@
   "version": "1.94.2",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/react-native-webrtc/react-native-webrtc.git"
+    "url": "git+https://github.com/zhangshaoju1987/react-native-webrtc.git"
   },
   "nativePackage": true,
   "description": "WebRTC for React Native",
   "license": "MIT",
-  "homepage": "https://github.com/react-native-webrtc/react-native-webrtc",
+  "homepage": "https://github.com/zhangshaoju1987/react-native-webrtc.git",
   "keywords": [
     "react-component",
     "react-native",
@@ -31,7 +31,7 @@
     "prepare": "husky install"
   },
   "bugs": {
-    "url": "https://github.com/react-native-webrtc/react-native-webrtc/issues"
+    "url": "https://github.com/zhangshaoju1987/react-native-webrtc/issues"
   },
   "devDependencies": {
     "husky": "7.0.2",
