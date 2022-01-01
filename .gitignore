@@ -12,3 +12,4 @@ examples/GumTestApp_macOS/package-lock.json
 *.jar
 *.tgz
 *.aar
+package-lock.json
