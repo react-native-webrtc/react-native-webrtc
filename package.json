@@ -43,8 +43,8 @@
     "**/*": "prettier --write --ignore-unknown"
   },
   "webrtc-builds": {
-    "android": "https://static.q-plants.com/webrtc_lib/m97/libwebrtc.aar",
-    "ios": "https://static.q-plants.com/webrtc_lib/m94/WebRTC.xcframework.tgz",
-    "ios-bitcode": "https://static.q-plants.com/webrtc_lib/m94/WebRTC.xcframework-bitcode.tgz"
+    "android":      "https://static.q-plants.com/webrtc_lib/m97/libwebrtc.aar",
+    "ios":          "https://static.q-plants.com/webrtc_lib/m97/WebRTC.xcframework.tgz",
+    "ios-bitcode":  "https://static.q-plants.com/webrtc_lib/m94/WebRTC.xcframework-bitcode.tgz"
   }
 }
