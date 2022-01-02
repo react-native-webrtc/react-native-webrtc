@@ -6,7 +6,7 @@ A WebRTC module for React Native.
 
 ## WebRTC Revision
 
-* Currently used revision: [M94]
+* Currently used revision: [M97]
 * Supported architectures
   * Android: armeabi-v7a, arm64-v8a, x86, x86_64
   * iOS: arm64, x86_64 (for bitcode support, run [this script](https://github.com/zhangshaoju1987/react-native-webrtc/blob/master/tools/downloadBitcode.sh))
