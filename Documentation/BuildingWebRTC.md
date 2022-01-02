@@ -1,6 +1,7 @@
 # Building WebRTC
 
-需要使用脚本 `tools/build-webrtc.py` 构建本模块需要的webrtc多平台（mac,ios,android）依赖库
+需要使用脚本 `tools/build-webrtc.py` 构建本模块需要的webrtc多平台（mac,ios,android）依赖库。
+需要vpn且带宽要足，命令行和git里需要设置http_proxy,https_proxy
 
 ## 构建前的准备
 
