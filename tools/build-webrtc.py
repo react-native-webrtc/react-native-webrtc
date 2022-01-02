@@ -282,6 +282,7 @@ def build(target_dir, platform, debug):
         sh(xcodebuild_cmd)
         sh('tar zcf WebRTC.xcframework.tgz WebRTC.xcframework', cwd=build_dir)
         rmr(xcframework_path)
+        print("target build is here:"+os.path.join(build_dir,"WebRTC.xcframework.tgz "))
     else:
         gn_out_dir = 'out/%s-%s' % (build_type, ANDROID_BUILD_CPUS[0])
         shutil.copy(os.path.join(gn_out_dir, 'lib.java/sdk/android/libwebrtc.jar'), build_dir)
