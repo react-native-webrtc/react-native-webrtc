@@ -1,6 +1,6 @@
 # Building WebRTC
 
-使用脚本 `tools/build-webrtc.py` 构建本模块需要的webrtc依赖库
+需要使用脚本 `tools/build-webrtc.py` 构建本模块需要的webrtc多平台（mac,ios,android）依赖库
 
 ## 构建前的准备
 
@@ -18,17 +18,14 @@ python build-webrtc.py --setup --ios /path/to/blank_dir
 
 ### Android 构建环境准备
 
-NOTE: 需要jdk8. Ubuntu安装java环境 `apt-get install default-jdk-headless`
+注意: 需要jdk8. Ubuntu安装java环境 `apt-get install default-jdk-headless`
 
 ```
 python build-webrtc.py --setup --android /path/to/blank_dir
 ```
 
 ## 选择要构建的WebRTC版本
-
-Once the setup process has finished, the target branch must be selected, also
-adding any required cherry-picks. The following example shows how the M87 branch
-was made:
+当上述步骤完成后，就意味着构建环境准备好了，此时要选择一个webrtc版本（通常选择最新的稳定版本）
 
 ```
 cd /path/to/blank_dir/build_webrtc/webrtc/ios/src/
@@ -36,11 +33,10 @@ git checkout -b build-M97 refs/remotes/branch-heads/4692
 gclient sync -D
 
 ```
-
-Now the code is ready for building!
+到此，代码就下载完成了，接下来开始构建!
 
 ## 开始构建
-如果你不是第一次构建，本地存在多个分支，切换不同的分支，需要先同步代码:
+如果你不是第一次构建，本地存在多个分支，当git切换不同的分支后，需要先同步代码:
 ```
 python build-webrtc.py --sync --ios /path/to/blank_dir
 ```
