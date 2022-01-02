@@ -135,7 +135,7 @@ def sync(target_dir, platform):
     webrtc_dir = os.path.join(target_dir, 'webrtc', platform, 'src')
 
     if not os.path.isdir(webrtc_dir):
-        print('WebRTC source not found, did you forget to run --setup?')
+        print('WebRTC source'+webrtc_dir+' not found, did you forget to run --setup?')
         sys.exit(1)
 
     # Prepare environment
@@ -161,7 +161,7 @@ def build(target_dir, platform, debug):
     webrtc_dir = os.path.join(target_dir, 'webrtc', platform, 'src')
 
     if not os.path.isdir(webrtc_dir):
-        print('WebRTC source not found, did you forget to run --setup?')
+        print('WebRTC source '+webrtc_dir+'not found, did you forget to run --setup?')
         sys.exit(1)
 
     # Prepare environment
