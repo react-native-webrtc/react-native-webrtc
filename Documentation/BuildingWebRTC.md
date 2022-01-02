@@ -55,6 +55,6 @@ python build-webrtc.py --build --ios /path/to/blank_dir
 开始构建:
 
 ```
-python build-webrtc.py --build --android ~/src/
+python build-webrtc.py --build --android /path/to/blank_dir
 ```
 所有最终的构建库都在这个目录里: `/path/to/blank_dir/build_webrtc/build/android`
