@@ -49,7 +49,7 @@ python build-webrtc.py --sync --ios /path/to/blank_dir
 python build-webrtc.py --build --ios /path/to/blank_dir
 ```
 
-所有的构建目录都在这个目录里: `/path/to/blank_dir/build_webrtc/build/ios/`.
+所有最终的构建库都在这个目录里: `/path/to/blank_dir/build_webrtc/build/ios/`.
 
 ### Android
 
@@ -60,4 +60,4 @@ python build-webrtc.py --build --ios /path/to/blank_dir
 ```
 python build-webrtc.py --build --android ~/src/
 ```
-所有的构建目录都在这个目录里: `/path/to/blank_dir/build_webrtc/build/android/`.
+所有最终的构建库都在这个目录里: `/path/to/blank_dir/build_webrtc/build/android/`.
