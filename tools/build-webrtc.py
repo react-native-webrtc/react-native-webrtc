@@ -37,6 +37,7 @@ def build_gn_args(platform_args):
 GN_COMMON_ARGS = [
     'is_component_build=false',
     'rtc_libvpx_build_vp9=true',
+    'enable_libaom=true',
     'is_debug=%s',
     'target_cpu="%s"'
 ]
