@@ -242,8 +242,9 @@ def build(target_dir, platform, debug):
         _IOS_BUILD_ARCHS = [item for item in IOS_BUILD_ARCHS if not item.startswith('simulator')]
         _IOS_BUILD_ARCHS.append(simulators[0])
 
-        # XCFramework
         xcframework_path = os.path.join(build_dir, 'WebRTC.xcframework')
+        # XCFramework
+        """
         xcodebuild_cmd = 'xcodebuild -create-xcframework -output %s' % xcframework_path
         for item in _IOS_BUILD_ARCHS:
             tenv, arch = item.split(':')
@@ -255,6 +256,7 @@ def build(target_dir, platform, debug):
         sh(xcodebuild_cmd)
         sh('tar zcf WebRTC.xcframework-bitcode.tgz WebRTC.xcframework', cwd=build_dir)
         rmr(xcframework_path)
+        """
 
         # XCFramework (stripped)
         xcodebuild_cmd = 'xcodebuild -create-xcframework -output %s' % xcframework_path
