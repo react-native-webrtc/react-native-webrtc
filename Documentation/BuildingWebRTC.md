@@ -23,7 +23,6 @@ python build-webrtc.py --setup --ios /path/to/blank_dir
 
 ```
 python build-webrtc.py --setup --android /path/to/blank_dir
-# 如果是第一次，则忽略这一步
 ```
 
 ## 选择要构建的WebRTC版本
