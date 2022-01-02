@@ -1,95 +1,67 @@
 # Building WebRTC
 
-This document shows how to prepare a WebRTC build for its inclusion in this
-plugin.
+使用脚本 `tools/build-webrtc.py` 构建本模块需要的webrtc依赖库
 
-The build will be made with the `build-webrtc.py` Python script located in the
-`tools/` directory.
+## 构建前的准备
 
-## Preparing the build
+携带参数 `--setup` 运行脚本 build-webrtc.py 将会下载构建所必须的所有工具. 
+运行该脚本时必须指定一个空目录； 
+脚本会在指定的目录下创建构建目录：build_webrtc；所有的源代码，构建后的目标库都在这个目录下。
 
-Running the script with `--setup` will download all necessary tools for building
-WebRTC. The script must be run with a target directory where all WebRTC source
-code and resulting build artifacts will be placed. A `build_webrtc` directory
-will be created containing it all.
+--setup 这个过程只需要执行一次，后面一般不需要重新执行（除非工具包过时了）
 
-The setup process only needs to be carried out once.
-
-### iOS
+### iOS 构建环境准备
 
 ```
-python build-webrtc.py --setup --ios ~/src/
+python build-webrtc.py --setup --ios /path/to/blank_dir
 ```
 
-### Android
+### Android 构建环境准备
 
-NOTE: Make sure you have the Java JDK installed beforehand. On Debian and
-Ubuntu systems this can be accomplished by installing the `default-jdk-headless`
-package.
+NOTE: 需要jdk8. Ubuntu安装java环境 `apt-get install default-jdk-headless`
 
 ```
-python build-webrtc.py --setup --android ~/src/
+python build-webrtc.py --setup --android /path/to/blank_dir
 ```
 
-## Selecting the branch
+## 选择要构建的WebRTC版本
 
 Once the setup process has finished, the target branch must be selected, also
 adding any required cherry-picks. The following example shows how the M87 branch
 was made:
 
 ```
-cd ~/src/build_webrtc/webrtc/ios/src/
-git checkout -b build-M87 refs/remotes/branch-heads/4280
-#git cherry-pick ...
-cd
+cd /path/to/blank_dir/build_webrtc/webrtc/ios/src/
+git checkout -b build-M97 refs/remotes/branch-heads/4692
+gclient sync -D
+
 ```
 
 Now the code is ready for building!
 
-Notice that since M79 chromium changed the branch naming scheme, for example M87 is WebRTC branch 4280.
-For a full list of branches, see: https://chromiumdash.appspot.com/branches
-
-## Building
+## 开始构建
+如果你不是第一次构建，本地存在多个分支，切换不同的分支，需要先同步代码:
+```
+python build-webrtc.py --sync --ios /path/to/blank_dir
+```
 
 ### iOS
 
-If you have switched branches, first run:
+开始构建:
 
 ```
-python build-webrtc.py --sync --ios ~/src/
+python build-webrtc.py --build --ios /path/to/blank_dir
 ```
 
-Now build it:
-
-```
-python build-webrtc.py --build --ios ~/src/
-```
-
-The build artifacts will be located in `~/src/build_webrtc/build/ios/`.
+所有的构建目录都在这个目录里: `/path/to/blank_dir/build_webrtc/build/ios/`.
 
 ### Android
 
-**NOTE**: WebRTC for Android can only be built on Linux at the moment.
+**NOTE**: Android版本只能目前只能在linux机器上进行，推荐Ubuntu
 
-If you have switched branches, first run:
-
-```
-python build-webrtc.py --sync --android ~/src/
-```
-
-Now build it:
+开始构建:
 
 ```
 python build-webrtc.py --build --android ~/src/
 ```
-
-The build artifacts will be located in `~/src/build_webrtc/build/android/`.
-
-### Making debug builds
-
-Debug builds can be made by adding `--debug` together with `--build`. For
-example, to make a debug iOS build:
-
-```
-python build-webrtc.py --build --ios --debug ~/src/
-```
+所有的构建目录都在这个目录里: `/path/to/blank_dir/build_webrtc/build/android/`.
