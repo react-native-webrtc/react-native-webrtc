@@ -15,7 +15,7 @@
     "react": "16.11.0",
     "react-native": "0.62.0",
     "react-native-macos": "^0.62.16",
-    "react-native-webrtc": "*"
+    "@zhumi/react-native-webrtc": "1.97.3"
   },
   "devDependencies": {
     "@babel/core": "7.12.8",
