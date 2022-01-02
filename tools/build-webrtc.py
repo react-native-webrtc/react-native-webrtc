@@ -35,14 +35,13 @@ def build_gn_args(platform_args):
 GN_COMMON_ARGS = [
     'is_component_build=false',
     'rtc_libvpx_build_vp9=true',
-    'enable_libaom=true',
     'rtc_build_examples=false',
     'is_debug=%s',
     'target_cpu="%s"'
 ]
 
 _GN_APPLE_COMMON = [
-    'enable_dsyms=true',
+    'enable_dsyms=false',
     'rtc_enable_objc_symbol_export=true',
     'rtc_include_tests=false',
     'rtc_enable_protobuf=false',
@@ -219,33 +218,40 @@ def build(target_dir, platform, debug):
 
     # Cleanup build dir
     rmr(build_dir)
+    print("build dir is:"+build_dir)
     mkdirp(build_dir)
 
     # Copy build artifacts to build directory
     if platform == 'ios':
         # Fat simulators (we need a single slice for both simulators)
         simulators = [item for item in IOS_BUILD_ARCHS if item.startswith('simulator')]
-        tenv, arch = simulators[0].split(':')
-        gn_out_dir = 'out/%s-ios-%s-%s' % (build_type, tenv, arch)
-        shutil.copytree(os.path.join(gn_out_dir, 'WebRTC.framework'), os.path.join(gn_out_dir, 'fat-WebRTC.framework'))
-        out_lib_path = os.path.join(gn_out_dir, 'fat-WebRTC.framework', 'WebRTC')
-        slice_paths = []
-        for item in simulators:
-            tenv, arch = item.split(':')
-            lib_path = os.path.join('out/%s-ios-%s-%s' % (build_type, tenv, arch), 'WebRTC.framework', 'WebRTC')
-            slice_paths.append(lib_path)
-        sh('lipo %s -create -output %s' % (' '.join(slice_paths), out_lib_path))
+        if(len(simulators) > 0):
+            tenv, arch = simulators[0].split(':')
+            gn_out_dir = 'out/%s-ios-%s-%s' % (build_type, tenv, arch)
+            shutil.copytree(os.path.join(gn_out_dir, 'WebRTC.framework'), os.path.join(gn_out_dir, 'fat-WebRTC.framework'))
+            out_lib_path = os.path.join(gn_out_dir, 'fat-WebRTC.framework', 'WebRTC')
+            slice_paths = []
+            for item in simulators:
+                tenv, arch = item.split(':')
+                lib_path = os.path.join('out/%s-ios-%s-%s' % (build_type, tenv, arch), 'WebRTC.framework', 'WebRTC')
+                slice_paths.append(lib_path)
+            sh('lipo %s -create -output %s' % (' '.join(slice_paths), out_lib_path))
 
-        orig_framework_path = os.path.join(gn_out_dir, 'WebRTC.framework')
-        bak_framework_path = os.path.join(gn_out_dir, 'bak-WebRTC.framework')
-        fat_framework_path = os.path.join(gn_out_dir, 'fat-WebRTC.framework')
-        shutil.move(orig_framework_path, bak_framework_path)
-        shutil.move(fat_framework_path, orig_framework_path)
+            orig_framework_path = os.path.join(gn_out_dir, 'WebRTC.framework')
+            print("orig_framework_path is:"+orig_framework_path)
+            bak_framework_path = os.path.join(gn_out_dir, 'bak-WebRTC.framework')
+            print("bak_framework_path is:"+bak_framework_path)
+            fat_framework_path = os.path.join(gn_out_dir, 'fat-WebRTC.framework')
+            print("fat_framework_path is"+fat_framework_path)
+            shutil.move(orig_framework_path, bak_framework_path)
+            shutil.move(fat_framework_path, orig_framework_path)
 
         _IOS_BUILD_ARCHS = [item for item in IOS_BUILD_ARCHS if not item.startswith('simulator')]
-        _IOS_BUILD_ARCHS.append(simulators[0])
+        if(len(simulators)>0):
+           _IOS_BUILD_ARCHS.append(simulators[0])
 
         xcframework_path = os.path.join(build_dir, 'WebRTC.xcframework')
+        print("xcframework_path is:"+xcframework_path)
         # XCFramework
         """
         xcodebuild_cmd = 'xcodebuild -create-xcframework -output %s' % xcframework_path
