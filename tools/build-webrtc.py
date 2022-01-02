@@ -36,6 +36,7 @@ GN_COMMON_ARGS = [
     'is_component_build=false',
     'rtc_libvpx_build_vp9=true',
     'enable_libaom=true',
+    'rtc_build_examples=false',
     'is_debug=%s',
     'target_cpu="%s"'
 ]
@@ -43,7 +44,9 @@ GN_COMMON_ARGS = [
 _GN_APPLE_COMMON = [
     'enable_dsyms=true',
     'rtc_enable_objc_symbol_export=true',
-    'rtc_include_tests=false'
+    'rtc_include_tests=false',
+    'rtc_enable_protobuf=false',
+
 ]
 
 _GN_IOS_ARGS = [
