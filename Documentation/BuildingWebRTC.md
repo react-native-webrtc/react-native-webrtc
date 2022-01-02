@@ -18,7 +18,9 @@ python build-webrtc.py --setup --ios /path/to/blank_dir
 
 ### Android 构建环境准备
 
-注意: 需要jdk8. Ubuntu安装java环境 `apt-get install default-jdk-headless`
+注意:   
+1. 需要jdk8. Ubuntu安装java环境 `apt-get install default-jdk-headless`
+2. Android版本只能目前只能在linux机器上进行(不要做无畏的尝试)，推荐Ubuntu;
 
 ```
 python build-webrtc.py --setup --android /path/to/blank_dir
@@ -42,7 +44,6 @@ python build-webrtc.py --sync --ios /path/to/blank_dir
 ```
 
 ### iOS
-
 开始构建:
 
 ```
@@ -52,9 +53,6 @@ python build-webrtc.py --build --ios /path/to/blank_dir
 所有最终的构建库都在这个目录里: `/path/to/blank_dir/build_webrtc/build/ios/`.
 
 ### Android
-
-**注意**: Android版本只能目前只能在linux机器上进行(不要做无畏的尝试)，推荐Ubuntu;
-
 开始构建:
 
 ```
