@@ -21,7 +21,7 @@
     "base64-js": "1.5.1",
     "event-target-shim": "6.0.2",
     "tar": "6.1.11",
-    "uuid": "3.4.0"
+    "uuid": "^8.3.2"
   },
   "peerDependencies": {
     "react-native": ">=0.60.0"
@@ -29,7 +29,7 @@
   "scripts": {
     "postinstall": "node tools/downloadWebRTC.js",
     "prepare": "husky install",
-    "publish":"npm publish --access public"
+    "publish": "npm publish --access public"
   },
   "bugs": {
     "url": "https://github.com/zhangshaoju1987/react-native-webrtc/issues"
