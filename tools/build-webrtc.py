@@ -23,9 +23,7 @@ ANDROID_BUILD_CPUS = [
     'x64'
 ]
 IOS_BUILD_ARCHS = [
-    'device:arm64',
-    'simulator:arm64',
-    'simulator:x64'
+    'device:arm64'
 ]
 MACOS_BUILD_ARCHS = [
     'x64'
@@ -49,18 +47,16 @@ _GN_APPLE_COMMON = [
 ]
 
 _GN_IOS_ARGS = [
-    'enable_ios_bitcode=true',
+    'enable_ios_bitcode=false',
     'ios_deployment_target="12.0"',
     'ios_enable_code_signing=false',
     'target_os="ios"',
-    'use_xcode_clang=true',
     'target_environment="%s"'
 ]
 GN_IOS_ARGS = build_gn_args(_GN_APPLE_COMMON + _GN_IOS_ARGS)
 
 _GN_MACOS_ARGS = [
-    'target_os="mac"',
-    'use_xcode_clang=false'
+    'target_os="mac"'
 ]
 GN_MACOS_ARGS = build_gn_args(_GN_APPLE_COMMON + _GN_MACOS_ARGS)
 
