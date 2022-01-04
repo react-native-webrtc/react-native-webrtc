@@ -1,6 +1,6 @@
 {
   "name": "@zhumi/react-native-webrtc",
-  "version": "1.97.3",
+  "version": "1.97.8",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/zhangshaoju1987/react-native-webrtc.git"
@@ -21,7 +21,7 @@
     "base64-js": "1.5.1",
     "event-target-shim": "6.0.2",
     "tar": "6.1.11",
-    "uuid": "^8.3.2"
+    "uuid": "3.4.0"
   },
   "peerDependencies": {
     "react-native": ">=0.60.0"
