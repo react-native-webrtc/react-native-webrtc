@@ -113,8 +113,8 @@ function normalizeMediaConstraints(constraints, mediaType) {
 }
 
 /**
- * Utility for creating random float point values.
- * We then chop off 4 from the end after converting to a string.
+ * Utility for creating short random strings from float point values.
+ * We take 4 characters from the end after converting to a string.
  * Conversion to string gives us some letters as we don't want just numbers.
  * Should be suitable to pass for enough randomness.
  *
