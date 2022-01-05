@@ -112,6 +112,14 @@ function normalizeMediaConstraints(constraints, mediaType) {
     }
 }
 
+function chr4() {
+    return Math.random().toString(16).slice(-4);
+}
+
+export function uniqueID() {
+    return `${chr4()}${chr4()}-${chr4()}-${chr4()}-${chr4()}-${chr4()}${chr4()}${chr4()}`;
+}
+
 /**
  * Utility for deep cloning an object. Object.assign() only does a shallow copy.
  *
