@@ -1,7 +1,7 @@
 
 import { NativeModules } from 'react-native';
 import { defineCustomEventTarget } from 'event-target-shim';
-import uuid from 'uuid';
+import { uniqueID } from './RTCUtil';
 
 import MediaStreamTrack from './MediaStreamTrack';
 
@@ -40,7 +40,7 @@ export default class MediaStream extends defineCustomEventTarget(...MEDIA_STREAM
         super();
 
         // Assigm a UUID to start with. It may get overridden for remote streams.
-        this.id = uuid.v4();
+        this.id = uniqueID();
         // Local MediaStreams are created by WebRTCModule to have their id and
         // reactTag equal because WebRTCModule follows the respective standard's
         // recommendation for id generation i.e. uses UUID which is unique enough
