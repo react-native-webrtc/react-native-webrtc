@@ -1,6 +1,6 @@
 ## iOS Installation
 
-`npm install react-native-webrtc --save`  
+`npm install @zhumi/react-native-webrtc --save`
 
 Starting with React Native 0.60 auto-linking works out of the box, so there are no extra steps.
 

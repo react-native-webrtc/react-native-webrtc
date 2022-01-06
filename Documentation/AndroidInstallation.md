@@ -1,6 +1,6 @@
 ## Android installation
 
-`npm install react-native-webrtc --save`  
+`npm install @zhumi/react-native-webrtc --save`
 
 Starting with React Native 0.60 auto-linking works out of the box, so there are no extra steps.
 
@@ -70,7 +70,7 @@ compileOptions {
 
 ## FAQ
 
-##  Fatal Exception: java.lang.UnsatisfiedLinkError
+## Fatal Exception: java.lang.UnsatisfiedLinkError
 
 If you are getting this error:
 
