@@ -3,20 +3,20 @@
 // Definitions by: Carlos Quiroga <https://github.com/KarlosQ>
 // Definitions: https://github.com/DefinitelyTyped/DefinitelyTyped
 // TypeScript Version: 2.8
-import { Component } from "react";
-import { ViewStyle } from "react-native";
+import { Component } from 'react';
+import { ViewStyle } from 'react-native';
 
 export type RTCSignalingState =
-    | "stable"
-    | "have-local-offer"
-    | "have-remote-offer"
-    | "have-local-pranswer"
-    | "have-remote-pranswer"
-    | "closed";
+    | 'stable'
+    | 'have-local-offer'
+    | 'have-remote-offer'
+    | 'have-local-pranswer'
+    | 'have-remote-pranswer'
+    | 'closed';
 
-export type RTCIceGatheringState = "new" | "gathering" | "complete";
+export type RTCIceGatheringState = 'new' | 'gathering' | 'complete';
 
-export type MediaStreamTrackState = "live" | "ended";
+export type MediaStreamTrackState = 'live' | 'ended';
 
 export interface SourceInfo {
     id: string;
@@ -27,15 +27,25 @@ export interface SourceInfo {
 }
 
 export type RTCIceConnectionState =
-    | "new"
-    | "checking"
-    | "connected"
-    | "completed"
-    | "failed"
-    | "disconnected"
-    | "closed";
+    | 'new'
+    | 'checking'
+    | 'connected'
+    | 'completed'
+    | 'failed'
+    | 'disconnected'
+    | 'closed';
 
-export type RTCPeerConnectionState = "new" | "connecting" | "connected" | "disconnected" | "failed" | "closed";
+export type RTCPeerConnectionState = 'new' | 'connecting' | 'connected' | 'disconnected' | 'failed' | 'closed';
+
+export type MediaDeviceKind = 'audioinput' | 'audiooutput' | 'videoinput';
+
+export class MediaDeviceInfo {
+    readonly deviceId: string;
+    readonly groupId: string;
+    readonly kind: MediaDeviceKind;
+    readonly label: string;
+    toJSON(): any;
+}
 
 export class MediaStreamTrack {
     private _enabled: boolean;
@@ -105,9 +115,9 @@ export interface ConfigurationParamWithUrl extends ConfigurationParam {
 
 export interface RTCPeerConnectionConfiguration {
     iceServers: ConfigurationParamWithUrls[] | ConfigurationParamWithUrl[];
-    iceTransportPolicy?: "all" | "relay" | "nohost" | "none";
-    bundlePolicy?: "balanced" | "max-compat" | "max-bundle";
-    rtcpMuxPolicy?: "negotiate" | "require";
+    iceTransportPolicy?: 'all' | 'relay' | 'nohost' | 'none';
+    bundlePolicy?: 'balanced' | 'max-compat' | 'max-bundle';
+    rtcpMuxPolicy?: 'negotiate' | 'require';
     iceCandidatePoolSize?: number;
 }
 
@@ -213,7 +223,7 @@ export interface MediaTrackConstraints {
     width?: number;
     height?: number;
     frameRate?: number;
-    facingMode?: "user" | "environment";
+    facingMode?: 'user' | 'environment';
     deviceId?: string;
 }
 
@@ -236,7 +246,7 @@ export interface RTCViewProps {
     streamURL: string;
     mirror?: boolean;
     zOrder?: number;
-    objectFit?: "contain" | "cover";
+    objectFit?: 'contain' | 'cover';
     style?: ViewStyle;
 }
 
