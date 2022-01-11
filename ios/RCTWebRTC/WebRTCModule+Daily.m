@@ -126,7 +126,7 @@ RCT_EXPORT_METHOD(enableNoOpRecordingEnsuringBackgroundContinuity:(BOOL)enable) 
 }
 
 - (void)audioSession:(RTCAudioSession *)audioSession didSetActive:(BOOL)active {
-  dispatch_async(self.captureSessionQueue, ^{
+  dispatch_async(self.workerQueue, ^{
     // The audio session has become active either for the first time or again
     // after being reset by WebRTC's audio module (for example, after a Wifi -> LTE
     // switch), so (re-)apply the currently chosen audio mode to the session.
@@ -135,7 +135,7 @@ RCT_EXPORT_METHOD(enableNoOpRecordingEnsuringBackgroundContinuity:(BOOL)enable) 
 }
 
 RCT_EXPORT_METHOD(setDailyAudioMode:(NSString *)audioMode) {
-  dispatch_async(self.captureSessionQueue, ^{
+  dispatch_async(self.workerQueue, ^{
     // Validate input
     if (![@[AUDIO_MODE_VIDEO_CALL, AUDIO_MODE_VOICE_CALL, AUDIO_MODE_IDLE] containsObject:audioMode]) {
       NSLog(@"[Daily] invalid argument to setDailyAudioMode: %@", audioMode);
