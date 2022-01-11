@@ -24,14 +24,6 @@ final class ThreadUtils {
     }
 
     /**
-     * Runs the given {@link Runnable} on the executor and synchronously waits for it to finish.
-     * @param runnable
-     */
-    public  static <T> T runOnExecutorAndWait(Callable<T> callable) throws ExecutionException, InterruptedException {
-        return executor.submit(callable).get();
-    }
-
-    /**
      * Submits the given {@link Callable} to be run on the executor.
      * @param callable
      * @return Future.
