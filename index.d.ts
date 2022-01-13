@@ -3,20 +3,20 @@
 // Definitions by: Carlos Quiroga <https://github.com/KarlosQ>
 // Definitions: https://github.com/DefinitelyTyped/DefinitelyTyped
 // TypeScript Version: 2.8
-import { Component } from "react";
-import { ViewStyle } from "react-native";
+import { Component } from 'react';
+import { ViewStyle } from 'react-native';
 
 export type RTCSignalingState =
-    | "stable"
-    | "have-local-offer"
-    | "have-remote-offer"
-    | "have-local-pranswer"
-    | "have-remote-pranswer"
-    | "closed";
+    | 'stable'
+    | 'have-local-offer'
+    | 'have-remote-offer'
+    | 'have-local-pranswer'
+    | 'have-remote-pranswer'
+    | 'closed';
 
-export type RTCIceGatheringState = "new" | "gathering" | "complete";
+export type RTCIceGatheringState = 'new' | 'gathering' | 'complete';
 
-export type MediaStreamTrackState = "live" | "ended";
+export type MediaStreamTrackState = 'live' | 'ended';
 
 export interface SourceInfo {
     id: string;
@@ -27,15 +27,25 @@ export interface SourceInfo {
 }
 
 export type RTCIceConnectionState =
-    | "new"
-    | "checking"
-    | "connected"
-    | "completed"
-    | "failed"
-    | "disconnected"
-    | "closed";
+    | 'new'
+    | 'checking'
+    | 'connected'
+    | 'completed'
+    | 'failed'
+    | 'disconnected'
+    | 'closed';
 
-export type RTCPeerConnectionState = "new" | "connecting" | "connected" | "disconnected" | "failed" | "closed";
+export type RTCPeerConnectionState = 'new' | 'connecting' | 'connected' | 'disconnected' | 'failed' | 'closed';
+
+export type MediaDeviceKind = 'audioinput' | 'audiooutput' | 'videoinput';
+
+export class MediaDeviceInfo {
+    readonly deviceId: string;
+    readonly groupId: string;
+    readonly kind: MediaDeviceKind;
+    readonly label: string;
+    toJSON(): any;
+}
 
 export class MediaStreamTrack {
     private _enabled: boolean;
@@ -91,8 +101,8 @@ export class MediaStream {
 }
 
 export interface ConfigurationParam {
-    username?: string;
-    credential?: string;
+    username?: string | undefined;
+    credential?: string | undefined;
 }
 
 export interface ConfigurationParamWithUrls extends ConfigurationParam {
@@ -105,10 +115,10 @@ export interface ConfigurationParamWithUrl extends ConfigurationParam {
 
 export interface RTCPeerConnectionConfiguration {
     iceServers: ConfigurationParamWithUrls[] | ConfigurationParamWithUrl[];
-    iceTransportPolicy?: "all" | "relay" | "nohost" | "none";
-    bundlePolicy?: "balanced" | "max-compat" | "max-bundle";
-    rtcpMuxPolicy?: "negotiate" | "require";
-    iceCandidatePoolSize?: number;
+    iceTransportPolicy?: 'all' | 'relay' | 'nohost' | 'none' | undefined;
+    bundlePolicy?: 'balanced' | 'max-compat' | 'max-bundle' | undefined;
+    rtcpMuxPolicy?: 'negotiate' | 'require' | undefined;
+    iceCandidatePoolSize?: number | undefined;
 }
 
 export interface EventOnCandidate {
@@ -221,13 +231,17 @@ export interface MediaSources {
 
 export interface MediaTrackConstraints {
     mandatory: MandatoryMedia;
-    facingMode: "user" | "environment";
+    width?: number;
+    height?: number;
+    frameRate?: number;
+    facingMode?: 'user' | 'environment';
+    deviceId?: string;
     optional: MediaSources[];
 }
 
 export interface MediaStreamConstraints {
-    video?: boolean | MediaTrackConstraints;
-    audio?: boolean;
+    video?: boolean | MediaTrackConstraints | undefined;
+    audio?: boolean | undefined;
 }
 
 export class mediaDevices {
@@ -235,28 +249,28 @@ export class mediaDevices {
 
     static enumerateDevices(): Promise<any>;
 
-    static getUserMedia(constraints: MediaStreamConstraints): Promise<MediaStream | boolean>;
+    static getUserMedia(constraints: MediaStreamConstraints): Promise<MediaStream>;
 }
 
 export function registerGlobals(): void;
 
 export interface RTCViewProps {
     streamURL: string;
-    mirror?: boolean;
-    zOrder?: number;
-    objectFit?: "contain" | "cover";
-    style?: ViewStyle;
+    mirror?: boolean | undefined;
+    zOrder?: number | undefined;
+    objectFit?: 'contain' | 'cover' | undefined;
+    style?: ViewStyle | undefined;
 }
 
 export class RTCView extends Component<RTCViewProps, any> {}
 
 export interface RTCOfferOptions {
-    iceRestart?: boolean;
-    offerToReceiveAudio?: boolean;
-    offerToReceiveVideo?: boolean;
-    voiceActivityDetection?: boolean;
+    iceRestart?: boolean | undefined;
+    offerToReceiveAudio?: boolean | undefined;
+    offerToReceiveVideo?: boolean | undefined;
+    voiceActivityDetection?: boolean | undefined;
 }
 
 export interface RTCAnswerOptions {
-    voiceActivityDetection?: boolean;
+    voiceActivityDetection?: boolean | undefined;
 }

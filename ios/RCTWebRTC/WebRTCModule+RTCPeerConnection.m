@@ -210,28 +210,37 @@ RCT_EXPORT_METHOD(peerConnectionCreateAnswer:(nonnull NSNumber *)peerConnectionI
        }];
 }
 
-RCT_EXPORT_METHOD(peerConnectionSetLocalDescription:(RTCSessionDescription *)sdp objectID:(nonnull NSNumber *)objectID callback:(RCTResponseSenderBlock)callback)
+RCT_EXPORT_METHOD(peerConnectionSetLocalDescription:(nonnull NSNumber *)objectID
+                                               desc:(RTCSessionDescription *)desc
+                                           resolver:(RCTPromiseResolveBlock)resolve
+                                           rejecter:(RCTPromiseRejectBlock)reject)
 {
-  RTCPeerConnection __weak *peerConnection = self.peerConnections[objectID];
+  RTCPeerConnection *peerConnection = self.peerConnections[objectID];
   if (!peerConnection) {
+    reject(@"E_INVALID", @"PeerConnection not found", nil);
     return;
   }
 
-  [peerConnection setLocalDescription:sdp completionHandler: ^(NSError *error) {
-    if (error) {
-      id errorResponse = @{
-        @"name": @"SetLocalDescriptionFailed",
-        @"message": error.localizedDescription ?: [NSNull null]
-      };
-      callback(@[@(NO), errorResponse]);
-    } else {
-      id newSdp = @{
-          @"type": [RTCSessionDescription stringForType:peerConnection.localDescription.type],
-          @"sdp": peerConnection.localDescription.sdp
-      };
-      callback(@[@(YES), newSdp]);
-    }
-  }];
+  __weak RTCPeerConnection *weakPc = peerConnection;
+
+  RTCSetSessionDescriptionCompletionHandler handler = ^(NSError *error) {
+      if (error) {
+          reject(@"E_OPERATION_ERROR", error.localizedDescription, nil);
+      } else {
+        RTCPeerConnection *strongPc = weakPc;
+        id newSdp = @{
+            @"type": [RTCSessionDescription stringForType:strongPc.localDescription.type],
+            @"sdp": strongPc.localDescription.sdp
+        };
+        resolve(newSdp);
+      }
+  };
+
+  if (desc == nil) {
+    [peerConnection setLocalDescriptionWithCompletionHandler:handler];
+  } else {
+    [peerConnection setLocalDescription:desc completionHandler:handler];
+  }
 }
 
 RCT_EXPORT_METHOD(peerConnectionSetRemoteDescription:(RTCSessionDescription *)sdp objectID:(nonnull NSNumber *)objectID callback:(RCTResponseSenderBlock)callback)
@@ -258,20 +267,31 @@ RCT_EXPORT_METHOD(peerConnectionSetRemoteDescription:(RTCSessionDescription *)sd
   }];
 }
 
-RCT_EXPORT_METHOD(peerConnectionAddICECandidate:(RTCIceCandidate*)candidate objectID:(nonnull NSNumber *)objectID callback:(RCTResponseSenderBlock)callback)
+RCT_EXPORT_METHOD(peerConnectionAddICECandidate:(nonnull NSNumber *)objectID
+                                      candidate:(RTCIceCandidate*)candidate
+                                       resolver:(RCTPromiseResolveBlock)resolve
+                                       rejecter:(RCTPromiseRejectBlock)reject)
 {
   RTCPeerConnection *peerConnection = self.peerConnections[objectID];
   if (!peerConnection) {
+    reject(@"E_INVALID", @"PeerConnection not found", nil);
     return;
   }
 
-  [peerConnection addIceCandidate:candidate];
-
-  id newSdp = @{
-      @"type": [RTCSessionDescription stringForType:peerConnection.remoteDescription.type],
-      @"sdp": peerConnection.remoteDescription.sdp
-  };
-  callback(@[@true, newSdp]);
+  __weak RTCPeerConnection *weakPc = peerConnection;
+  [peerConnection addIceCandidate:candidate
+                completionHandler:^(NSError *error) {
+                  if (error) {
+                      reject(@"E_OPERATION_ERROR", @"addIceCandidate failed", error);
+                  } else {
+                      RTCPeerConnection *strongPc = weakPc;
+                      id newSdp = @{
+                          @"type": [RTCSessionDescription stringForType:strongPc.remoteDescription.type],
+                          @"sdp": strongPc.remoteDescription.sdp
+                      };
+                      resolve(newSdp);
+                  }
+                }];
 }
 
 RCT_EXPORT_METHOD(peerConnectionClose:(nonnull NSNumber *)objectID)
@@ -319,6 +339,16 @@ RCT_EXPORT_METHOD(peerConnectionGetStats:(nonnull NSNumber *) objectID
   [peerConnection statisticsWithCompletionHandler:^(RTCStatisticsReport *report) {
     resolve([self statsToJSON:report]);
   }];
+}
+
+RCT_EXPORT_METHOD(peerConnectionRestartIce:(nonnull NSNumber *)objectID)
+{
+  RTCPeerConnection *peerConnection = self.peerConnections[objectID];
+  if (!peerConnection) {
+    return;
+  }
+
+  [peerConnection restartIce];
 }
 
 /**
@@ -372,34 +402,53 @@ RCT_EXPORT_METHOD(peerConnectionGetStats:(nonnull NSNumber *) objectID
         [s appendString:key];
         [s appendString:@"\":"];
         NSObject *statisticsValue = [statistics.values objectForKey:key];
-        if ([statisticsValue isKindOfClass:[NSArray class]]) {
-            [s appendString:@"["];
-            BOOL firstValue = YES;
-            for (NSObject *value in statisticsValue) {
-              if(firstValue) {
-                firstValue = NO;
-              } else {
-                [s appendString:@","];
-              }
-
-              [s appendString:@"\""];
-              [s appendString:[NSString stringWithFormat:@"%@", value]];
-              [s appendString:@"\""];
-            }
-            [s appendString:@"]"];
-        } else {
-            [s appendString:@"\""];
-            [s appendString:[NSString stringWithFormat:@"%@", statisticsValue]];
-            [s appendString:@"\""];
-        }
+        [self appendValue:statisticsValue toString:s];
     }
-    
+
     [s appendString:@"}]"];
   } 
 
   [s appendString:@"]"];
 
   return s;
+}
+
+- (void)appendValue:(NSObject *)statisticsValue toString:(NSMutableString *)s {
+    if ([statisticsValue isKindOfClass:[NSArray class]]) {
+        [s appendString:@"["];
+        BOOL firstValue = YES;
+        for (NSObject *element in (NSArray *)statisticsValue) {
+            if(firstValue) {
+                firstValue = NO;
+            } else {
+                [s appendString:@","];
+            }
+
+            [s appendString:@"\""];
+            [s appendString:[NSString stringWithFormat:@"%@", element]];
+            [s appendString:@"\""];
+      }
+    
+      [s appendString:@"]"];
+    } else if ([statisticsValue isKindOfClass:[NSDictionary class]]) {
+        NSError *error;
+        NSData *jsonData = [NSJSONSerialization dataWithJSONObject:statisticsValue
+                                                           options:0
+                                                           error:&error];
+
+        if (!jsonData) {
+            [s appendString:@"\""];
+            [s appendString:[NSString stringWithFormat:@"%@", statisticsValue]];
+            [s appendString:@"\""];
+        } else {
+            NSString *jsonString = [[NSString alloc] initWithData:jsonData encoding:NSUTF8StringEncoding];
+            [s appendString:jsonString];
+        }
+    } else {
+        [s appendString:@"\""];
+        [s appendString:[NSString stringWithFormat:@"%@", statisticsValue]];
+        [s appendString:@"\""];
+    }
 }
 
 - (NSString *)stringForPeerConnectionState:(RTCPeerConnectionState)state {

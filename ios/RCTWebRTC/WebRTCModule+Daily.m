@@ -156,13 +156,6 @@ RCT_EXPORT_METHOD(setDailyAudioMode:(NSString *)audioMode) {
     return;
   }
   
-  [audioSession lockForConfiguration];
-  
-  RTCAudioSessionConfiguration *config = [[RTCAudioSessionConfiguration alloc] init];
-  config.category = AVAudioSessionCategoryPlayAndRecord;
-  config.mode = ([audioMode isEqualToString:AUDIO_MODE_VIDEO_CALL] ?
-                 AVAudioSessionModeVideoChat :
-                 AVAudioSessionModeVoiceChat);
   // Ducking other apps' audio implicitly enables allowing mixing audio with
   // other apps, which allows this app to stay alive in the backgrounnd during
   // a call (assuming it has the voip background mode set).
@@ -171,15 +164,37 @@ RCT_EXPORT_METHOD(setDailyAudioMode:(NSString *)audioMode) {
   if ([audioMode isEqualToString:AUDIO_MODE_VIDEO_CALL]) {
     categoryOptions |= AVAudioSessionCategoryOptionDefaultToSpeaker;
   }
-  config.categoryOptions = categoryOptions;
+  [self audioSessionSetCategory:AVAudioSessionCategoryPlayAndRecord toSession:audioSession options:categoryOptions];
   
-  NSError *error;
-  [audioSession setConfiguration:config error:&error];
   
-  [audioSession unlockForConfiguration];
-  
-  if (error) {
-    NSLog(@"[Daily] error applying in-call audio mode %@: %@", audioMode, error);
+  NSString *mode = ([audioMode isEqualToString:AUDIO_MODE_VIDEO_CALL] ?
+                    AVAudioSessionModeVideoChat :
+                    AVAudioSessionModeVoiceChat);
+  [self audioSessionSetMode:mode toSession:audioSession];
+}
+
+- (void)audioSessionSetCategory:(NSString *)audioCategory
+                      toSession:(RTCAudioSession *)audioSession
+                        options:(AVAudioSessionCategoryOptions)options
+{
+  @try {
+    [audioSession setCategory:audioCategory
+                  withOptions:options
+                        error:nil];
+    NSLog(@"[Daily] audioSession.setCategory: %@, withOptions: %lu success", audioCategory, (unsigned long)options);
+  } @catch (NSException *e) {
+    NSLog(@"[Daily] audioSession.setCategory: %@, withOptions: %lu fail: %@", audioCategory, (unsigned long)options, e.reason);
+  }
+}
+
+- (void)audioSessionSetMode:(NSString *)audioMode
+                  toSession:(RTCAudioSession *)audioSession
+{
+  @try {
+    [audioSession setMode:audioMode error:nil];
+    NSLog(@"[Daily] audioSession.setMode(%@) success", audioMode);
+  } @catch (NSException *e) {
+    NSLog(@"[Daily] audioSession.setMode(%@) fail: %@", audioMode, e.reason);
   }
 }
 
