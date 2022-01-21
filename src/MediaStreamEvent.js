@@ -1,4 +1,3 @@
-'use strict';
 
 import type MediaStream from './MediaStream';
 

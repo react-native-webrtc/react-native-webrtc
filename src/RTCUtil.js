@@ -1,4 +1,3 @@
-'use strict';
 
 const DEFAULT_AUDIO_CONSTRAINTS = {};
 
@@ -111,6 +110,27 @@ function normalizeMediaConstraints(constraints, mediaType) {
         default:
             throw new TypeError(`Invalid media type: ${mediaType}`);
     }
+}
+
+/**
+ * Utility for creating short random strings from float point values.
+ * We take 4 characters from the end after converting to a string.
+ * Conversion to string gives us some letters as we don't want just numbers.
+ * Should be suitable to pass for enough randomness.
+ *
+ * @return {String} 4 random characters
+ */
+function chr4() {
+    return Math.random().toString(16).slice(-4);
+}
+
+/**
+ * Put together a random string in UUIDv4 format {xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx}
+ *
+ * @return {String} uuidv4
+ */
+export function uniqueID() {
+    return `${chr4()}${chr4()}-${chr4()}-${chr4()}-${chr4()}-${chr4()}${chr4()}${chr4()}`;
 }
 
 /**

@@ -1,6 +1,5 @@
-'use strict';
 
-import { Platform, NativeModules } from 'react-native';
+import { NativeModules } from 'react-native';
 import * as RTCUtil from './RTCUtil';
 
 import MediaStream from './MediaStream';

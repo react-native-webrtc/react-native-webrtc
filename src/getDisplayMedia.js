@@ -1,6 +1,5 @@
-'use strict';
 
-import { Platform, NativeModules } from 'react-native';
+import { NativeModules } from 'react-native';
 
 import MediaStream from './MediaStream';
 import MediaStreamError from './MediaStreamError';

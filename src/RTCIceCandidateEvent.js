@@ -1,4 +1,3 @@
-'use strict';
 
 import type RTCIceCandidate from './RTCIceCandidate';
 
