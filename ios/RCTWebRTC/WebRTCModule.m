@@ -126,6 +126,19 @@ RCT_REMAP_METHOD(captureFrame,
     }
 }
 
+RCT_REMAP_METHOD(releaseCapturer,
+    releaseCapturerWithResolver:(RCTPromiseResolveBlock)resolve
+        rejecter:(RCTPromiseRejectBlock)reject)
+{
+    if (!_frameTrack) {
+        reject( @"No Active Stream", @"No Active Stream", nil );
+        return;
+    }
+    [_frameTrack removeRenderer:self];
+    _frameTrack = nil;
+    resolve( @"success" );
+}
+
 /** The size of the frame. */
 - (void)setSize:(CGSize)size
 {
