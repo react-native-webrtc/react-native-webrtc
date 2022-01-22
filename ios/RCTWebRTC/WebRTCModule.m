@@ -153,7 +153,7 @@ RCT_REMAP_METHOD(captureFrame,
                              CVPixelBufferGetWidth(bufferRef),
                              CVPixelBufferGetHeight(bufferRef))];
 
-        UIImage *uiImage = [UIImage imageWithCGImage:videoImage];
+        UIImage *uiImage = [UIImage imageWithCGImage:videoImage scale:1 orientation: UIImageOrientationRight];
         float qFloat = _quality;
         NSString *base64 = [UIImageJPEGRepresentation(uiImage, (qFloat / 10)) base64EncodedStringWithOptions:(NSDataBase64EncodingOptions)0];
         _resolveBlock( base64 );
