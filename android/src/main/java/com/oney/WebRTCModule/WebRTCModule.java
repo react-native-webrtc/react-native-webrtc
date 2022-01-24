@@ -520,16 +520,17 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
                 return;
             }
 
-        String kind = null;
-        try{
-            kind = track.kind();
-        } catch(Exception ex) { Log.e(TAG, ex.getMessage(), ex); }
+            String kind = null;
+            try{
+                kind = track.kind();
+            } catch(Exception ex) { Log.e(TAG, ex.getMessage(), ex); }
 
-        if ("audio".equals(kind)) {
-            stream.addTrack((AudioTrack)track);
-        } else if ("video".equals(kind)) {
-            stream.addTrack((VideoTrack)track);
-        }
+            if ("audio".equals(kind)) {
+                stream.addTrack((AudioTrack)track);
+            } else if ("video".equals(kind)) {
+                stream.addTrack((VideoTrack)track);
+            }
+        });
     }
 
     @ReactMethod
@@ -543,16 +544,17 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
                 return;
             }
 
-        String kind = null;
-        try{
-            kind = track.kind();
-        } catch(Exception ex) { Log.e(TAG, ex.getMessage(), ex); }
+            String kind = null;
+            try{
+                kind = track.kind();
+            } catch(Exception ex) { Log.e(TAG, ex.getMessage(), ex); }
 
-        if ("audio".equals(kind)) {
-            stream.removeTrack((AudioTrack)track);
-        } else if ("video".equals(kind)) {
-            stream.removeTrack((VideoTrack)track);
-        }
+            if ("audio".equals(kind)) {
+                stream.removeTrack((AudioTrack)track);
+            } else if ("video".equals(kind)) {
+                stream.removeTrack((VideoTrack)track);
+            }
+        });
     }
 
     @ReactMethod
