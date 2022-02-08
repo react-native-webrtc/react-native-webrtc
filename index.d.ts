@@ -230,13 +230,13 @@ export interface MediaSources {
 }
 
 export interface MediaTrackConstraints {
-    mandatory: MandatoryMedia;
+    mandatory?: MandatoryMedia;
     width?: number;
     height?: number;
     frameRate?: number;
     facingMode?: 'user' | 'environment';
     deviceId?: string;
-    optional: MediaSources[];
+    optional?: MediaSources[];
 }
 
 export interface MediaStreamConstraints {
