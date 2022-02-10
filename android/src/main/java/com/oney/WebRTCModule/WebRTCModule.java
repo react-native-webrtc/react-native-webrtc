@@ -398,7 +398,7 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
     @ReactMethod(isBlockingSynchronousMethod = true)
     public void peerConnectionInit(ReadableMap configuration, int id) {
         PeerConnection.RTCConfiguration rtcConfiguration = parseRTCConfiguration(configuration);
-
+        rtcConfiguration.sdpSemantics = PeerConnection.SdpSemantics.UNIFIED_PLAN;
         try {
             ThreadUtils.submitToExecutor(() -> {
                 PeerConnectionObserver observer = new PeerConnectionObserver(this, id);
