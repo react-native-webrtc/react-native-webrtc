@@ -145,6 +145,8 @@ static const NSTimeInterval MUTE_DELAY = 1.5;
 }
 
 - (void)addVideoTrackAdapter:(NSString*)streamReactId track:(RTCVideoTrack*)track {
+    RCTLogTrace(@"[VideoTrackAdapter] Adapter creating for streamReactId %@ track %@", streamReactId, track.trackId);
+
     NSString* trackId = track.trackId;
     if ([self.videoTrackAdapters objectForKey:trackId] != nil) {
         RCTLogWarn(@"[VideoTrackAdapter] Adapter already exists for track %@", trackId);
