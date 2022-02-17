@@ -1,6 +1,6 @@
 {
   "name": "react-native-webrtc",
-  "version": "1.94.2",
+  "version": "1.98.0",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/react-native-webrtc/react-native-webrtc.git"
@@ -41,8 +41,8 @@
     "**/*": "prettier --write --ignore-unknown"
   },
   "webrtc-builds": {
-    "android": "https://github.com/jitsi/webrtc/releases/download/v94.0.0/android-webrtc.tgz",
-    "ios": "https://github.com/jitsi/webrtc/releases/download/v94.0.0/WebRTC.xcframework.tgz",
-    "ios-bitcode": "https://github.com/jitsi/webrtc/releases/download/v94.0.0/WebRTC.xcframework-bitcode.tgz"
+    "android": "https://github.com/jitsi/webrtc/releases/download/v98.0.0/android-webrtc.tgz",
+    "ios": "https://github.com/jitsi/webrtc/releases/download/v98.0.0/WebRTC.xcframework.tgz",
+    "ios-bitcode": "https://github.com/jitsi/webrtc/releases/download/v98.0.0/WebRTC.xcframework-bitcode.tgz"
   }
 }
