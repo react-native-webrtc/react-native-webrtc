@@ -37,12 +37,17 @@ def build_gn_args(platform_args):
 GN_COMMON_ARGS = [
     'is_component_build=false',
     'rtc_libvpx_build_vp9=true',
+    'rtc_build_dcsctp=true',
+    'rtc_build_usrsctp=false',
+    'rtc_enable_protobuf=false',
+    'rtc_include_tests=false',
     'is_debug=%s',
     'target_cpu="%s"'
 ]
 
 _GN_APPLE_COMMON = [
-    'enable_dsyms=true',
+    'enable_dsyms=false',
+    'rtc_enable_symbol_export=false',
     'rtc_enable_objc_symbol_export=true',
     'rtc_include_tests=false'
 ]
@@ -51,15 +56,14 @@ _GN_IOS_ARGS = [
     'enable_ios_bitcode=true',
     'ios_deployment_target="12.0"',
     'ios_enable_code_signing=false',
+    'use_lld=false',
     'target_os="ios"',
-    'use_xcode_clang=true',
     'target_environment="%s"'
 ]
 GN_IOS_ARGS = build_gn_args(_GN_APPLE_COMMON + _GN_IOS_ARGS)
 
 _GN_MACOS_ARGS = [
-    'target_os="mac"',
-    'use_xcode_clang=false'
+    'target_os="mac"'
 ]
 GN_MACOS_ARGS = build_gn_args(_GN_APPLE_COMMON + _GN_MACOS_ARGS)
 
