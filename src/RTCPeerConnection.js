@@ -129,7 +129,7 @@ export default class RTCPeerConnection extends defineCustomEventTarget(...PEER_C
                 (successful, data) => {
                     if (successful) {
                         this._mergeState(data.state);
-                        resolve(data);
+                        resolve(data.session);
                     } else {
                         reject(data); // TODO: convert to NavigatorUserMediaError
                     }
