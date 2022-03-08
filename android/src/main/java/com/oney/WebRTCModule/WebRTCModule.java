@@ -574,7 +574,9 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
                 mPeerConnectionObservers.valueAt(i).removeStream(stream);
             }
 
-            stream.dispose();
+            try{
+                stream.dispose();
+            } catch(Exception ex) { Log.e(TAG, ex.getMessage(), ex); }
         });
     }
 
