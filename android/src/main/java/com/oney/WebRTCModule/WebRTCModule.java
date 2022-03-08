@@ -808,7 +808,7 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
                     WritableMap newSdpMap = Arguments.createMap();
                     newSdpMap.putString("type", newSdp.type.canonicalForm());
                     newSdpMap.putString("sdp", newSdp.description);
-                    newSdpMap.putMap("state", serializeState(id));
+                    newSdpMap.putMap("state", serializeState(pcId));
                     promise.resolve(newSdpMap);
                 }
 
