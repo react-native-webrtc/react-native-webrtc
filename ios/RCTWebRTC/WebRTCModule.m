@@ -15,6 +15,7 @@
 
 #import <WebRTC/RTCDefaultVideoDecoderFactory.h>
 #import <WebRTC/RTCDefaultVideoEncoderFactory.h>
+#import <WebRTC/RTCFieldTrials.h>
 
 #import "WebRTCModule.h"
 #import "WebRTCModule+RTCPeerConnection.h"
@@ -56,6 +57,9 @@
 {
   self = [super init];
   if (self) {
+    NSDictionary *fieldTrials = @{@"WebRTC-DataChannel-Dcsctp": @"Enabled"};
+    RTCInitFieldTrialDictionary(fieldTrials);
+
     if (encoderFactory == nil) {
       encoderFactory = [[RTCDefaultVideoEncoderFactory alloc] init];
     }
