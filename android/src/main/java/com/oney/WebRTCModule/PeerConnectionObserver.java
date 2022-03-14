@@ -349,7 +349,7 @@ class PeerConnectionObserver implements PeerConnection.Observer {
             trackInfo.putBoolean("remote", true);
             tracks.pushMap(trackInfo);
 
-            videoTrackAdapters.addAdapter(streamReactTag, track);
+            videoTrackAdapters.addAdapter(track);
         }
         for (int i = 0; i < mediaStream.audioTracks.size(); i++) {
             AudioTrack track = mediaStream.audioTracks.get(i);

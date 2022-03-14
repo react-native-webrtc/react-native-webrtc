@@ -14,11 +14,11 @@ class MediaStreamTrack extends defineCustomEventTarget(...MEDIA_STREAM_TRACK_EVE
     _constraints: Object;
     _enabled: boolean;
     _settings: Object;
+    _muted: boolean;
 
     id: string;
     kind: string;
     label: string;
-    muted: boolean;
     // readyState in java: INITIALIZING, LIVE, ENDED, FAILED
     readyState: MediaStreamTrackState;
     remote: boolean;
@@ -29,11 +29,11 @@ class MediaStreamTrack extends defineCustomEventTarget(...MEDIA_STREAM_TRACK_EVE
         this._constraints = info.constraints || {};
         this._enabled = info.enabled;
         this._settings = info.settings || {};
+        this._muted = false;
 
         this.id = info.id;
         this.kind = info.kind;
         this.label = info.label;
-        this.muted = false;
         this.remote = info.remote;
 
         const _readyState = info.readyState.toLowerCase();
@@ -50,7 +50,10 @@ class MediaStreamTrack extends defineCustomEventTarget(...MEDIA_STREAM_TRACK_EVE
         }
         WebRTCModule.mediaStreamTrackSetEnabled(this.id, !this._enabled);
         this._enabled = !this._enabled;
-        this.muted = !this._enabled;
+    }
+
+    get muted(): boolean {
+        return this._muted;
     }
 
     stop() {
