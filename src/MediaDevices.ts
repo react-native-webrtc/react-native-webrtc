@@ -22,11 +22,10 @@ class MediaDevices extends defineCustomEventTarget(...MEDIA_DEVICES_EVENTS) {
      * W3C "Screen Capture" compatible {@code getDisplayMedia} implementation.
      * See: https://w3c.github.io/mediacapture-screen-share/
      *
-     * @param {*} constraints
      * @returns {Promise}
      */
-    getDisplayMedia(constraints) {
-        return getDisplayMedia(constraints);
+    getDisplayMedia() {
+        return getDisplayMedia();
     }
 
     /**

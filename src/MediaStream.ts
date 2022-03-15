@@ -94,7 +94,7 @@ export default class MediaStream extends defineCustomEventTarget(...MEDIA_STREAM
         return this._tracks.slice();
     }
 
-    getTrackById(trackId): ?MediaStreamTrack {
+    getTrackById(trackId): MediaStreamTrack | undefined {
         return this._tracks.find(track => track.id === trackId);
     }
 

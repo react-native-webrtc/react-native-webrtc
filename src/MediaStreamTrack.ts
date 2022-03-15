@@ -11,15 +11,14 @@ const MEDIA_STREAM_TRACK_EVENTS = ['ended', 'mute', 'unmute'];
 type MediaStreamTrackState = 'live' | 'ended';
 
 class MediaStreamTrack extends defineCustomEventTarget(...MEDIA_STREAM_TRACK_EVENTS) {
-    _constraints: Object;
+    _constraints: object;
     _enabled: boolean;
-    _settings: Object;
+    _settings: object;
     _muted: boolean;
 
     id: string;
     kind: string;
     label: string;
-    // readyState in java: INITIALIZING, LIVE, ENDED, FAILED
     readyState: MediaStreamTrackState;
     remote: boolean;
 
@@ -44,7 +43,7 @@ class MediaStreamTrack extends defineCustomEventTarget(...MEDIA_STREAM_TRACK_EVE
         return this._enabled;
     }
 
-    set enabled(enabled: boolean): void {
+    set enabled(enabled: boolean) {
         if (enabled === this._enabled) {
             return;
         }

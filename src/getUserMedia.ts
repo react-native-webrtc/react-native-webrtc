@@ -8,7 +8,12 @@ import permissions from './Permissions';
 
 const { WebRTCModule } = NativeModules;
 
-export default function getUserMedia(constraints = {}) {
+interface Constraints {
+    audio?: boolean | object;
+    video?: boolean | object;
+}
+
+export default function getUserMedia(constraints: Constraints = {}) {
     // According to
     // https://www.w3.org/TR/mediacapture-streams/#dom-mediadevices-getusermedia,
     // the constraints argument is a dictionary of type MediaStreamConstraints.
@@ -27,7 +32,7 @@ export default function getUserMedia(constraints = {}) {
     constraints = RTCUtil.normalizeConstraints(constraints);
 
     // Request required permissions
-    const reqPermissions = [];
+    const reqPermissions: Array<Promise<boolean>> = [];
     if (constraints.audio) {
         reqPermissions.push(permissions.request({ name: 'microphone' }));
     } else {
