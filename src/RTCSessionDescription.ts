@@ -1,7 +1,7 @@
 
 export default class RTCSessionDescription {
-    sdp: string;
-    type: string;
+    _sdp: string;
+    _type: string | null;
 
     constructor(info = { type: null, sdp: '' }) {
         this._sdp = info.sdp;
@@ -17,6 +17,9 @@ export default class RTCSessionDescription {
     }
 
     toJSON() {
-        return { sdp: this._sdp, type: this._type };
+        return {
+            sdp: this._sdp,
+            type: this._type
+        };
     }
 }

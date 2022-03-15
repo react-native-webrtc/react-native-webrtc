@@ -4,7 +4,6 @@ import { NativeModules } from 'react-native';
 
 import MediaStream from './MediaStream';
 import MediaStreamEvent from './MediaStreamEvent';
-import MediaStreamTrack from './MediaStreamTrack';
 import MediaStreamTrackEvent from './MediaStreamTrackEvent';
 import RTCDataChannel from './RTCDataChannel';
 import RTCDataChannelEvent from './RTCDataChannelEvent';
@@ -56,8 +55,8 @@ const PEER_CONNECTION_EVENTS = [
 let nextPeerConnectionId = 0;
 
 export default class RTCPeerConnection extends defineCustomEventTarget(...PEER_CONNECTION_EVENTS) {
-    localDescription: RTCSessionDescription;
-    remoteDescription: RTCSessionDescription;
+    localDescription: RTCSessionDescription | null = null;
+    remoteDescription: RTCSessionDescription | null = null;
 
     signalingState: RTCSignalingState = 'stable';
     iceGatheringState: RTCIceGatheringState = 'new';
@@ -67,7 +66,7 @@ export default class RTCPeerConnection extends defineCustomEventTarget(...PEER_C
     _peerConnectionId: number;
     _localStreams: Array<MediaStream> = [];
     _remoteStreams: Array<MediaStream> = [];
-    _subscriptions: Array<any>;
+    _subscriptions: Array<any> = [];
 
     constructor(configuration) {
         super();
@@ -130,7 +129,7 @@ export default class RTCPeerConnection extends defineCustomEventTarget(...PEER_C
         WebRTCModule.peerConnectionSetConfiguration(configuration, this._peerConnectionId);
     }
 
-    async setLocalDescription(sessionDescription: ?RTCSessionDescription) {
+    async setLocalDescription(sessionDescription?: RTCSessionDescription): Promise<void> {
         const desc = sessionDescription
             ? sessionDescription.toJSON
                 ? sessionDescription.toJSON()
@@ -141,7 +140,7 @@ export default class RTCPeerConnection extends defineCustomEventTarget(...PEER_C
         this.localDescription = new RTCSessionDescription(newSdp);
     }
 
-    setRemoteDescription(sessionDescription: RTCSessionDescription) {
+    setRemoteDescription(sessionDescription: RTCSessionDescription): Promise<void> {
         return new Promise((resolve, reject) => {
             WebRTCModule.peerConnectionSetRemoteDescription(
                 sessionDescription.toJSON ? sessionDescription.toJSON() : sessionDescription,
@@ -158,7 +157,7 @@ export default class RTCPeerConnection extends defineCustomEventTarget(...PEER_C
         });
     }
 
-    async addIceCandidate(candidate) {
+    async addIceCandidate(candidate): Promise<void> {
         if (!candidate || !candidate.candidate) {
             // XXX end-of cantidates is not implemented: https://bugs.chromium.org/p/webrtc/issues/detail?id=9218
             return;
@@ -216,6 +215,7 @@ export default class RTCPeerConnection extends defineCustomEventTarget(...PEER_C
                 if (ev.id !== this._peerConnectionId) {
                     return;
                 }
+                // @ts-ignore
                 this.dispatchEvent(new RTCEvent('negotiationneeded'));
             }),
             EventEmitter.addListener('peerConnectionIceConnectionChanged', ev => {
@@ -223,6 +223,7 @@ export default class RTCPeerConnection extends defineCustomEventTarget(...PEER_C
                     return;
                 }
                 this.iceConnectionState = ev.iceConnectionState;
+                // @ts-ignore
                 this.dispatchEvent(new RTCEvent('iceconnectionstatechange'));
                 if (ev.iceConnectionState === 'closed') {
                     // This PeerConnection is done, clean up event handlers.
@@ -234,6 +235,7 @@ export default class RTCPeerConnection extends defineCustomEventTarget(...PEER_C
                     return;
                 }
                 this.connectionState = ev.connectionState;
+                // @ts-ignore
                 this.dispatchEvent(new RTCEvent('connectionstatechange'));
                 if (ev.connectionState === 'closed') {
                     // This PeerConnection is done, clean up event handlers.
@@ -245,6 +247,7 @@ export default class RTCPeerConnection extends defineCustomEventTarget(...PEER_C
                     return;
                 }
                 this.signalingState = ev.signalingState;
+                // @ts-ignore
                 this.dispatchEvent(new RTCEvent('signalingstatechange'));
             }),
             EventEmitter.addListener('peerConnectionAddedStream', ev => {
@@ -254,6 +257,7 @@ export default class RTCPeerConnection extends defineCustomEventTarget(...PEER_C
                 const stream = new MediaStream(ev);
                 this._remoteStreams.push(stream);
                 this.remoteDescription = new RTCSessionDescription(ev.sdp);
+                // @ts-ignore
                 this.dispatchEvent(new MediaStreamEvent('addstream', { stream }));
             }),
             EventEmitter.addListener('peerConnectionRemovedStream', ev => {
@@ -268,6 +272,7 @@ export default class RTCPeerConnection extends defineCustomEventTarget(...PEER_C
                     }
                 }
                 this.remoteDescription = new RTCSessionDescription(ev.sdp);
+                // @ts-ignore
                 this.dispatchEvent(new MediaStreamEvent('removestream', { stream }));
             }),
             EventEmitter.addListener('mediaStreamTrackMuteChanged', ev => {
@@ -294,8 +299,8 @@ export default class RTCPeerConnection extends defineCustomEventTarget(...PEER_C
                 }
                 this.localDescription = new RTCSessionDescription(ev.sdp);
                 const candidate = new RTCIceCandidate(ev.candidate);
-                const event = new RTCIceCandidateEvent('icecandidate', { candidate });
-                this.dispatchEvent(event);
+                // @ts-ignore
+                this.dispatchEvent(new RTCIceCandidateEvent('icecandidate', { candidate }));
             }),
             EventEmitter.addListener('peerConnectionIceGatheringChanged', ev => {
                 if (ev.id !== this._peerConnectionId) {
@@ -305,9 +310,11 @@ export default class RTCPeerConnection extends defineCustomEventTarget(...PEER_C
 
                 if (this.iceGatheringState === 'complete') {
                     this.localDescription = new RTCSessionDescription(ev.sdp);
-                    this.dispatchEvent(new RTCIceCandidateEvent('icecandidate', null));
+                    // @ts-ignore
+                    this.dispatchEvent(new RTCIceCandidateEvent('icecandidate', { candidate: null }));
                 }
 
+                // @ts-ignore
                 this.dispatchEvent(new RTCEvent('icegatheringstatechange'));
             }),
             EventEmitter.addListener('peerConnectionDidOpenDataChannel', ev => {
@@ -315,6 +322,7 @@ export default class RTCPeerConnection extends defineCustomEventTarget(...PEER_C
                     return;
                 }
                 const channel = new RTCDataChannel(ev.dataChannel);
+                // @ts-ignore
                 this.dispatchEvent(new RTCDataChannelEvent('datachannel', { channel }));
             })
         ];
@@ -331,7 +339,7 @@ export default class RTCPeerConnection extends defineCustomEventTarget(...PEER_C
      * values with which to initialize corresponding attributes of the new
      * instance such as id
      */
-    createDataChannel(label: string, dataChannelDict: ?RTCDataChannelInit) {
+    createDataChannel(label: string, dataChannelDict?: RTCDataChannelInit) {
         if (dataChannelDict && 'id' in dataChannelDict) {
             const id = dataChannelDict.id;
             if (typeof id !== 'number') {

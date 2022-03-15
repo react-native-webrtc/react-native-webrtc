@@ -1,8 +1,9 @@
 
-export default class MessageEvent {
+import type MediaStreamError from './MediaStreamError';
+
+export default class MediaStreamErrorEvent {
     type: string;
-    data: string | ArrayBuffer | Blob;
-    origin: string;
+    error?: MediaStreamError;
     constructor(type, eventInitDict) {
         this.type = type.toString();
         Object.assign(this, eventInitDict);

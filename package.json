@@ -5,7 +5,6 @@
     "type": "git",
     "url": "git+https://github.com/react-native-webrtc/react-native-webrtc.git"
   },
-  "nativePackage": true,
   "description": "WebRTC for React Native",
   "license": "MIT",
   "homepage": "https://github.com/react-native-webrtc/react-native-webrtc",
@@ -16,7 +15,10 @@
     "android",
     "webrtc"
   ],
-  "main": "src/index.js",
+  "react-native": "src/index.ts",
+  "types": "lib/typescript/index.d.ts",
+  "main": "lib/commonjs/index.js",
+  "module": "lib/module/index.js",
   "dependencies": {
     "base64-js": "1.5.1",
     "event-target-shim": "6.0.2",
@@ -26,19 +28,33 @@
     "react-native": ">=0.60.0"
   },
   "scripts": {
+    "check": "tsc --noEmit",
     "postinstall": "node tools/downloadWebRTC.js",
-    "prepare": "husky install"
+    "prepare": "husky install && bob build"
   },
   "bugs": {
     "url": "https://github.com/react-native-webrtc/react-native-webrtc/issues"
   },
   "devDependencies": {
+    "@types/react": "17.0.40",
+    "@types/react-native": "0.67.3",
     "husky": "7.0.2",
     "lint-staged": "11.2.3",
-    "prettier": "2.4.1"
+    "prettier": "2.4.1",
+    "react-native-builder-bob": "0.18.2",
+    "typescript": "4.6.2"
   },
   "lint-staged": {
     "**/*": "prettier --write --ignore-unknown"
+  },
+  "react-native-builder-bob": {
+    "source": "src",
+    "output": "lib",
+    "targets": [
+      "commonjs",
+      "module",
+      "typescript"
+    ]
   },
   "webrtc-builds": {
     "android": "https://github.com/jitsi/webrtc/releases/download/v98.0.0/android-webrtc.tgz",

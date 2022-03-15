@@ -1,5 +1,5 @@
 
-import { NativeModules, PermissionsAndroid, Platform } from 'react-native';
+import { NativeModules, Permission, PermissionsAndroid, Platform } from 'react-native';
 
 const { WebRTCModule } = NativeModules;
 
@@ -7,7 +7,7 @@ const { WebRTCModule } = NativeModules;
  * Type declaration for a permissions descriptor.
  */
 type PermissionDescriptor = {
-    name: string
+    name: string;
 };
 
 /**
@@ -31,7 +31,7 @@ class Permissions {
      */
     VALID_PERMISSIONS = ['camera', 'microphone'];
 
-    _lastReq = Promise.resolve();
+    _lastReq: Promise<any> = Promise.resolve();
 
     /**
      * Helper for requesting Android permissions. On Android only one permission
@@ -39,14 +39,14 @@ class Permissions {
      * but we are not using that for symmetry with the W3C API for querying)
      * so we'll queue them up.
      *
-     * @param {string} perm - The requested permission from
+     * @param perm - The requested permission from
      * {@link PermissionsAndroid.PERMISSIONS}
      * https://facebook.github.io/react-native/docs/permissionsandroid#permissions-that-require-prompting-the-user
      */
-    _requestPermissionAndroid(perm) {
+    _requestPermissionAndroid(perm: Permission) {
         return new Promise((resolve, reject) => {
             PermissionsAndroid.request(perm).then(
-                granted => resolve(granted === true || granted === PermissionsAndroid.RESULTS.GRANTED),
+                granted => resolve(granted === PermissionsAndroid.RESULTS.GRANTED),
                 () => resolve(false)
             );
         });

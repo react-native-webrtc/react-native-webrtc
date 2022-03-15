@@ -1,8 +1,7 @@
 
 export default class RTCEvent {
     type: string;
-    constructor(type, eventInitDict) {
+    constructor(type) {
         this.type = type.toString();
-        Object.assign(this, eventInitDict);
     }
 }

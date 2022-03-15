@@ -143,13 +143,17 @@ export function deepClone(obj) {
     return JSON.parse(JSON.stringify(obj));
 }
 
+interface Constraints {
+    mandatory?: object;
+}
+
 /**
  * Normalize options passed to createOffer() / createAnswer().
  *
  * @param {Object} options - user supplied options
  * @return {Object} newOptions - normalized options
  */
-export function normalizeOfferAnswerOptions(options = {}) {
+export function normalizeOfferAnswerOptions(options: Constraints = {}) {
     const newOptions = {};
 
     if (!options) {
