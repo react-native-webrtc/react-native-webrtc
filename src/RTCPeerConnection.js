@@ -370,9 +370,16 @@ export default class RTCPeerConnection extends defineCustomEventTarget(...PEER_C
                 if (ev.peerConnectionId !== this._peerConnectionId) {
                     return;
                 }
-                const track = this._getTrack(ev.streamReactTag, ev.trackId);
+                let track;
+                for (const stream of this._remoteStreams) {
+                    const t = stream._tracks.find(track => track.id === ev.trackId);
+                    if (t) {
+                        track = t;
+                        break;
+                    }
+                }
                 if (track) {
-                    track.muted = ev.muted;
+                    track._muted = ev.muted;
                     const eventName = ev.muted ? 'mute' : 'unmute';
                     track.dispatchEvent(new MediaStreamTrackEvent(eventName, { track }));
                 }
