@@ -33,7 +33,7 @@ function registerGlobals() {
 
     global.navigator.mediaDevices.getUserMedia = mediaDevices.getUserMedia.bind(mediaDevices);
     global.navigator.mediaDevices.getDisplayMedia = mediaDevices.getDisplayMedia.bind(mediaDevices);
-    global.mediaDevices.enumerateDevices = mediaDevices.enumerateDevices.bind(mediaDevices);
+    global.navigator.mediaDevices.enumerateDevices = mediaDevices.enumerateDevices.bind(mediaDevices);
 
     global.RTCPeerConnection = RTCPeerConnection;
     global.RTCIceCandidate = RTCIceCandidate;
