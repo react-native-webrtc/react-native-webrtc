@@ -449,7 +449,7 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
                 if (track != null) {
                     break;
                 } else {
-                    Log.w(TAG, "getLocalTrack returned null for id: " + trackId)
+                    Log.w(TAG, "getLocalTrack returned null for id: " + trackId);
                 }
             }
         }
