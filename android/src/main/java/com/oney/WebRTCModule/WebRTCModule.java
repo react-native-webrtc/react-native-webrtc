@@ -448,6 +448,8 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
                 track = pco.remoteTracks.get(trackId);
                 if (track != null) {
                     break;
+                } else {
+                    Log.w(TAG, "getLocalTrack returned null for id: " + trackId)
                 }
             }
         }
@@ -521,13 +523,19 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
             }
 
             String kind = null;
+            String id = null;
             try{
                 kind = track.kind();
+                id = track.id();
             } catch(Exception ex) { Log.e(TAG, ex.getMessage(), ex); }
 
             if ("audio".equals(kind)) {
+                Log.i(TAG, "adding audio track: " + id + ", streamId: " + streamId);
+
                 stream.addTrack((AudioTrack)track);
             } else if ("video".equals(kind)) {
+                Log.i(TAG, "adding video track: " + id + ", streamId: " + streamId);
+
                 stream.addTrack((VideoTrack)track);
             }
         });
@@ -545,13 +553,19 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
             }
 
             String kind = null;
+            String id = null;
             try{
                 kind = track.kind();
+                id = track.id();
             } catch(Exception ex) { Log.e(TAG, ex.getMessage(), ex); }
 
             if ("audio".equals(kind)) {
+                Log.i(TAG, "removing audio track: " + id + ", streamId: " + streamId);
+
                 stream.removeTrack((AudioTrack)track);
             } else if ("video".equals(kind)) {
+                Log.i(TAG, "removing video track: " + id + ", streamId: " + streamId);
+
                 stream.removeTrack((VideoTrack)track);
             }
         });
@@ -576,6 +590,8 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
 
             try{
                 stream.dispose();
+
+                Log.i(TAG, "stream released/disposed: " + id);
             } catch(Exception ex) { Log.e(TAG, ex.getMessage(), ex); }
         });
     }
@@ -590,6 +606,7 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
             }
             track.setEnabled(false);
             getUserMediaImpl.disposeTrack(id);
+            Log.i(TAG, "track released/disposed: " + id);
         });
     }
 
@@ -614,6 +631,8 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
             MediaStreamTrack track = getLocalTrack(id);
             if (track != null) {
                 getUserMediaImpl.switchCamera(id);
+            } else {
+                Log.e(TAG, "can not switch null track: " + id);
             }
         });
     }
