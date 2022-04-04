@@ -210,6 +210,9 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
         // Required for perfect negotiation.
         conf.enableImplicitRollback = true;
 
+        // Plan B, just a little longer.
+        conf.sdpSemantics = PeerConnection.SdpSemantics.PLAN_B;
+
         if (map == null) {
             return conf;
         }
