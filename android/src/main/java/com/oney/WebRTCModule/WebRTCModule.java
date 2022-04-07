@@ -529,14 +529,22 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
                 id = track.id();
             } catch(Exception ex) { Log.e(TAG, ex.getMessage(), ex); }
 
+            TrackReceiver tr = trackReceiver.get();
+
             if ("audio".equals(kind)) {
                 Log.i(TAG, "adding audio track: " + id + ", streamId: " + streamId);
 
-                stream.addTrack((AudioTrack)track);
+                stream.addTrack((AudioTrack) track);
+
+                if (tr != null)
+                    tr.audioTrackAdded(streamId, id);
             } else if ("video".equals(kind)) {
                 Log.i(TAG, "adding video track: " + id + ", streamId: " + streamId);
 
-                stream.addTrack((VideoTrack)track);
+                stream.addTrack((VideoTrack) track);
+
+                if (tr != null)
+                    tr.videoTrackAdded(streamId, id);
             }
         });
     }
