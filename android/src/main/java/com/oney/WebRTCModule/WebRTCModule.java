@@ -588,11 +588,11 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
                 mPeerConnectionObservers.valueAt(i).removeStream(stream);
             }
 
-            try{
+            safe(() -> {
                 stream.dispose();
 
                 Log.i(TAG, "stream released/disposed: " + id);
-            } catch(Exception ex) { Log.e(TAG, ex.getMessage(), ex); }
+            });
         });
     }
 
@@ -905,7 +905,6 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
             if (pco == null || pco.getPeerConnection() == null) {
                 Log.d(TAG, "peerConnectionClose() peerConnection is null");
             } else {
-                pco.close();
                 safe(pco::close);
                 mPeerConnectionObservers.remove(id);
             }
