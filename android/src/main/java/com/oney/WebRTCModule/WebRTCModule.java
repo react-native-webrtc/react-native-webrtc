@@ -898,21 +898,6 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
         });
     }
 
-    @SuppressWarnings("unused")
-    public java.util.Collection<AudioTrack> getAudioTracks() {
-        java.util.Set<AudioTrack> audioTracks = new java.util.HashSet<>(localStreams.size());
-
-        for (MediaStream stream : localStreams.values()) {
-            for (AudioTrack track : stream.audioTracks) {
-                if (track != null) {
-                    audioTracks.add(track);
-                }
-            }
-        }
-
-        return audioTracks;
-    }
-
     @ReactMethod
     public void peerConnectionClose(int id) {
         ThreadUtils.runOnExecutor(() -> {
