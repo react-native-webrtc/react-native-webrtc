@@ -921,6 +921,7 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
                 Log.d(TAG, "peerConnectionClose() peerConnection is null");
             } else {
                 pco.close();
+                safe(pco::close);
                 mPeerConnectionObservers.remove(id);
             }
         });
@@ -1011,4 +1012,175 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
     public void removeListeners(Integer count) {
         // Keep: Required for RN built in Event Emitter Calls.
     }
+
+
+    //region Custom
+
+    private final AtomicReference<TrackReceiver> trackReceiver = new AtomicReference<>();
+
+    private void safe(Runnable runnable) {
+        try {
+            runnable.run();
+        } catch (Exception ex) {
+            Log.e(TAG, ex.getMessage(), ex);
+        }
+    }
+
+    /**
+     * Sets the track receiver listener. Thread-safe
+     *
+     * @param receiver Listener
+     */
+    public void setTrackReceiver(TrackReceiver receiver) {
+        trackReceiver.set(receiver);
+    }
+
+    /**
+     * Result handler for track events
+     */
+    public interface TrackReceiver {
+        /**
+         * When an audio track is added
+         *
+         * @param streamID Stream ID
+         * @param id       Track ID
+         */
+        void audioTrackAdded(String streamID, String id);
+
+        /**
+         * When a video track is added
+         *
+         * @param streamID Stream ID
+         * @param id       Track ID
+         */
+        void videoTrackAdded(String streamID, String id);
+    }
+
+    /**
+     * List of tracks callback
+     */
+    public interface TrackNumerator<T> {
+        /**
+         * When tracks are returned
+         *
+         * @param tracks List of tracks
+         */
+        void tracksFound(Collection<T> tracks);
+    }
+
+    /**
+     * Boolean callback
+     */
+    public interface BooleanState {
+        /**
+         * When result is returned
+         *
+         * @param state True if found, false otherwise
+         */
+        void stateFound(boolean state);
+    }
+
+    /**
+     * Gets all audio tracks. Runs on WebRTC thread
+     *
+     * @param id     Stream ID
+     * @param tracks Callback
+     */
+    @SuppressWarnings("unused")
+    public void getStreamAudioTracks(String id, TrackNumerator<AudioTrack> tracks) {
+        ThreadUtils.runOnExecutor(() -> {
+            MediaStream stream = localStreams.get(id);
+
+            if (stream == null) {
+                Log.d(TAG, "getStreamAudioTracks() stream is null");
+                tracks.tracksFound(new ArrayList<>(0));
+                return;
+            }
+
+            tracks.tracksFound(stream.audioTracks);
+        });
+    }
+
+    /**
+     * Gets all video tracks. Runs on WebRTC thread
+     *
+     * @param id     Stream ID
+     * @param tracks Callback
+     */
+    @SuppressWarnings("unused")
+    public void getStreamVideoTracks(String id, TrackNumerator<VideoTrack> tracks) {
+        ThreadUtils.runOnExecutor(() -> {
+            MediaStream stream = localStreams.get(id);
+
+            if (stream == null) {
+                Log.d(TAG, "getStreamVideoTracks() stream is null");
+                tracks.tracksFound(new ArrayList<>(0));
+                return;
+            }
+
+            tracks.tracksFound(stream.videoTracks);
+        });
+    }
+
+    /**
+     * Whether a stream has at least 1 audio track
+     *
+     * @param streamId Stream ID
+     * @param state    Callback
+     */
+    public void hasAudio(String streamId, BooleanState state) {
+        ThreadUtils.runOnExecutor(() -> {
+            MediaStream stream = localStreams.get(streamId);
+
+            if (stream == null) {
+                Log.d(TAG, "hasAudio() stream is null");
+                state.stateFound(false);
+                return;
+            }
+
+            state.stateFound(!stream.audioTracks.isEmpty());
+        });
+    }
+
+    /**
+     * Whether a stream has at least 1 video track
+     *
+     * @param streamId Stream ID
+     * @param state    Callback
+     */
+    public void hasVideo(String streamId, BooleanState state) {
+        ThreadUtils.runOnExecutor(() -> {
+            MediaStream stream = localStreams.get(streamId);
+
+            if (stream == null) {
+                Log.d(TAG, "hasVideo() stream is null");
+                state.stateFound(false);
+                return;
+            }
+
+            state.stateFound(!stream.videoTracks.isEmpty());
+        });
+    }
+
+    /**
+     * Gets audio tracks. Note: this must be called from the WebRTC thread
+     *
+     * @return List of audio tracks
+     */
+    public java.util.Collection<AudioTrack> getAudioTracks() {
+        java.util.Set<AudioTrack> audioTracks = new java.util.HashSet<>(localStreams.size());
+
+        for (MediaStream stream : localStreams.values()) {
+            for (AudioTrack track : stream.audioTracks) {
+                if (track != null) {
+                    audioTracks.add(track);
+                }
+            }
+        }
+
+        return audioTracks;
+    }
+
+    //endregion
+
 }
