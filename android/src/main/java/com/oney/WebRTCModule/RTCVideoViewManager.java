@@ -15,7 +15,7 @@ public class RTCVideoViewManager extends SimpleViewManager<WebRTCView> {
 
   @Override
   public WebRTCView createViewInstance(ThemedReactContext context) {
-    return new WebRTCView(context);
+    return new WebRTCView(context, null);
   }
 
   /**

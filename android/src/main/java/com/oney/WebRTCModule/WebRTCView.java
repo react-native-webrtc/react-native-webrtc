@@ -152,8 +152,8 @@ public class WebRTCView extends ViewGroup {
      */
     private VideoTrack videoTrack;
 
-    public WebRTCView(Context context) {
-        super(context);
+    public WebRTCView(Context context, AttributeSet attrs) {
+        super(context, attrs);
 
         surfaceViewRenderer = new SurfaceViewRenderer(context);
         addView(surfaceViewRenderer);
