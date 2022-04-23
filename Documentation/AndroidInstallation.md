@@ -1,6 +1,4 @@
-## Android installation
-
-`npm install react-native-webrtc --save`  
+## Android Installation
 
 Starting with React Native 0.60 auto-linking works out of the box, so there are no extra steps.
 
