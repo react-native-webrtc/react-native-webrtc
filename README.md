@@ -2,8 +2,8 @@
 
 # React-Native-WebRTC
 
-[![npm](https://img.shields.io/npm/v/react-native-webrtc)](https://www.npmjs.com/package/react-native-webrtc)
-[![npm](https://img.shields.io/npm/dm/react-native-webrtc)](https://www.npmjs.com/package/react-native-webrtc)
+[![npm version](https://img.shields.io/npm/v/react-native-webrtc)](https://www.npmjs.com/package/react-native-webrtc)
+[![npm downloads](https://img.shields.io/npm/dm/react-native-webrtc)](https://www.npmjs.com/package/react-native-webrtc)
 [![Discourse topics](https://img.shields.io/discourse/topics?server=https%3A%2F%2Freact-native-webrtc.discourse.group%2F)](https://react-native-webrtc.discourse.group/)
 
 A WebRTC module for React Native.
@@ -16,14 +16,15 @@ A WebRTC module for React Native.
 | Data Channels | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: |
 | Screen Capture | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: |
 | Plan B | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: |
-| Unified Plan | - | - | - | - | - |
+| Unified Plan* | - | - | - | - | - |
 
-> **Web** - The [react-native-webrtc-web-shim](https://github.com/react-native-webrtc/react-native-webrtc-web-shim) project provides a shim for react-native-web support which allows you to use [(almost)](https://github.com/react-native-webrtc/react-native-webrtc-web-shim/tree/main#setup) the same code in react-native-web as you would with react-native directly.
+> **Web** - The [react-native-webrtc-web-shim](https://github.com/react-native-webrtc/react-native-webrtc-web-shim) project provides a shim for react-native-web support.  
+That will allow you to use [(almost)](https://github.com/react-native-webrtc/react-native-webrtc-web-shim/tree/main#setup) the same code in react-native-web as you would with react-native directly.
 
 > **Expo** - Sadly this module is not available in the [Expo Go](https://expo.dev/client) app due to including much needed native code.  
-> You can on the other hand get things working via the [Custom Dev Clients](https://docs.expo.dev/development/getting-started/) and out-of-tree [Expo Config Plugin](https://github.com/expo/config-plugins/tree/master/packages/react-native-webrtc).
+You can on the other hand get things working via the [Custom Dev Clients](https://docs.expo.dev/development/getting-started/) and out-of-tree [Expo Config Plugin](https://github.com/expo/config-plugins/tree/master/packages/react-native-webrtc).  
 
-> **Unified Plan support is in the works and will be coming soon.**
+> **Unified Plan** - This feature has had some work and will hopefully be officially supported soon.
 
 ## WebRTC Revision
 
@@ -33,18 +34,18 @@ A WebRTC module for React Native.
   * iOS: arm64, x86_64 (for bitcode support, run [this script](./tools/downloadBitcode.sh))
   * macOS: x86_64
 
-## Quick Start
+## Getting Started
 
 Use one of the following preferred package install methods to immediately get going.  
-Don't forget to follow the corresponding platform install guide to cover extra required steps.  
+Don't forget to follow platform guides below to cover any extra required steps.  
 
-**npm:** `npm install react-native-webrtc`  
+**npm:** `npm install react-native-webrtc --save`  
 **yarn:** `yarn add react-native-webrtc`  
 
 ## Guides
 
-- [iOS Setup](./Documentation/iOSInstallation.md)
-- [Android Setup](./Documentation/AndroidInstallation.md)
+- [iOS Install](./Documentation/iOSInstallation.md)
+- [Android Install](./Documentation/AndroidInstallation.md)
 - [Basic Usage](./Documentation/BasicUsage.md)
 - [Improving Call Reliability](./Documentation/ImprovingCallReliability.md)
 
@@ -64,6 +65,5 @@ Looking for extra functionality coverage? The [react-native-webrtc](https://gith
 
 ## Acknowledgements
 
-This project exists thanks to all the [people](https://github.com/react-native-webrtc/react-native-webrtc/graphs/contributors) who contribute.
-
+This project exists thanks to all the [people](https://github.com/react-native-webrtc/react-native-webrtc/graphs/contributors) who contribute.  
 Special thanks to [Wan Huang Yang](https://github.com/oney/) for creating the first version of this package and [Saúl Ibarra Corretgé](https://github.com/saghul) for keeping the project alive.

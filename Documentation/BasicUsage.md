@@ -1,110 +1,261 @@
-## Usage
-Now, you can use WebRTC like in browser.
-In your `index.ios.js`/`index.android.js`, you can require WebRTC to import RTCPeerConnection, RTCSessionDescription, etc.
+# Basic Usage
+
+For starters we're going to import everything ready to use.  
+Most of the included functionality is similar to how you would deal with WebRTC in your browser.  
+We support most WebRTC APIs, see this [document](https://developer.mozilla.org/en-US/docs/Web/API/RTCPeerConnection) for more details.
 
 ```javascript
 import {
-  RTCPeerConnection,
-  RTCIceCandidate,
-  RTCSessionDescription,
-  RTCView,
-  MediaStream,
-  MediaStreamTrack,
-  mediaDevices,
-  registerGlobals
+	ScreenCapturePickerView,
+	RTCPeerConnection,
+	RTCIceCandidate,
+	RTCSessionDescription,
+	RTCView,
+	MediaStream,
+	MediaStreamTrack,
+	mediaDevices,
+	permissions,
+	registerGlobals
 } from 'react-native-webrtc';
 ```
-Anything about using RTCPeerConnection, RTCSessionDescription and RTCIceCandidate is like browser.
-Support most WebRTC APIs, please see the [Document](https://developer.mozilla.org/en-US/docs/Web/API/RTCPeerConnection).
+
+## Defining Media Constraints
 
 ```javascript
-const configuration = {"iceServers": [{"url": "stun:stun.l.google.com:19302"}]};
-const pc = new RTCPeerConnection(configuration);
+var mediaConstraints = {
+	audio: {
+		googEchoCancellation: true,
+		googAutoGainControl: true,
+		googNoiseSuppression: true,
+		googHighpassFilter: true,
+		googEchoCancellation2: true,
+		googAutoGainControl2: true,
+		googNoiseSuppression2: true
+	},
+	video: {
+		mandatory: {
+			minFrameRate: '30'
+		},
+		facingMode: 'user',
+		optional: []
+	}
+};
+```
 
-let isFront = true;
-mediaDevices.enumerateDevices().then(sourceInfos => {
-  console.log(sourceInfos);
-  let videoSourceId;
-  for (let i = 0; i < sourceInfos.length; i++) {
-    const sourceInfo = sourceInfos[i];
-    if(sourceInfo.kind == "videoinput" && sourceInfo.facing == (isFront ? "front" : "environment")) {
-      videoSourceId = sourceInfo.deviceId;
-    }
-  }
-  mediaDevices.getUserMedia({
-    audio: true,
-    video: {
-      width: 640,
-      height: 480,
-      frameRate: 30,
-      facingMode: (isFront ? "user" : "environment"),
-      deviceId: videoSourceId
-    }
-  })
-  .then(stream => {
-    // Got stream!
-  })
-  .catch(error => {
-    // Log error
-  });
-});
+## Getting a Media Stream
 
-pc.createOffer().then(desc => {
-  pc.setLocalDescription(desc).then(() => {
-    // Send pc.localDescription to peer
-  });
-});
+```javascript
+var localMediaStream;
+var isVoiceOnly: boolean = false;
 
-pc.onicecandidate = function (event) {
-  // send event.candidate to peer
+try {
+	const mediaStream = await mediaDevices.getUserMedia( mediaConstraints );
+
+	if ( isVoiceOnly ) {
+		let videoTrack = await mediaStream.getVideoTracks()[ 0 ];
+		videoTrack.enabled = false;
+	};
+
+	localMediaStream = mediaStream;
+} catch( err ) {
+	// Handle Error
+};
+```
+
+```javascript
+mediaDevices.getUserMedia( mediaConstraints ).then( function( mediaStream ) {
+	if ( isVoiceOnly ) {
+		let videoTrack = await mediaStream.getVideoTracks()[ 0 ];
+		videoTrack.enabled = false;
+	};
+
+	localMediaStream = mediaStream;
+} ).catch( function( err ) {
+	// Handle Error
+} );
+```
+
+## Defining Peer Constraints
+
+```javascript
+var peerConstraints = {
+	iceServers: [
+		{
+			url: 'stun:stun.l.google.com:19302'
+		}
+	],
+	iceTransportPolicy: 'all',
+	bundlePolicy: 'balanced',
+	rtcpMuxPolicy: 'require'
+};
+```
+
+## Creating a Peer Connection
+
+```javascript
+var peerConnection = new RTCPeerConnection( peerConstraints );
+
+peerConnection.onicecandidate = handleLocalCandidate;
+peerConnection.onicecandidateerror = handleCandidateError;
+peerConnection.oniceconnectionstatechange = handleICEConnectionChange;
+peerConnection.onconnectionstatechange = handleConnectionStateChange;
+peerConnection.onsignalingstatechange = handleSignalingChange;
+peerConnection.onnegotiationneeded = handleNegotiation;
+peerConnection.onaddstream = handleStreamAdded;
+peerConnection.onremovestream = handleStreamRemoved;
+
+peerConnection.addStream( localMediaStream );
+```
+
+## Destroying a Peer Connection
+
+```javascript
+peerConnection.onicecandidate = null;
+peerConnection.onicecandidateerror = null;
+peerConnection.oniceconnectionstatechange = null;
+peerConnection.onconnectionstatechange = null;
+peerConnection.onsignalingstatechange = null;
+peerConnection.onnegotiationneeded = null;
+peerConnection.onaddstream = null;
+peerConnection.onremovestream = null;
+
+peerConnection._unregisterEvents();
+peerConnection.close();
+peerConnection = null;
+```
+
+## Dealing with ICE Candidates and Peer Events
+
+```javascript
+function handleLocalCandidate( iceEvent: any ) {
+	// If we've reached the end, don't send anything.
+	if ( !iceEvent.candidate ) { return; };
+
+	// Send the ICE Candidate to the call recipient.
 };
 
-// also support setRemoteDescription, createAnswer, addIceCandidate, onnegotiationneeded, oniceconnectionstatechange, onsignalingstatechange, onaddstream
+function handleCandidateError( err: any ) {
+	// Handle Error
+};
 
+function handleICEConnectionChange( event: any ) {
+
+};
+
+function handleConnectionStateChange( event: any ) {
+
+};
+
+function handleSignalingChange( event: any ) {
+
+};
+
+function handleNegotiation() {
+
+};
+
+function handleStreamAdded( streamEvent: any ) {
+
+};
+
+function handleStreamRemoved( streamEvent: any ) {
+
+};
 ```
 
-### RTCView
-
-However, render video stream should be used by React way.
-
-Rendering RTCView.
+## Defining Session Constraints
 
 ```javascript
-<RTCView streamURL={this.state.stream.toURL()}/>
+var sessionConstraints = {
+	mandatory: {
+		OfferToReceiveAudio: true,
+		OfferToReceiveVideo: true,
+		VoiceActivityDetection: true
+	},
+	optional: [
+		{
+			DtlsSrtpKeyAgreement: true
+		}
+	]
+};
 ```
 
-| Name                           | Type             | Default                   | Description                                                                                                                                |
-| ------------------------------ | ---------------- | ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
-| mirror                         | boolean          | false               | Indicates whether the video specified by "streamURL" should be mirrored during rendering. Commonly, applications choose to mirror theuser-facing camera.                                                                                                                       |
-| objectFit                      | string           | 'contain'           | Can be contain or cover                                                                                                | 
-| streamURL                      | string           | ''                  | This is mandatory                                                                                                                      |
-| zOrder                         | number           | 0                   | Similarly to zIndex                                                                                              |
+## Creating an Offer
 
-### Custom APIs
+```javascript
+try {
+	// Create an offer.
+	const offerDescription = await peerConnection.createOffer( sessionConstraints );
+	await peerConnection.setLocalDescription( offerDescription );
 
-#### registerGlobals()
+	// Send the offerDescription to the other participant.
+} catch( err ) {
+	// Handle Errors
+};
+```
 
-By calling this method the JavaScript global namespace gets "polluted" with the following additions:
+```javascript
+peerConnection.createOffer( sessionConstraints ).then( function( offerDescription ) {
 
-* `navigator.mediaDevices.getUserMedia()`
-* `navigator.mediaDevices.getDisplayMedia()`
-* `navigator.mediaDevices.enumerateDevices()`
-* `window.RTCPeerConnection`
-* `window.RTCIceCandidate`
-* `window.RTCSessionDescription`
-* `window.MediaStream`
-* `window.MediaStreamTrack`
+	peerConnection.setLocalDescription( offerDescription ).then( function() {
 
-This is useful to make existing WebRTC JavaScript libraries (that expect those globals to exist) work with react-native-webrtc.
+	} ).catch( function( err ) {
+		// Handle Error
+	} );
 
+} ).catch( function( err ) {
+	// Handle Error
+} );
+```
 
-#### MediaStreamTrack.prototype._switchCamera()
+## Creating an Answer
 
-This function allows to switch the front / back cameras in a video track
-on the fly, without the need for adding / removing tracks or renegotiating.
+```javascript
+try {
+	// This is the received offerDescription.
+	var offerDescription = new RTCSessionDescription( offerDescription );
+	await peerConnection.setRemoteDescription( offerDescription );
 
-#### VideoTrack.enabled
+	// Create an answer.
+	const answerDescription = await peerConnection.createAnswer( sessionConstraints );
+	await peerConnection.setLocalDescription( answerDescription );
 
-Starting with version 1.67, when setting a local video track's enabled state to
-`false`, the camera will be closed, but the track will remain alive. Setting
-it back to `true` will re-enable the camera.
+	// Send the answerDescription back as a response to the offerDescription.
+} catch( err ) {
+	// Handle Errors
+};
+```
+
+```javascript
+// This is the received offerDescription.
+var offerDescription = new RTCSessionDescription( offerDescription );
+
+peerConnection.setRemoteDescription( offerDescription ).then( function() {
+
+	peerConnection.createAnswer( sessionConstraints ).then( function( answerDescription ) {
+
+		peerConnection.setLocalDescription( answerDescription ).then( function() {
+
+		} ).catch( function( err ) {
+			// Handle Error
+		} );
+
+	} ).catch( function( err ) {
+		// Handle Error
+	} );
+
+} ).catch( function( err ) {
+	// Handle Error
+} );
+```
+
+## Rendering a Media Stream
+
+```javascript
+<RTCView
+	objectFit={'cover'}
+	zOrder={0}
+	mirror={true}
+	streamURL={localStream}
+/>
+```

@@ -1,10 +1,10 @@
-## Android Installation
+# Android Installation
 
 Starting with React Native 0.60 auto-linking works out of the box, so there are no extra steps.
 
 See a sample app in the `examples/GumTestApp` directory.
 
-### Manual linking
+## Manual Linking
 
 This is not needed with React Native >= 0.60.
 
@@ -38,26 +38,33 @@ protected List<ReactPackage> getPackages() {
 }
 ```
 
-</details>
+</details>  
 
-### Declaring permissions
+## Declaring Permissions
 
 Locate your app's `AndroidManifest.xml` file and add these permissions:
 
 ```xml
-    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
-    <uses-permission android:name="android.permission.BLUETOOTH" />
-    <uses-permission android:name="android.permission.CAMERA" />
-    <uses-permission android:name="android.permission.INTERNET" />
-    <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
-    <uses-permission android:name="android.permission.RECORD_AUDIO" />
-    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
-    <uses-permission android:name="android.permission.WAKE_LOCK" />
+<uses-feature android:name="android.hardware.camera" />
+<uses-feature android:name="android.hardware.camera.autofocus" />
+<uses-permission android:name="android.permission.CAMERA" />
+<uses-permission android:name="android.permission.RECORD_AUDIO" />
+<uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+<uses-permission android:name="android.permission.CHANGE_NETWORK_STATE" />
+<uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
 ```
 
-### Enable Java 8 support
+If you plan to also support Bluetooth devices then also add the following.
 
-In `android/app/build.gradle` add this inside the `android` section:
+```xml
+<uses-permission android:name="android.permission.BLUETOOTH" android:maxSdkVersion="30" />
+<uses-permission android:name="android.permission.BLUETOOTH_ADMIN" android:maxSdkVersion="30" />
+<uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
+```
+
+## Enable Java 8 Support
+
+In `android/app/build.gradle` add the following inside the `android` section.
 
 ```gradle
 compileOptions {
@@ -66,9 +73,16 @@ compileOptions {
 }
 ```
 
+## R8/ProGuard Support
+In `android/app/proguard-rules.pro` add the following on a new line.
+
+```
+-keep class org.webrtc.** { *; }
+```
+
 ## FAQ
 
-##  Fatal Exception: java.lang.UnsatisfiedLinkError
+### Fatal Exception: java.lang.UnsatisfiedLinkError
 
 If you are getting this error:
 
@@ -89,6 +103,6 @@ Add this line to `android/gradle.properties`:
 ```
 # This one fixes a weird WebRTC runtime problem on some devices.
 # https://github.com/jitsi/jitsi-meet/issues/7911#issuecomment-714323255
-android.enableDexingArtifactTransform.desugaring=false
 
+android.enableDexingArtifactTransform.desugaring=false
 ```

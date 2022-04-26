@@ -31,7 +31,7 @@ package.
 python build-webrtc.py --setup --android ~/src/
 ```
 
-## Selecting the branch
+### Selecting the branch
 
 Once the setup process has finished, the target branch must be selected, also
 adding any required cherry-picks. The following example shows how the M87 branch

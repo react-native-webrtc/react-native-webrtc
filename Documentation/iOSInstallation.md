@@ -1,4 +1,4 @@
-## iOS Installation
+# iOS Installation
 
 Starting with React Native 0.60 auto-linking works out of the box, so there are no extra steps.
 
@@ -6,7 +6,7 @@ Starting with React Native 0.60 auto-linking works out of the box, so there are 
 
 See a sample app in the `examples/GumTestApp` directory.
 
-### Manual linking (using CocoaPods)
+## Manual Linking (using CocoaPods)
 
 This is not needed with React Native >= 0.60.
 
@@ -22,7 +22,7 @@ pod 'react-native-webrtc', :path => '../node_modules/react-native-webrtc'
 
 </details>
 
-### Adjusting the supported platform version
+## Adjusting the supported platform version
 
 You may have to change the `platform` field in your Podfile, as `react-native-webrtc` doesn't support iOS < 11 - set it to '11.0' or above (otherwise you get an error when doing `pod install`):
 
@@ -30,7 +30,7 @@ You may have to change the `platform` field in your Podfile, as `react-native-we
 platform :ios, '11.0'
 ```
 
-### Declare permissions in Info.plist
+## Declaring Permissions
 
 Navigate to `<ProjectFolder>/ios/<ProjectName>/` and edit `Info.plist` adding the following lines:
 
