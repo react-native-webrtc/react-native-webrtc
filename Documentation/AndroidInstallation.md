@@ -1,14 +1,14 @@
 # Android Installation
 
-Starting with React Native 0.60 auto-linking works out of the box, so there are no extra steps.
-
+Starting with React Native 0.60 auto-linking works out of the box, so there are no extra steps.  
 See a sample app in the `examples/GumTestApp` directory.
 
 ## Manual Linking
 
 This is not needed with React Native >= 0.60.
 
-<details><summary>Show instructions</summary>
+<details>
+<summary>Show instructions</summary>
 
 In `android/settings.gradle`, add WebRTCModule:
 
@@ -74,9 +74,10 @@ compileOptions {
 ```
 
 ## R8/ProGuard Support
+
 In `android/app/proguard-rules.pro` add the following on a new line.
 
-```
+```proguard
 -keep class org.webrtc.** { *; }
 ```
 

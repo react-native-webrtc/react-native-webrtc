@@ -1,19 +1,17 @@
 # iOS Installation
 
-Starting with React Native 0.60 auto-linking works out of the box, so there are no extra steps.
-
-**IMPORTANT:** Make sure you are using CocoaPods 1.10 or higher.
-
+Starting with React Native 0.60 auto-linking works out of the box, so there are no extra steps.  
+**IMPORTANT:** Make sure you are using CocoaPods 1.10 or higher.  
 See a sample app in the `examples/GumTestApp` directory.
 
 ## Manual Linking (using CocoaPods)
 
 This is not needed with React Native >= 0.60.
 
-<details><summary>Show instructions</summary>
+<details>
+<summary>Show instructions</summary>
 
-You can use the included podspec in your Podfile to take care of all dependencies.
-
+You can use the included podspec in your Podfile to take care of all dependencies.  
 Include in the Podfile in your react-native ios directory:
 
 ```
@@ -34,7 +32,7 @@ platform :ios, '11.0'
 
 Navigate to `<ProjectFolder>/ios/<ProjectName>/` and edit `Info.plist` adding the following lines:
 
-```
+```xml
 <key>NSCameraUsageDescription</key>
 <string>Camera permission description</string>
 <key>NSMicrophoneUsageDescription</key>
@@ -45,6 +43,5 @@ Navigate to `<ProjectFolder>/ios/<ProjectName>/` and edit `Info.plist` adding th
 
 ### Library not loaded/Code signature invalid
 
-This is an issue with iOS 13.3.1. All dynamic frameworks being compiled to the newest release of iOS 13.3.1 are experiencing this issue when run on a personal provisioning profile/developer account. Use a non-Personal Team provisioning profile (paid developer account).
-
+This is an issue with iOS 13.3.1. All dynamic frameworks being compiled to the newest release of iOS 13.3.1 are experiencing this issue when run on a personal provisioning profile/developer account. Use a non-Personal Team provisioning profile (paid developer account).  
 Source (https://stackoverflow.com/a/60090629/8691951)

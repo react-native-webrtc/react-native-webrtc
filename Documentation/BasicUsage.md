@@ -2,7 +2,7 @@
 
 For starters we're going to import everything ready to use.  
 Most of the included functionality is similar to how you would deal with WebRTC in your browser.  
-We support most WebRTC APIs, see this [document](https://developer.mozilla.org/en-US/docs/Web/API/RTCPeerConnection) for more details.
+We support most of the official WebRTC APIs, see this [document](https://developer.mozilla.org/en-US/docs/Web/API/RTCPeerConnection) for more details.
 
 ```javascript
 import {
@@ -61,6 +61,8 @@ try {
 	// Handle Error
 };
 ```
+
+Promise based method.
 
 ```javascript
 mediaDevices.getUserMedia( mediaConstraints ).then( function( mediaStream ) {
@@ -194,6 +196,8 @@ try {
 };
 ```
 
+Promise based method.
+
 ```javascript
 peerConnection.createOffer( sessionConstraints ).then( function( offerDescription ) {
 
@@ -225,6 +229,8 @@ try {
 	// Handle Errors
 };
 ```
+
+Promise based method.
 
 ```javascript
 // This is the received offerDescription.

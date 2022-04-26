@@ -10,13 +10,16 @@ A WebRTC module for React Native.
 
 ## Feature Overview
 
-|  | Android | iOS | macOS | Web* | Expo* |
-| :------------- | :-------------: | :-------------: | :-------------: | :-------------: | :-------------: |
-| Audio/Video | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: |
-| Data Channels | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: |
-| Screen Capture | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: |
-| Plan B | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: |
-| Unified Plan* | - | - | - | - | - |
+|  | Android | iOS | macOS | Windows* | Web* | Expo* |
+| :------------- | :-------------: | :-------------: | :-------------: | :-------------: | :-------------: | :-------------: |
+| Audio/Video | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | - | :heavy_check_mark: | :heavy_check_mark: |
+| Data Channels | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | - | :heavy_check_mark: | :heavy_check_mark: |
+| Screen Capture | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | - | :heavy_check_mark: | :heavy_check_mark: |
+| Plan B | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | - | :heavy_check_mark: | :heavy_check_mark: |
+| Unified Plan* | - | - | - | - | - | - |
+
+> **Windows** - We don't currently have any support for the [react-native-windows](https://github.com/microsoft/react-native-windows) platform.  
+On the other hand we're open to contributions.
 
 > **Web** - The [react-native-webrtc-web-shim](https://github.com/react-native-webrtc/react-native-webrtc-web-shim) project provides a shim for react-native-web support.  
 That will allow you to use [(almost)](https://github.com/react-native-webrtc/react-native-webrtc-web-shim/tree/main#setup) the same code in react-native-web as you would with react-native directly.
@@ -44,8 +47,8 @@ Don't forget to follow platform guides below to cover any extra required steps.
 
 ## Guides
 
-- [iOS Install](./Documentation/iOSInstallation.md)
 - [Android Install](./Documentation/AndroidInstallation.md)
+- [iOS Install](./Documentation/iOSInstallation.md)
 - [Basic Usage](./Documentation/BasicUsage.md)
 - [Improving Call Reliability](./Documentation/ImprovingCallReliability.md)
 
@@ -61,7 +64,8 @@ Everyone is welcome and every little helps.
 
 ## Related Projects
 
-Looking for extra functionality coverage? The [react-native-webrtc](https://github.com/react-native-webrtc) organization provides a number of packages which are more than useful when developing Real Time Communications applications.
+Looking for extra functionality coverage?  
+The [react-native-webrtc](https://github.com/react-native-webrtc) organization provides a number of packages which are more than useful when developing Real Time Communication applications.
 
 ## Acknowledgements
 
