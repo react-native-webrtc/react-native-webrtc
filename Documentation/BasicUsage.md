@@ -14,30 +14,35 @@ import {
 	MediaStream,
 	MediaStreamTrack,
 	mediaDevices,
-	permissions,
 	registerGlobals
 } from 'react-native-webrtc';
+```
+
+## Registering Globals
+
+```javascript
+registerGlobals();
+```
+
+```javascript
+navigator.mediaDevices.getUserMedia()
+navigator.mediaDevices.getDisplayMedia()
+navigator.mediaDevices.enumerateDevices()
+window.RTCPeerConnection
+window.RTCIceCandidate
+window.RTCSessionDescription
+window.MediaStream
+window.MediaStreamTrack
 ```
 
 ## Defining Media Constraints
 
 ```javascript
-var mediaConstraints = {
-	audio: {
-		googEchoCancellation: true,
-		googAutoGainControl: true,
-		googNoiseSuppression: true,
-		googHighpassFilter: true,
-		googEchoCancellation2: true,
-		googAutoGainControl2: true,
-		googNoiseSuppression2: true
-	},
+let mediaConstraints = {
+	audio: true,
 	video: {
-		mandatory: {
-			minFrameRate: '30'
-		},
-		facingMode: 'user',
-		optional: []
+		frameRate: 30,
+		facingMode: 'user'
 	}
 };
 ```
@@ -45,8 +50,8 @@ var mediaConstraints = {
 ## Getting a Media Stream
 
 ```javascript
-var localMediaStream;
-var isVoiceOnly: boolean = false;
+let localMediaStream;
+let isVoiceOnly = false;
 
 try {
 	const mediaStream = await mediaDevices.getUserMedia( mediaConstraints );
@@ -62,51 +67,41 @@ try {
 };
 ```
 
-Promise based method.
+## Destroying a Media Stream
 
 ```javascript
-mediaDevices.getUserMedia( mediaConstraints ).then( function( mediaStream ) {
-	if ( isVoiceOnly ) {
-		let videoTrack = await mediaStream.getVideoTracks()[ 0 ];
-		videoTrack.enabled = false;
-	};
+localMediaStream.getTracks().map(
+	track => track.stop()
+);
 
-	localMediaStream = mediaStream;
-} ).catch( function( err ) {
-	// Handle Error
-} );
+localMediaStream = null;
 ```
 
 ## Defining Peer Constraints
 
 ```javascript
-var peerConstraints = {
+let peerConstraints = {
 	iceServers: [
 		{
 			url: 'stun:stun.l.google.com:19302'
 		}
-	],
-	iceTransportPolicy: 'all',
-	bundlePolicy: 'balanced',
-	rtcpMuxPolicy: 'require'
+	]
 };
 ```
 
 ## Creating a Peer Connection
 
 ```javascript
-var peerConnection = new RTCPeerConnection( peerConstraints );
+let peerConnection = new RTCPeerConnection( peerConstraints );
 
 peerConnection.onicecandidate = handleLocalCandidate;
 peerConnection.onicecandidateerror = handleCandidateError;
-peerConnection.oniceconnectionstatechange = handleICEConnectionChange;
+peerConnection.oniceconnectionstatechange = handleICEConnectionStateChange;
 peerConnection.onconnectionstatechange = handleConnectionStateChange;
-peerConnection.onsignalingstatechange = handleSignalingChange;
+peerConnection.onsignalingstatechange = handleSignalingStateChange;
 peerConnection.onnegotiationneeded = handleNegotiation;
 peerConnection.onaddstream = handleStreamAdded;
 peerConnection.onremovestream = handleStreamRemoved;
-
-peerConnection.addStream( localMediaStream );
 ```
 
 ## Destroying a Peer Connection
@@ -126,29 +121,41 @@ peerConnection.close();
 peerConnection = null;
 ```
 
+## Adding a Data Channel
+
+```javascript
+
+```
+
+## Adding a Media Stream
+
+```javascript
+peerConnection.addStream( localMediaStream );
+```
+
 ## Dealing with ICE Candidates and Peer Events
 
 ```javascript
-function handleLocalCandidate( iceEvent: any ) {
+function handleLocalCandidate( event ) {
 	// If we've reached the end, don't send anything.
-	if ( !iceEvent.candidate ) { return; };
+	if ( !event.candidate ) { return; };
 
 	// Send the ICE Candidate to the call recipient.
 };
 
-function handleCandidateError( err: any ) {
+function handleCandidateError( err ) {
 	// Handle Error
 };
 
-function handleICEConnectionChange( event: any ) {
+function handleICEConnectionStateChange( event ) {
 
 };
 
-function handleConnectionStateChange( event: any ) {
+function handleConnectionStateChange( event ) {
 
 };
 
-function handleSignalingChange( event: any ) {
+function handleSignalingStateChange( event ) {
 
 };
 
@@ -156,11 +163,11 @@ function handleNegotiation() {
 
 };
 
-function handleStreamAdded( streamEvent: any ) {
+function handleStreamAdded( event ) {
 
 };
 
-function handleStreamRemoved( streamEvent: any ) {
+function handleStreamRemoved( event ) {
 
 };
 ```
@@ -168,7 +175,7 @@ function handleStreamRemoved( streamEvent: any ) {
 ## Defining Session Constraints
 
 ```javascript
-var sessionConstraints = {
+let sessionConstraints = {
 	mandatory: {
 		OfferToReceiveAudio: true,
 		OfferToReceiveVideo: true,
@@ -186,7 +193,6 @@ var sessionConstraints = {
 
 ```javascript
 try {
-	// Create an offer.
 	const offerDescription = await peerConnection.createOffer( sessionConstraints );
 	await peerConnection.setLocalDescription( offerDescription );
 
@@ -196,31 +202,14 @@ try {
 };
 ```
 
-Promise based method.
-
-```javascript
-peerConnection.createOffer( sessionConstraints ).then( function( offerDescription ) {
-
-	peerConnection.setLocalDescription( offerDescription ).then( function() {
-
-	} ).catch( function( err ) {
-		// Handle Error
-	} );
-
-} ).catch( function( err ) {
-	// Handle Error
-} );
-```
-
 ## Creating an Answer
 
 ```javascript
 try {
-	// This is the received offerDescription.
-	var offerDescription = new RTCSessionDescription( offerDescription );
+	// Use the received offerDescription
+	const offerDescription = new RTCSessionDescription( offerDescription );
 	await peerConnection.setRemoteDescription( offerDescription );
 
-	// Create an answer.
 	const answerDescription = await peerConnection.createAnswer( sessionConstraints );
 	await peerConnection.setLocalDescription( answerDescription );
 
@@ -230,38 +219,20 @@ try {
 };
 ```
 
-Promise based method.
-
-```javascript
-// This is the received offerDescription.
-var offerDescription = new RTCSessionDescription( offerDescription );
-
-peerConnection.setRemoteDescription( offerDescription ).then( function() {
-
-	peerConnection.createAnswer( sessionConstraints ).then( function( answerDescription ) {
-
-		peerConnection.setLocalDescription( answerDescription ).then( function() {
-
-		} ).catch( function( err ) {
-			// Handle Error
-		} );
-
-	} ).catch( function( err ) {
-		// Handle Error
-	} );
-
-} ).catch( function( err ) {
-	// Handle Error
-} );
-```
-
 ## Rendering a Media Stream
 
 ```javascript
 <RTCView
-	objectFit={'cover'}
-	zOrder={0}
 	mirror={true}
+	objectFit={'cover'}
 	streamURL={localStream}
+	zOrder={0}
 />
 ```
+
+|  | | Type | | Default | | Description |
+| - | - | :---- | - | :------- | - | :----------- |
+| mirror | | boolean | | false | | Indicates whether the video specified by `streamURL` should be mirrored.  Usually you'd mirror the user facing self preview camera. |
+| objectFit | | string | | 'contain' | | Can be `'contain'` or `'cover'` nothing more or less. | 
+| streamURL | | string | | 'streamurl' | | Requred to have an actual video stream rendering. |
+| zOrder | | number | | 0 | | Similar to zIndex. |

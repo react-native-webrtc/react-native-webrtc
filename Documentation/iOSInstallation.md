@@ -1,8 +1,10 @@
 # iOS Installation
 
-Starting with React Native 0.60 auto-linking works out of the box, so there are no extra steps.  
+Starting with React Native 0.60 due to a new auto linking feature, you won't need to follow the manual linking steps below but you
+will need to follow the other steps if you plan on releasing an app to production.  
+See a sample app in the `examples/GumTestApp` directory.  
+
 **IMPORTANT:** Make sure you are using CocoaPods 1.10 or higher.  
-See a sample app in the `examples/GumTestApp` directory.
 
 ## Manual Linking (using CocoaPods)
 

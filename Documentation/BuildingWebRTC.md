@@ -66,7 +66,7 @@ The build artifacts will be located in `~/src/build_webrtc/build/ios/`.
 
 ### Android
 
-**NOTE**: WebRTC for Android can only be built on Linux at the moment.  
+**NOTE**: WebRTC for Android can only be built on Linux.  
 If you have switched branches, first run:
 
 ```

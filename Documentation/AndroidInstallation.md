@@ -1,14 +1,15 @@
 # Android Installation
 
-Starting with React Native 0.60 auto-linking works out of the box, so there are no extra steps.  
-See a sample app in the `examples/GumTestApp` directory.
+Starting with React Native 0.60 due to a new auto linking feature, you won't need to follow the manual linking steps below but you
+will need to follow the other steps if you plan on releasing an app to production.  
+See a sample app in the `examples/GumTestApp` directory.  
 
 ## Manual Linking
 
 This is not needed with React Native >= 0.60.
 
 <details>
-<summary>Show instructions</summary>
+<summary>Show Instructions</summary>
 
 In `android/settings.gradle`, add WebRTCModule:
 
