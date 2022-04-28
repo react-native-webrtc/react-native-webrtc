@@ -207,7 +207,7 @@ try {
 ```javascript
 try {
 	// Use the received offerDescription
-	const offerDescription = new RTCSessionDescription( offerDescription );
+	let offerDescription = new RTCSessionDescription( offerDescription );
 	await peerConnection.setRemoteDescription( offerDescription );
 
 	const answerDescription = await peerConnection.createAnswer( sessionConstraints );
