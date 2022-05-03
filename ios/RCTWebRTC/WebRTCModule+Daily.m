@@ -6,18 +6,14 @@
 //
 
 #import "WebRTCModule.h"
+#import "WebRTCModule+DailyAudioMode.h"
+#import "WebRTCModule+DailyDevicesManager.h"
 
 #import <objc/runtime.h>
 #import <WebRTC/RTCAudioSession.h>
 #import <WebRTC/RTCAudioSessionConfiguration.h>
 
-NSString *const AUDIO_MODE_VIDEO_CALL = @"video";
-NSString *const AUDIO_MODE_VOICE_CALL = @"voice";
-NSString *const AUDIO_MODE_IDLE = @"idle";
-
 @interface WebRTCModule (Daily) <RTCAudioSessionDelegate>
-
-@property (nonatomic, strong) NSString *audioMode;
 
 // Expects to only be accessed on captureSessionQueue
 @property (nonatomic, strong) AVCaptureSession *captureSession;
@@ -114,17 +110,6 @@ RCT_EXPORT_METHOD(enableNoOpRecordingEnsuringBackgroundContinuity:(BOOL)enable) 
 
 #pragma mark - setDailyAudioMode
 
-- (void)setAudioMode:(NSString *)audioMode {
-  objc_setAssociatedObject(self,
-                           @selector(audioMode),
-                           audioMode,
-                           OBJC_ASSOCIATION_RETAIN_NONATOMIC);
-}
-
-- (NSString *)audioMode {
-  return  objc_getAssociatedObject(self, @selector(audioMode));
-}
-
 - (void)audioSession:(RTCAudioSession *)audioSession didSetActive:(BOOL)active {
   // The audio session has become active either for the first time or again
   // after being reset by WebRTC's audio module (for example, after a Wifi -> LTE
@@ -139,20 +124,28 @@ RCT_EXPORT_METHOD(setDailyAudioMode:(NSString *)audioMode) {
     return;
   }
   
-  self.audioMode = audioMode;
+  [self setAudioMode: audioMode];
   
   // Apply the chosen audio mode right away if the audio session is already
   // active. Otherwise, it will be applied when the session becomes active.
   RTCAudioSession *audioSession = RTCAudioSession.sharedInstance;
+  NSLog(@"[Daily] setDailyAudioMode: %@", audioMode);
   if (audioSession.isActive) {
     [self applyAudioMode:audioMode toSession:audioSession];
   }
 }
 
 - (void)applyAudioMode:(NSString *)audioMode toSession:(RTCAudioSession *)audioSession {
+  NSLog(@"[Daily] applyAudioMode: %@", audioMode);
   // Do nothing if we're attempting to "unset" the in-call audio mode (for now
   // it doesn't seem like there's anything to do).
   if ([audioMode isEqualToString:AUDIO_MODE_IDLE]) {
+    return;
+  }
+    
+  if ([audioMode isEqualToString:AUDIO_MODE_USER_SPECIFIED_ROUTE]) {
+    // Invoking to restore to the user chosen device
+    [self setAudioDevice:self.userSelectedDevice];
     return;
   }
   
@@ -164,38 +157,10 @@ RCT_EXPORT_METHOD(setDailyAudioMode:(NSString *)audioMode) {
   if ([audioMode isEqualToString:AUDIO_MODE_VIDEO_CALL]) {
     categoryOptions |= AVAudioSessionCategoryOptionDefaultToSpeaker;
   }
-  [self audioSessionSetCategory:AVAudioSessionCategoryPlayAndRecord toSession:audioSession options:categoryOptions];
-  
-  
   NSString *mode = ([audioMode isEqualToString:AUDIO_MODE_VIDEO_CALL] ?
                     AVAudioSessionModeVideoChat :
                     AVAudioSessionModeVoiceChat);
-  [self audioSessionSetMode:mode toSession:audioSession];
-}
-
-- (void)audioSessionSetCategory:(NSString *)audioCategory
-                      toSession:(RTCAudioSession *)audioSession
-                        options:(AVAudioSessionCategoryOptions)options
-{
-  @try {
-    [audioSession setCategory:audioCategory
-                  withOptions:options
-                        error:nil];
-    NSLog(@"[Daily] audioSession.setCategory: %@, withOptions: %lu success", audioCategory, (unsigned long)options);
-  } @catch (NSException *e) {
-    NSLog(@"[Daily] audioSession.setCategory: %@, withOptions: %lu fail: %@", audioCategory, (unsigned long)options, e.reason);
-  }
-}
-
-- (void)audioSessionSetMode:(NSString *)audioMode
-                  toSession:(RTCAudioSession *)audioSession
-{
-  @try {
-    [audioSession setMode:audioMode error:nil];
-    NSLog(@"[Daily] audioSession.setMode(%@) success", audioMode);
-  } @catch (NSException *e) {
-    NSLog(@"[Daily] audioSession.setMode(%@) fail: %@", audioMode, e.reason);
-  }
+  [self configureAudioSession:AVAudioSession.sharedInstance audioMode:mode categoryOptions:categoryOptions];
 }
 
 @end

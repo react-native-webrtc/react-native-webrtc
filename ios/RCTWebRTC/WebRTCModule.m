@@ -114,7 +114,8 @@ RCT_EXPORT_MODULE();
     kEventPeerConnectionDidOpenDataChannel,
     kEventDataChannelStateChanged,
     kEventDataChannelReceiveMessage,
-    kEventMediaStreamTrackMuteChanged
+    kEventMediaStreamTrackMuteChanged,
+    kEventMediaDevicesOnDeviceChange,
   ];
 }
 

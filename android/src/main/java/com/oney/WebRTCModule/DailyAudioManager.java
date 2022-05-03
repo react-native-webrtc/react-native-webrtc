@@ -15,10 +15,11 @@ import com.facebook.react.bridge.ReactApplicationContext;
 import com.facebook.react.bridge.WritableMap;
 import com.facebook.react.modules.core.DeviceEventManagerModule;
 
-import java.util.HashSet;
-import java.util.Set;
+import java.util.Arrays;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+
+import com.oney.WebRTCModule.DailyWebRTCDevicesManager.AudioDeviceType;
 
 public class DailyAudioManager implements AudioManager.OnAudioFocusChangeListener {
     static final String TAG = DailyAudioManager.class.getCanonicalName();
@@ -26,16 +27,11 @@ public class DailyAudioManager implements AudioManager.OnAudioFocusChangeListene
     public enum Mode {
         IDLE,
         VIDEO_CALL,
-        VOICE_CALL
+        VOICE_CALL,
+        USER_SPECIFIED_ROUTE
     }
 
-    private enum DeviceType {
-        BLUETOOTH,
-        HEADSET,
-        SPEAKER,
-        EARPIECE
-    }
-
+    private DailyWebRTCDevicesManager dailyWebRTCDevicesManager;
     private AudioManager audioManager;
     private DeviceEventManagerModule.RCTDeviceEventEmitter eventEmitter;
     private Mode mode;
@@ -60,7 +56,7 @@ public class DailyAudioManager implements AudioManager.OnAudioFocusChangeListene
         }
     };
 
-    public DailyAudioManager(ReactApplicationContext reactContext, Mode initialMode) {
+    public DailyAudioManager(ReactApplicationContext reactContext, Mode initialMode, DailyWebRTCDevicesManager dailyWebRTCDevicesManager) {
         reactContext.addLifecycleEventListener(new LifecycleEventListener() {
             @Override
             public void onHostResume() {
@@ -86,6 +82,7 @@ public class DailyAudioManager implements AudioManager.OnAudioFocusChangeListene
                 });
             }
         });
+        this.dailyWebRTCDevicesManager = dailyWebRTCDevicesManager;
         this.audioManager = (AudioManager) reactContext.getSystemService(Context.AUDIO_SERVICE);
         this.eventEmitter = reactContext.getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter.class);
         this.mode = initialMode;
@@ -137,6 +134,7 @@ public class DailyAudioManager implements AudioManager.OnAudioFocusChangeListene
             case IDLE:
                 transitionOutOfCallMode();
                 break;
+            case USER_SPECIFIED_ROUTE:
             case VIDEO_CALL:
             case VOICE_CALL:
                 transitionToCurrentCallMode(previousMode);
@@ -161,15 +159,13 @@ public class DailyAudioManager implements AudioManager.OnAudioFocusChangeListene
     // Does things in the reverse order of transitionOutOfCallMode()
     private void transitionToCurrentCallMode(Mode previousMode) {
         // Already in a call, so all we have to do is configure devices
-        if (previousMode == Mode.VIDEO_CALL || previousMode == Mode.VOICE_CALL) {
+        if (previousMode == Mode.VIDEO_CALL || previousMode == Mode.VOICE_CALL || previousMode == Mode.USER_SPECIFIED_ROUTE) {
             configureDevicesForCurrentMode();
         } else {
             // Configure devices
             configureDevicesForCurrentMode();
-
             // Request audio focus
             requestAudioFocus();
-
             // Start listening for device changes
             audioManager.registerAudioDeviceCallback(audioDeviceCallback, null);
         }
@@ -209,77 +205,37 @@ public class DailyAudioManager implements AudioManager.OnAudioFocusChangeListene
 
     private void configureDevicesForCurrentMode() {
         Log.d(TAG, "configureDevicesForCurrentMode => " + mode);
+        if (mode == Mode.USER_SPECIFIED_ROUTE) {
+            return; // If the user is manually controlling device selection, don't do anything
+        }
         if (mode == Mode.IDLE) {
-            audioManager.setMode(AudioManager.MODE_NORMAL);
-            audioManager.setSpeakerphoneOn(false);
-            toggleBluetooth(false);
+            this.audioManager.setMode(AudioManager.MODE_NORMAL);
+            this.dailyWebRTCDevicesManager.setAudioDevice(AudioDeviceType.WIRED_OR_EARPIECE.toString());
         } else {
-            audioManager.setMode(AudioManager.MODE_IN_COMMUNICATION);
-            Set<DeviceType> availableDeviceTypes = getAvailableDeviceTypes();
-            DeviceType preferredDeviceType = getPreferredDeviceTypeForCurrentMode(availableDeviceTypes);
-            Log.d(TAG, "configureDevicesForCurrentMode: preferring device type " + preferredDeviceType);
-            audioManager.setSpeakerphoneOn(shouldSpeakerphoneBeOn(preferredDeviceType));
-            toggleBluetooth(shouldBluetoothBeOn(preferredDeviceType));
-            audioManager.setMicrophoneMute(false);
+            this.audioManager.setMode(AudioManager.MODE_IN_COMMUNICATION);
+            AudioDeviceType preferredAudioDevice = this.getPreferredAudioDevice();
+            Log.d(TAG, "configureDevicesForCurrentMode: preferring audio route " + preferredAudioDevice);
+            this.dailyWebRTCDevicesManager.setAudioDevice(preferredAudioDevice.toString());
         }
     }
 
-    private Set<DeviceType> getAvailableDeviceTypes() {
-        Set<DeviceType> deviceTypes = new HashSet<DeviceType>();
-        AudioDeviceInfo[] devices = audioManager.getDevices(AudioManager.GET_DEVICES_ALL);
-        for (AudioDeviceInfo info : devices) {
-            switch (info.getType()) {
-                case AudioDeviceInfo.TYPE_BLUETOOTH_SCO:
-                    deviceTypes.add(DeviceType.BLUETOOTH);
-                    break;
-                case AudioDeviceInfo.TYPE_BUILTIN_SPEAKER:
-                    deviceTypes.add(DeviceType.SPEAKER);
-                    break;
-                case AudioDeviceInfo.TYPE_BUILTIN_EARPIECE:
-                    deviceTypes.add(DeviceType.EARPIECE);
-                    break;
-                case AudioDeviceInfo.TYPE_WIRED_HEADPHONES:
-                case AudioDeviceInfo.TYPE_WIRED_HEADSET:
-                case 22: // AudioDeviceInfo.TYPE_USB_HEADSET, which is defined only in API level 26
-                    deviceTypes.add(DeviceType.HEADSET);
-                    break;
-            }
-        }
-        return deviceTypes;
-    }
+    private AudioDeviceType getPreferredAudioDevice() {
+        AudioDeviceInfo[] audioOutputDevices = this.audioManager.getDevices(AudioManager.GET_DEVICES_OUTPUTS);
 
-    private DeviceType getPreferredDeviceTypeForCurrentMode(Set<DeviceType> availableDeviceTypes) {
-        if (availableDeviceTypes.contains(DeviceType.BLUETOOTH)) {
-            return DeviceType.BLUETOOTH;
+        boolean isBluetoothHeadsetPlugged = Arrays.stream(audioOutputDevices).anyMatch(device -> device.getType() == AudioDeviceInfo.TYPE_BLUETOOTH_SCO);
+        if (isBluetoothHeadsetPlugged) {
+            return AudioDeviceType.BLUETOOTH;
         }
-        if (availableDeviceTypes.contains(DeviceType.HEADSET)) {
-            return DeviceType.HEADSET;
-        }
-        if (mode == Mode.VIDEO_CALL && availableDeviceTypes.contains(DeviceType.SPEAKER)) {
-            return DeviceType.SPEAKER;
-        }
-        if (mode == Mode.VOICE_CALL && availableDeviceTypes.contains(DeviceType.EARPIECE)) {
-            return DeviceType.EARPIECE;
-        }
-        return null;
-    }
 
-    private boolean shouldSpeakerphoneBeOn(DeviceType preferredDeviceType) {
-        return preferredDeviceType == DeviceType.SPEAKER;
-    }
-
-    private boolean shouldBluetoothBeOn(DeviceType preferredDeviceType) {
-        return preferredDeviceType == DeviceType.BLUETOOTH;
-    }
-
-    private void toggleBluetooth(boolean on) {
-        if (on) {
-            audioManager.startBluetoothSco();
-            audioManager.setBluetoothScoOn(true);
-        } else {
-            audioManager.setBluetoothScoOn(false);
-            audioManager.stopBluetoothSco();
+        boolean isWiredHeadsetPlugged = Arrays.stream(audioOutputDevices).anyMatch(
+                device -> device.getType() == AudioDeviceInfo.TYPE_WIRED_HEADSET ||
+                        device.getType() == AudioDeviceInfo.TYPE_WIRED_HEADPHONES
+        );
+        if (isWiredHeadsetPlugged) {
+            return AudioDeviceType.WIRED_OR_EARPIECE;
         }
+
+        return (mode == Mode.VIDEO_CALL) ? AudioDeviceType.SPEAKERPHONE : AudioDeviceType.WIRED_OR_EARPIECE;
     }
 
     private void sendAudioFocusChangeEvent(boolean hasFocus) {

@@ -184,50 +184,52 @@ RCT_EXPORT_METHOD(getUserMedia:(NSDictionary *)constraints
 
 #pragma mark - Other stream related APIs
 
-RCT_EXPORT_METHOD(enumerateDevices:(RCTResponseSenderBlock)callback)
-{
-    NSMutableArray *devices = [NSMutableArray array];
-    AVCaptureDeviceDiscoverySession *videoevicesSession
-        = [AVCaptureDeviceDiscoverySession discoverySessionWithDeviceTypes:@[ AVCaptureDeviceTypeBuiltInWideAngleCamera ]
-                                                                 mediaType:AVMediaTypeVideo
-                                                                  position:AVCaptureDevicePositionUnspecified];
-    for (AVCaptureDevice *device in videoevicesSession.devices) {
-        NSString *position = @"unknown";
-        if (device.position == AVCaptureDevicePositionBack) {
-            position = @"environment";
-        } else if (device.position == AVCaptureDevicePositionFront) {
-            position = @"front";
-        }
-        NSString *label = @"Unknown video device";
-        if (device.localizedName != nil) {
-            label = device.localizedName;
-        }
-        [devices addObject:@{
-                             @"facing": position,
-                             @"deviceId": device.uniqueID,
-                             @"groupId": @"",
-                             @"label": label,
-                             @"kind": @"videoinput",
-                             }];
-    }
-    AVCaptureDeviceDiscoverySession *audioDevicesSession
-        = [AVCaptureDeviceDiscoverySession discoverySessionWithDeviceTypes:@[ AVCaptureDeviceTypeBuiltInMicrophone ]
-                                                                 mediaType:AVMediaTypeAudio
-                                                                  position:AVCaptureDevicePositionUnspecified];
-    for (AVCaptureDevice *device in audioDevicesSession.devices) {
-        NSString *label = @"Unknown audio device";
-        if (device.localizedName != nil) {
-            label = device.localizedName;
-        }
-        [devices addObject:@{
-                             @"deviceId": device.uniqueID,
-                             @"groupId": @"",
-                             @"label": label,
-                             @"kind": @"audioinput",
-                             }];
-    }
-    callback(@[devices]);
-}
+// Disabling this method, we are implementing that inside of WebRTCModule+DevicesManager to list also the output devices
+// and keep all the logic related with the devices in a single place
+//RCT_EXPORT_METHOD(enumerateDevices:(RCTResponseSenderBlock)callback)
+//{
+//    NSMutableArray *devices = [NSMutableArray array];
+//    AVCaptureDeviceDiscoverySession *videoevicesSession
+//        = [AVCaptureDeviceDiscoverySession discoverySessionWithDeviceTypes:@[ AVCaptureDeviceTypeBuiltInWideAngleCamera ]
+//                                                                 mediaType:AVMediaTypeVideo
+//                                                                  position:AVCaptureDevicePositionUnspecified];
+//    for (AVCaptureDevice *device in videoevicesSession.devices) {
+//        NSString *position = @"unknown";
+//        if (device.position == AVCaptureDevicePositionBack) {
+//            position = @"environment";
+//        } else if (device.position == AVCaptureDevicePositionFront) {
+//            position = @"front";
+//        }
+//        NSString *label = @"Unknown video device";
+//        if (device.localizedName != nil) {
+//            label = device.localizedName;
+//        }
+//        [devices addObject:@{
+//                             @"facing": position,
+//                             @"deviceId": device.uniqueID,
+//                             @"groupId": @"",
+//                             @"label": label,
+//                             @"kind": @"videoinput",
+//                             }];
+//    }
+//    AVCaptureDeviceDiscoverySession *audioDevicesSession
+//        = [AVCaptureDeviceDiscoverySession discoverySessionWithDeviceTypes:@[ AVCaptureDeviceTypeBuiltInMicrophone ]
+//                                                                 mediaType:AVMediaTypeAudio
+//                                                                  position:AVCaptureDevicePositionUnspecified];
+//    for (AVCaptureDevice *device in audioDevicesSession.devices) {
+//        NSString *label = @"Unknown audio device";
+//        if (device.localizedName != nil) {
+//            label = device.localizedName;
+//        }
+//        [devices addObject:@{
+//                             @"deviceId": device.uniqueID,
+//                             @"groupId": @"",
+//                             @"label": label,
+//                             @"kind": @"audioinput",
+//                             }];
+//    }
+//    callback(@[devices]);
+//}
 
 RCT_EXPORT_METHOD(mediaStreamCreate:(nonnull NSString *)streamID)
 {
