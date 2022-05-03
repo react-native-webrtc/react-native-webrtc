@@ -37,7 +37,7 @@ export type RTCIceConnectionState =
 
 export type RTCPeerConnectionState = 'new' | 'connecting' | 'connected' | 'disconnected' | 'failed' | 'closed';
 
-export type MediaDeviceKind = 'audioinput' | 'audiooutput' | 'videoinput';
+export type MediaDeviceKind = 'videoinput' | 'audio';
 
 export class MediaDeviceInfo {
     readonly deviceId: string;

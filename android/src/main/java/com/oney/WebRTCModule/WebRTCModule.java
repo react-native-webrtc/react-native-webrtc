@@ -3,8 +3,6 @@ package com.oney.WebRTCModule;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
-import android.content.Context;
-import android.media.AudioManager;
 import android.util.Log;
 import android.util.SparseArray;
 
@@ -43,6 +41,7 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
     final Map<String, MediaStream> localStreams;
 
     private final GetUserMediaImpl getUserMediaImpl;
+    private final DailyWebRTCDevicesManager dailyWebRTCDevicesManager;
 
     public static class Options {
         private VideoEncoderFactory videoEncoderFactory = null;
@@ -133,6 +132,7 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
                 .createPeerConnectionFactory();
 
         getUserMediaImpl = new GetUserMediaImpl(this, reactContext);
+        dailyWebRTCDevicesManager = new DailyWebRTCDevicesManager(this, reactContext);
     }
 
     @NonNull
@@ -499,8 +499,10 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
 
     @ReactMethod
     public void enumerateDevices(Callback callback) {
+        /*ThreadUtils.runOnExecutor(() ->
+            callback.invoke(getUserMediaImpl.enumerateDevices()));*/
         ThreadUtils.runOnExecutor(() ->
-            callback.invoke(getUserMediaImpl.enumerateDevices()));
+                callback.invoke(dailyWebRTCDevicesManager.enumerateDevices()));
     }
 
     @ReactMethod
@@ -1010,6 +1012,30 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
     private  DailyAudioManager dailyAudioManager;
 
     @ReactMethod
+    public void setAudioDevice(String deviceId) {
+        ThreadUtils.runOnExecutor(() -> {
+            this.dailyWebRTCDevicesManager.setAudioDevice(deviceId);
+            // changing the audio mode so Daily won't automatically affect anymore to change the desired audio route
+            if(this.dailyAudioManager != null){
+                this.dailyAudioManager.setMode(DailyAudioManager.Mode.USER_SPECIFIED_ROUTE);
+            }
+        });
+    }
+
+    @ReactMethod
+    public void startMediaDevicesEventMonitor() {
+        this.dailyWebRTCDevicesManager.startMediaDevicesEventMonitor();
+    }
+
+    @ReactMethod
+    public void getAudioDevice(Promise promise) {
+        ThreadUtils.runOnExecutor(() -> {
+            String deviceId = this.dailyWebRTCDevicesManager.getAudioDevice();
+            promise.resolve(deviceId);
+        });
+    }
+
+    @ReactMethod
     public void setDailyAudioMode(String audioModeString) {
         Log.d(TAG, "setDailyAudioMode: " + audioModeString);
         DailyAudioManager.Mode audioMode;
@@ -1028,7 +1054,7 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
         }
         if (dailyAudioManager == null) {
             ReactApplicationContext reactContext = getReactApplicationContext();
-            dailyAudioManager = new DailyAudioManager(reactContext, audioMode);
+            dailyAudioManager = new DailyAudioManager(reactContext, audioMode, this.dailyWebRTCDevicesManager);
         }
         else {
             dailyAudioManager.setMode(audioMode);
