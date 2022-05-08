@@ -208,16 +208,38 @@ class GetUserMediaImpl {
             errorCallback.invoke("DOMException", "AbortError");
             return;
         }
+        String streamId = UUID.randomUUID().toString();
+        MediaStream mediaStream
+            = webRTCModule.mFactory.createLocalMediaStream(streamId);
+        WritableArray tracks = Arguments.createArray();
 
-        createStream(new MediaStreamTrack[]{audioTrack, videoTrack}, (streamId, tracksInfo) -> {
-            WritableArray tracksInfoWritableArray = Arguments.createArray();
-
-            for (WritableMap trackInfo : tracksInfo) {
-                tracksInfoWritableArray.pushMap(trackInfo);
+        for (MediaStreamTrack track : new MediaStreamTrack[]{audioTrack, videoTrack}) {
+            if (track == null) {
+                continue;
             }
 
-            successCallback.invoke(streamId, tracksInfoWritableArray);
-        });
+            if (track instanceof AudioTrack) {
+                mediaStream.addTrack((AudioTrack) track);
+            } else {
+                mediaStream.addTrack((VideoTrack) track);
+            }
+
+            WritableMap track_ = Arguments.createMap();
+            String trackId = track.id();
+
+            track_.putBoolean("enabled", track.enabled());
+            track_.putString("id", trackId);
+            track_.putString("kind", track.kind());
+            track_.putString("label", trackId);
+            track_.putString("readyState", track.state().toString());
+            track_.putBoolean("remote", false);
+            tracks.pushMap(track_);
+        }
+
+        Log.d(TAG, "MediaStream id: " + streamId);
+        webRTCModule.localStreams.put(streamId, mediaStream);
+
+        successCallback.invoke(streamId, tracks);
     }
 
     void mediaStreamTrackSetEnabled(String trackId, final boolean enabled) {

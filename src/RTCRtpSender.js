@@ -1,5 +1,6 @@
 import {NativeModules} from 'react-native';
 import RTCRtpTransceiver from './RTCRtpTransceiver';
+import MediaStreamTrack from './MediaStreamTrack';
 
 const {WebRTCModule} = NativeModules;
 

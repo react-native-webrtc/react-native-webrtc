@@ -12,6 +12,8 @@ import RTCSessionDescription from './RTCSessionDescription';
 import RTCIceCandidate from './RTCIceCandidate';
 import RTCIceCandidateEvent from './RTCIceCandidateEvent';
 import RTCEvent from './RTCEvent';
+
+import RtpSender from './RtpSender';
 import RTCRtpTransceiver from './RTCRtpTransceiver';
 import * as RTCUtil from './RTCUtil';
 import EventEmitter from './EventEmitter';
@@ -68,6 +70,7 @@ export default class RTCPeerConnection extends defineCustomEventTarget(...PEER_C
 
     _peerConnectionId: number;
     _localStreams: Array<MediaStream> = [];
+    _rtpSenders:Array<RtpSender> = [];
     _remoteStreams: Array<MediaStream> = [];
     _subscriptions: Array<any>;
     _transceivers: Array<RTCRtpTransceiver> = [];
@@ -95,6 +98,74 @@ export default class RTCPeerConnection extends defineCustomEventTarget(...PEER_C
         }
         this._localStreams.splice(index, 1);
         WebRTCModule.peerConnectionRemoveStream(stream._reactTag, this._peerConnectionId);
+    }
+
+    addTrack(track: MediaStreamTrack) {
+        return new Promise((resolve, reject) => {
+          var sender = this._rtpSenders.find((sender)=> sender.track().id === track.id);
+          if(sender !== undefined){
+            return;
+          }
+          WebRTCModule.peerConnectionAddTrack(track.id, this._peerConnectionId,(successful, data) => {
+            if (successful) {
+              var info = {
+                id: data.track.id,
+                kind: data.track.kind,
+                label: data.track.kind,
+                enabled: data.track.enabled,
+                readyState: data.track.readyState,
+                remote: data.track.remote
+              };
+              var sender = new RtpSender(data.id, new MediaStreamTrack(info));
+              this._rtpSenders.push(sender);
+              resolve(sender);
+            } else {
+              reject(data);
+            }
+          });
+        });
+    }
+  
+    removeTrack(sender: RtpSender) {
+        return new Promise((resolve, reject) => {
+          const index = this._rtpSenders.indexOf(sender);
+          if (index === -1) {
+              return;
+          }
+          WebRTCModule.peerConnectionRemoveTrack(sender.id(), this._peerConnectionId,(successful) => {
+            if(successful){
+              this._rtpSenders.splice(index, 1);
+            }
+            resolve(successful);
+          });
+        })
+    }
+  
+    getRtpSenders(){
+      return new Promise((resolve, reject) => {
+        WebRTCModule.peerConnectionGetRtpSenders(this._peerConnectionId,(successful, data) => {
+          if(successful){
+            this._rtpSenders.length = 0;
+  
+            for (var i = 0; i < data.length; i++) {
+              var  senderOrigin  =  data [ i ] ;
+              var info = {
+                id: senderOrigin.track.id,
+                kind: senderOrigin.track.kind,
+                label: senderOrigin.track.kind,
+                enabled: senderOrigin.track.enabled,
+                readyState: senderOrigin.track.readyState,
+                remote: senderOrigin.track.remote
+              };
+              var  sender  =  new  RtpSender ( senderOrigin . id ,  new  MediaStreamTrack ( info ) ) ;
+              this._rtpSenders.push(sender);
+            }
+            resolve(this._rtpSenders);
+          }else {
+            reject(successful)
+          }
+        });
+      })
     }
 
     addTransceiver(source: 'audio' |'video' | MediaStreamTrack, init) {
@@ -322,6 +393,16 @@ export default class RTCPeerConnection extends defineCustomEventTarget(...PEER_C
                 this.signalingState = ev.signalingState;
                 this.dispatchEvent(new RTCEvent('signalingstatechange'));
             }),
+            //add remote track
+            EventEmitter.addListener('peerConnectionAddedTrack', ev => {
+                if (ev.id !== this._peerConnectionId) {
+                return;
+                }
+                ev.id = ev.trackId; delete ev.trackId;
+                const track = new MediaStreamTrack(ev);
+                this.dispatchEvent(new MediaStreamTrackEvent('track', { track }));
+            }),
+
             EventEmitter.addListener('peerConnectionAddedStream', ev => {
                 if (ev.id !== this._peerConnectionId) {
                     return;

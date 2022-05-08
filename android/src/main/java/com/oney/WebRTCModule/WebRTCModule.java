@@ -677,6 +677,150 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
         });
     }
 
+        //--added code
+        @ReactMethod
+        public void peerConnectionAddTrack(String trackId, int id, Callback callback) {
+            ThreadUtils.runOnExecutor(() -> {
+                PeerConnectionObserver pco = mPeerConnectionObservers.get(id);
+    
+            if(pco != null){
+                if(pco.isUnifiedPlan == true){
+                    //只能添加本地轨道
+                    MediaStreamTrack mediaStreamTrack = getLocalTrack(trackId);
+                    if (mediaStreamTrack == null) {
+                        Log.d(TAG, "peerConnectionAddTrack() mediaStreamTrack is null(local)");
+                        return;
+                    }
+    
+                    try{
+                        //查找轨道是否有对应的（RtpSender）了
+                        String addTrackId = mediaStreamTrack.id(); RtpSender sender = null;
+                        for (RtpSender rtpSender : pco.getPeerConnection().getSenders()){
+                            if(rtpSender.track() != null){
+                                if(rtpSender.track().id().equalsIgnoreCase(addTrackId)){
+                                    sender = rtpSender;
+                                    break;
+                                }
+                            }
+                        }
+    
+                        if(sender == null){
+                            //没有创建收发器，就添加轨道，有收发器，轨道就添加到 RtpSender 里
+                            if(pco.getPeerConnection().getTransceivers().size() <= 0){
+                                sender = pco.addTrack(mediaStreamTrack);
+                            }else {
+                                for (RtpTransceiver transceiver : pco.getPeerConnection().getTransceivers()){
+                                    if(transceiver.getReceiver().track() != null){
+                                        if(transceiver.getSender().track() == null && transceiver.getReceiver().track().kind().equalsIgnoreCase(mediaStreamTrack.kind())){
+                                            transceiver.getSender().setTrack(mediaStreamTrack,false);
+                                            transceiver.setDirection(RtpTransceiver.RtpTransceiverDirection.SEND_RECV);
+                                            sender = transceiver.getSender();
+                                            break;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        if(sender != null){
+                            WritableMap map = Arguments.createMap();
+                            WritableMap subMap = Arguments.createMap();
+                            map.putString("id", sender.id());
+    
+    
+                            subMap.putString("id", sender.track().id());
+                            subMap.putString("kind", sender.track().kind());
+                            subMap.putString("readyState", (sender.track().state() == MediaStreamTrack.State.LIVE)?"live":"ended");
+                            subMap.putBoolean("enabled", sender.track().enabled());
+                            subMap.putBoolean("remote", false); //只能添加本地轨道，远程轨道 RTC 自动添加到收发器（RtpReceiver 里)
+    
+                            map.putMap("track", subMap);
+    
+                            callback.invoke(true, map);
+                        }else {
+                            callback.invoke(false,"add track failed");
+                            Log.e(TAG, "peerConnectionAddTrack() failed");
+                        }
+                    }catch (Exception e){
+                        callback.invoke(false,"add track failed");
+                        Log.e(TAG, "peerConnectionAddTrack() failed");
+                    }
+                }else {
+                    callback.invoke(false,"Plan-B mode does not allow AddTrack");
+                    Log.e(TAG, "Plan-B mode does not allow AddTrack");
+                }
+            }else {
+                callback.invoke(false,"pco == null");
+                Log.e(TAG, "peerConnectionAddTrack() failed");
+            }});
+        }
+
+    
+        @ReactMethod
+        public void peerConnectionRemoveTrack(String senderId, int id, Callback callback) {
+            ThreadUtils.runOnExecutor(() -> {
+                PeerConnectionObserver pco = mPeerConnectionObservers.get(id);
+            RtpSender rtpSender = null;
+    
+            if(pco != null){
+                for (int i = 0; i < pco.getPeerConnection().getSenders().size(); i++) {
+                    if(pco.getPeerConnection().getSenders().get(i).id().equalsIgnoreCase(senderId)){
+                        rtpSender = pco.getPeerConnection().getSenders().get(i);
+                        break;
+                    }
+                }
+    
+                if(rtpSender != null){
+                    boolean result = pco.removeTrack(rtpSender);
+                    if(result == true){
+                        callback.invoke(true);
+                    }else {
+                        Log.e(TAG, "peerConnectionRemoveTrack() failed");
+                        callback.invoke(false, "peerConnectionRemoveTrack() failed");
+                    }
+                }else {
+                    Log.e(TAG, "peerConnectionRemoveTrack() rtpSender is null");
+                    callback.invoke(false, "rtpSender == null");
+                }
+            }else {
+                Log.e(TAG, "peerConnectionRemoveTrack() failed");
+                callback.invoke(false, "pco == null");
+            }
+            });
+        }
+    
+
+    
+        @ReactMethod
+        public void peerConnectionGetRtpSenders(int id, Callback callback) {
+            ThreadUtils.runOnExecutor(() -> {
+                PeerConnectionObserver pco = mPeerConnectionObservers.get(id);
+            if(pco != null){
+                WritableArray array = Arguments.createArray();
+                for (int i = 0; i < pco.getPeerConnection().getSenders().size(); i++) {
+                    RtpSender sender = pco.getPeerConnection().getSenders().get(i);
+                    if(sender.track() == null){ continue; } //因移除了轨道，导致 RtpSender 存在，而 MediaStreamTrack 为 null
+    
+                    WritableMap map = Arguments.createMap();
+                    WritableMap subMap = Arguments.createMap();
+                    map.putString("id", sender.id());
+    
+                    subMap.putString("id", sender.track().id());
+                    subMap.putString("kind", sender.track().kind());
+                    subMap.putString("readyState", (sender.track().state() == MediaStreamTrack.State.LIVE)?"live":"ended");
+                    subMap.putBoolean("enabled", sender.track().enabled());
+                    subMap.putBoolean("remote", false);
+    
+                    map.putMap("track", subMap);
+                    array.pushMap(map);
+                }
+                callback.invoke(true, array);
+            }else {
+                Log.e(TAG, "peerConnectionRemoveTrack() failed");
+                callback.invoke(false, "pco == null");
+            }
+            });
+    }
+    
     private ReadableMap serializeState(int id) {
         PeerConnection peerConnection = getPeerConnection(id);
         PeerConnectionObserver pco = mPeerConnectionObservers.get(id);
@@ -1179,14 +1323,8 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
     public void peerConnectionAddTransceiver(int id,
                                              ReadableMap options,
                                              final Callback callback) {
-        ThreadUtils.runOnExecutor(() ->
-                this.peerConnectionAddTransceiverAsync(id, options, callback));
-    }
-
-    private void peerConnectionAddTransceiverAsync(int id,
-                                                   ReadableMap options,
-                                                   final Callback callback) {
-        PeerConnectionObserver pco = mPeerConnectionObservers.get(id);
+        ThreadUtils.runOnExecutor(() -> {
+            PeerConnectionObserver pco = mPeerConnectionObservers.get(id);
 
         if (pco != null) {
             String transceiverId;
@@ -1224,20 +1362,15 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
             Log.d(TAG, "peerConnectionAddTransceiver() peerConnection is null");
             callback.invoke(false, "peerConnection is null");
         }
+    });
     }
 
     @ReactMethod
     public void peerConnectionTransceiverStop(int id,
                                               String transceiverId,
                                               final Callback callback) {
-        ThreadUtils.runOnExecutor(() ->
-                this.peerConnectionTransceiverStopAsync(id, transceiverId, callback));
-    }
-
-    private void peerConnectionTransceiverStopAsync(int id,
-                                                    String transceiverId,
-                                                    final Callback callback) {
-        PeerConnectionObserver pco = mPeerConnectionObservers.get(id);
+        ThreadUtils.runOnExecutor(() -> {
+            PeerConnectionObserver pco = mPeerConnectionObservers.get(id);
         if (pco != null) {
             RtpTransceiver transceiver = pco.getTransceiver(transceiverId);
             transceiver.stop();
@@ -1249,22 +1382,17 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
             Log.d(TAG, "peerConnectionAddTransceiver() peerConnection is null");
             callback.invoke(false, "peerConnection is null");
         }
+        });
     }
+
 
     @ReactMethod
     public void peerConnectionTransceiverReplaceTrack(int id,
                                                       String transceiverId,
                                                       String trackId,
                                                       final Callback callback) {
-        ThreadUtils.runOnExecutor(() ->
-                this.peerConnectionTransceiverReplaceTrackAsync(id, transceiverId, trackId, callback));
-    }
-
-    private void peerConnectionTransceiverReplaceTrackAsync(int id,
-                                                            String transceiverId,
-                                                            String trackId,
-                                                            final Callback callback) {
-        PeerConnectionObserver pco = mPeerConnectionObservers.get(id);
+        ThreadUtils.runOnExecutor(() ->{
+            PeerConnectionObserver pco = mPeerConnectionObservers.get(id);
         if (pco != null) {
             RtpTransceiver transceiver = pco.getTransceiver(transceiverId);
             RtpSender sender = transceiver.getSender();
@@ -1279,6 +1407,8 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
             Log.d(TAG, "peerConnectionTransceiverReplaceTrack() peerConnection is null");
             callback.invoke(false, "peerConnection is null");
         }
+
+        });
     }
 
     @ReactMethod

@@ -21,6 +21,8 @@ import org.webrtc.MediaStreamTrack;
 import org.webrtc.PeerConnection;
 import org.webrtc.RtpReceiver;
 import org.webrtc.SessionDescription;
+
+import org.webrtc.RtpSender;
 import org.webrtc.RtpTransceiver;
 import org.webrtc.StatsObserver;
 import org.webrtc.StatsReport;
@@ -105,6 +107,44 @@ class PeerConnectionObserver implements PeerConnection.Observer {
 
         return localStreams.remove(localStream);
     }
+
+     //-- add code
+    /**
+     * Adds a specific local <tt>MediaStreamTrack</tt> to the associated
+     * <tt>PeerConnection</tt>.
+     *
+     * @param mediaStreamTrack the local <tt>MediaStreamTrack</tt> to add to the
+     * associated <tt>PeerConnection</tt>
+     * @return <tt>true</tt> if the specified <tt>mediaStreamTrack</tt> was added to
+     * the associated <tt>PeerConnection</tt>; otherwise, <tt>false</tt>
+     */
+    RtpSender addTrack(MediaStreamTrack mediaStreamTrack) {
+        if (peerConnection != null) {
+            RtpSender sender = peerConnection.addTrack(mediaStreamTrack);
+            return sender;
+        }
+
+        return null;
+    }
+
+    /**
+     * Removes a specific local <tt>RtpSender</tt> from the associated
+     * <tt>PeerConnection</tt>.
+     *
+     * @param rtpSender the local <tt>RtpSender</tt> from the associated
+     * <tt>PeerConnection</tt>
+     * @return <tt>true</tt> if removing the specified <tt>rtpSender</tt> from
+     * this instance resulted in a modification of its internal list of local
+     * <tt>RtpSender</tt>s; otherwise, <tt>false</tt>
+     */
+    boolean removeTrack(RtpSender rtpSender) {
+        if (peerConnection != null) {
+            boolean result = peerConnection.removeTrack(rtpSender);
+            return result;
+        }
+        return false;
+    }
+
 
     String addTransceiver(MediaStreamTrack.MediaType mediaType, RtpTransceiver.RtpTransceiverInit init) {
         if (peerConnection == null) {
@@ -495,6 +535,52 @@ class PeerConnectionObserver implements PeerConnection.Observer {
         params.putInt("id", id);
         params.putString("signalingState", signalingStateString(signalingState));
         webRTCModule.sendEvent("peerConnectionSignalingStateChanged", params);
+    }
+
+    @Override
+    public void onTrack(RtpTransceiver transceiver) {
+        //-- add code
+        if(isUnifiedPlan){
+            MediaStreamTrack track = transceiver.getReceiver().track();
+            if(track != null){
+                WritableMap trackInfo = Arguments.createMap();
+                if(track.kind().equals(MediaStreamTrack.VIDEO_TRACK_KIND)){
+                    String streamReactTag = UUID.randomUUID().toString();
+                    videoTrackAdapters.addAdapter(streamReactTag, (VideoTrack) track);
+
+                    if(transceiver.getSender().track() == null){
+                        MediaStreamTrack videoTrack = webRTCModule.getLocalTrackByType("video");
+
+                        if(videoTrack != null){
+                            transceiver.getSender().setTrack(videoTrack, false);
+                            transceiver.setDirection(RtpTransceiver.RtpTransceiverDirection.SEND_RECV);
+                            this.onRenegotiationNeeded();
+                        }
+                    }
+                }else {
+                    if(transceiver.getSender().track() == null) {
+                        MediaStreamTrack audioTrack = webRTCModule.getLocalTrackByType("audio");
+
+                        if(audioTrack != null){
+                            transceiver.getSender().setTrack(audioTrack, false);
+                            transceiver.setDirection(RtpTransceiver.RtpTransceiverDirection.SEND_RECV);
+                        }
+                    }
+                }
+
+                remoteTracks.put(track.id(), track);
+
+                trackInfo.putInt("id", id);
+                trackInfo.putString("trackId", track.id());
+                trackInfo.putString("kind", track.kind());
+                trackInfo.putString("label", track.id());
+                trackInfo.putBoolean("remote", true);
+                trackInfo.putBoolean("enabled", track.enabled());
+                trackInfo.putString("readyState", track.state().toString().toLowerCase());
+
+                webRTCModule.sendEvent("peerConnectionAddedTrack", trackInfo);
+            }
+        }
     }
 
     @Override
