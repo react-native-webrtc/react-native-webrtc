@@ -437,33 +437,34 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
             e.printStackTrace();
             throw new RuntimeException(e);
         }
+    }
 
-    MediaStream getStreamForReactTag(String streamReactTag) {
-        // This function _only_ gets called from WebRTCView, in the UI thread.
-        // Hence make sure we run this code in the executor or we run at the risk
-        // of being out of sync.
-        try {
-            return (MediaStream) ThreadUtils.submitToExecutor((Callable<Object>) () -> {
-                MediaStream stream = localStreams.get(streamReactTag);
-
-                if (stream != null) {
-                    return stream;
-                }
-
-                for (int i = 0, size = mPeerConnectionObservers.size(); i < size; i++) {
-                    PeerConnectionObserver pco = mPeerConnectionObservers.valueAt(i);
-                    stream = pco.remoteStreams.get(streamReactTag);
+        MediaStream getStreamForReactTag(String streamReactTag) {
+            // This function _only_ gets called from WebRTCView, in the UI thread.
+            // Hence make sure we run this code in the executor or we run at the risk
+            // of being out of sync.
+            try {
+                return (MediaStream) ThreadUtils.submitToExecutor((Callable<Object>) () -> {
+                    MediaStream stream = localStreams.get(streamReactTag);
+    
                     if (stream != null) {
                         return stream;
                     }
-                }
-
+    
+                    for (int i = 0, size = mPeerConnectionObservers.size(); i < size; i++) {
+                        PeerConnectionObserver pco = mPeerConnectionObservers.valueAt(i);
+                        stream = pco.remoteStreams.get(streamReactTag);
+                        if (stream != null) {
+                            return stream;
+                        }
+                    }
+    
+                    return null;
+                }).get();
+            } catch (ExecutionException | InterruptedException e) {
                 return null;
-            }).get();
-        } catch (ExecutionException | InterruptedException e) {
-            return null;
+            }
         }
-    }
 
     private MediaStreamTrack getTrack(String trackId) {
         MediaStreamTrack track = getLocalTrack(trackId);
