@@ -425,10 +425,9 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
         PeerConnection.RTCConfiguration rtcConfiguration = parseRTCConfiguration(configuration);
 
         try {
-            ThreadUtils.runOnExecutor(() -> peerConnectionInitAsync(rtcConfiguration, id));
-
             ThreadUtils.submitToExecutor(() -> {
-                PeerConnectionObserver observer = new PeerConnectionObserver(this, id);
+                // unified plan set to true
+                PeerConnectionObserver observer = new PeerConnectionObserver(this, id, true);
                 PeerConnection peerConnection = mFactory.createPeerConnection(rtcConfiguration, observer);
                 observer.setPeerConnection(peerConnection);
                 mPeerConnectionObservers.put(id, observer);
@@ -829,7 +828,6 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
                                                    int id,
                                                    Callback callback) {
         ThreadUtils.runOnExecutor(() -> {
-            peerConnectionAddICECandidateAsync(candidateMap, id, callback);
             PeerConnection peerConnection = getPeerConnection(id);
             if (peerConnection == null) {
                 Log.d(TAG, "peerConnectionSetRemoteDescription() peerConnection is null");
