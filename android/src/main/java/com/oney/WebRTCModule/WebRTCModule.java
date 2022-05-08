@@ -438,18 +438,6 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
             throw new RuntimeException(e);
         }
 
-    private void peerConnectionInitAsync(
-            PeerConnection.RTCConfiguration configuration,
-            int id) {
-        PeerConnectionObserver observer = new PeerConnectionObserver(this,
-                id, configuration.sdpSemantics == PeerConnection.SdpSemantics.UNIFIED_PLAN);
-        PeerConnection peerConnection
-                = mFactory.createPeerConnection(configuration, observer);
-
-        observer.setPeerConnection(peerConnection);
-        mPeerConnectionObservers.put(id, observer);
-    }
-
     MediaStream getStreamForReactTag(String streamReactTag) {
         // This function _only_ gets called from WebRTCView, in the UI thread.
         // Hence make sure we run this code in the executor or we run at the risk
