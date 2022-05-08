@@ -484,6 +484,26 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
     MediaStreamTrack getLocalTrack(String trackId) {
         return getUserMediaImpl.getTrack(trackId);
     }
+    
+    MediaStreamTrack getLocalTrackByType(String type) {
+        return getUserMediaImpl.getTrackByType(type);
+    }
+
+    private static MediaStreamTrack getLocalTrack(
+            MediaStream localStream,
+            String trackId) {
+        for (AudioTrack track : localStream.audioTracks) {
+            if (track.id().equals(trackId)) {
+                return track;
+            }
+        }
+        for (VideoTrack track : localStream.videoTracks) {
+            if (track.id().equals(trackId)) {
+                return track;
+            }
+        }
+        return null;
+    }
 
     /**
      * Turns an "options" <tt>ReadableMap</tt> into a <tt>MediaConstraints</tt> object.
