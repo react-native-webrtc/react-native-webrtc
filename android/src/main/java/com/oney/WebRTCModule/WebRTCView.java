@@ -201,7 +201,7 @@ public class WebRTCView extends ViewGroup {
             // infrastructure hooked up while this View is not attached to a
             // window. Additionally, a memory leak was solved in a similar way
             // on iOS.
-            tryAddRendererToVideoTrack();
+            safeTryAddRendererToVideoTrack();
         } finally {
             super.onAttachedToWindow();
         }
@@ -488,7 +488,7 @@ public class WebRTCView extends ViewGroup {
             this.videoTrack = videoTrack;
 
             if (videoTrack != null) {
-                tryAddRendererToVideoTrack();
+                safeTryAddRendererToVideoTrack();
                 if (oldVideoTrack == null) {
                     // If there was no old track, clean the surface so we start
                     // with black.
@@ -517,6 +517,32 @@ public class WebRTCView extends ViewGroup {
         case 2:
             surfaceViewRenderer.setZOrderOnTop(true);
             break;
+        }
+    }
+
+    public interface IRendererErrorListener {
+        public void renderError(WebRTCView view, String streamURL);
+    }
+
+    private IRendererErrorListener rendererErrorListener;
+
+    public void setRendererErrorListener(IRendererErrorListener listener) {
+        synchronized (layoutSyncRoot) {
+            rendererErrorListener = listener;
+        }
+    }
+
+    private void safeTryAddRendererToVideoTrack(){
+        try{
+            tryAddRendererToVideoTrack();
+        } catch (Throwable error){
+            Log.e(TAG, "tryAddRendererToVideoTrack", error);
+
+            synchronized (layoutSyncRoot) {
+                if(rendererErrorListener != null){
+                    rendererErrorListener.renderError(this, streamURL);
+                }
+            }
         }
     }
 

@@ -1,6 +1,6 @@
 {
   "name": "@livelyvideomobile/react-native-webrtc",
-  "version": "1.94.9",
+  "version": "1.94.11",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/LivelyVideo/react-native-webrtc.git"
