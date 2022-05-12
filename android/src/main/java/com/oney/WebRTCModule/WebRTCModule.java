@@ -707,6 +707,11 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
                 @Override
                 public void onCreateFailure(String s) {
                     callback.invoke(false, s);
+
+                    CriticalErrorListener cl = criticalListener.get();
+                    if (cl != null) {
+                        cl.producerFailed(s);
+                    }
                 }
 
                 @Override
@@ -1011,6 +1016,7 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
     //region Custom
 
     private final AtomicReference<TrackReceiver> trackReceiver = new AtomicReference<>();
+    private final AtomicReference<CriticalErrorListener> criticalListener = new AtomicReference<>();
 
     private void safe(Runnable runnable) {
         try {
@@ -1048,6 +1054,28 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
          * @param id       Track ID
          */
         void videoTrackAdded(String streamID, String id);
+    }
+
+    /**
+     * Sets the critical error listener. Thread-safe
+     *
+     * @param listener Listener
+     */
+    public void setCriticalErrorListener(CriticalErrorListener listener) {
+        criticalListener.set(listener);
+    }
+
+    /**
+     * Critical errors
+     */
+    public interface CriticalErrorListener {
+        /**
+         * When creating a producer fails, i.e. the user's broadcast/stream.
+         * Basically, other consumers will not be able consumer video/audio from this user.
+         *
+         * @param error Error
+         */
+        void producerFailed(String error);
     }
 
     /**
