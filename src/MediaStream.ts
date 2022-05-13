@@ -26,7 +26,7 @@ export default class MediaStream extends defineCustomEventTarget(...MEDIA_STREAM
     _reactTag: string;
 
     /**
-     * A MediaStream can be constructed in several ways, depending on the paramters
+     * A MediaStream can be constructed in several ways, depending on the parameters
      * that are passed here.
      *
      * - undefined: just a new stream, with no tracks.
