@@ -158,7 +158,6 @@ const NSUInteger kMaxReadLength = 10 * 1024;
 }
 
 - (void)stopCapture {
-    [self.connection close];
     self.connection = nil;
 }
 
