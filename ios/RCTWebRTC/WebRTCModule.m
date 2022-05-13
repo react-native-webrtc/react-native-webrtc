@@ -105,8 +105,6 @@ RCT_EXPORT_MODULE();
   return @[
     kEventPeerConnectionSignalingStateChanged,
     kEventPeerConnectionStateChanged,
-    kEventPeerConnectionAddedStream,
-    kEventPeerConnectionRemovedStream,
     kEventPeerConnectionOnRenegotiationNeeded,
     kEventPeerConnectionIceConnectionChanged,
     kEventPeerConnectionIceGatheringChanged,

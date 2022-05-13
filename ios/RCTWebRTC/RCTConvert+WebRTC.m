@@ -90,8 +90,7 @@
   // Required for perfect negotiation.
   config.enableImplicitRollback = YES;
 
-  // Plan B, just a little longer.
-  config.sdpSemantics = RTCSdpSemanticsPlanB;
+  config.sdpSemantics = RTCSdpSemanticsUnifiedPlan;
 
   if (!json) {
     return config;

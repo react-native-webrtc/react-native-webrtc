@@ -119,35 +119,6 @@ RCT_EXPORT_METHOD(peerConnectionSetConfiguration:(RTCConfiguration*)configuratio
   [peerConnection setConfiguration:configuration];
 }
 
-RCT_EXPORT_METHOD(peerConnectionAddStream:(nonnull NSString *)streamID objectID:(nonnull NSNumber *)objectID)
-{
-  RTCPeerConnection *peerConnection = self.peerConnections[objectID];
-  if (!peerConnection) {
-    return;
-  }
-  RTCMediaStream *stream = self.localStreams[streamID];
-  if (!stream) {
-    return;
-  }
-
-  [peerConnection addStream:stream];
-}
-
-RCT_EXPORT_METHOD(peerConnectionRemoveStream:(nonnull NSString *)streamID objectID:(nonnull NSNumber *)objectID)
-{
-  RTCPeerConnection *peerConnection = self.peerConnections[objectID];
-  if (!peerConnection) {
-    return;
-  }
-  RTCMediaStream *stream = self.localStreams[streamID];
-  if (!stream) {
-    return;
-  }
-
-  [peerConnection removeStream:stream];
-}
-
-
 RCT_EXPORT_METHOD(peerConnectionCreateOffer:(nonnull NSNumber *)objectID
                                     options:(NSDictionary *)options
                                    callback:(RCTResponseSenderBlock)callback)
@@ -507,74 +478,6 @@ RCT_EXPORT_METHOD(peerConnectionRestartIce:(nonnull NSNumber *)objectID)
                      body:@{
                        @"id": peerConnection.reactTag,
                        @"signalingState": [self stringForSignalingState:newState]
-                     }];
-}
-
-- (void)peerConnection:(RTCPeerConnection *)peerConnection didAddStream:(RTCMediaStream *)stream {
-  NSString *streamReactTag = [[NSUUID UUID] UUIDString];
-  NSMutableArray *tracks = [NSMutableArray array];
-  for (RTCVideoTrack *track in stream.videoTracks) {
-    peerConnection.remoteTracks[track.trackId] = track;
-    [peerConnection addVideoTrackAdapter:track];
-    [tracks addObject:@{@"id": track.trackId, @"kind": track.kind, @"label": track.trackId, @"enabled": @(track.isEnabled), @"remote": @(YES), @"readyState": @"live"}];
-  }
-  for (RTCAudioTrack *track in stream.audioTracks) {
-    peerConnection.remoteTracks[track.trackId] = track;
-    [tracks addObject:@{@"id": track.trackId, @"kind": track.kind, @"label": track.trackId, @"enabled": @(track.isEnabled), @"remote": @(YES), @"readyState": @"live"}];
-  }
-
-  peerConnection.remoteStreams[streamReactTag] = stream;
-
-  id newSdp = @{
-    @"type": [RTCSessionDescription stringForType:peerConnection.remoteDescription.type],
-    @"sdp": peerConnection.remoteDescription.sdp
-  };
-
-  [self sendEventWithName:kEventPeerConnectionAddedStream
-                     body:@{
-                       @"id": peerConnection.reactTag,
-                       @"streamId": stream.streamId,
-                       @"streamReactTag": streamReactTag,
-                       @"tracks": tracks,
-                       @"sdp": newSdp
-                     }];
-}
-
-- (void)peerConnection:(RTCPeerConnection *)peerConnection didRemoveStream:(RTCMediaStream *)stream {
-  // XXX Find the stream by comparing the 'streamId' values. It turns out that WebRTC (as of M69) creates new wrapper
-  // instance for the native media stream before invoking the 'didRemoveStream' callback. This means it's a different
-  // RTCMediaStream instance passed to 'didAddStream' and 'didRemoveStream'.
-  NSString *streamReactTag = nil;
-  for (NSString *aReactTag in peerConnection.remoteStreams) {
-    RTCMediaStream *aStream = peerConnection.remoteStreams[aReactTag];
-    if ([aStream.streamId isEqualToString:stream.streamId]) {
-      streamReactTag = aReactTag;
-      break;
-    }
-  }
-  if (!streamReactTag) {
-    RCTLogWarn(@"didRemoveStream - stream not found, id: %@", stream.streamId);
-    return;
-  }
-  for (RTCVideoTrack *track in stream.videoTracks) {
-    [peerConnection removeVideoTrackAdapter:track];
-    [peerConnection.remoteTracks removeObjectForKey:track.trackId];
-  }
-  for (RTCAudioTrack *track in stream.audioTracks) {
-    [peerConnection.remoteTracks removeObjectForKey:track.trackId];
-  }
-  [peerConnection.remoteStreams removeObjectForKey:streamReactTag];
-
-  id newSdp = @{
-    @"type": [RTCSessionDescription stringForType:peerConnection.remoteDescription.type],
-    @"sdp": peerConnection.remoteDescription.sdp
-  };
-
-  [self sendEventWithName:kEventPeerConnectionRemovedStream
-                     body:@{
-                       @"id": peerConnection.reactTag,
-                       @"streamId": streamReactTag,
-                       @"sdp": newSdp
                      }];
 }
 

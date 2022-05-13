@@ -12,7 +12,7 @@ const FACING_MODES = [ 'user', 'environment' ];
 
 const ASPECT_RATIO = 16 / 9;
 
-const STANDARD_OA_OPTIONS = {
+const STANDARD_OFFER_OPTIONS = {
     icerestart: 'IceRestart',
     offertoreceiveaudio: 'OfferToReceiveAudio',
     offertoreceivevideo: 'OfferToReceiveVideo',
@@ -133,12 +133,12 @@ export function deepClone<T>(obj: T): T {
 }
 
 /**
- * Normalize options passed to createOffer() / createAnswer().
+ * Normalize options passed to createOffer().
  *
  * @param options - user supplied options
  * @return Normalized options
  */
-export function normalizeOfferAnswerOptions(options: object = {}): object {
+export function normalizeOfferOptions(options: object = {}): object {
     const newOptions = {};
 
     if (!options) {
@@ -148,7 +148,7 @@ export function normalizeOfferAnswerOptions(options: object = {}): object {
     // Convert standard options into WebRTC internal constant names.
     // See: https://github.com/jitsi/webrtc/blob/0cd6ce4de669bed94ba47b88cb71b9be0341bb81/sdk/media_constraints.cc#L113
     for (const [key, value] of Object.entries(options)) {
-        const newKey = STANDARD_OA_OPTIONS[key.toLowerCase()];
+        const newKey = STANDARD_OFFER_OPTIONS[key.toLowerCase()];
         if (newKey) {
             newOptions[newKey] = String(Boolean(value));
         }

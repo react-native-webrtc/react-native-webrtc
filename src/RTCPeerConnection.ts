@@ -47,9 +47,7 @@ const PEER_CONNECTION_EVENTS = [
     'icegatheringstatechange',
     'negotiationneeded',
     'signalingstatechange',
-    'datachannel',
-    'addstream',
-    'removestream'
+    'datachannel'
 ];
 
 let nextPeerConnectionId = 0;
@@ -64,8 +62,6 @@ export default class RTCPeerConnection extends defineCustomEventTarget(...PEER_C
     iceConnectionState: RTCIceConnectionState = 'new';
 
     _peerConnectionId: number;
-    _localStreams: MediaStream[] = [];
-    _remoteStreams: MediaStream[] = [];
     _subscriptions: any[] = [];
 
     constructor(configuration) {
@@ -75,45 +71,11 @@ export default class RTCPeerConnection extends defineCustomEventTarget(...PEER_C
         this._registerEvents();
     }
 
-    addStream(stream: MediaStream): void {
-        const index = this._localStreams.indexOf(stream);
-        if (index !== -1) {
-            return;
-        }
-        WebRTCModule.peerConnectionAddStream(stream._reactTag, this._peerConnectionId);
-        this._localStreams.push(stream);
-    }
-
-    removeStream(stream: MediaStream): void {
-        const index = this._localStreams.indexOf(stream);
-        if (index === -1) {
-            return;
-        }
-        this._localStreams.splice(index, 1);
-        WebRTCModule.peerConnectionRemoveStream(stream._reactTag, this._peerConnectionId);
-    }
-
     createOffer(options) {
         return new Promise((resolve, reject) => {
             WebRTCModule.peerConnectionCreateOffer(
                 this._peerConnectionId,
-                RTCUtil.normalizeOfferAnswerOptions(options),
-                (successful, data) => {
-                    if (successful) {
-                        resolve(data);
-                    } else {
-                        reject(data); // TODO: convert to NavigatorUserMediaError
-                    }
-                }
-            );
-        });
-    }
-
-    createAnswer(options = {}) {
-        return new Promise((resolve, reject) => {
-            WebRTCModule.peerConnectionCreateAnswer(
-                this._peerConnectionId,
-                RTCUtil.normalizeOfferAnswerOptions(options),
+                RTCUtil.normalizeOfferOptions(options),
                 (successful, data) => {
                     if (successful) {
                         resolve(data);
@@ -125,7 +87,57 @@ export default class RTCPeerConnection extends defineCustomEventTarget(...PEER_C
         });
     }
 
+    createAnswer() {
+        return new Promise((resolve, reject) => {
+            WebRTCModule.peerConnectionCreateAnswer(
+                this._peerConnectionId,
+                {},
+                (successful, data) => {
+                    if (successful) {
+                        resolve(data);
+                    } else {
+                        reject(data);
+                    }
+                }
+            );
+        });
+    }
+
+<<<<<<< HEAD
     setConfiguration(configuration): void {
+||||||| parent of 0382805 (api: drop Plan B)
+    setConfiguration(configuration) {
+=======
+    /**
+     * Creates a new RTCDataChannel object with the given label. The
+     * RTCDataChannelInit dictionary can be used to configure properties of the
+     * underlying channel such as data reliability.
+     *
+     * @param {string} label - the value with which the label attribute of the new
+     * instance is to be initialized
+     * @param {RTCDataChannelInit} dataChannelDict - an optional dictionary of
+     * values with which to initialize corresponding attributes of the new
+     * instance such as id
+     */
+     createDataChannel(label: string, dataChannelDict?: RTCDataChannelInit) {
+        if (dataChannelDict && 'id' in dataChannelDict) {
+            const id = dataChannelDict.id;
+            if (typeof id !== 'number') {
+                throw new TypeError('DataChannel id must be a number: ' + id);
+            }
+        }
+
+        const channelInfo = WebRTCModule.createDataChannel(this._peerConnectionId, label, dataChannelDict);
+
+        if (channelInfo === null) {
+            throw new TypeError('Failed to create new DataChannel');
+        }
+
+        return new RTCDataChannel(channelInfo);
+    }
+
+    setConfiguration(configuration) {
+>>>>>>> 0382805 (api: drop Plan B)
         WebRTCModule.peerConnectionSetConfiguration(configuration, this._peerConnectionId);
     }
 
@@ -188,6 +200,7 @@ export default class RTCPeerConnection extends defineCustomEventTarget(...PEER_C
         });
     }
 
+<<<<<<< HEAD
     getLocalStreams(): MediaStream[] {
         return this._localStreams.slice();
     }
@@ -197,6 +210,19 @@ export default class RTCPeerConnection extends defineCustomEventTarget(...PEER_C
     }
 
     close(): void {
+||||||| parent of 0382805 (api: drop Plan B)
+    getLocalStreams() {
+        return this._localStreams.slice();
+    }
+
+    getRemoteStreams() {
+        return this._remoteStreams.slice();
+    }
+
+    close() {
+=======
+    close() {
+>>>>>>> 0382805 (api: drop Plan B)
         WebRTCModule.peerConnectionClose(this._peerConnectionId);
     }
 
@@ -250,31 +276,6 @@ export default class RTCPeerConnection extends defineCustomEventTarget(...PEER_C
                 // @ts-ignore
                 this.dispatchEvent(new RTCEvent('signalingstatechange'));
             }),
-            EventEmitter.addListener('peerConnectionAddedStream', ev => {
-                if (ev.id !== this._peerConnectionId) {
-                    return;
-                }
-                const stream = new MediaStream(ev);
-                this._remoteStreams.push(stream);
-                this.remoteDescription = new RTCSessionDescription(ev.sdp);
-                // @ts-ignore
-                this.dispatchEvent(new MediaStreamEvent('addstream', { stream }));
-            }),
-            EventEmitter.addListener('peerConnectionRemovedStream', ev => {
-                if (ev.id !== this._peerConnectionId) {
-                    return;
-                }
-                const stream = this._remoteStreams.find(s => s._reactTag === ev.streamId);
-                if (stream) {
-                    const index = this._remoteStreams.indexOf(stream);
-                    if (index !== -1) {
-                        this._remoteStreams.splice(index, 1);
-                    }
-                }
-                this.remoteDescription = new RTCSessionDescription(ev.sdp);
-                // @ts-ignore
-                this.dispatchEvent(new MediaStreamEvent('removestream', { stream }));
-            }),
             EventEmitter.addListener('mediaStreamTrackMuteChanged', ev => {
                 if (ev.peerConnectionId !== this._peerConnectionId) {
                     return;
@@ -327,6 +328,7 @@ export default class RTCPeerConnection extends defineCustomEventTarget(...PEER_C
             })
         ];
     }
+<<<<<<< HEAD
 
     /**
      * Creates a new RTCDataChannel object with the given label. The
@@ -355,4 +357,35 @@ export default class RTCPeerConnection extends defineCustomEventTarget(...PEER_C
 
         return new RTCDataChannel(channelInfo);
     }
+||||||| parent of 0382805 (api: drop Plan B)
+
+    /**
+     * Creates a new RTCDataChannel object with the given label. The
+     * RTCDataChannelInit dictionary can be used to configure properties of the
+     * underlying channel such as data reliability.
+     *
+     * @param {string} label - the value with which the label attribute of the new
+     * instance is to be initialized
+     * @param {RTCDataChannelInit} dataChannelDict - an optional dictionary of
+     * values with which to initialize corresponding attributes of the new
+     * instance such as id
+     */
+    createDataChannel(label: string, dataChannelDict?: RTCDataChannelInit) {
+        if (dataChannelDict && 'id' in dataChannelDict) {
+            const id = dataChannelDict.id;
+            if (typeof id !== 'number') {
+                throw new TypeError('DataChannel id must be a number: ' + id);
+            }
+        }
+
+        const channelInfo = WebRTCModule.createDataChannel(this._peerConnectionId, label, dataChannelDict);
+
+        if (channelInfo === null) {
+            throw new TypeError('Failed to create new DataChannel');
+        }
+
+        return new RTCDataChannel(channelInfo);
+    }
+=======
+>>>>>>> 0382805 (api: drop Plan B)
 }
