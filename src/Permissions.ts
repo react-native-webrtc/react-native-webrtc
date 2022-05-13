@@ -84,7 +84,7 @@ class Permissions {
                 permissionDesc.name === 'camera'
                     ? PermissionsAndroid.PERMISSIONS.CAMERA
                     : PermissionsAndroid.PERMISSIONS.RECORD_AUDIO;
-            return new Promise((resolve, reject) => {
+            return new Promise(resolve => {
                 PermissionsAndroid.check(perm).then(
                     granted => resolve(granted ? this.RESULT.GRANTED : this.RESULT.PROMPT),
                     () => resolve(this.RESULT.PROMPT)
