@@ -22,6 +22,7 @@
   "dependencies": {
     "adm-zip": "0.5.9",
     "base64-js": "1.5.1",
+    "debug": "4.3.4",
     "event-target-shim": "6.0.2",
     "tar": "6.1.11"
   },
@@ -37,6 +38,7 @@
     "url": "https://github.com/react-native-webrtc/react-native-webrtc/issues"
   },
   "devDependencies": {
+    "@types/debug": "4.1.7",
     "@types/react": "17.0.40",
     "@types/react-native": "0.67.3",
     "husky": "7.0.2",

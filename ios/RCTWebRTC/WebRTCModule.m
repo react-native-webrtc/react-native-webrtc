@@ -13,9 +13,6 @@
 #import <React/RCTEventDispatcher.h>
 #import <React/RCTUtils.h>
 
-#import <WebRTC/RTCDefaultVideoDecoderFactory.h>
-#import <WebRTC/RTCDefaultVideoEncoderFactory.h>
-
 #import "WebRTCModule.h"
 #import "WebRTCModule+RTCPeerConnection.h"
 
@@ -62,6 +59,9 @@
     if (decoderFactory == nil) {
       decoderFactory = [[RTCDefaultVideoDecoderFactory alloc] init];
     }
+    _encoderFactory = encoderFactory;
+    _decoderFactory = decoderFactory;
+
     _peerConnectionFactory
       = [[RTCPeerConnectionFactory alloc] initWithEncoderFactory:encoderFactory
                                                   decoderFactory:decoderFactory];
@@ -94,6 +94,22 @@
   return stream;
 }
 
+- (void)sendErrorWithEventName: (NSString *) eventName
+                      funcName: (NSString *) funcName
+                       message: (NSString *) message
+                          info: (NSDictionary *) info {
+    NSMutableDictionary *errorInfo = [NSMutableDictionary new];
+    
+    errorInfo[@"func"] = funcName;
+    if (info)
+        errorInfo[@"info"] = info;
+    if (message)
+        errorInfo[@"message"] = message;
+
+    [self sendEventWithName: kEventPeerConnectionOnError
+                       body: errorInfo];
+}
+
 RCT_EXPORT_MODULE();
 
 - (dispatch_queue_t)methodQueue
@@ -105,8 +121,6 @@ RCT_EXPORT_MODULE();
   return @[
     kEventPeerConnectionSignalingStateChanged,
     kEventPeerConnectionStateChanged,
-    kEventPeerConnectionAddedStream,
-    kEventPeerConnectionRemovedStream,
     kEventPeerConnectionOnRenegotiationNeeded,
     kEventPeerConnectionIceConnectionChanged,
     kEventPeerConnectionIceGatheringChanged,
@@ -114,7 +128,13 @@ RCT_EXPORT_MODULE();
     kEventPeerConnectionDidOpenDataChannel,
     kEventDataChannelStateChanged,
     kEventDataChannelReceiveMessage,
-    kEventMediaStreamTrackMuteChanged
+    kEventMediaStreamTrackMuteChanged,
+    kEventTransceiverStopSuccessful,
+    kEventTransceiverOnError,
+    kEventPeerConnectionOnRemoveTrack,
+    kEventPeerConnectionOnRemoveTrackSuccessful,
+    kEventPeerConnectionOnTrack,
+    kEventPeerConnectionOnError
   ];
 }
 
