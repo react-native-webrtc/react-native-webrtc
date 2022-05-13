@@ -210,8 +210,7 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
         // Required for perfect negotiation.
         conf.enableImplicitRollback = true;
 
-        // Plan B, just a little longer.
-        conf.sdpSemantics = PeerConnection.SdpSemantics.PLAN_B;
+        conf.sdpSemantics = PeerConnection.SdpSemantics.UNIFIED_PLAN;
 
         if (map == null) {
             return conf;
@@ -621,36 +620,6 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
                 return;
             }
             peerConnection.setConfiguration(parseRTCConfiguration(configuration));
-        });
-    }
-
-    @ReactMethod
-    public void peerConnectionAddStream(String streamId, int id) {
-        ThreadUtils.runOnExecutor(() -> {
-            MediaStream mediaStream = localStreams.get(streamId);
-            if (mediaStream == null) {
-                Log.d(TAG, "peerConnectionAddStream() mediaStream is null");
-                return;
-            }
-            PeerConnectionObserver pco = mPeerConnectionObservers.get(id);
-            if (pco == null || !pco.addStream(mediaStream)) {
-                Log.e(TAG, "peerConnectionAddStream() failed");
-            }
-        });
-    }
-
-    @ReactMethod
-    public void peerConnectionRemoveStream(String streamId, int id) {
-        ThreadUtils.runOnExecutor(() -> {
-            MediaStream mediaStream = localStreams.get(streamId);
-            if (mediaStream == null) {
-                Log.d(TAG, "peerConnectionRemoveStream() mediaStream is null");
-                return;
-            }
-            PeerConnectionObserver pco = mPeerConnectionObservers.get(id);
-            if (pco == null || !pco.removeStream(mediaStream)) {
-                Log.e(TAG, "peerConnectionRemoveStream() failed");
-            }
         });
     }
 
