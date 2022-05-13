@@ -15,13 +15,14 @@ class MediaStreamTrack extends defineCustomEventTarget(...MEDIA_STREAM_TRACK_EVE
     _enabled: boolean;
     _settings: object;
     _muted: boolean;
+    _peerConnectionId: number;
 
-    id: string;
-    kind: string;
-    label: string;
+    readonly id: string;
+    readonly kind: string;
+    readonly label: string = "";
     readyState: MediaStreamTrackState;
-    remote: boolean;
-
+    readonly remote: boolean;
+    
     constructor(info) {
         super();
 
@@ -29,10 +30,10 @@ class MediaStreamTrack extends defineCustomEventTarget(...MEDIA_STREAM_TRACK_EVE
         this._enabled = info.enabled;
         this._settings = info.settings || {};
         this._muted = false;
+        this._peerConnectionId = info.peerConnectionId;
 
         this.id = info.id;
         this.kind = info.kind;
-        this.label = info.label;
         this.remote = info.remote;
 
         const _readyState = info.readyState.toLowerCase();
@@ -97,7 +98,7 @@ class MediaStreamTrack extends defineCustomEventTarget(...MEDIA_STREAM_TRACK_EVE
     getSettings() {
         return deepClone(this._settings);
     }
-
+    
     release(): void {
         WebRTCModule.mediaStreamTrackRelease(this.id);
     }
