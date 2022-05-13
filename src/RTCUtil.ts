@@ -8,6 +8,8 @@ const DEFAULT_VIDEO_CONSTRAINTS = {
     width: 1280
 };
 
+const FACING_MODES = [ 'user', 'environment' ];
+
 const ASPECT_RATIO = 16 / 9;
 
 const STANDARD_OA_OPTIONS = {
@@ -63,32 +65,19 @@ function normalizeMediaConstraints(constraints, mediaType) {
         case 'audio':
             return constraints;
         case 'video': {
-            let c;
-            if (constraints.mandatory) {
-                // Old style.
-                c = {
-                    deviceId: extractString(constraints.optional || {}, 'sourceId'),
-                    facingMode: extractString(constraints, 'facingMode'),
-                    frameRate: extractNumber(constraints.mandatory, 'minFrameRate'),
-                    height: extractNumber(constraints.mandatory, 'minHeight'),
-                    width: extractNumber(constraints.mandatory, 'minWidth')
-                };
-            } else {
-                // New style.
-                c = {
-                    deviceId: extractString(constraints, 'deviceId'),
-                    facingMode: extractString(constraints, 'facingMode'),
-                    frameRate: extractNumber(constraints, 'frameRate'),
-                    height: extractNumber(constraints, 'height'),
-                    width: extractNumber(constraints, 'width')
-                };
-            }
+            const c = {
+                deviceId: extractString(constraints, 'deviceId'),
+                facingMode: extractString(constraints, 'facingMode'),
+                frameRate: extractNumber(constraints, 'frameRate'),
+                height: extractNumber(constraints, 'height'),
+                width: extractNumber(constraints, 'width')
+            };
 
             if (!c.deviceId) {
                 delete c.deviceId;
             }
 
-            if (!c.facingMode || (c.facingMode !== 'user' && c.facingMode !== 'environment')) {
+            if (!FACING_MODES.includes(c.facingMode)) {
                 c.facingMode = DEFAULT_VIDEO_CONSTRAINTS.facingMode;
             }
 
@@ -99,9 +88,9 @@ function normalizeMediaConstraints(constraints, mediaType) {
             if (!c.height && !c.width) {
                 c.height = DEFAULT_VIDEO_CONSTRAINTS.height;
                 c.width = DEFAULT_VIDEO_CONSTRAINTS.width;
-            } else if (!c.height) {
+            } else if (!c.height && c.width) {
                 c.height = Math.round(c.width / ASPECT_RATIO);
-            } else if (!c.width) {
+            } else if (!c.width && c.height) {
                 c.width = Math.round(c.height * ASPECT_RATIO);
             }
 
@@ -143,26 +132,17 @@ export function deepClone<T>(obj: T): T {
     return JSON.parse(JSON.stringify(obj));
 }
 
-interface Constraints {
-    mandatory?: object;
-}
-
 /**
  * Normalize options passed to createOffer() / createAnswer().
  *
- * @param {Object} options - user supplied options
- * @return {Object} newOptions - normalized options
+ * @param options - user supplied options
+ * @return Normalized options
  */
-export function normalizeOfferAnswerOptions(options: Constraints = {}) {
+export function normalizeOfferAnswerOptions(options: object = {}): object {
     const newOptions = {};
 
     if (!options) {
         return newOptions;
-    }
-
-    // Support legacy constraints.
-    if (options.mandatory) {
-        options = options.mandatory;
     }
 
     // Convert standard options into WebRTC internal constant names.
