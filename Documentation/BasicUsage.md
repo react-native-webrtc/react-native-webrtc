@@ -43,7 +43,7 @@ window.MediaStreamTrack
 
 ## Get Available Media Devices
 
-As weird as it can be, some devices might not have more than 1 camera. The following would allow you to know how many cameras the device has. You can ofcourse use `enumerateDevices` to list other media device information too.  
+As weird as it can be, some devices might not have more than 1 camera. The following will allow you to know how many cameras the device has. You can ofcourse use `enumerateDevices` to list other media device information.  
 
 ```javascript
 let cameraCount = 0;
@@ -289,9 +289,9 @@ try {
 />
 ```
 
-| Param | | Type | | Default | | Description |
-| - | - | :---- | - | :------- | - | :----------- |
-| mirror | | boolean | | false | | Indicates whether the video specified by `streamURL` should be mirrored.  Usually you'd mirror the user facing self preview camera. |
-| objectFit | | string | | 'contain' | | Can be `'contain'` or `'cover'` nothing more or less. | 
-| streamURL | | string | | 'streamurl' | | Requred to have an actual video stream rendering. |
-| zOrder | | number | | 0 | | Similar to zIndex. |
+| Param | Type | Default | Description |
+| :----- | :---- | :------- | :----------- |
+| mirror | boolean | false | Indicates whether the video specified by `streamURL` should be mirrored.  Usually you'd mirror the user facing self preview camera. |
+| objectFit | string | 'contain' | Can be `'contain'` or `'cover'` nothing more or less. | 
+| streamURL | string | 'streamurl' | Requred to have an actual video stream rendering. |
+| zOrder | number | 0 | Similar to zIndex. |
