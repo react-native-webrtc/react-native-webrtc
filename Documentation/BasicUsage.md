@@ -2,7 +2,8 @@
 
 For starters we're going to import everything ready to use.  
 Most of the included functionality is similar to how you would deal with WebRTC in your browser.  
-We support most of the official WebRTC APIs, see this [document](https://developer.mozilla.org/en-US/docs/Web/API/RTCPeerConnection) for more details.
+We support a lot of the official WebRTC APIs, see this [document](https://developer.mozilla.org/en-US/docs/Web/API/RTCPeerConnection) for more details.  
+If you see functions listed in the document linked above but not listed below then they are likely not supported by this module yet and will most likely be supported in the future.  
 
 ```javascript
 import {
@@ -20,9 +21,14 @@ import {
 
 ## Registering Globals
 
+You'll only really need to use this function if you are mixing project development with libraries that use browser based WebRTC functions. Also applies if you are making your project compatible with react-native-web.  
+
 ```javascript
 registerGlobals();
 ```
+
+Here is a list of everything that will be linked up.  
+You can also find a shim for react-native-web over [here](https://github.com/react-native-webrtc/react-native-webrtc-web-shim).
 
 ```javascript
 navigator.mediaDevices.getUserMedia()
@@ -35,7 +41,30 @@ window.MediaStream
 window.MediaStreamTrack
 ```
 
+## Get Available Media Devices
+
+As weird as it can be, some devices might not have more than 1 camera. The following would allow you to know how many cameras the device has. You can ofcourse use `enumerateDevices` to list other media device information too.  
+
+```javascript
+let cameraCount = 0;
+
+try {
+	const devices = await mediaDevices.enumerateDevices();
+
+	devices.map( device => {
+		if ( device.kind != 'videoinput' ) { return; };
+
+		cameraCount = cameraCount + 1;
+	} );
+} catch( err ) {
+	// Handle Error
+};
+```
+
 ## Defining Media Constraints
+
+By default we're sending both audio and video.  
+This will allow us to toggle the video stream during a call.  
 
 ```javascript
 let mediaConstraints = {
@@ -47,7 +76,10 @@ let mediaConstraints = {
 };
 ```
 
-## Getting a Media Stream
+## Getting a Media Stream using getUserMedia
+
+If you only want a voice call then you can flip `isVoiceOnly` over to `true`.  
+You can then cycle and enable or disable the video tracks on demand during a call.  
 
 ```javascript
 let localMediaStream;
@@ -67,7 +99,25 @@ try {
 };
 ```
 
-## Destroying a Media Stream
+## Getting a Media Stream using getDisplayMedia
+
+This will allow you to capture the device screen.  
+You will run into issues with Android 10+ due to extra requirements.  
+
+```javascript
+try {
+	const mediaStream = await mediaDevices.getDisplayMedia();
+
+	localMediaStream = mediaStream;
+} catch( err ) {
+	// Handle Error
+};
+```
+
+## Destroying the Media Stream
+
+Cycling all of the tracks and stopping them is more than enough to clean up after a call has finished.  
+You won't need to do this for remote tracks, only local.  
 
 ```javascript
 localMediaStream.getTracks().map(
@@ -78,6 +128,9 @@ localMediaStream = null;
 ```
 
 ## Defining Peer Constraints
+
+We're only specifying a STUN server but you should look at also using a TURN server.  
+If you want to improve call reliability then check [this guide](./ImprovingCallReliability.md).  
 
 ```javascript
 let peerConstraints = {
@@ -94,17 +147,19 @@ let peerConstraints = {
 ```javascript
 let peerConnection = new RTCPeerConnection( peerConstraints );
 
-peerConnection.onicecandidate = handleLocalCandidate;
-peerConnection.onicecandidateerror = handleCandidateError;
-peerConnection.oniceconnectionstatechange = handleICEConnectionStateChange;
-peerConnection.onconnectionstatechange = handleConnectionStateChange;
-peerConnection.onsignalingstatechange = handleSignalingStateChange;
-peerConnection.onnegotiationneeded = handleNegotiation;
-peerConnection.onaddstream = handleStreamAdded;
-peerConnection.onremovestream = handleStreamRemoved;
+peerConnection.onicecandidate = function( event ) {};
+peerConnection.onicecandidateerror = function( err ) {};
+peerConnection.oniceconnectionstatechange = function() {};
+peerConnection.onconnectionstatechange = function( event ) {};
+peerConnection.onsignalingstatechange = function( event ) {};
+peerConnection.onnegotiationneeded = function() {};
+peerConnection.onaddstream = function( event ) {};
+peerConnection.onremovestream = function( event ) {};
 ```
 
-## Destroying a Peer Connection
+## Destroying the Peer Connection
+
+When ending a call you should always make sure to dispose of everything ready for another call. You don't necessarily need to blank out the events, usually you can get away with the last 3 lines as that will kill everything, double standards.  
 
 ```javascript
 peerConnection.onicecandidate = null;
@@ -121,55 +176,37 @@ peerConnection.close();
 peerConnection = null;
 ```
 
-## Adding a Data Channel
+## Adding the Media Stream
 
-```javascript
-
-```
-
-## Adding a Media Stream
+By adding a media stream to the peer you will trigger negotiations and ice candidate generation.  
+Make sure you are handling ice candidates correctly or you won't get a call connected.  
 
 ```javascript
 peerConnection.addStream( localMediaStream );
 ```
 
-## Dealing with ICE Candidates and Peer Events
+## Creating a Data Channel
 
 ```javascript
-function handleLocalCandidate( event ) {
-	// If we've reached the end, don't send anything.
-	if ( !event.candidate ) { return; };
 
-	// Send the ICE Candidate to the call recipient.
-};
+```
 
-function handleCandidateError( err ) {
-	// Handle Error
-};
+## Adding the Data Channel
 
-function handleICEConnectionStateChange( event ) {
+```javascript
 
-};
+```
 
-function handleConnectionStateChange( event ) {
+## Destroying the Data Channel
 
-};
+```javascript
 
-function handleSignalingStateChange( event ) {
+```
 
-};
+## Handling Ice Candidates
 
-function handleNegotiation() {
+```javascript
 
-};
-
-function handleStreamAdded( event ) {
-
-};
-
-function handleStreamRemoved( event ) {
-
-};
 ```
 
 ## Defining Session Constraints
@@ -180,12 +217,7 @@ let sessionConstraints = {
 		OfferToReceiveAudio: true,
 		OfferToReceiveVideo: true,
 		VoiceActivityDetection: true
-	},
-	optional: [
-		{
-			DtlsSrtpKeyAgreement: true
-		}
-	]
+	}
 };
 ```
 
@@ -219,7 +251,34 @@ try {
 };
 ```
 
-## Rendering a Media Stream
+## Flipping the Active Camera
+
+Naturally we assume you'd be using the front camera by default when starting a call.  
+So we set `isFrontCam` as `true` and let the value flip.  
+
+```javascript
+let isFrontCam = true;
+
+try {
+	// Taken from above, we don't want to flip if we don't have another camera.
+	if ( cameraCount < 2 ) { return; };
+
+	const videoTrack = await localMediaStream.getVideoTracks()[ 0 ];
+	videoTrack._switchCamera();
+
+	isFrontCam = !isFrontCam;
+} catch( err ) {
+	// Handle Error
+};
+```
+
+## Screen Capture Picker - iOS?
+
+```javascript
+<ScreenCapturePickerView />
+```
+
+## Media Stream Rendering
 
 ```javascript
 <RTCView
@@ -230,7 +289,7 @@ try {
 />
 ```
 
-|  | | Type | | Default | | Description |
+| Param | | Type | | Default | | Description |
 | - | - | :---- | - | :------- | - | :----------- |
 | mirror | | boolean | | false | | Indicates whether the video specified by `streamURL` should be mirrored.  Usually you'd mirror the user facing self preview camera. |
 | objectFit | | string | | 'contain' | | Can be `'contain'` or `'cover'` nothing more or less. | 

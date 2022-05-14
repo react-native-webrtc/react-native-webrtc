@@ -86,8 +86,6 @@ In `android/app/proguard-rules.pro` add the following on a new line.
 
 ### Fatal Exception: java.lang.UnsatisfiedLinkError
 
-If you are getting this error:
-
 ```
 Fatal Exception: java.lang.UnsatisfiedLinkError: No implementation found for void org.webrtc.PeerConnectionFactory.nativeInitializeAndroidGlobals() (tried Java_org_webrtc_PeerConnectionFactory_nativeInitializeAndroidGlobals and Java_org_webrtc_PeerConnectionFactory_nativeInitializeAndroidGlobals__)
        at org.webrtc.PeerConnectionFactory.nativeInitializeAndroidGlobals(PeerConnectionFactory.java)
@@ -100,7 +98,7 @@ Fatal Exception: java.lang.UnsatisfiedLinkError: No implementation found for voi
        at java.lang.Thread.run(Thread.java:764)
 ```
 
-Add this line to `android/gradle.properties`:
+If you're experiencing the error above then in `android/gradle.properties` add the following.  
 
 ```
 # This one fixes a weird WebRTC runtime problem on some devices.

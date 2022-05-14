@@ -18,17 +18,17 @@ A WebRTC module for React Native.
 | Plan B | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | - | :heavy_check_mark: | :heavy_check_mark: |
 | Unified Plan* | - | - | - | - | - | - |
 
-> **Windows** - We don't currently have any support for the [react-native-windows](https://github.com/microsoft/react-native-windows) platform.  
-On the other hand we're open to contributions.
+> **Windows** - We don't currently support the [react-native-windows](https://github.com/microsoft/react-native-windows) platform at this time.  
+Anyone interested in getting the ball rolling? We're open to contributions.
 
 > **Web** - The [react-native-webrtc-web-shim](https://github.com/react-native-webrtc/react-native-webrtc-web-shim) project provides a shim for [react-native-web](https://github.com/necolas/react-native-web) support.  
-That will allow you to use [(almost)](https://github.com/react-native-webrtc/react-native-webrtc-web-shim/tree/main#setup) the same code in [react-native-web](https://github.com/necolas/react-native-web) as you would with react-native directly.
+Which will allow you to use [(almost)](https://github.com/react-native-webrtc/react-native-webrtc-web-shim/tree/main#setup) the exact same code in your [react-native-web](https://github.com/necolas/react-native-web) project as you would with [react-native](https://reactnative.dev/) directly.  
 
-> **Expo** - Sadly this module is not available in the [Expo Go](https://expo.dev/client) app due to including much needed native code.  
-You can on the other hand get things working via the [Custom Dev Clients](https://docs.expo.dev/development/getting-started/) and out-of-tree [Expo Config Plugin](https://github.com/expo/config-plugins/tree/master/packages/react-native-webrtc).  
+> **Expo** - Sadly this module is not available in the [Expo Go](https://expo.dev/client) app by default due to including much needed native code.  
+However you can get things working via the [expo-dev-client](https://docs.expo.dev/development/getting-started/) library and out-of-tree [config-plugins/react-native-webrtc](https://github.com/expo/config-plugins/tree/master/packages/react-native-webrtc) package.  
 
-> **Unified Plan** - This feature has had a little bit of work and will hopefully be supported soon.  
-Until then you should stick to using Plan B standards.  
+> **Unified Plan** - Currently in development but expected to be released sometime in the near future.  
+Plan B will remain default until adequate support and testing has been completed.  
 
 ## WebRTC Revision
 
@@ -56,20 +56,15 @@ Don't forget to follow platform guides below to cover any extra required steps.
 
 ## Example Projects
 
-We have some very basic examples included in the [examples](./examples) directory.  
-Don't worry though, there are plans to include a much more broader example with backend included.
+We have some very basic example projects included in the [examples](./examples) directory.  
+Don't worry, there are plans to include a much more broader example with backend included.  
 
 ## Community
 
 Come join our [Discourse Community](https://react-native-webrtc.discourse.group/) if you want to discuss any React Native and WebRTC related topics.  
-Everyone is welcome and every little helps.
+Everyone is welcome and every little helps.  
 
 ## Related Projects
 
 Looking for extra functionality coverage?  
-The [react-native-webrtc](https://github.com/react-native-webrtc) organization provides a number of packages which are more than useful when developing Real Time Communication applications.
-
-## Acknowledgements
-
-This project exists thanks to all the [people](https://github.com/react-native-webrtc/react-native-webrtc/graphs/contributors) who contribute.  
-Special thanks to [Wan Huang Yang](https://github.com/oney/) for creating the first version of this package and [Saúl Ibarra Corretgé](https://github.com/saghul) for keeping the project updated with the latest stable WebRTC revisions.
+The [react-native-webrtc](https://github.com/react-native-webrtc) organization provides a number of packages which are more than useful when developing Real Time Communication applications.  
