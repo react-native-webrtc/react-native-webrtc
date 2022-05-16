@@ -3,7 +3,7 @@
 For starters we're going to import everything ready to use.  
 Most of the included functionality is similar to how you would deal with WebRTC in your browser.  
 We support a lot of the official WebRTC APIs, see this [document](https://developer.mozilla.org/en-US/docs/Web/API/RTCPeerConnection) for more details.  
-If you see functions listed in the document linked above but not listed below then they are likely not supported by this module yet and will most likely be supported in the future.  
+If you see functions that are listed in the document above but not listed below then they are likely not supported by this module yet and will most likely be supported in the near future, we're open to contributions.
 
 ```javascript
 import {
@@ -30,16 +30,14 @@ registerGlobals();
 Here is a list of everything that will be linked up.  
 You can also find a shim for react-native-web over [here](https://github.com/react-native-webrtc/react-native-webrtc-web-shim).
 
-```javascript
-navigator.mediaDevices.getUserMedia()
-navigator.mediaDevices.getDisplayMedia()
-navigator.mediaDevices.enumerateDevices()
-window.RTCPeerConnection
-window.RTCIceCandidate
-window.RTCSessionDescription
-window.MediaStream
-window.MediaStreamTrack
-```
+`navigator.mediaDevices.getUserMedia()`  
+`navigator.mediaDevices.getDisplayMedia()`  
+`navigator.mediaDevices.enumerateDevices()`  
+`window.RTCPeerConnection`  
+`window.RTCIceCandidate`  
+`window.RTCSessionDescription`  
+`window.MediaStream`  
+`window.MediaStreamTrack`  
 
 ## Get Available Media Devices
 
@@ -101,8 +99,8 @@ try {
 
 ## Getting a Media Stream using getDisplayMedia
 
-This will allow capturing the device screen, also requires permission on execution.  
-There are currently issues with Android 10 and above due to needing a foreground service.  
+This will allow capturing the device screen, also requests permission on execution.  
+Android 10+ requires that a foreground service is running otherwise capturing won't work, follow [this solution](./AndroidInstallation.md#screen-capture-support---android-10).  
 
 ```javascript
 try {
@@ -261,7 +259,7 @@ try {
 ## Creating an Answer
 
 All parties will need to ensure they are handling ICE Candidates correctly.  
-Otherwise the offer and answer handshake stage can go a little wonky.  
+Otherwise the offer and answer handshake stage will go a little wonky.  
 
 ```javascript
 try {
