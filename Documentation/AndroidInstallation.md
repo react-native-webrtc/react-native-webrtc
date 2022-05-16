@@ -1,45 +1,9 @@
 # Android Installation
 
-Starting with React Native 0.60 due to a new auto linking feature, you won't need to follow the manual linking steps below but you
-will need to follow the other steps if you plan on releasing an app to production.  
+Starting with React Native 0.60 due to a new auto linking feature you no longer need to follow manual linking steps but you
+will need to follow the other steps below if you plan on releasing your app to production.  
+
 See a sample app in the `examples/GumTestApp` directory.  
-
-## Manual Linking
-
-This is not needed with React Native >= 0.60.
-
-<details>
-<summary>Show Instructions</summary>
-
-In `android/settings.gradle`, add WebRTCModule:
-
-```gradle
-include ':WebRTCModule', ':app'
-project(':WebRTCModule').projectDir = new File(rootProject.projectDir, '../node_modules/react-native-webrtc/android')
-```
-
-In `android/app/build.gradle`, add WebRTCModule to dependencies:
-
-```gradle
-dependencies {
-  ...
-  compile project(':WebRTCModule')
-}
-```
-
-In your `MainApplication.java`:
-
-```java
-@Override
-protected List<ReactPackage> getPackages() {
-	return Arrays.<ReactPackage>asList(
-		new MainReactPackage(),
-		new com.oney.WebRTCModule.WebRTCModulePackage() // <-- Add this line
-	);
-}
-```
-
-</details>  
 
 ## Declaring Permissions
 

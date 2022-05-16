@@ -134,7 +134,7 @@ If you want to improve call reliability then check [this guide](./ImprovingCallR
 let peerConstraints = {
 	iceServers: [
 		{
-			url: 'stun:stun.l.google.com:19302'
+			urls: 'stun:stun.l.google.com:19302'
 		}
 	]
 };
@@ -264,7 +264,7 @@ Otherwise the offer and answer handshake stage will go a little wonky.
 ```javascript
 try {
 	// Use the received offerDescription
-	let offerDescription = new RTCSessionDescription( offerDescription );
+	const offerDescription = new RTCSessionDescription( offerDescription );
 	await peerConnection.setRemoteDescription( offerDescription );
 
 	const answerDescription = await peerConnection.createAnswer( sessionConstraints );
