@@ -43,7 +43,7 @@ window.MediaStreamTrack
 
 ## Get Available Media Devices
 
-As weird as it can be, some devices might not have more than 1 camera. The following will allow you to know how many cameras the device has. You can ofcourse use `enumerateDevices` to list other media device information.  
+Some devices might not have more than 1 camera. The following will allow you to know how many cameras the device has. You can ofcourse use `enumerateDevices` to list other media device information too.  
 
 ```javascript
 let cameraCount = 0;
@@ -101,8 +101,8 @@ try {
 
 ## Getting a Media Stream using getDisplayMedia
 
-This will allow you to capture the device screen.  
-You will run into issues with Android 10+ due to extra requirements.  
+This will allow capturing the device screen, also requires permission on execution.  
+There are currently issues with Android 10 and above due to needing a foreground service.  
 
 ```javascript
 try {
@@ -144,33 +144,29 @@ let peerConstraints = {
 
 ## Creating a Peer Connection
 
+Here we're creating a peer connection required to get a call started.  
+You can also hook up events by directly overwriting functions instead of using event listeners.  
+
 ```javascript
 let peerConnection = new RTCPeerConnection( peerConstraints );
 
-peerConnection.onicecandidate = function( event ) {};
-peerConnection.onicecandidateerror = function( err ) {};
-peerConnection.oniceconnectionstatechange = function() {};
-peerConnection.onconnectionstatechange = function( event ) {};
-peerConnection.onsignalingstatechange = function( event ) {};
-peerConnection.onnegotiationneeded = function() {};
-peerConnection.onaddstream = function( event ) {};
-peerConnection.onremovestream = function( event ) {};
+peerConnection.addEventListener( 'connectionstatechange', event => {} );
+peerConnection.addEventListener( 'icecandidate', event => {} );
+peerConnection.addEventListener( 'icecandidateerror', event => {} );
+peerConnection.addEventListener( 'iceconnectionstatechange', event => {} );
+peerConnection.addEventListener( 'icegatheringstatechange', event => {} );
+peerConnection.addEventListener( 'negotiationneeded', event => {} );
+peerConnection.addEventListener( 'signalingstatechange', event => {} );
+peerConnection.addEventListener( 'addstream', event => {} );
+peerConnection.addEventListener( 'removestream', event => {} );
 ```
 
 ## Destroying the Peer Connection
 
-When ending a call you should always make sure to dispose of everything ready for another call. You don't necessarily need to blank out the events, usually you can get away with the last 3 lines as that will kill everything, double standards.  
+When ending a call you should always make sure to dispose of everything ready for another call.  
+The following should dispose of everything related to the peer connection.  
 
 ```javascript
-peerConnection.onicecandidate = null;
-peerConnection.onicecandidateerror = null;
-peerConnection.oniceconnectionstatechange = null;
-peerConnection.onconnectionstatechange = null;
-peerConnection.onsignalingstatechange = null;
-peerConnection.onnegotiationneeded = null;
-peerConnection.onaddstream = null;
-peerConnection.onremovestream = null;
-
 peerConnection._unregisterEvents();
 peerConnection.close();
 peerConnection = null;
@@ -178,8 +174,8 @@ peerConnection = null;
 
 ## Adding the Media Stream
 
-By adding a media stream to the peer you will trigger negotiations and ice candidate generation.  
-Make sure you are handling ice candidates correctly or you won't get a call connected.  
+After using one of the media functions above you can then add the media stream to the peer.  
+The negotiation needed event will be triggered on the peer connection afterwords.  
 
 ```javascript
 peerConnection.addStream( localMediaStream );
@@ -187,29 +183,54 @@ peerConnection.addStream( localMediaStream );
 
 ## Creating a Data Channel
 
-```javascript
+Usually the call initialiser would create the data channel but it can be done on both sides.  
+The negotiation needed event will be triggered on the peer connection afterwords.  
 
+```javascript
+let datachannel = peerConnection.createDataChannel( 'my_channel' );
+
+datachannel.addEventListener( 'open', event => {} );
+datachannel.addEventListener( 'close', event => {} );
+datachannel.addEventListener( 'message', message => {} );
 ```
 
-## Adding the Data Channel
+## Handling Data Channels
+
+The following event is for the second client, not the client which created the data channel.  
+Unless ofcourse you want both sides to create separate data channels.  
 
 ```javascript
+peerConnection.addEventListener( 'datachannel', event => {
+	let datachannel = event.channel;
 
+	// Now you've got the datachannel.
+	// You can hookup and use the same events as above ^
+} );
+```
+
+## Sending a Message via the Data Channel
+
+You can send a range of different data types over data channels, we're gong to send a simple string.  
+Bare in mind there are limits so sending large amounts of data isn't usually advised.  
+
+```javascript
+datachannel.send( 'Hey There!' );
 ```
 
 ## Destroying the Data Channel
 
-```javascript
-
-```
-
-## Handling Ice Candidates
+When the peer connection is destroyed, data channels should also be destroyed automatically.  
+But as good practice, you can always close them yourself.  
 
 ```javascript
-
+datachannel.close();
+datachannel = null;
 ```
 
 ## Defining Session Constraints
+
+As mentioned above by default we're going for the approach of offering both video and voice.  
+That will allow you to enable and disable video streams on demand while a call is active.  
 
 ```javascript
 let sessionConstraints = {
@@ -223,6 +244,9 @@ let sessionConstraints = {
 
 ## Creating an Offer
 
+Executed by the call initialiser after media streams have been added to the peer connection.  
+ICE Candidate creation and gathering will start as soon as an offer has been created.  
+
 ```javascript
 try {
 	const offerDescription = await peerConnection.createOffer( sessionConstraints );
@@ -235,6 +259,9 @@ try {
 ```
 
 ## Creating an Answer
+
+All parties will need to ensure they are handling ICE Candidates correctly.  
+Otherwise the offer and answer handshake stage can go a little wonky.  
 
 ```javascript
 try {
@@ -251,10 +278,10 @@ try {
 };
 ```
 
-## Flipping the Active Camera
+## Switching the Active Camera
 
-Naturally we assume you'd be using the front camera by default when starting a call.  
-So we set `isFrontCam` as `true` and let the value flip.  
+Naturally we assume you'll be using the front camera by default when starting a call.  
+So we set `isFrontCam` as `true` and let the value flip on execution.  
 
 ```javascript
 let isFrontCam = true;
@@ -272,26 +299,23 @@ try {
 };
 ```
 
-## Screen Capture Picker - iOS?
+## Rendering the Media Stream
 
-```javascript
-<ScreenCapturePickerView />
-```
-
-## Media Stream Rendering
+Once you've gained a local and/or remote stream then rendering it is as follows.  
+Don't forget, the user facing camera is usually mirrored.  
 
 ```javascript
 <RTCView
 	mirror={true}
 	objectFit={'cover'}
-	streamURL={localStream}
+	streamURL={localMediaStream.toURL()}
 	zOrder={0}
 />
 ```
 
 | Param | Type | Default | Description |
 | :----- | :---- | :------- | :----------- |
-| mirror | boolean | false | Indicates whether the video specified by `streamURL` should be mirrored.  Usually you'd mirror the user facing self preview camera. |
+| mirror | boolean | false | Indicates whether the video specified by `streamURL` should be mirrored. |
 | objectFit | string | 'contain' | Can be `'contain'` or `'cover'` nothing more or less. | 
-| streamURL | string | 'streamurl' | Requred to have an actual video stream rendering. |
+| streamURL | string | 'streamURL' | Required to have an actual video stream rendering. |
 | zOrder | number | 0 | Similar to zIndex. |
