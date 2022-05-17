@@ -1,8 +1,8 @@
 # Improving Call Reliability
 
-If you're having issues getting devices connected together reliably then you're in the right place.  
-This guide covers some basic knowledge about STUN and TURN servers.  
-Why you should have both and why they're important.  
+This guide covers some basic knowledge about STUN and TURN servers but most important why you should have both.  
+If you're having issues getting devices connected together then you are definitely in the right place.  
+Don't be discouraged, if you are pushing app development to production then you will need to consider reliability.  
 
 ## What is a NAT and how do we get around it?
 
@@ -27,6 +27,7 @@ If you don't use a TURN server then the connection will just outright fail.
 
 TURN (Traversal Using Relay NAT) is a protocol specifically designed to help relay traffic around restrictive networks.  
 When a direct connection can't be established between peers then the only option is to relay data or fail to connect.  
+
 You should always use a STUN server to determine if direct connections can be established.  
 Then your TURN server can be used as the fallback option.  
 At the end of the day, it is better to have a working call service vs connections failing.  

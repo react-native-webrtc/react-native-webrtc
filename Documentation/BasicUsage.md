@@ -115,7 +115,7 @@ try {
 ## Destroying the Media Stream
 
 Cycling all of the tracks and stopping them is more than enough to clean up after a call has finished.  
-You won't need to do this for remote tracks, only local.  
+You won't usually need to do this for remote tracks, only local.  
 
 ```javascript
 localMediaStream.getTracks().map(
@@ -273,6 +273,24 @@ try {
 	// Send the answerDescription back as a response to the offerDescription.
 } catch( err ) {
 	// Handle Errors
+};
+```
+
+## Toggle the Active Microphone
+
+During an active call you might want to mute your microphone.  
+Easy to accomplish by flipping the track enabled value to false, also possible on remote tracks.  
+
+```javascript
+let isMuted = false;
+
+try {
+	const audioTrack = await localMediaStream.getAudioTracks()[ 0 ];
+	audioTrack.enabled = !audioTrack.enabled;
+
+	isMuted = !isMuted;
+} catch( err ) {
+	// Handle Error
 };
 ```
 
