@@ -25,9 +25,9 @@ export default class RTCDataChannel extends defineCustomEventTarget(...DATA_CHAN
     _readyState: RTCDataChannelState;
     _subscriptions: any[] = [];
 
-    binaryType: string = 'arraybuffer'; // we only support 'arraybuffer'
-    bufferedAmount: number = 0;
-    bufferedAmountLowThreshold: number = 0;
+    binaryType = 'arraybuffer'; // we only support 'arraybuffer'
+    bufferedAmount = 0;
+    bufferedAmountLowThreshold = 0;
 
     constructor(info) {
         super();

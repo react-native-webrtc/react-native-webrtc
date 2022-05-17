@@ -11,7 +11,7 @@ const MEDIA_STREAM_EVENTS = ['active', 'inactive', 'addtrack', 'removetrack'];
 
 export default class MediaStream extends defineCustomEventTarget(...MEDIA_STREAM_EVENTS) {
     id: string;
-    active: boolean = true;
+    active = true;
 
     _tracks: MediaStreamTrack[] = [];
 
