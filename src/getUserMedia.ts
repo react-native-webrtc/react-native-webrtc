@@ -32,7 +32,7 @@ export default function getUserMedia(constraints: Constraints = {}) {
     constraints = RTCUtil.normalizeConstraints(constraints);
 
     // Request required permissions
-    const reqPermissions: Array<Promise<boolean>> = [];
+    const reqPermissions: Promise<boolean>[] = [];
     if (constraints.audio) {
         reqPermissions.push(permissions.request({ name: 'microphone' }));
     } else {

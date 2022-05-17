@@ -64,9 +64,9 @@ export default class RTCPeerConnection extends defineCustomEventTarget(...PEER_C
     iceConnectionState: RTCIceConnectionState = 'new';
 
     _peerConnectionId: number;
-    _localStreams: Array<MediaStream> = [];
-    _remoteStreams: Array<MediaStream> = [];
-    _subscriptions: Array<any> = [];
+    _localStreams: MediaStream[] = [];
+    _remoteStreams: MediaStream[] = [];
+    _subscriptions: any[] = [];
 
     constructor(configuration) {
         super();

@@ -13,7 +13,7 @@ export default class MediaStream extends defineCustomEventTarget(...MEDIA_STREAM
     id: string;
     active: boolean = true;
 
-    _tracks: Array<MediaStreamTrack> = [];
+    _tracks: MediaStreamTrack[] = [];
 
     /**
      * The identifier of this MediaStream unique within the associated
@@ -90,7 +90,7 @@ export default class MediaStream extends defineCustomEventTarget(...MEDIA_STREAM
         WebRTCModule.mediaStreamRemoveTrack(this._reactTag, track.id);
     }
 
-    getTracks(): Array<MediaStreamTrack> {
+    getTracks(): MediaStreamTrack[] {
         return this._tracks.slice();
     }
 
@@ -98,11 +98,11 @@ export default class MediaStream extends defineCustomEventTarget(...MEDIA_STREAM
         return this._tracks.find(track => track.id === trackId);
     }
 
-    getAudioTracks(): Array<MediaStreamTrack> {
+    getAudioTracks(): MediaStreamTrack[] {
         return this._tracks.filter(track => track.kind === 'audio');
     }
 
-    getVideoTracks(): Array<MediaStreamTrack> {
+    getVideoTracks(): MediaStreamTrack[] {
         return this._tracks.filter(track => track.kind === 'video');
     }
 
