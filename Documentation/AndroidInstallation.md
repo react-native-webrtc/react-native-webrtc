@@ -103,6 +103,17 @@ try {
 };
 ```
 
+Lastly you'll need to add this to your projects main `index.js` file.  
+Otherwise you'll receive errors relating to the foreground service not being registered correctly.  
+
+```javascript
+notifee.registerForegroundService( notification => {
+	return new Promise( () => {
+
+	} );
+} );
+```
+
 ## Fatal Exception: java.lang.UnsatisfiedLinkError
 
 ```
