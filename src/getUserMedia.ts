@@ -13,7 +13,7 @@ interface Constraints {
     video?: boolean | object;
 }
 
-export default function getUserMedia(constraints: Constraints = {}) {
+export default function getUserMedia(constraints: Constraints = {}): Promise<MediaStream> {
     // According to
     // https://www.w3.org/TR/mediacapture-streams/#dom-mediadevices-getusermedia,
     // the constraints argument is a dictionary of type MediaStreamConstraints.

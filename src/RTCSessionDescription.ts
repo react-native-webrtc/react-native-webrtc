@@ -8,15 +8,15 @@ export default class RTCSessionDescription {
         this._type = info.type;
     }
 
-    get sdp() {
+    get sdp(): string {
         return this._sdp;
     }
 
-    get type() {
+    get type(): string | null {
         return this._type;
     }
 
-    toJSON() {
+    toJSON(): { sdp: string, type: string | null } {
         return {
             sdp: this._sdp,
             type: this._type

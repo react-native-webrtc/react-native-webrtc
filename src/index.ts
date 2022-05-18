@@ -21,7 +21,7 @@ export {
     registerGlobals
 };
 
-function registerGlobals() {
+function registerGlobals(): void {
     // Should not happen. React Native has a global navigator object.
     if (typeof global.navigator !== 'object') {
         throw new Error('navigator is not an object');

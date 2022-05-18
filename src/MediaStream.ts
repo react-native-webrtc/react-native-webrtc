@@ -72,7 +72,7 @@ export default class MediaStream extends defineCustomEventTarget(...MEDIA_STREAM
         }
     }
 
-    addTrack(track: MediaStreamTrack) {
+    addTrack(track: MediaStreamTrack): void {
         const index = this._tracks.indexOf(track);
         if (index !== -1) {
             return;
@@ -81,7 +81,7 @@ export default class MediaStream extends defineCustomEventTarget(...MEDIA_STREAM
         WebRTCModule.mediaStreamAddTrack(this._reactTag, track.id);
     }
 
-    removeTrack(track: MediaStreamTrack) {
+    removeTrack(track: MediaStreamTrack): void {
         const index = this._tracks.indexOf(track);
         if (index === -1) {
             return;
@@ -110,11 +110,11 @@ export default class MediaStream extends defineCustomEventTarget(...MEDIA_STREAM
         throw new Error('Not implemented.');
     }
 
-    toURL() {
+    toURL(): string {
         return this._reactTag;
     }
 
-    release(releaseTracks = true) {
+    release(releaseTracks = true): void {
         const tracks = [...this._tracks];
         for (const track of tracks) {
             this.removeTrack(track);

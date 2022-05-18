@@ -129,7 +129,7 @@ function chr4() {
  *
  * @return {String} uuidv4
  */
-export function uniqueID() {
+export function uniqueID(): string {
     return `${chr4()}${chr4()}-${chr4()}-${chr4()}-${chr4()}-${chr4()}${chr4()}${chr4()}`;
 }
 
