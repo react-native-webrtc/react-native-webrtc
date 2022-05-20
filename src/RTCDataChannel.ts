@@ -79,6 +79,9 @@ export default class RTCDataChannel extends defineCustomEventTarget(...DATA_CHAN
         return this._readyState;
     }
 
+    send(data: string): void;
+    send(data: ArrayBuffer): void;
+    send(data: ArrayBufferView): void;
     send(data: string | ArrayBuffer | ArrayBufferView): void {
         if (typeof data === 'string') {
             WebRTCModule.dataChannelSend(this._peerConnectionId, this._reactTag, data, 'text');
