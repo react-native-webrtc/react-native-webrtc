@@ -139,7 +139,7 @@ export function uniqueID() {
  * @param {Object} obj - object to be cloned
  * @return {Object} cloned obj
  */
-export function deepClone(obj) {
+export function deepClone<T>(obj: T): T {
     return JSON.parse(JSON.stringify(obj));
 }
 
