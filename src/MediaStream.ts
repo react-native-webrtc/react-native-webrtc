@@ -11,9 +11,9 @@ const MEDIA_STREAM_EVENTS = ['active', 'inactive', 'addtrack', 'removetrack'];
 
 export default class MediaStream extends defineCustomEventTarget(...MEDIA_STREAM_EVENTS) {
     id: string;
-    active: boolean = true;
+    active = true;
 
-    _tracks: Array<MediaStreamTrack> = [];
+    _tracks: MediaStreamTrack[] = [];
 
     /**
      * The identifier of this MediaStream unique within the associated
@@ -72,7 +72,7 @@ export default class MediaStream extends defineCustomEventTarget(...MEDIA_STREAM
         }
     }
 
-    addTrack(track: MediaStreamTrack) {
+    addTrack(track: MediaStreamTrack): void {
         const index = this._tracks.indexOf(track);
         if (index !== -1) {
             return;
@@ -81,7 +81,7 @@ export default class MediaStream extends defineCustomEventTarget(...MEDIA_STREAM
         WebRTCModule.mediaStreamAddTrack(this._reactTag, track.id);
     }
 
-    removeTrack(track: MediaStreamTrack) {
+    removeTrack(track: MediaStreamTrack): void {
         const index = this._tracks.indexOf(track);
         if (index === -1) {
             return;
@@ -90,7 +90,7 @@ export default class MediaStream extends defineCustomEventTarget(...MEDIA_STREAM
         WebRTCModule.mediaStreamRemoveTrack(this._reactTag, track.id);
     }
 
-    getTracks(): Array<MediaStreamTrack> {
+    getTracks(): MediaStreamTrack[] {
         return this._tracks.slice();
     }
 
@@ -98,23 +98,23 @@ export default class MediaStream extends defineCustomEventTarget(...MEDIA_STREAM
         return this._tracks.find(track => track.id === trackId);
     }
 
-    getAudioTracks(): Array<MediaStreamTrack> {
+    getAudioTracks(): MediaStreamTrack[] {
         return this._tracks.filter(track => track.kind === 'audio');
     }
 
-    getVideoTracks(): Array<MediaStreamTrack> {
+    getVideoTracks(): MediaStreamTrack[] {
         return this._tracks.filter(track => track.kind === 'video');
     }
 
-    clone() {
+    clone(): never {
         throw new Error('Not implemented.');
     }
 
-    toURL() {
+    toURL(): string {
         return this._reactTag;
     }
 
-    release(releaseTracks = true) {
+    release(releaseTracks = true): void {
         const tracks = [...this._tracks];
         for (const track of tracks) {
             this.removeTrack(track);

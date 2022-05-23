@@ -23,11 +23,11 @@ export default class RTCDataChannel extends defineCustomEventTarget(...DATA_CHAN
     _ordered: boolean;
     _protocol: string;
     _readyState: RTCDataChannelState;
-    _subscriptions: Array<any> = [];
+    _subscriptions: any[] = [];
 
-    binaryType: string = 'arraybuffer'; // we only support 'arraybuffer'
-    bufferedAmount: number = 0;
-    bufferedAmountLowThreshold: number = 0;
+    binaryType = 'arraybuffer'; // we only support 'arraybuffer'
+    bufferedAmount = 0;
+    bufferedAmountLowThreshold = 0;
 
     constructor(info) {
         super();
@@ -79,7 +79,10 @@ export default class RTCDataChannel extends defineCustomEventTarget(...DATA_CHAN
         return this._readyState;
     }
 
-    send(data: string | ArrayBuffer | ArrayBufferView) {
+    send(data: string): void;
+    send(data: ArrayBuffer): void;
+    send(data: ArrayBufferView): void;
+    send(data: string | ArrayBuffer | ArrayBufferView): void {
         if (typeof data === 'string') {
             WebRTCModule.dataChannelSend(this._peerConnectionId, this._reactTag, data, 'text');
             return;
@@ -96,19 +99,19 @@ export default class RTCDataChannel extends defineCustomEventTarget(...DATA_CHAN
         WebRTCModule.dataChannelSend(this._peerConnectionId, this._reactTag, base64.fromByteArray(data as Uint8Array), 'binary');
     }
 
-    close() {
+    close(): void {
         if (this._readyState === 'closing' || this._readyState === 'closed') {
             return;
         }
         WebRTCModule.dataChannelClose(this._peerConnectionId, this._reactTag);
     }
 
-    _unregisterEvents() {
+    _unregisterEvents(): void {
         this._subscriptions.forEach(e => e.remove());
         this._subscriptions = [];
     }
 
-    _registerEvents() {
+    _registerEvents(): void {
         this._subscriptions = [
             EventEmitter.addListener('dataChannelStateChanged', ev => {
                 if (ev.reactTag !== this._reactTag) {

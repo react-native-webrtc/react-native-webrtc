@@ -13,7 +13,7 @@ interface Constraints {
     video?: boolean | object;
 }
 
-export default function getUserMedia(constraints: Constraints = {}) {
+export default function getUserMedia(constraints: Constraints = {}): Promise<MediaStream> {
     // According to
     // https://www.w3.org/TR/mediacapture-streams/#dom-mediadevices-getusermedia,
     // the constraints argument is a dictionary of type MediaStreamConstraints.
@@ -32,7 +32,7 @@ export default function getUserMedia(constraints: Constraints = {}) {
     constraints = RTCUtil.normalizeConstraints(constraints);
 
     // Request required permissions
-    const reqPermissions: Array<Promise<boolean>> = [];
+    const reqPermissions: Promise<boolean>[] = [];
     if (constraints.audio) {
         reqPermissions.push(permissions.request({ name: 'microphone' }));
     } else {

@@ -64,9 +64,9 @@ export default class RTCPeerConnection extends defineCustomEventTarget(...PEER_C
     iceConnectionState: RTCIceConnectionState = 'new';
 
     _peerConnectionId: number;
-    _localStreams: Array<MediaStream> = [];
-    _remoteStreams: Array<MediaStream> = [];
-    _subscriptions: Array<any> = [];
+    _localStreams: MediaStream[] = [];
+    _remoteStreams: MediaStream[] = [];
+    _subscriptions: any[] = [];
 
     constructor(configuration) {
         super();
@@ -75,7 +75,7 @@ export default class RTCPeerConnection extends defineCustomEventTarget(...PEER_C
         this._registerEvents();
     }
 
-    addStream(stream: MediaStream) {
+    addStream(stream: MediaStream): void {
         const index = this._localStreams.indexOf(stream);
         if (index !== -1) {
             return;
@@ -84,7 +84,7 @@ export default class RTCPeerConnection extends defineCustomEventTarget(...PEER_C
         this._localStreams.push(stream);
     }
 
-    removeStream(stream: MediaStream) {
+    removeStream(stream: MediaStream): void {
         const index = this._localStreams.indexOf(stream);
         if (index === -1) {
             return;
@@ -125,7 +125,7 @@ export default class RTCPeerConnection extends defineCustomEventTarget(...PEER_C
         });
     }
 
-    setConfiguration(configuration) {
+    setConfiguration(configuration): void {
         WebRTCModule.peerConnectionSetConfiguration(configuration, this._peerConnectionId);
     }
 
@@ -188,19 +188,19 @@ export default class RTCPeerConnection extends defineCustomEventTarget(...PEER_C
         });
     }
 
-    getLocalStreams() {
+    getLocalStreams(): MediaStream[] {
         return this._localStreams.slice();
     }
 
-    getRemoteStreams() {
+    getRemoteStreams(): MediaStream[] {
         return this._remoteStreams.slice();
     }
 
-    close() {
+    close(): void {
         WebRTCModule.peerConnectionClose(this._peerConnectionId);
     }
 
-    restartIce() {
+    restartIce(): void {
         WebRTCModule.peerConnectionRestartIce(this._peerConnectionId);
     }
 
@@ -339,7 +339,7 @@ export default class RTCPeerConnection extends defineCustomEventTarget(...PEER_C
      * values with which to initialize corresponding attributes of the new
      * instance such as id
      */
-    createDataChannel(label: string, dataChannelDict?: RTCDataChannelInit) {
+    createDataChannel(label: string, dataChannelDict?: RTCDataChannelInit): RTCDataChannel {
         if (dataChannelDict && 'id' in dataChannelDict) {
             const id = dataChannelDict.id;
             if (typeof id !== 'number') {
