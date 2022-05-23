@@ -78,15 +78,15 @@ class MediaStreamTrack extends defineCustomEventTarget(...MEDIA_STREAM_TRACK_EVE
         WebRTCModule.mediaStreamTrackSwitchCamera(this.id);
     }
 
-    applyConstraints() {
+    applyConstraints(): never {
         throw new Error('Not implemented.');
     }
 
-    clone() {
+    clone(): never {
         throw new Error('Not implemented.');
     }
 
-    getCapabilities() {
+    getCapabilities(): never {
         throw new Error('Not implemented.');
     }
 

@@ -106,7 +106,7 @@ export default class MediaStream extends defineCustomEventTarget(...MEDIA_STREAM
         return this._tracks.filter(track => track.kind === 'video');
     }
 
-    clone() {
+    clone(): never {
         throw new Error('Not implemented.');
     }
 
