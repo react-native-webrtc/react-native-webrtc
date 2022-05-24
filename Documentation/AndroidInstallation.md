@@ -51,8 +51,8 @@ In `android/app/proguard-rules.pro` add the following on a new line.
 
 ## Screen Capture Support - Android 10+
 
-You'll need [Notifee](https://notifee.app/react-native/docs/overview) or another library which can handle foreground services for you.  
-The basic requirement to get screen capturing working on Android 10 and above is to have a foreground service running with `mediaProjection` as a service type before you start screen capturing.  
+You'll need [Notifee](https://notifee.app/react-native/docs/overview) or another library that can handle foreground services for you.  
+The basic requirement to get screen capturing working since Android 10 and above is to have a foreground service with `mediaProjection` included as a service type and to have that service running before starting a screen capture session.  
 
 In `android/app/main/AndroidManifest.xml` add the following inside the `<application>` section.  
 
@@ -62,10 +62,9 @@ In `android/app/main/AndroidManifest.xml` add the following inside the `<applica
 	android:foregroundServiceType="mediaProjection|camera|microphone" />
 ```
 
-To actually get screen capturing working you'll need to start the foreground service which includes an ongoing notification.  
-
-You will be prompted for permission each time you want to initialise screen capturing.  
-A notification channel is also required and created below.  
+The following will create an ongoing persistent notification which also comes with a foreground service.  
+You will be prompted for permissions automatically each time you want to initialise screen capturing.  
+A notification channel is also required and created.  
 
 ```javascript
 import notifee, { AndroidImportance } from '@notifee/react-native';
@@ -79,7 +78,7 @@ try {
 		importance: AndroidImportance.DEFAULT
 	} );
 
-	const notificationId = await notifee.displayNotification( {
+	await notifee.displayNotification( {
 		title: 'Screen Capture',
 		body: 'This notification will be here until you stop capturing.',
 		android: {
@@ -92,12 +91,12 @@ try {
 };
 ```
 
-Once screen capturing has finished you should then cancel the notification.  
-That will ofcourse also stop the foreground service.  
+Once screen capturing has finished you should then stop the foreground service.  
+Usually you'd run a notification cancellation function but as the service is involved, instead run the following.  
 
 ```javascript
 try {
-	await notifee.cancelNotification( notificationId );
+	await notifee.stopForegroundService();
 } catch( err ) {
 	// Handle Error
 };
