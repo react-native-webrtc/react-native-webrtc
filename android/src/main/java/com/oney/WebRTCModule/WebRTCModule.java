@@ -17,6 +17,7 @@ import com.facebook.react.bridge.ReadableMap;
 import com.facebook.react.bridge.ReadableMapKeySetIterator;
 import com.facebook.react.bridge.ReadableType;
 import com.facebook.react.bridge.WritableMap;
+import com.facebook.react.bridge.WritableArray;
 import com.facebook.react.module.annotations.ReactModule;
 import com.facebook.react.modules.core.DeviceEventManagerModule;
 
@@ -37,6 +38,10 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
     static final String TAG = WebRTCModule.class.getCanonicalName();
 
     PeerConnectionFactory mFactory;
+    VideoEncoderFactory mVideoEncoderFactory;
+    VideoDecoderFactory mVideoDecoderFactory;
+
+    // Need to expose the peer connection codec factories here to get capabilities
     private final SparseArray<PeerConnectionObserver> mPeerConnectionObservers;
     final Map<String, MediaStream> localStreams;
 
@@ -129,6 +134,10 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
                 .setVideoEncoderFactory(encoderFactory)
                 .setVideoDecoderFactory(decoderFactory)
                 .createPeerConnectionFactory();
+
+        // Saving the encoder and decoder factories to get codec info later when needed
+        mVideoEncoderFactory = encoderFactory;
+        mVideoDecoderFactory = decoderFactory;
 
         getUserMediaImpl = new GetUserMediaImpl(this, reactContext);
     }
@@ -388,6 +397,22 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
             conf.presumeWritableWhenFullyRelayed = v;
         }
 
+        // sdpSemantics
+        if (map.hasKey("sdpSemantics")
+                && map.getType("sdpSemantics") == ReadableType.String) {
+            final String v = map.getString("sdpSemantics");
+            if (v != null) {
+                switch (v) {
+                    case "unified-plan":
+                        conf.sdpSemantics = PeerConnection.SdpSemantics.UNIFIED_PLAN;
+                        break;
+                    case "plan-b":
+                        conf.sdpSemantics = PeerConnection.SdpSemantics.PLAN_B;
+                }
+
+            }
+        }
+
         return conf;
     }
 
@@ -397,7 +422,7 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
 
         try {
             ThreadUtils.submitToExecutor(() -> {
-                PeerConnectionObserver observer = new PeerConnectionObserver(this, id);
+                PeerConnectionObserver observer = new PeerConnectionObserver(this, id, rtcConfiguration.sdpSemantics);
                 PeerConnection peerConnection = mFactory.createPeerConnection(rtcConfiguration, observer);
                 observer.setPeerConnection(peerConnection);
                 mPeerConnectionObservers.put(id, observer);
@@ -435,7 +460,7 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
         }
     }
 
-    private MediaStreamTrack getTrack(String trackId) {
+    public MediaStreamTrack getTrack(String trackId) {
         MediaStreamTrack track = getLocalTrack(trackId);
 
         if (track == null) {
@@ -476,6 +501,171 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
         }
 
         return mediaConstraints;
+    }
+
+
+    /**
+     * Transceiver Parsing Helpers
+     */
+
+    private MediaStreamTrack.MediaType mediaTypeForString(String type) {
+        switch(type) {
+            case "audio": 
+                return MediaStreamTrack.MediaType.MEDIA_TYPE_AUDIO;
+            case "video":
+                return MediaStreamTrack.MediaType.MEDIA_TYPE_VIDEO;
+            default:
+                throw new Error("Unknown media type");
+        }
+    }
+    
+    private RtpTransceiver.RtpTransceiverDirection parseDirection(String src) {
+        switch (src) {
+            case "sendrecv":
+                return RtpTransceiver.RtpTransceiverDirection.SEND_RECV;
+            case "sendonly":
+                return RtpTransceiver.RtpTransceiverDirection.SEND_ONLY;
+            case "recvonly":
+                return RtpTransceiver.RtpTransceiverDirection.RECV_ONLY;
+            case "inactive":
+                return RtpTransceiver.RtpTransceiverDirection.INACTIVE;
+        }
+        throw new Error("Invalid direction");
+    }
+
+    private RtpTransceiver.RtpTransceiverInit parseTransceiverOptions(ReadableMap map) {
+        RtpTransceiver.RtpTransceiverDirection direction = RtpTransceiver.RtpTransceiverDirection.SEND_RECV;
+        ArrayList<String> streamIds = new ArrayList<>();
+        if (map != null) {
+            if (map.hasKey("direction")) {
+                String directionRaw = map.getString("direction");
+                if (directionRaw != null) {
+                    direction = this.parseDirection(directionRaw);
+                }
+            }
+            if (map.hasKey("streamIds")) {
+                ReadableArray rawStreamIds = map.getArray("streamIds");
+                if (rawStreamIds != null) {
+                    for (int i = 0; i < rawStreamIds.size(); i++) {
+                        streamIds.add(rawStreamIds.getString(i));
+                    }
+                }
+            }
+        }
+
+        return new RtpTransceiver.RtpTransceiverInit(direction, streamIds);
+    }
+
+    @ReactMethod(isBlockingSynchronousMethod = true)
+    public WritableMap peerConnectionAddTransceiver(int id,
+                                             ReadableMap options) {
+        try {
+            return (WritableMap) ThreadUtils.submitToExecutor((Callable<Object>) () -> {
+                PeerConnectionObserver pco = mPeerConnectionObservers.get(id);
+                if (pco == null) {
+                    Log.d(TAG, "peerConnectionAddTransceiver() peerConnection is null");
+                    return null;
+                }
+
+                RtpTransceiver transceiver = null;
+                if (options.hasKey("type")) {
+                    String kind = options.getString("type");
+                    transceiver = pco.addTransceiver(mediaTypeForString(kind), parseTransceiverOptions(options.getMap("init")));
+                } else if (options.hasKey("trackId")) {
+                    String trackId = options.getString("trackId");
+                    MediaStreamTrack track = getTrack(trackId);
+                    transceiver = pco.addTransceiver(track, parseTransceiverOptions(options.getMap("init")));
+
+                }
+                if (transceiver == null) {
+                    Log.d(TAG, "peerConnectionAddTransceiver() Error adding transceiver");
+                    return null;
+                }
+                return pco.serializeTransceiver(transceiver);
+            }).get();
+        } catch (InterruptedException | ExecutionException e) {
+            Log.d(TAG, "peerConnectionAddTransceiver() " + e.getMessage());
+            return null;
+        }
+    }
+
+    @ReactMethod(isBlockingSynchronousMethod = true)
+    public WritableMap peerConnectionGetTransceivers(int id) {
+        try {
+            return (WritableMap) ThreadUtils.submitToExecutor((Callable<Object>) () -> {
+                PeerConnectionObserver pco = mPeerConnectionObservers.get(id);
+                if (pco == null) {
+                    Log.d(TAG, "peerConnectionTransceiverStop() peerConnectionObserver is null");
+                    return null;
+                }
+                return pco.getTransceiversMap();
+            }).get();
+        } catch (InterruptedException | ExecutionException e) {
+            Log.d(TAG, "peerConnectionTransceiverStop(): " + e.getMessage());
+            return null;
+        }
+    }
+
+    @ReactMethod(isBlockingSynchronousMethod = true)
+    public boolean peerConnectionTransceiverStop(int id,
+                                              String transceiverId) {
+        try {
+            return (boolean) ThreadUtils.submitToExecutor((Callable<Object>) () -> {
+                PeerConnectionObserver pco = mPeerConnectionObservers.get(id);
+                if (pco == null) {
+                    Log.d(TAG, "peerConnectionTransceiverStop() peerConnectionObserver is null");
+                    return false;
+                }
+                RtpTransceiver transceiver = pco.getTransceiver(transceiverId);
+                transceiver.stop();
+                return true;
+            }).get();
+        } catch (InterruptedException | ExecutionException e) {
+            Log.d(TAG, "peerConnectionTransceiverStop(): " + e.getMessage());
+            return false;
+        }
+    }
+
+    @ReactMethod
+    public void peerConnectionTransceiverReplaceTrack(int id,
+                                                      String transceiverId,
+                                                      String trackId,
+                                                      Promise promise) {
+        ThreadUtils.runOnExecutor(() ->{
+            PeerConnectionObserver pco = mPeerConnectionObservers.get(id);
+            if (pco == null) {
+                Log.d(TAG, "peerConnectionTransceiverReplaceTrack() peerConnectionObserver is null");
+                promise.reject(new Exception("Peer Connection Observer is null"));
+                return;
+            }
+            RtpTransceiver transceiver = pco.getTransceiver(transceiverId);
+            RtpSender sender = transceiver.getSender();
+            MediaStreamTrack track = getTrack(trackId);
+            sender.setTrack(track, false);
+            promise.resolve(true);
+        });
+    }
+
+    @ReactMethod(isBlockingSynchronousMethod = true)
+    public boolean peerConnectionTransceiverSetDirection(int id,
+                                                      String transceiverId,
+                                                      String direction) {
+
+        try {
+            return (boolean) ThreadUtils.submitToExecutor((Callable<Object>) () -> {
+                PeerConnectionObserver pco = mPeerConnectionObservers.get(id);
+                if (pco == null) {
+                    Log.d(TAG, "peerConnectionTransceiverSetDirection() peerConnectionObserver is null");
+                    return false;
+                }
+                RtpTransceiver transceiver = pco.getTransceiver(transceiverId);
+                transceiver.setDirection(this.parseDirection(direction));
+                return true;
+            }).get();
+        } catch (InterruptedException | ExecutionException e) {
+            Log.d(TAG, "peerConnectionTransceiverStop(): " + e.getMessage());
+            return false;
+        }
     }
 
     @ReactMethod
@@ -736,6 +926,50 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
                 peerConnection.setLocalDescription(observer);
             }
         });
+    }
+
+    private WritableMap mapForVideoCodecInfo(VideoCodecInfo info) {
+        WritableMap params = Arguments.createMap();
+        params.putString("mimeType", "video/" + info.name);
+        return params;
+    }
+
+    @ReactMethod(isBlockingSynchronousMethod = true)
+    public WritableMap receiverGetCapabilities() {
+        try {
+            return (WritableMap) ThreadUtils.submitToExecutor((Callable<Object>) () -> {
+                VideoCodecInfo[] videoCodecInfos = mVideoDecoderFactory.getSupportedCodecs();
+                WritableMap params = Arguments.createMap();
+                WritableArray codecs = Arguments.createArray();
+                for(VideoCodecInfo codecInfo: videoCodecInfos) {
+                    codecs.pushMap(mapForVideoCodecInfo(codecInfo));
+                }
+                params.putArray("codecs", codecs);
+                return params;
+            }).get();
+        } catch (ExecutionException | InterruptedException e) {
+            Log.d(TAG, "senderGetCapabilities() " + e.getMessage());
+            return null;
+        }
+    }
+
+    @ReactMethod(isBlockingSynchronousMethod = true)
+    public WritableMap senderGetCapabilities() {
+        try {
+            return (WritableMap) ThreadUtils.submitToExecutor((Callable<Object>) () -> {
+                VideoCodecInfo[] videoCodecInfos = mVideoEncoderFactory.getSupportedCodecs();
+                WritableMap params = Arguments.createMap();
+                WritableArray codecs = Arguments.createArray();
+                for(VideoCodecInfo codecInfo: videoCodecInfos) {
+                    codecs.pushMap(mapForVideoCodecInfo(codecInfo));
+                }
+                params.putArray("codecs", codecs);
+                return params;
+            }).get();
+        } catch (ExecutionException | InterruptedException e) {
+            Log.d(TAG, "senderGetCapabilities() " + e.getMessage());
+            return null;
+        }
     }
 
     @ReactMethod

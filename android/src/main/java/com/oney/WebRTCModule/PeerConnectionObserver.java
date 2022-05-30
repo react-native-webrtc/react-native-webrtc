@@ -19,6 +19,7 @@ import org.webrtc.MediaStream;
 import org.webrtc.MediaStreamTrack;
 import org.webrtc.PeerConnection;
 import org.webrtc.RtpReceiver;
+import org.webrtc.RtpTransceiver;
 import org.webrtc.SessionDescription;
 import org.webrtc.VideoTrack;
 
@@ -35,6 +36,9 @@ import java.util.UUID;
 class PeerConnectionObserver implements PeerConnection.Observer {
     private final static String TAG = WebRTCModule.TAG;
 
+
+    private PeerConnection.SdpSemantics sdpSemantics; 
+    
     private final Map<String, DataChannelWrapper> dataChannels;
     private final int id;
     private PeerConnection peerConnection;
@@ -44,8 +48,9 @@ class PeerConnectionObserver implements PeerConnection.Observer {
     private final VideoTrackAdapter videoTrackAdapters;
     private final WebRTCModule webRTCModule;
 
-    PeerConnectionObserver(WebRTCModule webRTCModule, int id) {
+    PeerConnectionObserver(WebRTCModule webRTCModule, int id, PeerConnection.SdpSemantics semantics) {
         this.webRTCModule = webRTCModule;
+        this.sdpSemantics = semantics;
         this.id = id;
         this.dataChannels = new HashMap<>();
         this.localStreams = new ArrayList<>();
@@ -99,6 +104,62 @@ class PeerConnectionObserver implements PeerConnection.Observer {
         remoteStreams.clear();
         remoteTracks.clear();
         dataChannels.clear();
+    }
+
+    RtpTransceiver addTransceiver(MediaStreamTrack.MediaType mediaType, RtpTransceiver.RtpTransceiverInit init) {
+        if (sdpSemantics != PeerConnection.SdpSemantics.UNIFIED_PLAN) {
+            throw new Error("Cannot add transceiver: Invalid plan");
+        }
+
+        if (peerConnection == null) {
+            throw new Error("Cannot Add transceiver: peer connection is null");
+        }
+
+        return peerConnection.addTransceiver(mediaType, init);
+    }
+
+    RtpTransceiver addTransceiver(MediaStreamTrack track, RtpTransceiver.RtpTransceiverInit init) {
+        if (sdpSemantics != PeerConnection.SdpSemantics.UNIFIED_PLAN) {
+            throw new Error("Cannot add transceiver: Invalid plan");
+        }
+
+        if (peerConnection == null) {
+            throw new Error("Cannot Add transceiver: peer connection is null");
+        }
+
+        return peerConnection.addTransceiver(track, init);
+    }
+
+    String resolveTransceiverId(RtpTransceiver transceiver) {
+        return transceiver.getSender().id();
+    }
+
+    RtpTransceiver getTransceiver(String id) {
+        if (this.peerConnection == null) {
+            throw new Error("Peer connection is null");
+        }
+
+        for(RtpTransceiver transceiver: this.peerConnection.getTransceivers()) {
+            if (transceiver.getSender().id().equals(id)) {
+                return transceiver;
+            }
+        }
+        throw new Error("Unable to find transceiver");
+    }
+
+    public ReadableMap getTransceiversMap() {
+        if (this.peerConnection == null) {
+            throw new Error("Peer connection is null");
+        }
+
+        List<RtpTransceiver> transceivers = this.peerConnection.getTransceivers();
+        WritableMap transceiversMap = Arguments.createMap();
+        WritableArray transceiversArray = Arguments.createArray();
+        for(RtpTransceiver transceiver: transceivers) {
+            transceiversArray.pushMap(serializeTransceiver(transceiver));
+        }
+        transceiversMap.putArray("transceivers", transceiversArray);
+        return transceiversMap;
     }
 
     WritableMap createDataChannel(String label, ReadableMap config) {
@@ -316,6 +377,85 @@ class PeerConnectionObserver implements PeerConnection.Observer {
     @Override
     public void onAddTrack(final RtpReceiver receiver, final MediaStream[] mediaStreams) {
         Log.d(TAG, "onAddTrack");
+
+        MediaStreamTrack track = receiver.track();
+
+        if (track == null || sdpSemantics != PeerConnection.SdpSemantics.UNIFIED_PLAN) {
+            return;
+        }
+        if(track.kind().equals(MediaStreamTrack.VIDEO_TRACK_KIND)){
+            videoTrackAdapters.addAdapter((VideoTrack) track);
+        }
+        remoteTracks.put(track.id(), track);
+
+
+        WritableMap params = Arguments.createMap();
+        WritableMap eventInfo = Arguments.createMap();
+        WritableArray streams = Arguments.createArray();
+
+        for (MediaStream stream : mediaStreams) {
+            // Getting the streamReactTag 
+            String streamReactTag = null;
+            for (Map.Entry<String, MediaStream> e : remoteStreams.entrySet()) {
+                if (e.getValue().equals(stream)) {
+                    streamReactTag = e.getKey();
+                    break;
+                }
+            }
+            if (streamReactTag == null) {
+                streamReactTag = UUID.randomUUID().toString();
+                remoteStreams.put(streamReactTag, stream);
+            }
+            streams.pushMap(serializeStream(streamReactTag, stream));
+        }
+
+        eventInfo.putArray("streams", streams);
+        eventInfo.putMap("track", serializeTrack(receiver.track()));
+        eventInfo.putMap("receiver", serializeReceiver(receiver));
+
+        // Getting the transceiver object associated with the receiver for the event
+        List<RtpTransceiver> transceivers = peerConnection.getTransceivers();
+        for( RtpTransceiver transceiver : transceivers ) {
+            if(transceiver.getReceiver() != null && receiver.id().equals(transceiver.getReceiver().id())) {
+                eventInfo.putMap("transceiver", serializeTransceiver(transceiver));
+                break;
+            }
+        }
+        params.putInt("id", this.id);
+        params.putMap("info", eventInfo);
+
+        webRTCModule.sendEvent("peerConnectionOnTrack", params);
+    }
+
+    @Override
+    public void onTrack(final RtpTransceiver transceiver) {
+        Log.d(TAG, "onTrack");
+
+        RtpReceiver receiver = transceiver.getReceiver();
+        MediaStreamTrack track = receiver.track();
+
+        if (track == null || sdpSemantics != PeerConnection.SdpSemantics.UNIFIED_PLAN) {
+            return;
+        }
+        if(track.kind().equals(MediaStreamTrack.VIDEO_TRACK_KIND)){
+            videoTrackAdapters.addAdapter((VideoTrack) track);
+        }
+        remoteTracks.put(track.id(), track);
+
+        WritableMap params = Arguments.createMap();
+        WritableMap eventInfo = Arguments.createMap();
+        WritableArray streams = Arguments.createArray();
+        
+        eventInfo.putArray("streams", streams);
+        eventInfo.putMap("track", serializeTrack(receiver.track()));
+        eventInfo.putMap("receiver", serializeReceiver(receiver));
+        eventInfo.putMap("transceiver", serializeTransceiver(transceiver));
+        
+        // Getting the transceiver object associated with the receiver for the event
+        params.putInt("id", this.id);
+        params.putMap("info", eventInfo);
+
+        webRTCModule.sendEvent("peerConnectionOnTrack", params);
     }
 
     @Nullable
@@ -388,5 +528,87 @@ class PeerConnectionObserver implements PeerConnection.Observer {
                 return "closed";
         }
         return null;
+    }
+
+    /**
+     * Serialization and Parsing helpers
+     */
+
+    private WritableMap serializeStream(String streamReactTag, MediaStream stream) {
+
+        Log.d(TAG, "streamReactTag = " + streamReactTag);
+        WritableMap params = Arguments.createMap();
+        params.putInt("id", id);
+        params.putString("streamId", stream.getId());
+        params.putString("streamReactTag", streamReactTag);
+
+        WritableArray tracks = Arguments.createArray();
+
+        for (VideoTrack track: stream.videoTracks) {
+            tracks.pushMap(serializeTrack(track));
+        }
+        for (AudioTrack track: stream.audioTracks) {
+            tracks.pushMap(serializeTrack(track));
+        }
+
+        params.putArray("tracks", tracks);
+
+        return params;
+    }
+
+    private String serializeDirection(RtpTransceiver.RtpTransceiverDirection src) {
+        switch(src) {
+            case INACTIVE:
+                return "inactive";
+            case RECV_ONLY:
+                return "recvonly";
+            case SEND_ONLY:
+                return "sendonly";
+            case SEND_RECV:
+                return "sendrecv";
+            default:
+                throw new Error("Invalid direction");
+        }
+    }
+
+    private ReadableMap serializeTrack(MediaStreamTrack track) {
+        WritableMap trackInfo = Arguments.createMap();
+        trackInfo.putString("id", track.id());
+        if (track.kind().equals("video")) {
+            trackInfo.putString("label", "Video");
+        } else if (track.kind().equals("audio")) {
+            trackInfo.putString("label", "Aideo");
+        } else {
+            throw new Error("Unknown kind: " + track.kind());
+        }
+        trackInfo.putString("kind", track.kind());
+        trackInfo.putBoolean("enabled", track.enabled());
+        trackInfo.putString("readyState", track.state().toString());
+        trackInfo.putBoolean("remote", true);
+        return trackInfo;
+    }
+
+    private ReadableMap serializeReceiver(RtpReceiver receiver) {
+        WritableMap res = Arguments.createMap();
+        res.putString("id", receiver.id());
+        res.putMap("track", serializeTrack(receiver.track()));
+        return res;
+    }
+
+    public ReadableMap serializeTransceiver(RtpTransceiver transceiver) {
+        WritableMap res = Arguments.createMap();
+        res.putString("id", transceiver.getSender().id());
+        String mid = transceiver.getMid();
+        if (mid != null) {
+            res.putString("mid", mid);
+        }
+        res.putString("direction", serializeDirection(transceiver.getDirection()));
+        RtpTransceiver.RtpTransceiverDirection currentDirection = transceiver.getCurrentDirection();
+        if (currentDirection != null) {
+            res.putString("currentDirection", serializeDirection(transceiver.getCurrentDirection()));
+        }
+        res.putBoolean("isStopped", transceiver.isStopped());
+        res.putMap("receiver", serializeReceiver(transceiver.getReceiver()));
+        return res;
     }
 }

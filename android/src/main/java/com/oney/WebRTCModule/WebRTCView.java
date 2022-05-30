@@ -25,6 +25,7 @@ import org.webrtc.RendererCommon;
 import org.webrtc.RendererCommon.RendererEvents;
 import org.webrtc.RendererCommon.ScalingType;
 import org.webrtc.SurfaceViewRenderer;
+import org.webrtc.MediaStreamTrack;
 import org.webrtc.VideoTrack;
 
 public class WebRTCView extends ViewGroup {
@@ -189,6 +190,9 @@ public class WebRTCView extends ViewGroup {
             }
         }
 
+        if (videoTrack == null) {
+            Log.d(TAG, "No video track found for stream tag or track id");
+        }
         return videoTrack;
     }
 
