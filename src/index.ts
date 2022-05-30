@@ -4,7 +4,13 @@ import RTCRtpReceiver from './RTCRtpReceiver';
 import RTCRtpSender from './RTCRtpSender';
 import RTCSessionDescription from './RTCSessionDescription';
 import RTCView from './RTCView';
+<<<<<<< HEAD
 import ScreenCapturePickerView from './ScreenCapturePickerView';
+=======
+import RTCRtpTransceiver from './RTCRtpTransceiver';
+import RTCRtpReceiver from './RTCRtpReceiver';
+import RTCRtpSender from './RTCRtpSender';
+>>>>>>> ee44073 (Added Transceivers API to Typescript)
 import MediaStream from './MediaStream';
 import MediaStreamTrack from './MediaStreamTrack';
 import mediaDevices from './MediaDevices';
@@ -19,7 +25,15 @@ export {
     RTCRtpSender,
     RTCSessionDescription,
     RTCView,
+<<<<<<< HEAD
     ScreenCapturePickerView,
+=======
+    RTCRtpTransceiver,
+    RTCRtpReceiver,
+    RTCRtpSender,
+    MediaStream,
+    MediaStreamTrack,
+>>>>>>> ee44073 (Added Transceivers API to Typescript)
     mediaDevices,
     permissions,
     registerGlobals
@@ -46,4 +60,7 @@ function registerGlobals(): void {
     global.RTCSessionDescription = RTCSessionDescription;
     global.MediaStream = MediaStream;
     global.MediaStreamTrack = MediaStreamTrack;
+    global.RTCRtpTransceiver = RTCRtpTransceiver;
+    global.RTCRtpReceiver = RTCRtpReceiver;
+    global.RTCRtpSender = RTCRtpSender;
 }

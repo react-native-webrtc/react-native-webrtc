@@ -1,8 +1,9 @@
 
-import { NativeModules } from 'react-native';
+import { NativeModules, TurboModuleRegistry } from 'react-native';
 import { defineCustomEventTarget } from 'event-target-shim';
 
 import { deepClone } from './RTCUtil';
+import EventEmitter from './EventEmitter';
 
 const { WebRTCModule } = NativeModules;
 
@@ -96,6 +97,10 @@ class MediaStreamTrack extends defineCustomEventTarget(...MEDIA_STREAM_TRACK_EVE
 
     getSettings() {
         return deepClone(this._settings);
+    }
+
+    toURL(): String {
+        return this.id;
     }
 
     release(): void {

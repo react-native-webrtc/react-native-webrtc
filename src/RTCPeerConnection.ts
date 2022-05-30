@@ -5,14 +5,19 @@ import { NativeModules } from 'react-native';
 import MediaStream from './MediaStream';
 import MediaStreamEvent from './MediaStreamEvent';
 import MediaStreamTrackEvent from './MediaStreamTrackEvent';
+import MediaStreamTrack from './MediaStreamTrack';
+import RTCRtpTransceiver from './RTCRtpTransceiver';
 import RTCDataChannel from './RTCDataChannel';
 import RTCDataChannelEvent from './RTCDataChannelEvent';
+import RTCTrackEvent from './RTCTrackEvent';
 import RTCSessionDescription from './RTCSessionDescription';
 import RTCIceCandidate from './RTCIceCandidate';
 import RTCIceCandidateEvent from './RTCIceCandidateEvent';
 import RTCEvent from './RTCEvent';
 import * as RTCUtil from './RTCUtil';
 import EventEmitter from './EventEmitter';
+import RTCRtpReceiver from './RTCRtpReceiver';
+import RTCRtpSender from './RTCRtpSender';
 
 const { WebRTCModule } = NativeModules;
 
@@ -47,7 +52,8 @@ const PEER_CONNECTION_EVENTS = [
     'icegatheringstatechange',
     'negotiationneeded',
     'signalingstatechange',
-    'datachannel'
+    'datachannel',
+    'track'
 ];
 
 let nextPeerConnectionId = 0;
@@ -63,6 +69,7 @@ export default class RTCPeerConnection extends defineCustomEventTarget(...PEER_C
 
     _peerConnectionId: number;
     _subscriptions: any[] = [];
+    _transceivers: RTCRtpTransceiver[] = [];
 
     constructor(configuration) {
         super();
@@ -103,41 +110,7 @@ export default class RTCPeerConnection extends defineCustomEventTarget(...PEER_C
         });
     }
 
-<<<<<<< HEAD
     setConfiguration(configuration): void {
-||||||| parent of 0382805 (api: drop Plan B)
-    setConfiguration(configuration) {
-=======
-    /**
-     * Creates a new RTCDataChannel object with the given label. The
-     * RTCDataChannelInit dictionary can be used to configure properties of the
-     * underlying channel such as data reliability.
-     *
-     * @param {string} label - the value with which the label attribute of the new
-     * instance is to be initialized
-     * @param {RTCDataChannelInit} dataChannelDict - an optional dictionary of
-     * values with which to initialize corresponding attributes of the new
-     * instance such as id
-     */
-     createDataChannel(label: string, dataChannelDict?: RTCDataChannelInit) {
-        if (dataChannelDict && 'id' in dataChannelDict) {
-            const id = dataChannelDict.id;
-            if (typeof id !== 'number') {
-                throw new TypeError('DataChannel id must be a number: ' + id);
-            }
-        }
-
-        const channelInfo = WebRTCModule.createDataChannel(this._peerConnectionId, label, dataChannelDict);
-
-        if (channelInfo === null) {
-            throw new TypeError('Failed to create new DataChannel');
-        }
-
-        return new RTCDataChannel(channelInfo);
-    }
-
-    setConfiguration(configuration) {
->>>>>>> 0382805 (api: drop Plan B)
         WebRTCModule.peerConnectionSetConfiguration(configuration, this._peerConnectionId);
     }
 
@@ -183,6 +156,31 @@ export default class RTCPeerConnection extends defineCustomEventTarget(...PEER_C
         this.remoteDescription = new RTCSessionDescription(newSdp);
     }
 
+
+    addTransceiver(source: 'audio' |'video' | MediaStreamTrack, init): RTCRtpTransceiver {
+        let src = {};
+        if (source === 'audio') {
+            src = { type: 'audio' };
+        } else if (source === 'video') {
+            src = { type: 'video' };
+        } else {
+            src = { trackId: source.id };
+        }
+        // Extract the stream ids 
+        if (init && init.streams) {
+            init.streamIds = init.streams.map((stream) => {
+                return stream.id;
+            });
+        }
+
+        const transceiver = WebRTCModule.peerConnectionAddTransceiver(this._peerConnectionId, { ...src, init: { ...init } });
+        if (transceiver == null) {
+            console.log("Error adding transceiver");
+            throw new Error("Transceiver could not be added");
+        }
+        return new RTCRtpTransceiver(transceiver);
+    }
+
     getStats() {
         return WebRTCModule.peerConnectionGetStats(this._peerConnectionId).then(data => {
             /* On both Android and iOS it is faster to construct a single
@@ -200,29 +198,33 @@ export default class RTCPeerConnection extends defineCustomEventTarget(...PEER_C
         });
     }
 
-<<<<<<< HEAD
-    getLocalStreams(): MediaStream[] {
-        return this._localStreams.slice();
+    getTransceivers(): RTCRtpTransceiver[] {
+        const response = WebRTCModule.peerConnectionGetTransceivers(this._peerConnectionId);
+        if (response === null)
+            return [];
+        return response.transceivers.map((transceiver) => {
+            return new RTCRtpTransceiver(transceiver);
+        });
     }
 
-    getRemoteStreams(): MediaStream[] {
-        return this._remoteStreams.slice();
+    getSenders(): RTCRtpSender[] {
+        const transceivers = this.getTransceivers();
+        let senders: RTCRtpSender[] = [];
+        for (var transceiver of this.getTransceivers()) {
+            if (transceiver.sender)
+                senders.push(transceiver.sender);
+        }
+        return senders;
+    }
+
+    getReceivers(): RTCRtpReceiver[] {
+        const transceivers = this.getTransceivers();
+        return transceivers.map((transceiver) => {
+            return transceiver.receiver;
+        });
     }
 
     close(): void {
-||||||| parent of 0382805 (api: drop Plan B)
-    getLocalStreams() {
-        return this._localStreams.slice();
-    }
-
-    getRemoteStreams() {
-        return this._remoteStreams.slice();
-    }
-
-    close() {
-=======
-    close() {
->>>>>>> 0382805 (api: drop Plan B)
         WebRTCModule.peerConnectionClose(this._peerConnectionId);
     }
 
@@ -276,24 +278,36 @@ export default class RTCPeerConnection extends defineCustomEventTarget(...PEER_C
                 // @ts-ignore
                 this.dispatchEvent(new RTCEvent('signalingstatechange'));
             }),
+            EventEmitter.addListener('peerConnectionOnTrack', ev => {
+                if (ev.id !== this._peerConnectionId) {
+                    return;
+                }
+
+                // Creating objects out of the event data
+                // TODO: pass objects instead (track for receiver and receiver for transceiver)
+                const track = new MediaStreamTrack(ev.info.track);
+                const receiver = new RTCRtpReceiver({ ...ev.info.receiver.id, track });
+                const transceiver = new RTCRtpTransceiver({ ...ev.info.transceiver, receiver: receiver });
+                const streams = ev.info.streams.map(stream => {
+                    return new MediaStream(stream);
+                });
+
+                // @ts-ignore
+                this.dispatchEvent(new RTCTrackEvent('track', { track, receiver, transceiver, streams }));
+            }),
             EventEmitter.addListener('mediaStreamTrackMuteChanged', ev => {
                 if (ev.peerConnectionId !== this._peerConnectionId) {
                     return;
                 }
-                let track;
-                for (const stream of this._remoteStreams) {
-                    const t = stream._tracks.find(track => track.id === ev.trackId);
-                    if (t) {
-                        track = t;
-                        break;
-                    }
-                }
-                if (track) {
-                    track._muted = ev.muted;
-                    const eventName = ev.muted ? 'mute' : 'unmute';
-                    track.dispatchEvent(new MediaStreamTrackEvent(eventName, { track }));
-                }
+                // TODO: Fetch track from a cached version of tracks or from transceivers.
+                // let track = null;
+                //if (track) {
+                //    track._muted = ev.muted;
+                //    const eventName = ev.muted ? 'mute' : 'unmute';
+                //    track.dispatchEvent(new MediaStreamTrackEvent(eventName, { track }));
+                //}
             }),
+
             EventEmitter.addListener('peerConnectionGotICECandidate', ev => {
                 if (ev.id !== this._peerConnectionId) {
                     return;
@@ -328,7 +342,6 @@ export default class RTCPeerConnection extends defineCustomEventTarget(...PEER_C
             })
         ];
     }
-<<<<<<< HEAD
 
     /**
      * Creates a new RTCDataChannel object with the given label. The
@@ -357,35 +370,4 @@ export default class RTCPeerConnection extends defineCustomEventTarget(...PEER_C
 
         return new RTCDataChannel(channelInfo);
     }
-||||||| parent of 0382805 (api: drop Plan B)
-
-    /**
-     * Creates a new RTCDataChannel object with the given label. The
-     * RTCDataChannelInit dictionary can be used to configure properties of the
-     * underlying channel such as data reliability.
-     *
-     * @param {string} label - the value with which the label attribute of the new
-     * instance is to be initialized
-     * @param {RTCDataChannelInit} dataChannelDict - an optional dictionary of
-     * values with which to initialize corresponding attributes of the new
-     * instance such as id
-     */
-    createDataChannel(label: string, dataChannelDict?: RTCDataChannelInit) {
-        if (dataChannelDict && 'id' in dataChannelDict) {
-            const id = dataChannelDict.id;
-            if (typeof id !== 'number') {
-                throw new TypeError('DataChannel id must be a number: ' + id);
-            }
-        }
-
-        const channelInfo = WebRTCModule.createDataChannel(this._peerConnectionId, label, dataChannelDict);
-
-        if (channelInfo === null) {
-            throw new TypeError('Failed to create new DataChannel');
-        }
-
-        return new RTCDataChannel(channelInfo);
-    }
-=======
->>>>>>> 0382805 (api: drop Plan B)
 }
