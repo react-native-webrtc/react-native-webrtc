@@ -188,7 +188,7 @@ public class WebRTCView extends ViewGroup {
                 }
             }
         }
-
+        
         return videoTrack;
     }
 
