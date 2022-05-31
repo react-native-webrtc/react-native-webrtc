@@ -21,7 +21,8 @@ import {
 
 ## Registering Globals
 
-You'll only really need to use this function if you are mixing project development with libraries that use browser based WebRTC functions. Also applies if you are making your project compatible with react-native-web.  
+You'll only really need to use this function if you're mixing project development with libraries that use browser based WebRTC functions.  
+Also applies if you are making your project compatible with react-native-web.  
 
 ```javascript
 registerGlobals();
@@ -41,7 +42,8 @@ You can also find a shim for react-native-web over [here](https://github.com/rea
 
 ## Get Available Media Devices
 
-Some devices might not have more than 1 camera. The following will allow you to know how many cameras the device has. You can ofcourse use `enumerateDevices` to list other media device information too.  
+Some devices might not have more than 1 camera. The following will allow you to know how many cameras the device has.  
+You can ofcourse use `enumerateDevices` to list other media device information too.  
 
 ```javascript
 let cameraCount = 0;
@@ -62,7 +64,7 @@ try {
 ## Defining Media Constraints
 
 By default we're sending both audio and video.  
-This will allow us to toggle the video stream during a call.  
+That will allow us to toggle the video track during an ongoing call.  
 
 ```javascript
 let mediaConstraints = {
@@ -142,7 +144,7 @@ let peerConstraints = {
 
 ## Creating a Peer Connection
 
-Here we're creating a peer connection required to get a call started.  
+Here we're creating a peer connection required to actually get the call started.  
 You can also hook up events by directly overwriting functions instead of using event listeners.  
 
 ```javascript
@@ -173,7 +175,7 @@ peerConnection = null;
 ## Adding the Media Stream
 
 After using one of the media functions above you can then add the media stream to the peer.  
-The negotiation needed event will be triggered on the peer connection afterwords.  
+The `negotiationneeded` event will be triggered on the peer connection afterwords.  
 
 ```javascript
 peerConnection.addStream( localMediaStream );
@@ -182,7 +184,7 @@ peerConnection.addStream( localMediaStream );
 ## Creating a Data Channel
 
 Usually the call initialiser would create the data channel but it can be done on both sides.  
-The negotiation needed event will be triggered on the peer connection afterwords.  
+The `negotiationneeded` event will be triggered on the peer connection afterwords.  
 
 ```javascript
 let datachannel = peerConnection.createDataChannel( 'my_channel' );
@@ -208,8 +210,8 @@ peerConnection.addEventListener( 'datachannel', event => {
 
 ## Sending a Message via the Data Channel
 
-You can send a range of different data types over data channels, we're gong to send a simple string.  
-Bare in mind there are limits so sending large amounts of data isn't usually advised.  
+You can send a range of different data types but we're just going to send a simple string.  
+Bare in mind there are limits, sending large amounts of data per message isn't advised.  
 
 ```javascript
 datachannel.send( 'Hey There!' );
@@ -276,7 +278,7 @@ try {
 };
 ```
 
-## Toggle the Active Microphone
+## Toggle an Active Microphone
 
 During an active call you might want to mute your microphone.  
 Easy to accomplish by flipping the track enabled value to false, also possible on remote tracks.  

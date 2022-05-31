@@ -52,7 +52,7 @@ In `android/app/proguard-rules.pro` add the following on a new line.
 ## Screen Capture Support - Android 10+
 
 You'll need [Notifee](https://notifee.app/react-native/docs/overview) or another library that can handle foreground services for you.  
-The basic requirement to get screen capturing working since Android 10 and above is to have a foreground service with `mediaProjection` included as a service type and to have that service running before starting a screen capture session.  
+The basic requirement to get screen capturing working with Android 10 and above is to have a foreground service that includes `mediaProjection` as a type and to then have that same service running before trying to capture the screen.  
 
 In `android/app/main/AndroidManifest.xml` add the following inside the `<application>` section.  
 
@@ -62,9 +62,9 @@ In `android/app/main/AndroidManifest.xml` add the following inside the `<applica
 	android:foregroundServiceType="mediaProjection|camera|microphone" />
 ```
 
-The following will create an ongoing persistent notification which also comes with a foreground service.  
-You will be prompted for permissions automatically each time you want to initialise screen capturing.  
-A notification channel is also required and created.  
+The following will create an ongoing persistent notification which typically comes with a foreground service.  
+You will be prompted for permissions automatically each time you want to initialize screen capturing.  
+A notification channel is also required and created before the notification.  
 
 ```javascript
 import notifee, { AndroidImportance } from '@notifee/react-native';
@@ -91,8 +91,8 @@ try {
 };
 ```
 
-Once screen capturing has finished you should then stop the foreground service.  
-Usually you'd run a notification cancellation function but as the service is involved, instead run the following.  
+Once the screen capturing session has finished you should stop the ongoing foreground service.  
+Usually you'd run a notification cancellation but as the service is involved, run the following instead.  
 
 ```javascript
 try {
