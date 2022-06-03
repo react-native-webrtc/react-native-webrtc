@@ -105,10 +105,14 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
                 .createInitializationOptions());
 
         if (encoderFactory == null || decoderFactory == null) {
+            boolean enableHardwareAccel = WebRTCModulePreferences.get(
+                    reactContext).isHardwareAccelerationEnabled();
             // Initialize EGL context required for HW acceleration.
-            EglBase.Context eglContext = EglUtils.getRootEglBaseContext();
+            EglBase.Context eglContext = enableHardwareAccel ? EglUtils.getRootEglBaseContext() : null;
 
             if (eglContext != null) {
+                Log.i(TAG, "initializing default encoder/decoder (with hardware acceleration)");
+
                 encoderFactory
                     = new DefaultVideoEncoderFactory(
                     eglContext,
@@ -116,6 +120,8 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
                     /* enableH264HighProfile */ false);
                 decoderFactory = new DefaultVideoDecoderFactory(eglContext);
             } else {
+                Log.i(TAG, "initializing default encoder/decoder (without hardware acceleration)");
+
                 encoderFactory = new SoftwareVideoEncoderFactory();
                 decoderFactory = new SoftwareVideoDecoderFactory();
             }
