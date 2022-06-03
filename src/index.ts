@@ -1,19 +1,31 @@
-import ScreenCapturePickerView from './ScreenCapturePickerView';
-import RTCPeerConnection from './RTCPeerConnection';
 import RTCIceCandidate from './RTCIceCandidate';
+import RTCPeerConnection from './RTCPeerConnection';
+import RTCRtpReceiver from './RTCRtpReceiver';
+import RTCRtpSender from './RTCRtpSender';
+import RTCRtpTransceiver from './RTCRtpTransceiver';
+import RTCRtpCapabilities from './RTCRtpCapabilities';
+import RTCRtpCodecCapability from './RTCRtpCodecCapability';
 import RTCSessionDescription from './RTCSessionDescription';
+import RTCErrorEvent from './RTCErrorEvent';
 import RTCView from './RTCView';
+import ScreenCapturePickerView from './ScreenCapturePickerView';
 import MediaStream from './MediaStream';
 import MediaStreamTrack from './MediaStreamTrack';
 import mediaDevices from './MediaDevices';
 import permissions from './Permissions';
 
 export {
-    ScreenCapturePickerView,
-    RTCPeerConnection,
     RTCIceCandidate,
+    RTCPeerConnection,
     RTCSessionDescription,
     RTCView,
+    ScreenCapturePickerView,
+    RTCRtpTransceiver,
+    RTCRtpReceiver,
+    RTCRtpSender,
+    RTCErrorEvent,
+    RTCRtpCapabilities,
+    RTCRtpCodecCapability,
     MediaStream,
     MediaStreamTrack,
     mediaDevices,
@@ -35,9 +47,17 @@ function registerGlobals(): void {
     global.navigator.mediaDevices.getDisplayMedia = mediaDevices.getDisplayMedia.bind(mediaDevices);
     global.navigator.mediaDevices.enumerateDevices = mediaDevices.enumerateDevices.bind(mediaDevices);
 
-    global.RTCPeerConnection = RTCPeerConnection;
     global.RTCIceCandidate = RTCIceCandidate;
+    global.RTCPeerConnection = RTCPeerConnection;
+    global.RTCRtpReceiver = RTCRtpReceiver;
+    global.RTCRtpSender = RTCRtpReceiver;
     global.RTCSessionDescription = RTCSessionDescription;
     global.MediaStream = MediaStream;
     global.MediaStreamTrack = MediaStreamTrack;
+    global.RTCRtpTransceiver = RTCRtpTransceiver;
+    global.RTCRtpReceiver = RTCRtpReceiver;
+    global.RTCRtpSender = RTCRtpSender;
+    global.RTCErrorEvent = RTCErrorEvent;
+    global.RTCRtpCapabilities = RTCRtpCapabilities;
+    global.RTCRtpCodecCapability = RTCRtpCodecCapability;
 }
