@@ -16,13 +16,15 @@ class MediaStreamTrack extends defineCustomEventTarget(...MEDIA_STREAM_TRACK_EVE
     _enabled: boolean;
     _settings: object;
     _muted: boolean;
+    _subscriptions: any[] = [];
+    _peerConnectionId: number;
 
     id: string;
     kind: string;
     label: string;
     readyState: MediaStreamTrackState;
     remote: boolean;
-
+    
     constructor(info) {
         super();
 
@@ -30,6 +32,7 @@ class MediaStreamTrack extends defineCustomEventTarget(...MEDIA_STREAM_TRACK_EVE
         this._enabled = info.enabled;
         this._settings = info.settings || {};
         this._muted = false;
+        this._peerConnectionId = info.peerConnectionId;
 
         this.id = info.id;
         this.kind = info.kind;
@@ -105,6 +108,27 @@ class MediaStreamTrack extends defineCustomEventTarget(...MEDIA_STREAM_TRACK_EVE
 
     release(): void {
         WebRTCModule.mediaStreamTrackRelease(this.id);
+    }
+
+    _unregisterEvents(): void {
+        this._subscriptions.forEach(e => e.remove());
+        this._subscriptions = [];
+    }
+    _registerEvents(): void {
+        this._subscriptions = [
+            EventEmitter.addListener('mediaStreamTrackMuteChanged', ev => {
+                if (ev.peerConnectionId !== this._peerConnectionId) {
+                    return;
+                }
+                // TODO: Fetch track from a cached version of tracks or from transceivers.
+                // let track = null;
+                //if (track) {
+                //    track._muted = ev.muted;
+                //    const eventName = ev.muted ? 'mute' : 'unmute';
+                //    track.dispatchEvent(new MediaStreamTrackEvent(eventName, { track }));
+                //}
+            }),
+        ];
     }
 }
 

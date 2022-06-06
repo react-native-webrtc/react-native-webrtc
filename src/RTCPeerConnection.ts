@@ -13,6 +13,7 @@ import RTCTrackEvent from './RTCTrackEvent';
 import RTCSessionDescription from './RTCSessionDescription';
 import RTCIceCandidate from './RTCIceCandidate';
 import RTCIceCandidateEvent from './RTCIceCandidateEvent';
+import RTCErrorEvent from './RTCErrorEvent';
 import RTCEvent from './RTCEvent';
 import * as RTCUtil from './RTCUtil';
 import EventEmitter from './EventEmitter';
@@ -157,7 +158,7 @@ export default class RTCPeerConnection extends defineCustomEventTarget(...PEER_C
     }
 
 
-    addTransceiver(source: 'audio' |'video' | MediaStreamTrack, init): RTCRtpTransceiver {
+    addTransceiver(source: 'audio' | 'video' | MediaStreamTrack, init): RTCRtpTransceiver {
         let src = {};
         if (source === 'audio') {
             src = { type: 'audio' };
@@ -199,18 +200,20 @@ export default class RTCPeerConnection extends defineCustomEventTarget(...PEER_C
     }
 
     getTransceivers(): RTCRtpTransceiver[] {
-        const response = WebRTCModule.peerConnectionGetTransceivers(this._peerConnectionId);
-        if (response === null)
+        // Return a cached version of transceivers
+        if (this._transceivers == null || this._transceivers.length === 0) {
+            WebRTCModule.peerConnectionGetTransceivers(this._peerConnectionId);
             return [];
-        return response.transceivers.map((transceiver) => {
-            return new RTCRtpTransceiver(transceiver);
-        });
+        } 
+        return this._transceivers;
     }
 
     getSenders(): RTCRtpSender[] {
         const transceivers = this.getTransceivers();
+        if (transceivers.length === 0) return [];
+
         let senders: RTCRtpSender[] = [];
-        for (var transceiver of this.getTransceivers()) {
+        for (var transceiver of transceivers) {
             if (transceiver.sender)
                 senders.push(transceiver.sender);
         }
@@ -219,9 +222,14 @@ export default class RTCPeerConnection extends defineCustomEventTarget(...PEER_C
 
     getReceivers(): RTCRtpReceiver[] {
         const transceivers = this.getTransceivers();
-        return transceivers.map((transceiver) => {
-            return transceiver.receiver;
-        });
+        if (transceivers.length === 0) return [];
+
+        let receivers: RTCRtpReceiver[] = [];
+        for (var transceiver of transceivers) {
+            if (transceiver.receiver)
+                receivers.push(transceiver.receiver);
+        }
+        return receivers;
     }
 
     close(): void {
@@ -295,19 +303,6 @@ export default class RTCPeerConnection extends defineCustomEventTarget(...PEER_C
                 // @ts-ignore
                 this.dispatchEvent(new RTCTrackEvent('track', { track, receiver, transceiver, streams }));
             }),
-            EventEmitter.addListener('mediaStreamTrackMuteChanged', ev => {
-                if (ev.peerConnectionId !== this._peerConnectionId) {
-                    return;
-                }
-                // TODO: Fetch track from a cached version of tracks or from transceivers.
-                // let track = null;
-                //if (track) {
-                //    track._muted = ev.muted;
-                //    const eventName = ev.muted ? 'mute' : 'unmute';
-                //    track.dispatchEvent(new MediaStreamTrackEvent(eventName, { track }));
-                //}
-            }),
-
             EventEmitter.addListener('peerConnectionGotICECandidate', ev => {
                 if (ev.id !== this._peerConnectionId) {
                     return;
@@ -339,6 +334,15 @@ export default class RTCPeerConnection extends defineCustomEventTarget(...PEER_C
                 const channel = new RTCDataChannel(ev.dataChannel);
                 // @ts-ignore
                 this.dispatchEvent(new RTCDataChannelEvent('datachannel', { channel }));
+            }),
+
+            // Since the current underlying architecture performs certain actions
+            // Asynchronously when the outer web API expects synchronous behaviour
+            // This is the only way to report error on operations for those who wish
+            // to handle them.
+            EventEmitter.addListener('peerConnectionOnError', ev => {
+                // @ts-ignore
+                this.dispatchEvent(new RTCErrorEvent('error', ev.func, ev.message));
             })
         ];
     }

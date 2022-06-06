@@ -2,38 +2,32 @@ import RTCIceCandidate from './RTCIceCandidate';
 import RTCPeerConnection from './RTCPeerConnection';
 import RTCRtpReceiver from './RTCRtpReceiver';
 import RTCRtpSender from './RTCRtpSender';
-import RTCSessionDescription from './RTCSessionDescription';
-import RTCView from './RTCView';
-<<<<<<< HEAD
-import ScreenCapturePickerView from './ScreenCapturePickerView';
-=======
 import RTCRtpTransceiver from './RTCRtpTransceiver';
-import RTCRtpReceiver from './RTCRtpReceiver';
-import RTCRtpSender from './RTCRtpSender';
->>>>>>> ee44073 (Added Transceivers API to Typescript)
+import RTCRtpCapabilities from './RTCRtpCapabilities';
+import RTCRtpCodecCapability from './RTCRtpCodecCapability';
+import RTCSessionDescription from './RTCSessionDescription';
+import RTCErrorEvent from './RTCErrorEvent';
+import RTCView from './RTCView';
+import ScreenCapturePickerView from './ScreenCapturePickerView';
 import MediaStream from './MediaStream';
 import MediaStreamTrack from './MediaStreamTrack';
 import mediaDevices from './MediaDevices';
 import permissions from './Permissions';
 
 export {
-    MediaStream,
-    MediaStreamTrack,
     RTCIceCandidate,
     RTCPeerConnection,
-    RTCRtpReceiver,
-    RTCRtpSender,
     RTCSessionDescription,
     RTCView,
-<<<<<<< HEAD
     ScreenCapturePickerView,
-=======
     RTCRtpTransceiver,
     RTCRtpReceiver,
     RTCRtpSender,
+    RTCErrorEvent,
+    RTCRtpCapabilities,
+    RTCRtpCodecCapability,
     MediaStream,
     MediaStreamTrack,
->>>>>>> ee44073 (Added Transceivers API to Typescript)
     mediaDevices,
     permissions,
     registerGlobals
@@ -63,4 +57,7 @@ function registerGlobals(): void {
     global.RTCRtpTransceiver = RTCRtpTransceiver;
     global.RTCRtpReceiver = RTCRtpReceiver;
     global.RTCRtpSender = RTCRtpSender;
+    global.RTCErrorEvent = RTCErrorEvent;
+    global.RTCRtpCapabilities = RTCRtpCapabilities;
+    global.RTCRtpCodecCapability = RTCRtpCodecCapability;
 }
