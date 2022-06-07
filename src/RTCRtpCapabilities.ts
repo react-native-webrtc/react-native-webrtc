@@ -48,14 +48,14 @@ export function getCapabilities(endpoint: 'sender' | 'receiver'): RTCRtpCapabili
 
 // Registering EventEmitter to initialize capabilities
 const _subscriptions: any[] = [
-    EventEmitter.addListener('senderGetCapabilities', ev => {
+    EventEmitter.addListener('senderGetCapabilitiesSuccessful', ev => {
         if (ev.codecs === 'undefined') {
             throw new Error('Invalid event object passed to senderGetCapabilities: codecs is undefined');
         }
         _senderCapabilities = new RTCRtpCapabilities(ev.codecs);
     }),
 
-    EventEmitter.addListener('receiverGetCapabilities', ev => {
+    EventEmitter.addListener('receiverGetCapabilitiesSuccessful', ev => {
         if (ev.codecs === 'undefined') {
             throw new Error('Invalid event object passed to senderGetCapabilities: codecs is undefined');
         }

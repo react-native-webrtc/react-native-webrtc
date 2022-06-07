@@ -3,7 +3,7 @@ import { NativeModules, TurboModuleRegistry } from 'react-native';
 import { defineCustomEventTarget } from 'event-target-shim';
 
 import { deepClone } from './RTCUtil';
-import EventEmitter from './EventEmitter';
+import { addListener } from './EventEmitter';
 
 const { WebRTCModule } = NativeModules;
 
@@ -110,25 +110,19 @@ class MediaStreamTrack extends defineCustomEventTarget(...MEDIA_STREAM_TRACK_EVE
         WebRTCModule.mediaStreamTrackRelease(this.id);
     }
 
-    _unregisterEvents(): void {
-        this._subscriptions.forEach(e => e.remove());
-        this._subscriptions = [];
-    }
     _registerEvents(): void {
-        this._subscriptions = [
-            EventEmitter.addListener('mediaStreamTrackMuteChanged', ev => {
-                if (ev.peerConnectionId !== this._peerConnectionId) {
-                    return;
-                }
-                // TODO: Fetch track from a cached version of tracks or from transceivers.
-                // let track = null;
-                //if (track) {
-                //    track._muted = ev.muted;
-                //    const eventName = ev.muted ? 'mute' : 'unmute';
-                //    track.dispatchEvent(new MediaStreamTrackEvent(eventName, { track }));
-                //}
-            }),
-        ];
+        addListener(this, 'mediaStreamTrackMuteChanged', ev => {
+            if (ev.peerConnectionId !== this._peerConnectionId) {
+                return;
+            }
+            // TODO: Fetch track from a cached version of tracks or from transceivers.
+            // let track = null;
+            //if (track) {
+            //    track._muted = ev.muted;
+            //    const eventName = ev.muted ? 'mute' : 'unmute';
+            //    track.dispatchEvent(new MediaStreamTrackEvent(eventName, { track }));
+            //}
+        });
     }
 }
 

@@ -6,16 +6,16 @@ import RTCRtpTransceiver from './RTCRtpTransceiver';
 
 export default class RTCTrackEvent {
     type: string;
-    track: MediaStreamTrack;
-    streams: MediaStream[] = [];
-    transceiver: RTCRtpTransceiver;
-    receiver: RTCRtpReceiver;
+    readonly streams: MediaStream[] = [];
+    readonly transceiver: RTCRtpTransceiver;
+    readonly receiver: RTCRtpReceiver | null;
+    readonly track: MediaStreamTrack | null;
 
-    constructor(type: string, eventInitDict: { track: MediaStreamTrack, streams: MediaStream[], transceiver: RTCRtpTransceiver, receiver: RTCRtpReceiver}) {
+    constructor(type: string, eventInitDict: { streams: MediaStream[], transceiver: RTCRtpTransceiver }) {
         this.type = type.toString();
-        this.track = eventInitDict.track;
         this.streams = eventInitDict.streams;
         this.transceiver = eventInitDict.transceiver;
-        this.receiver = eventInitDict.receiver;
+        this.receiver = eventInitDict.transceiver.receiver;
+        this.track = eventInitDict.transceiver.receiver ? eventInitDict.transceiver.receiver.track : null;
     }
 }

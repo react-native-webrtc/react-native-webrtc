@@ -16,7 +16,7 @@ import RTCIceCandidateEvent from './RTCIceCandidateEvent';
 import RTCErrorEvent from './RTCErrorEvent';
 import RTCEvent from './RTCEvent';
 import * as RTCUtil from './RTCUtil';
-import EventEmitter from './EventEmitter';
+import { addListener, removeListener } from './EventEmitter';
 import RTCRtpReceiver from './RTCRtpReceiver';
 import RTCRtpSender from './RTCRtpSender';
 
@@ -54,7 +54,8 @@ const PEER_CONNECTION_EVENTS = [
     'negotiationneeded',
     'signalingstatechange',
     'datachannel',
-    'track'
+    'track',
+    'error'
 ];
 
 let nextPeerConnectionId = 0;
@@ -70,7 +71,8 @@ export default class RTCPeerConnection extends defineCustomEventTarget(...PEER_C
 
     _peerConnectionId: number;
     _subscriptions: any[] = [];
-    _transceivers: RTCRtpTransceiver[] = [];
+    _transceivers: { timestamp: number, transceiver: RTCRtpTransceiver }[] = [];
+    _remoteStreams: { [id: string]: MediaStream } = {};
 
     constructor(configuration) {
         super();
@@ -174,12 +176,17 @@ export default class RTCPeerConnection extends defineCustomEventTarget(...PEER_C
             });
         }
 
-        const transceiver = WebRTCModule.peerConnectionAddTransceiver(this._peerConnectionId, { ...src, init: { ...init } });
-        if (transceiver == null) {
+        const result = WebRTCModule.peerConnectionAddTransceiver(this._peerConnectionId, { ...src, init: { ...init } });
+        if (result == null) {
             console.log("Error adding transceiver");
             throw new Error("Transceiver could not be added");
         }
-        return new RTCRtpTransceiver(transceiver);
+        const transceiver = new RTCRtpTransceiver(result.transceiver);
+        this._transceivers.push({ timestamp: parseInt(result.timestamp), transceiver: transceiver });
+        this._transceivers.sort((a, b) => {
+            return a.timestamp - b.timestamp;
+        })
+        return transceiver;
     }
 
     getStats() {
@@ -202,10 +209,11 @@ export default class RTCPeerConnection extends defineCustomEventTarget(...PEER_C
     getTransceivers(): RTCRtpTransceiver[] {
         // Return a cached version of transceivers
         if (this._transceivers == null || this._transceivers.length === 0) {
-            WebRTCModule.peerConnectionGetTransceivers(this._peerConnectionId);
             return [];
         } 
-        return this._transceivers;
+        return this._transceivers.map((element) => {
+            return element.transceiver;
+        });
     }
 
     getSenders(): RTCRtpSender[] {
@@ -234,117 +242,146 @@ export default class RTCPeerConnection extends defineCustomEventTarget(...PEER_C
 
     close(): void {
         WebRTCModule.peerConnectionClose(this._peerConnectionId);
+        // According to the W3C spec: https://w3c.github.io/webrtc-pc/#rtcpeerconnection-interface
+        // transceivers have to be stopped
+        this._transceivers.forEach(({ timestamp, transceiver })=> {
+            transceiver.stop();
+        })
     }
 
     restartIce(): void {
         WebRTCModule.peerConnectionRestartIce(this._peerConnectionId);
     }
 
-    _unregisterEvents(): void {
-        this._subscriptions.forEach(e => e.remove());
-        this._subscriptions = [];
-    }
-
     _registerEvents(): void {
-        this._subscriptions = [
-            EventEmitter.addListener('peerConnectionOnRenegotiationNeeded', ev => {
-                if (ev.id !== this._peerConnectionId) {
-                    return;
-                }
-                // @ts-ignore
-                this.dispatchEvent(new RTCEvent('negotiationneeded'));
-            }),
-            EventEmitter.addListener('peerConnectionIceConnectionChanged', ev => {
-                if (ev.id !== this._peerConnectionId) {
-                    return;
-                }
-                this.iceConnectionState = ev.iceConnectionState;
-                // @ts-ignore
-                this.dispatchEvent(new RTCEvent('iceconnectionstatechange'));
-                if (ev.iceConnectionState === 'closed') {
-                    // This PeerConnection is done, clean up event handlers.
-                    this._unregisterEvents();
-                }
-            }),
-            EventEmitter.addListener('peerConnectionStateChanged', ev => {
-                if (ev.id !== this._peerConnectionId) {
-                    return;
-                }
-                this.connectionState = ev.connectionState;
-                // @ts-ignore
-                this.dispatchEvent(new RTCEvent('connectionstatechange'));
-                if (ev.connectionState === 'closed') {
-                    // This PeerConnection is done, clean up event handlers.
-                    this._unregisterEvents();
-                }
-            }),
-            EventEmitter.addListener('peerConnectionSignalingStateChanged', ev => {
-                if (ev.id !== this._peerConnectionId) {
-                    return;
-                }
-                this.signalingState = ev.signalingState;
-                // @ts-ignore
-                this.dispatchEvent(new RTCEvent('signalingstatechange'));
-            }),
-            EventEmitter.addListener('peerConnectionOnTrack', ev => {
-                if (ev.id !== this._peerConnectionId) {
-                    return;
-                }
-
-                // Creating objects out of the event data
-                // TODO: pass objects instead (track for receiver and receiver for transceiver)
+        addListener(this, 'peerConnectionOnRenegotiationNeeded', ev => {
+            if (ev.id !== this._peerConnectionId) {
+                return;
+            }
+            // @ts-ignore
+            this.dispatchEvent(new RTCEvent('negotiationneeded'));
+        });
+        addListener(this, 'peerConnectionIceConnectionChanged', ev => {
+            if (ev.id !== this._peerConnectionId) {
+                return;
+            }
+            this.iceConnectionState = ev.iceConnectionState;
+            if (ev.iceConnectionState === 'closed') {
+                // This PeerConnection is done, clean up event handlers.
+                removeListener(this);
+            }
+            // @ts-ignore
+            this.dispatchEvent(new RTCEvent('iceconnectionstatechange'));
+        });
+        addListener(this, 'peerConnectionStateChanged', ev => {
+            if (ev.id !== this._peerConnectionId) {
+                return;
+            }
+            this.connectionState = ev.connectionState;
+            if (ev.connectionState === 'closed') {
+                // This PeerConnection is done, clean up event handlers.
+                removeListener(this);
+            }
+            // @ts-ignore
+            this.dispatchEvent(new RTCEvent('connectionstatechange'));
+        });
+        addListener(this, 'peerConnectionSignalingStateChanged', ev => {
+            if (ev.id !== this._peerConnectionId) {
+                return;
+            }
+            this.signalingState = ev.signalingState;
+            // @ts-ignore
+            this.dispatchEvent(new RTCEvent('signalingstatechange'));
+        })
+        addListener(this, 'peerConnectionOnTrack', ev => {
+            if (ev.id !== this._peerConnectionId) {
+                return;
+            }
+            const transceiver = (() => {
+                // Creating a track and receiver objects
                 const track = new MediaStreamTrack(ev.info.track);
-                const receiver = new RTCRtpReceiver({ ...ev.info.receiver.id, track });
-                const transceiver = new RTCRtpTransceiver({ ...ev.info.transceiver, receiver: receiver });
-                const streams = ev.info.streams.map(stream => {
-                    return new MediaStream(stream);
-                });
-
-                // @ts-ignore
-                this.dispatchEvent(new RTCTrackEvent('track', { track, receiver, transceiver, streams }));
-            }),
-            EventEmitter.addListener('peerConnectionGotICECandidate', ev => {
-                if (ev.id !== this._peerConnectionId) {
-                    return;
+                const receiver = new RTCRtpReceiver({ ...ev.info.receiver, track });
+                // Make sure transceivers are stored in timestamp order. Also, we have to make
+                // sure we do not add a transceiver if it exists. 
+                let [{ timestamp, transceiver }] = this._transceivers.filter(({ timestamp, transceiver }) => {
+                    return transceiver.id === ev.info.transceiver.id;
+                })
+                if (!transceiver) {
+                    // Creating objects out of the event data
+                    const newTransceiver = new RTCRtpTransceiver({ ...ev.info.transceiver, receiver: receiver });
+                    this._transceivers.push({ timestamp: parseInt(ev.info.timestamp), transceiver: newTransceiver });
+                    this._transceivers.sort((a, b) => {
+                        return a.timestamp - b.timestamp;
+                    })
+                    return newTransceiver;
+                } else {
+                    transceiver._receiver._track = track;
+                    transceiver._mid = ev.info.transceiver.mid;
+                    transceiver._currentDirection = ev.info.transceiver.currentDirection;
+                    transceiver._direction = ev.info.transceiver.direction;
+                    return transceiver;
                 }
+            })();
+
+            // Get the stream object from the event. Create if necessary.
+            const streams = ev.info.streams.map(stream => {
+                // Here we are making sure that we don't create stream objects that already exist
+                // So that event listeners do get the same object if it has been created before.
+                if (!(stream.streamId in this._remoteStreams)) {
+                    this._remoteStreams[stream.streamId] = new MediaStream(stream);
+                }
+                return this._remoteStreams[stream.streamId];
+            });
+
+            console.log("transceiver is", transceiver);
+            // @ts-ignore
+            this.dispatchEvent(new RTCTrackEvent('track', { streams, transceiver }));
+        });
+        addListener(this, 'peerConnectionGotICECandidate', ev => {
+            if (ev.id !== this._peerConnectionId) {
+                return;
+            }
+            this.localDescription = new RTCSessionDescription(ev.sdp);
+            const candidate = new RTCIceCandidate(ev.candidate);
+            // @ts-ignore
+            this.dispatchEvent(new RTCIceCandidateEvent('icecandidate', { candidate }));
+        });
+        addListener(this, 'peerConnectionIceGatheringChanged', ev => {
+            if (ev.id !== this._peerConnectionId) {
+                return;
+            }
+            this.iceGatheringState = ev.iceGatheringState;
+
+            if (this.iceGatheringState === 'complete') {
                 this.localDescription = new RTCSessionDescription(ev.sdp);
-                const candidate = new RTCIceCandidate(ev.candidate);
                 // @ts-ignore
-                this.dispatchEvent(new RTCIceCandidateEvent('icecandidate', { candidate }));
-            }),
-            EventEmitter.addListener('peerConnectionIceGatheringChanged', ev => {
-                if (ev.id !== this._peerConnectionId) {
-                    return;
-                }
-                this.iceGatheringState = ev.iceGatheringState;
+                this.dispatchEvent(new RTCIceCandidateEvent('icecandidate', { candidate: null }));
+            }
 
-                if (this.iceGatheringState === 'complete') {
-                    this.localDescription = new RTCSessionDescription(ev.sdp);
-                    // @ts-ignore
-                    this.dispatchEvent(new RTCIceCandidateEvent('icecandidate', { candidate: null }));
-                }
+            // @ts-ignore
+            this.dispatchEvent(new RTCEvent('icegatheringstatechange'));
+        });
+        addListener(this, 'peerConnectionDidOpenDataChannel', ev => {
+            if (ev.id !== this._peerConnectionId) {
+                return;
+            }
+            const channel = new RTCDataChannel(ev.dataChannel);
+            // @ts-ignore
+            this.dispatchEvent(new RTCDataChannelEvent('datachannel', { channel }));
+        });
 
-                // @ts-ignore
-                this.dispatchEvent(new RTCEvent('icegatheringstatechange'));
-            }),
-            EventEmitter.addListener('peerConnectionDidOpenDataChannel', ev => {
-                if (ev.id !== this._peerConnectionId) {
-                    return;
-                }
-                const channel = new RTCDataChannel(ev.dataChannel);
-                // @ts-ignore
-                this.dispatchEvent(new RTCDataChannelEvent('datachannel', { channel }));
-            }),
-
-            // Since the current underlying architecture performs certain actions
-            // Asynchronously when the outer web API expects synchronous behaviour
-            // This is the only way to report error on operations for those who wish
-            // to handle them.
-            EventEmitter.addListener('peerConnectionOnError', ev => {
-                // @ts-ignore
-                this.dispatchEvent(new RTCErrorEvent('error', ev.func, ev.message));
-            })
-        ];
+        // Since the current underlying architecture performs certain actions
+        // Asynchronously when the outer web API expects synchronous behaviour
+        // This is the only way to report error on operations for those who wish
+        // to handle them.
+        addListener(this, 'peerConnectionOnError', ev => {
+            if (ev.info.peerConnectionId !== this._peerConnectionId) {
+                return;
+            }
+            console.log("Received peer connection error event: ", ev);
+            // @ts-ignore
+            this.dispatchEvent(new RTCErrorEvent('error', ev.func, ev.message));
+        });
     }
 
     /**

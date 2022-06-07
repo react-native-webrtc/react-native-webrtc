@@ -7,21 +7,21 @@ const {WebRTCModule} = NativeModules;
 
 export default class RTCRtpSender {
     _id: string;
-    _track: MediaStreamTrack;
+    _track: MediaStreamTrack | null = null;
     _peerConnectionId: number;
-    _capabilities: RTCRtpCapabilities[] = [];
 
-    constructor(info: { pId: number, id: string, track: MediaStreamTrack }) {
-        this._peerConnectionId = info.pId;
+    constructor(info: { peerConnectionId: number, id: string, track?: MediaStreamTrack }) {
+        this._peerConnectionId = info.peerConnectionId;
         this._id = info.id;
-        this._track = info.track;
+        if (info.track)
+            this._track = info.track;
     }
 
-    replaceTrack = (track: MediaStreamTrack | null) => {
+    replaceTrack(track: MediaStreamTrack | null): Promise<void> {
         return new Promise<void>((resolve, reject) => {
-            // Find a way to not use peer connection id inside transceiver
-            WebRTCModule.peerConnectionTransceiverReplaceTrack(this._peerConnectionId, this._id, track ? track.id : null, (successful, data) => {
+            WebRTCModule.senderReplaceTrack(this._peerConnectionId, this._id, track ? track.id : null, (successful, data) => {
                 if (successful) {
+                    this._track = track;
                     resolve();
                 } else {
                     reject(new Error(data));
@@ -36,7 +36,7 @@ export default class RTCRtpSender {
         }
         const capabilities = getCapabilities('sender');
         if (!capabilities)
-            throw new Error('capabilities is not yet initialized');
+            throw new Error("Capabilities is not yet initialized");
         return capabilities;
     }
 

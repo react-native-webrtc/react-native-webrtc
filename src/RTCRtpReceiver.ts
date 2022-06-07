@@ -6,11 +6,13 @@ const { WebRTCModule } = NativeModules;
 
 export default class RTCRtpReceiver {
     _id: string;
+    _peerConnectionId: number;
     _track: MediaStreamTrack;
-    constructor(info: { id: string, track: MediaStreamTrack }) {
+
+    constructor(info: { peerConnectionId: number, id: string, track: MediaStreamTrack }) {
         this._id = info.id;
+        this._peerConnectionId = info.peerConnectionId;
         this._track = info.track;
-        Object.freeze(this);
     }
 
     static getCapabilities(kind: "audio" | "video"): RTCRtpCapabilities {
@@ -20,7 +22,7 @@ export default class RTCRtpReceiver {
         }
         const capabilities = getCapabilities('receiver');
         if (!capabilities)
-            throw new Error('capabilities is not yet initialized');
+            throw new Error('Capabilities is not yet initialized');
         return capabilities;
     }
 
