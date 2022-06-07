@@ -19,6 +19,7 @@ import org.webrtc.MediaStream;
 import org.webrtc.MediaStreamTrack;
 import org.webrtc.PeerConnection;
 import org.webrtc.RtpReceiver;
+import org.webrtc.RtpSender;
 import org.webrtc.RtpTransceiver;
 import org.webrtc.SessionDescription;
 import org.webrtc.VideoTrack;
@@ -72,15 +73,6 @@ class PeerConnectionObserver implements PeerConnection.Observer {
 
         // Close the PeerConnection first to stop any events.
         peerConnection.close();
-
-        // PeerConnection.dispose() calls MediaStream.dispose() on all local
-        // MediaStreams added to it and the app may crash if a local MediaStream
-        // is added to multiple PeerConnections. In order to reduce the risks of
-        // an app crash, remove all local MediaStreams from the associated
-        // PeerConnection so that it doesn't attempt to dispose of them.
-        for (MediaStream localStream : new ArrayList<>(localStreams)) {
-            removeStream(localStream);
-        }
 
         // Remove video track adapters
         for (MediaStream stream : remoteStreams.values()) {
@@ -378,6 +370,10 @@ class PeerConnectionObserver implements PeerConnection.Observer {
     public void onAddTrack(final RtpReceiver receiver, final MediaStream[] mediaStreams) {
         Log.d(TAG, "onAddTrack");
 
+        // Get The timestamp so that we can reorder the transceivers on the JS layer
+        Long tsLong = System.currentTimeMillis()/1000;
+        String ts = tsLong.toString();
+
         MediaStreamTrack track = receiver.track();
 
         if (track == null || sdpSemantics != PeerConnection.SdpSemantics.UNIFIED_PLAN) {
@@ -412,7 +408,7 @@ class PeerConnectionObserver implements PeerConnection.Observer {
         eventInfo.putArray("streams", streams);
         eventInfo.putMap("track", serializeTrack(receiver.track()));
         eventInfo.putMap("receiver", serializeReceiver(receiver));
-
+        eventInfo.putString("timestamp", ts);
         // Getting the transceiver object associated with the receiver for the event
         List<RtpTransceiver> transceivers = peerConnection.getTransceivers();
         for( RtpTransceiver transceiver : transceivers ) {
@@ -434,6 +430,10 @@ class PeerConnectionObserver implements PeerConnection.Observer {
         RtpReceiver receiver = transceiver.getReceiver();
         MediaStreamTrack track = receiver.track();
 
+        // Get The timestamp so that we can reorder the transceivers on the JS layer
+        Long tsLong = System.currentTimeMillis()/1000;
+        String ts = tsLong.toString();
+
         if (track == null || sdpSemantics != PeerConnection.SdpSemantics.UNIFIED_PLAN) {
             return;
         }
@@ -450,12 +450,25 @@ class PeerConnectionObserver implements PeerConnection.Observer {
         eventInfo.putMap("track", serializeTrack(receiver.track()));
         eventInfo.putMap("receiver", serializeReceiver(receiver));
         eventInfo.putMap("transceiver", serializeTransceiver(transceiver));
-        
+        eventInfo.putString("timestamp", ts);
+
         // Getting the transceiver object associated with the receiver for the event
         params.putInt("id", this.id);
         params.putMap("info", eventInfo);
 
         webRTCModule.sendEvent("peerConnectionOnTrack", params);
+    }
+
+    // This is only added to compile. Plan B is not supported anymore.
+    @Override
+    public void onRemoveStream(MediaStream stream) {
+
+    }
+
+    // This is only added to compile. Plan B is not supported anymore.
+    @Override
+    public void onAddStream(MediaStream stream) {
+
     }
 
     @Nullable
@@ -556,7 +569,7 @@ class PeerConnectionObserver implements PeerConnection.Observer {
         return params;
     }
 
-    private String serializeDirection(RtpTransceiver.RtpTransceiverDirection src) {
+    public String serializeDirection(RtpTransceiver.RtpTransceiverDirection src) {
         switch(src) {
             case INACTIVE:
                 return "inactive";
@@ -574,6 +587,7 @@ class PeerConnectionObserver implements PeerConnection.Observer {
     private ReadableMap serializeTrack(MediaStreamTrack track) {
         WritableMap trackInfo = Arguments.createMap();
         trackInfo.putString("id", track.id());
+        trackInfo.putInt("peerConnectionId", this.id);
         if (track.kind().equals("video")) {
             trackInfo.putString("label", "Video");
         } else if (track.kind().equals("audio")) {
@@ -588,9 +602,24 @@ class PeerConnectionObserver implements PeerConnection.Observer {
         return trackInfo;
     }
 
+    /**
+     * This method is currently missing serializing DtmfSender
+     * and transport.
+     * // TODO: Add transport and dtmf fields to the serialized sender to match the web APIs
+     */
+    private ReadableMap serializeSender(RtpSender sender) {
+        WritableMap res = Arguments.createMap();
+        res.putString("id", sender.id());
+        res.putInt("peerConnectionId", this.id);
+        if (sender.track() != null)
+            res.putMap("track", serializeTrack(sender.track()));
+        return res;
+    }
+
     private ReadableMap serializeReceiver(RtpReceiver receiver) {
         WritableMap res = Arguments.createMap();
         res.putString("id", receiver.id());
+        res.putInt("peerConnectionId", this.id);
         res.putMap("track", serializeTrack(receiver.track()));
         return res;
     }
@@ -598,6 +627,7 @@ class PeerConnectionObserver implements PeerConnection.Observer {
     public ReadableMap serializeTransceiver(RtpTransceiver transceiver) {
         WritableMap res = Arguments.createMap();
         res.putString("id", transceiver.getSender().id());
+        res.putInt("peerConnectionId", this.id);
         String mid = transceiver.getMid();
         if (mid != null) {
             res.putString("mid", mid);
@@ -609,6 +639,7 @@ class PeerConnectionObserver implements PeerConnection.Observer {
         }
         res.putBoolean("isStopped", transceiver.isStopped());
         res.putMap("receiver", serializeReceiver(transceiver.getReceiver()));
+        res.putMap("sender", serializeSender(transceiver.getSender()));
         return res;
     }
 }
