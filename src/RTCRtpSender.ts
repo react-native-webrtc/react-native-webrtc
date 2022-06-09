@@ -1,6 +1,6 @@
 import {NativeModules} from 'react-native';
 import MediaStreamTrack from './MediaStreamTrack';
-import RTCRtpCapabilities, { getCapabilities } from './RTCRtpCapabilities';
+import RTCRtpCapabilities, { senderCapabilities } from './RTCRtpCapabilities';
 
 const {WebRTCModule} = NativeModules;
 
@@ -18,26 +18,18 @@ export default class RTCRtpSender {
     }
 
     replaceTrack(track: MediaStreamTrack | null): Promise<void> {
-        return new Promise<void>((resolve, reject) => {
-            WebRTCModule.senderReplaceTrack(this._peerConnectionId, this._id, track ? track.id : null, (successful, data) => {
-                if (successful) {
-                    this._track = track;
-                    resolve();
-                } else {
-                    reject(new Error(data));
-                }
-            });
-        });
+        return WebRTCModule.senderReplaceTrack(this._peerConnectionId, this._id, track ? track.id : null)
+            .then(() => this._track = track);
     }
     
     static getCapabilities(kind: "audio" | "video"): RTCRtpCapabilities {
         if (kind === "audio") {
             throw new Error("Unimplemented capabilities for audio");
         }
-        const capabilities = getCapabilities('sender');
-        if (!capabilities)
-            throw new Error("Capabilities is not yet initialized");
-        return capabilities;
+        if (!senderCapabilities) {
+            throw new Error("sender Capabilities are null");
+        }
+        return senderCapabilities;
     }
 
     get track() {

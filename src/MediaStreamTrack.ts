@@ -1,5 +1,5 @@
 
-import { NativeModules, TurboModuleRegistry } from 'react-native';
+import { NativeModules } from 'react-native';
 import { defineCustomEventTarget } from 'event-target-shim';
 
 import { deepClone } from './RTCUtil';
@@ -16,10 +16,9 @@ class MediaStreamTrack extends defineCustomEventTarget(...MEDIA_STREAM_TRACK_EVE
     _enabled: boolean;
     _settings: object;
     _muted: boolean;
-    _subscriptions: any[] = [];
     _peerConnectionId: number;
 
-    id: string;
+    readonly id: string;
     kind: string;
     label: string;
     readyState: MediaStreamTrackState;
@@ -41,6 +40,8 @@ class MediaStreamTrack extends defineCustomEventTarget(...MEDIA_STREAM_TRACK_EVE
 
         const _readyState = info.readyState.toLowerCase();
         this.readyState = _readyState === 'initializing' || _readyState === 'live' ? 'live' : 'ended';
+
+        this._registerEvents();
     }
 
     get enabled(): boolean {
@@ -101,27 +102,17 @@ class MediaStreamTrack extends defineCustomEventTarget(...MEDIA_STREAM_TRACK_EVE
     getSettings() {
         return deepClone(this._settings);
     }
-
-    toURL(): String {
-        return this.id;
-    }
-
+    
     release(): void {
         WebRTCModule.mediaStreamTrackRelease(this.id);
     }
 
     _registerEvents(): void {
-        addListener(this, 'mediaStreamTrackMuteChanged', ev => {
-            if (ev.peerConnectionId !== this._peerConnectionId) {
+        addListener(this, 'mediaStreamTrackOnMuteChanged', ev => {
+            if (ev.peerConnectionId !== this._peerConnectionId || ev.trackId != this.id) {
                 return;
             }
-            // TODO: Fetch track from a cached version of tracks or from transceivers.
-            // let track = null;
-            //if (track) {
-            //    track._muted = ev.muted;
-            //    const eventName = ev.muted ? 'mute' : 'unmute';
-            //    track.dispatchEvent(new MediaStreamTrackEvent(eventName, { track }));
-            //}
+            this._muted = ev.mute;
         });
     }
 }

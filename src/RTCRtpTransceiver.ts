@@ -17,12 +17,10 @@ export default class RTCRtpTransceiver extends defineCustomEventTarget(...TRANSC
     _receiver: RTCRtpReceiver;
 
     _id: string;
-    _mid: string | null;
+    _mid: string | null = null;
     _direction: string;
     _currentDirection: string | null = null;
     _stopped: boolean;
-
-    _subscriptions: any[] = [];
 
     constructor(args: {
         peerConnectionId: number,
@@ -41,8 +39,8 @@ export default class RTCRtpTransceiver extends defineCustomEventTarget(...TRANSC
         this._direction = args.direction;
         this._currentDirection = args.currentDirection;
         this._stopped = args.isStopped;
-        this._sender = new RTCRtpSender({ peerConnectionId: args.peerConnectionId, id: args.sender.id, track: args.sender.track? args.sender.track : undefined });
-        this._receiver = new RTCRtpReceiver({ peerConnectionId: args.peerConnectionId, id: args.id, track: args.receiver.track });
+        this._sender = args.sender;
+        this._receiver = args.receiver;
         this._registerEvents();
     }
 
@@ -105,12 +103,6 @@ export default class RTCRtpTransceiver extends defineCustomEventTarget(...TRANSC
             }
             this._stopped = true;
             this._currentDirection = null;
-        });
-        addListener(this, 'transceiverOnCurrentDirectionUpdate', ev => {
-            if (ev.peerConnectionId !== this._peerConnectionId || ev.transceiverId !== this._id) {
-                return;
-            }
-            this._currentDirection = ev.currentDirection;
         });
         addListener(this, 'transceiverOnError', ev => {
             if (ev.info.peerConnectionId !== this._peerConnectionId || ev.info.transceiverId !== this._id) {

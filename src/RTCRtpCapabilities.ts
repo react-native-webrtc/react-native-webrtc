@@ -1,7 +1,5 @@
 import {NativeModules} from 'react-native';
 import RTCRtpCodecCapability from './RTCRtpCodecCapability';
-import EventEmitter from './EventEmitter';
-
 const { WebRTCModule } = NativeModules;
 
 /**
@@ -21,52 +19,23 @@ export default class RTCRtpCapabilities {
     }
 }
 
-var _senderCapabilities: RTCRtpCapabilities | null = null;
-var _receiverCapabilities: RTCRtpCapabilities | null = null;
-
-export function getCapabilities(endpoint: 'sender' | 'receiver'): RTCRtpCapabilities | null {
+function getCapabilities(endpoint: 'sender' | 'receiver'): RTCRtpCapabilities | null {
     switch (endpoint) {
         case 'sender': {
-            if (!_senderCapabilities) {
-                WebRTCModule.senderGetCapabilities();
-                return null;
-            }
-            return _senderCapabilities;
+            const capabilities = WebRTCModule.senderGetCapabilities();
+            if (!capabilities) return null;
+            return new RTCRtpCapabilities(capabilities.codecs);
         }
-
         case 'receiver': {
-            if (!_receiverCapabilities) {
-                WebRTCModule.senderGetCapabilities();
-                return null;
-            }
-            return _receiverCapabilities;
+            const capabilities = WebRTCModule.receiverGetCapabilities();
+            if (!capabilities) return null;
+            return new RTCRtpCapabilities(capabilities.codecs);
         }
         default:
             throw new TypeError('Invalid endpoint: ' + endpoint);
     }
 }
 
-// Registering EventEmitter to initialize capabilities
-const _subscriptions: any[] = [
-    EventEmitter.addListener('senderGetCapabilitiesSuccessful', ev => {
-        if (ev.codecs === 'undefined') {
-            throw new Error('Invalid event object passed to senderGetCapabilities: codecs is undefined');
-        }
-        _senderCapabilities = new RTCRtpCapabilities(ev.codecs);
-    }),
-
-    EventEmitter.addListener('receiverGetCapabilitiesSuccessful', ev => {
-        if (ev.codecs === 'undefined') {
-            throw new Error('Invalid event object passed to senderGetCapabilities: codecs is undefined');
-        }
-        _receiverCapabilities = new RTCRtpCapabilities(ev.codecs);
-    }),
-]
-
 // Initialize capabilities on module import
-if (!_senderCapabilities) {
-    WebRTCModule.senderGetCapabilities();
-}
-if (!_receiverCapabilities) {
-    WebRTCModule.receiverGetCapabilities();
-}
+export const senderCapabilities = getCapabilities('sender');
+export const receiverCapabilities = getCapabilities('receiver');
