@@ -9,6 +9,7 @@ import androidx.annotation.Nullable;
 import com.facebook.react.bridge.Arguments;
 import com.facebook.react.bridge.Promise;
 import com.facebook.react.bridge.ReadableMap;
+import com.facebook.react.bridge.ReadableArray;
 import com.facebook.react.bridge.WritableArray;
 import com.facebook.react.bridge.WritableMap;
 
@@ -37,9 +38,6 @@ import java.util.UUID;
 class PeerConnectionObserver implements PeerConnection.Observer {
     private final static String TAG = WebRTCModule.TAG;
 
-
-    private PeerConnection.SdpSemantics sdpSemantics; 
-    
     private final Map<String, DataChannelWrapper> dataChannels;
     private final int id;
     private PeerConnection peerConnection;
@@ -49,9 +47,8 @@ class PeerConnectionObserver implements PeerConnection.Observer {
     private final VideoTrackAdapter videoTrackAdapters;
     private final WebRTCModule webRTCModule;
 
-    PeerConnectionObserver(WebRTCModule webRTCModule, int id, PeerConnection.SdpSemantics semantics) {
+    PeerConnectionObserver(WebRTCModule webRTCModule, int id) {
         this.webRTCModule = webRTCModule;
-        this.sdpSemantics = semantics;
         this.id = id;
         this.dataChannels = new HashMap<>();
         this.localStreams = new ArrayList<>();
@@ -73,6 +70,15 @@ class PeerConnectionObserver implements PeerConnection.Observer {
 
         // Close the PeerConnection first to stop any events.
         peerConnection.close();
+
+        // PeerConnection.dispose() calls MediaStream.dispose() on all local
+        // MediaStreams added to it and the app may crash if a local MediaStream
+        // is added to multiple PeerConnections. In order to reduce the risks of
+        // an app crash, remove all local MediaStreams from the associated
+        // PeerConnection so that it doesn't attempt to dispose of them.
+        for (MediaStream localStream : new ArrayList<>(localStreams)) {
+            removeStream(localStream);
+        }
 
         // Remove video track adapters
         for (MediaStream stream : remoteStreams.values()) {
@@ -99,36 +105,28 @@ class PeerConnectionObserver implements PeerConnection.Observer {
     }
 
     RtpTransceiver addTransceiver(MediaStreamTrack.MediaType mediaType, RtpTransceiver.RtpTransceiverInit init) {
-        if (sdpSemantics != PeerConnection.SdpSemantics.UNIFIED_PLAN) {
-            throw new Error("Cannot add transceiver: Invalid plan");
-        }
-
         if (peerConnection == null) {
-            throw new Error("Cannot Add transceiver: peer connection is null");
+            return null;
         }
 
         return peerConnection.addTransceiver(mediaType, init);
     }
 
     RtpTransceiver addTransceiver(MediaStreamTrack track, RtpTransceiver.RtpTransceiverInit init) {
-        if (sdpSemantics != PeerConnection.SdpSemantics.UNIFIED_PLAN) {
-            throw new Error("Cannot add transceiver: Invalid plan");
-        }
-
         if (peerConnection == null) {
-            throw new Error("Cannot Add transceiver: peer connection is null");
+            return null;
         }
 
         return peerConnection.addTransceiver(track, init);
     }
 
-    String resolveTransceiverId(RtpTransceiver transceiver) {
+    String getTransceiverId(RtpTransceiver transceiver) {
         return transceiver.getSender().id();
     }
 
     RtpTransceiver getTransceiver(String id) {
         if (this.peerConnection == null) {
-            throw new Error("Peer connection is null");
+            return null;
         }
 
         for(RtpTransceiver transceiver: this.peerConnection.getTransceivers()) {
@@ -136,22 +134,20 @@ class PeerConnectionObserver implements PeerConnection.Observer {
                 return transceiver;
             }
         }
-        throw new Error("Unable to find transceiver");
+        return null;
     }
 
-    public ReadableMap getTransceiversMap() {
+    public ReadableArray getTransceiversArray() {
         if (this.peerConnection == null) {
-            throw new Error("Peer connection is null");
+            return null;
         }
 
         List<RtpTransceiver> transceivers = this.peerConnection.getTransceivers();
-        WritableMap transceiversMap = Arguments.createMap();
         WritableArray transceiversArray = Arguments.createArray();
         for(RtpTransceiver transceiver: transceivers) {
             transceiversArray.pushMap(serializeTransceiver(transceiver));
         }
-        transceiversMap.putArray("transceivers", transceiversArray);
-        return transceiversMap;
+        return transceiversArray;
     }
 
     WritableMap createDataChannel(String label, ReadableMap config) {
@@ -366,6 +362,10 @@ class PeerConnectionObserver implements PeerConnection.Observer {
         webRTCModule.sendEvent("peerConnectionSignalingStateChanged", params);
     }
 
+    /**
+     * Triggered when a new track is signaled by the remote peer, as a result of
+     * setRemoteDescription.
+     */
     @Override
     public void onAddTrack(final RtpReceiver receiver, final MediaStream[] mediaStreams) {
         Log.d(TAG, "onAddTrack");
@@ -376,7 +376,7 @@ class PeerConnectionObserver implements PeerConnection.Observer {
 
         MediaStreamTrack track = receiver.track();
 
-        if (track == null || sdpSemantics != PeerConnection.SdpSemantics.UNIFIED_PLAN) {
+        if (track == null) {
             return;
         }
         if(track.kind().equals(MediaStreamTrack.VIDEO_TRACK_KIND)){
@@ -406,7 +406,6 @@ class PeerConnectionObserver implements PeerConnection.Observer {
         }
 
         eventInfo.putArray("streams", streams);
-        eventInfo.putMap("track", serializeTrack(receiver.track()));
         eventInfo.putMap("receiver", serializeReceiver(receiver));
         eventInfo.putString("timestamp", ts);
         // Getting the transceiver object associated with the receiver for the event
@@ -423,6 +422,11 @@ class PeerConnectionObserver implements PeerConnection.Observer {
         webRTCModule.sendEvent("peerConnectionOnTrack", params);
     }
 
+    /**
+     * Triggered when the signaling from SetRemoteDescription indicates that a transceiver
+     * will be receiving media from a remote endpoint. This is only called if UNIFIED_PLAN
+     * semantics are specified. The transceiver will be disposed automatically.
+     */
     @Override
     public void onTrack(final RtpTransceiver transceiver) {
         Log.d(TAG, "onTrack");
@@ -434,7 +438,7 @@ class PeerConnectionObserver implements PeerConnection.Observer {
         Long tsLong = System.currentTimeMillis()/1000;
         String ts = tsLong.toString();
 
-        if (track == null || sdpSemantics != PeerConnection.SdpSemantics.UNIFIED_PLAN) {
+        if (track == null) {
             return;
         }
         if(track.kind().equals(MediaStreamTrack.VIDEO_TRACK_KIND)){
@@ -447,7 +451,6 @@ class PeerConnectionObserver implements PeerConnection.Observer {
         WritableArray streams = Arguments.createArray();
         
         eventInfo.putArray("streams", streams);
-        eventInfo.putMap("track", serializeTrack(receiver.track()));
         eventInfo.putMap("receiver", serializeReceiver(receiver));
         eventInfo.putMap("transceiver", serializeTransceiver(transceiver));
         eventInfo.putString("timestamp", ts);
@@ -459,6 +462,26 @@ class PeerConnectionObserver implements PeerConnection.Observer {
         webRTCModule.sendEvent("peerConnectionOnTrack", params);
     }
 
+    /*
+     * Triggered when a previously added remote track is removed by the remote
+     * peer, as a result of setRemoteDescription.
+     */
+    @Override
+    public void onRemoveTrack(RtpReceiver receiver){
+        // According to the W3C spec, we need to send out 
+        // the track Id so that we can remove it from the MediaStream objects stored
+        // at the JS layer, which are the same stream objects passed down to 
+        // the `track` event.
+
+        WritableMap params = Arguments.createMap();
+        params.putInt("id", this.id);
+        params.putString("trackId", receiver.track().id());
+        webRTCModule.sendEvent("peerConnectionOnRemoveTrack", params);
+        
+        params.putBoolean("mute", true);
+        webRTCModule.sendEvent("mediaStreamTrackOnMuteChanged", params);
+    };
+
     // This is only added to compile. Plan B is not supported anymore.
     @Override
     public void onRemoveStream(MediaStream stream) {
@@ -469,6 +492,24 @@ class PeerConnectionObserver implements PeerConnection.Observer {
     @Override
     public void onAddStream(MediaStream stream) {
 
+    }
+
+    /**
+     * Removes a specific local <tt>MediaStream</tt> from the associated
+     * <tt>PeerConnection</tt>.
+     *
+     * @param localStream the local <tt>MediaStream</tt> from the associated
+     *                    <tt>PeerConnection</tt>
+     * @return <tt>true</tt> if removing the specified <tt>mediaStream</tt> from
+     * this instance resulted in a modification of its internal list of local
+     * <tt>MediaStream</tt>s; otherwise, <tt>false</tt>
+     */
+    boolean removeStream(MediaStream localStream) {
+        if (peerConnection != null) {
+            peerConnection.removeStream(localStream);
+        }
+
+        return localStreams.remove(localStream);
     }
 
     @Nullable
@@ -589,15 +630,15 @@ class PeerConnectionObserver implements PeerConnection.Observer {
         trackInfo.putString("id", track.id());
         trackInfo.putInt("peerConnectionId", this.id);
         if (track.kind().equals("video")) {
-            trackInfo.putString("label", "Video");
+            trackInfo.putString("label", "");
         } else if (track.kind().equals("audio")) {
-            trackInfo.putString("label", "Aideo");
+            trackInfo.putString("label", "");
         } else {
             throw new Error("Unknown kind: " + track.kind());
         }
         trackInfo.putString("kind", track.kind());
         trackInfo.putBoolean("enabled", track.enabled());
-        trackInfo.putString("readyState", track.state().toString());
+        trackInfo.putString("readyState", track.state().toString().toLowerCase());
         trackInfo.putBoolean("remote", true);
         return trackInfo;
     }
@@ -605,9 +646,9 @@ class PeerConnectionObserver implements PeerConnection.Observer {
     /**
      * This method is currently missing serializing DtmfSender
      * and transport.
-     * // TODO: Add transport and dtmf fields to the serialized sender to match the web APIs
+     * TODO: Add transport and dtmf fields to the serialized sender to match the web APIs.
      */
-    private ReadableMap serializeSender(RtpSender sender) {
+    public ReadableMap serializeSender(RtpSender sender) {
         WritableMap res = Arguments.createMap();
         res.putString("id", sender.id());
         res.putInt("peerConnectionId", this.id);
@@ -629,9 +670,7 @@ class PeerConnectionObserver implements PeerConnection.Observer {
         res.putString("id", transceiver.getSender().id());
         res.putInt("peerConnectionId", this.id);
         String mid = transceiver.getMid();
-        if (mid != null) {
-            res.putString("mid", mid);
-        }
+        res.putString("mid", mid);
         res.putString("direction", serializeDirection(transceiver.getDirection()));
         RtpTransceiver.RtpTransceiverDirection currentDirection = transceiver.getCurrentDirection();
         if (currentDirection != null) {

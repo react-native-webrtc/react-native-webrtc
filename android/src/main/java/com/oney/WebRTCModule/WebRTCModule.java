@@ -406,23 +406,7 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
             final boolean v = map.getBoolean("presumeWritableWhenFullyRelayed");
             conf.presumeWritableWhenFullyRelayed = v;
         }
-
-        // sdpSemantics
-        if (map.hasKey("sdpSemantics")
-                && map.getType("sdpSemantics") == ReadableType.String) {
-            final String v = map.getString("sdpSemantics");
-            if (v != null) {
-                switch (v) {
-                    case "unified-plan":
-                        conf.sdpSemantics = PeerConnection.SdpSemantics.UNIFIED_PLAN;
-                        break;
-                    case "plan-b":
-                        conf.sdpSemantics = PeerConnection.SdpSemantics.PLAN_B;
-                }
-
-            }
-        }
-
+        
         return conf;
     }
 
@@ -432,7 +416,7 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
 
         try {
             ThreadUtils.submitToExecutor(() -> {
-                PeerConnectionObserver observer = new PeerConnectionObserver(this, id, rtcConfiguration.sdpSemantics);
+                PeerConnectionObserver observer = new PeerConnectionObserver(this, id);
                 PeerConnection peerConnection = mFactory.createPeerConnection(rtcConfiguration, observer);
                 observer.setPeerConnection(peerConnection);
                 mPeerConnectionObservers.put(id, observer);
@@ -544,7 +528,7 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
     }
 
     private RtpTransceiver.RtpTransceiverInit parseTransceiverOptions(ReadableMap map) {
-        RtpTransceiver.RtpTransceiverDirection direction = RtpTransceiver.RtpTransceiverDirection.SEND_RECV;
+        RtpTransceiver.RtpTransceiverDirection direction = RtpTransceiver.RtpTransceiverDirection.INACTIVE;
         ArrayList<String> streamIds = new ArrayList<>();
         if (map != null) {
             if (map.hasKey("direction")) {
@@ -586,7 +570,12 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
                     MediaStreamTrack track = getTrack(trackId);
                     transceiver = pco.addTransceiver(track, parseTransceiverOptions(options.getMap("init")));
 
+                } else {
+                    // This should technically never happen as the JS side checks for that.
+                    Log.d(TAG, "peerConnectionAddTransceiver() no type nor trackId provided in options");
+                    return null;
                 }
+
                 // We need the timestamp to reorder the transceivers array 
                 Long tsLong = System.currentTimeMillis()/1000;
                 String ts = tsLong.toString();      
@@ -605,28 +594,88 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
         }
     }
 
-//    @ReactMethod
-//    public WritableMap peerConnectionGetTransceivers(int id) {
-//        ThreadUtils.runOnExecutor(() -> {
-//            WritableMap identifier = Arguments.createMap();
-//            identifier.putInt("peerConnectionId", id);
-//            try {
-//                PeerConnectionObserver pco = mPeerConnectionObservers.get(id);
-//                if (pco == null) {
-//                    Log.d(TAG, "peerConnectionTransceiverStop() peerConnectionObserver is null");
-//                    return null;
-//                }
-//                WritableMap params = Arguments.createMap();
-//                params.putMap("identifiers", identifiers);
-//                params.putMap("info", pco.getTransceiversMap());
-//                sendEvent("peerConnectionGetTransceiversSuccessful", params);
-//            } catch (InterruptedException | ExecutionException e) {
-//                Log.d(TAG, "peerConnectionGetTransceivers(): " + e.getMessage());
-//                sendError("peerConnectionOnError", "getTransceivers", e.getMessage(), identifier);
-//            }
-//        });
-//    }
-//
+    @ReactMethod(isBlockingSynchronousMethod = true)
+    public WritableMap peerConnectionAddTrack(int id,
+                                              String trackId,
+                                             ReadableMap options) {
+        try {
+            return (WritableMap) ThreadUtils.submitToExecutor((Callable<Object>) () -> {
+                PeerConnectionObserver pco = mPeerConnectionObservers.get(id);
+                if (pco == null) {
+                    Log.d(TAG, "peerConnectionAddTrack() peerConnection is null");
+                    return null;
+                }
+
+                MediaStreamTrack track = getTrack(trackId);
+                List<String> streamIds = new ArrayList<>();
+                if (options.hasKey("streamIds")) {
+                    ReadableArray rawStreamIds = options.getArray("streamIds");
+                    if (rawStreamIds != null) {
+                        for (int i = 0; i < rawStreamIds.size(); i++) {
+                            streamIds.add(rawStreamIds.getString(i));
+                        }
+                    }
+                }
+                RtpSender sender = pco.getPeerConnection().addTrack(track, streamIds);
+
+                // Need to get the corresponding transceiver as well
+                RtpTransceiver transceiver = pco.getTransceiver(sender.id());
+
+                if (transceiver == null) {
+                    Log.d(TAG, "peerConnectionAddTrack() transceiver is null");
+                    return null;
+                }
+
+                // We need the timestamp to reorder the transceivers array 
+                Long tsLong = System.currentTimeMillis()/1000;
+                String ts = tsLong.toString();      
+                WritableMap params = Arguments.createMap();
+                params.putString("timestamp", ts);
+                params.putMap("transceiver", pco.serializeTransceiver(transceiver));
+                params.putMap("sender", pco.serializeSender(sender));
+                return params;
+            }).get();
+        } catch (InterruptedException | ExecutionException e) {
+            Log.d(TAG, "peerConnectionAddTrack() " + e.getMessage());
+            return null;
+        }
+    }
+
+    @ReactMethod
+    public void peerConnectionRemoveTrack(int id,
+                                            String senderId) {
+            ThreadUtils.runOnExecutor(() -> {
+                WritableMap identifier = Arguments.createMap();
+                identifier.putInt("peerConnectionId", id);
+                identifier.putString("senderId", senderId);
+                try {
+                    PeerConnectionObserver pco = mPeerConnectionObservers.get(id);
+                    if (pco == null) {
+                        Log.d(TAG, "peerConnectionRemoveTrack() peerConnection is null");
+                        sendError("peerConnectionOnError", "removeTrack", "Peer Connection is not initialized", null);
+                        return;
+                    }
+                    RtpTransceiver transceiver = pco.getTransceiver(senderId);
+
+                    if (transceiver == null) {
+                        Log.d(TAG, "peerConnectionAddTrack() transceiver is null");
+                        sendError("peerConnectionOnError", "removeTrack", "transceiver is null", null);
+                        return;
+                    }
+
+                    boolean successful = pco.getPeerConnection().removeTrack(transceiver.getSender());
+                    if (successful) {
+                        sendEvent("peerConnectionOnRemoveTrackSuccessful", identifier);
+                        return;
+                    }
+                    sendError("peerConnectionOnError", "removeTrack", "Internal Error", identifier);
+                } catch (Exception e) {
+                    Log.d(TAG, "peerConnectionRemoveTrack() " + e.getMessage());
+                    sendError("peerConnectionOnError", "removeTrack", e.getMessage(), identifier);
+                }
+            });
+    }
+
     @ReactMethod
     public void transceiverStop(int id,
                                 String senderId) {
@@ -645,6 +694,7 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
                     return;
                 }
                 RtpTransceiver transceiver = pco.getTransceiver(senderId);
+
                 transceiver.stop();
                 sendEvent("transceiverStopSuccessful", identifier);
             } catch (Exception e) {
@@ -668,8 +718,15 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
                     return;
                 }
                 RtpTransceiver transceiver = pco.getTransceiver(senderId); // transceiver Id is not a thing, we identify them by sender Ids
+
+                if (transceiver == null) {
+                    Log.d(TAG, "senderReplaceTrack() transceiver is null");
+                    promise.reject(new Exception("Could not get transceiver"));
+                    return;
+                }
+
                 RtpSender sender = transceiver.getSender();
-                MediaStreamTrack track = getTrack(trackId);
+                MediaStreamTrack track = getLocalTrack(trackId);
                 sender.setTrack(track, false);
                 promise.resolve(true);
             } catch (Exception e) {
@@ -699,6 +756,11 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
                     return;
                 }
                 RtpTransceiver transceiver = pco.getTransceiver(senderId);
+                if (transceiver == null){
+                    Log.d(TAG, "transceiverSetDirection() transceiver is null");
+                    return;
+                }
+
                 RtpTransceiver.RtpTransceiverDirection oldDirection = transceiver.getDirection(); 
                 params.putString("oldDirection", pco.serializeDirection(oldDirection));
                 transceiver.setDirection(this.parseDirection(direction));
@@ -829,16 +891,17 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
     }
 
     /**
-     * This serializes the transceivers current directions and sends them to the
-     * JS layer for potential update
+     * This serializes the transceivers current direction and mid and returns them
+     * for update when an sdp negotiation/renegotiation happens 
      */
-    private void sendTransceiverCurrentDirectionUpdate(int id) {
+    private ReadableArray getTransceiversSdpInfo(int id) {
         Log.d(TAG, "sendTransceiverCurrentDirectionUpdate");
         PeerConnectionObserver pco = mPeerConnectionObservers.get(id);
         if (pco == null) {
-            return;
+            return null;
         }
         PeerConnection peerConnection = pco.getPeerConnection();
+        WritableArray transceiverUpdates = Arguments.createArray();
         for(RtpTransceiver transceiver: peerConnection.getTransceivers()) {
             RtpTransceiver.RtpTransceiverDirection direction = transceiver.getCurrentDirection();
             Log.d(TAG, "sendTransceiverCurrentDirectionUpdate() direction checking");
@@ -847,11 +910,13 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
             WritableMap transceiverUpdate = Arguments.createMap();
             transceiverUpdate.putString("transceiverId", transceiver.getSender().id());
             transceiverUpdate.putInt("peerConnectionId", id);
+            transceiverUpdate.putString("mid", transceiver.getMid());
             transceiverUpdate.putString("currentDirection", directionSerialized);
-            sendEvent("transceiverOnCurrentDirectionUpdate", transceiverUpdate);
+            transceiverUpdates.pushMap(transceiverUpdate);
         }
-
+        return transceiverUpdates;
     }
+
     @ReactMethod
     public void peerConnectionSetConfiguration(ReadableMap configuration,
                                                int id) {
@@ -887,13 +952,12 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
                 @Override
                 public void onCreateSuccess(SessionDescription sdp) {
                     WritableMap params = Arguments.createMap();
-                    params.putString("sdp", sdp.description);
-                    params.putString("type", sdp.type.canonicalForm());
+                    WritableMap sdpInfo = Arguments.createMap();
+                    sdpInfo.putString("sdp", sdp.description);
+                    sdpInfo.putString("type", sdp.type.canonicalForm());
+                    params.putArray("transceiverUpdates", getTransceiversSdpInfo(id));
+                    params.putMap("sdpInfo", sdpInfo);
                     callback.invoke(true, params);
-
-                    // Here, the currentDirection attribute of transceivers
-                    // Would have been set, so we update the current direction based on that
-                    sendTransceiverCurrentDirectionUpdate(id);
                 }
 
                 @Override
@@ -927,13 +991,12 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
                 @Override
                 public void onCreateSuccess(SessionDescription sdp) {
                     WritableMap params = Arguments.createMap();
-                    params.putString("sdp", sdp.description);
-                    params.putString("type", sdp.type.canonicalForm());
+                    WritableMap sdpInfo = Arguments.createMap();
+                    sdpInfo.putString("sdp", sdp.description);
+                    sdpInfo.putString("type", sdp.type.canonicalForm());
+                    params.putArray("transceiverUpdates", getTransceiversSdpInfo(id));
+                    params.putMap("sdpInfo", sdpInfo);
                     callback.invoke(true, params);
-
-                    // Here, the currentDirection attribute of transceivers
-                    // Would have been set, so we update the current direction based on that
-                    sendTransceiverCurrentDirectionUpdate(id);
                 }
 
                 @Override
@@ -966,13 +1029,12 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
                 public void onSetSuccess() {
                     SessionDescription newSdp = peerConnection.getLocalDescription();
                     WritableMap newSdpMap = Arguments.createMap();
+                    WritableMap params = Arguments.createMap();
                     newSdpMap.putString("type", newSdp.type.canonicalForm());
                     newSdpMap.putString("sdp", newSdp.description);
-                    promise.resolve(newSdpMap);
-                    
-                    // Here, the currentDirection attribute of transceivers
-                    // Would have been set, so we update the current direction based on that
-                    sendTransceiverCurrentDirectionUpdate(pcId);
+                    params.putMap("sdpInfo", newSdpMap);
+                    params.putArray("transceiverUpdates", getTransceiversSdpInfo(pcId));
+                    promise.resolve(params);
                 }
 
                 @Override
@@ -1024,13 +1086,12 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
                 public void onSetSuccess() {
                     SessionDescription newSdp = peerConnection.getRemoteDescription();
                     WritableMap newSdpMap = Arguments.createMap();
+                    WritableMap params = Arguments.createMap();
                     newSdpMap.putString("type", newSdp.type.canonicalForm());
                     newSdpMap.putString("sdp", newSdp.description);
-                    callback.invoke(true, newSdpMap);
-                    
-                    // Here, the currentDirection attribute of transceivers
-                    // Would have been set, so we update the current direction based on that
-                    sendTransceiverCurrentDirectionUpdate(id);
+                    params.putArray("transceiverUpdates", getTransceiversSdpInfo(id));
+                    params.putMap("sdpInfo", newSdpMap);
+                    callback.invoke(true, params);
                 }
 
                 @Override
@@ -1044,7 +1105,6 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
             }, sdp);
         });
     }
-
 
     private WritableMap mapForVideoCodecInfo(VideoCodecInfo info) {
         WritableMap params = Arguments.createMap();
@@ -1075,32 +1135,31 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
 
     }
 
-    @ReactMethod
-    public void receiverGetCapabilities() {
-        ThreadUtils.runOnExecutor(() -> {
-            try {
-                WritableMap capabilities = doReceiverGetCapabilities();
-                sendEvent("receiverGetCapabilitiesSuccessful", capabilities);
-            } catch (Exception e) {
-                Log.d(TAG, "receiverGetCapabilities() " + e.getMessage());
-                sendError("receiverError", "getCapabilities", e.getMessage(), null);
-            }
-        });
+    @ReactMethod(isBlockingSynchronousMethod = true)
+    public WritableMap receiverGetCapabilities() {
+        try {
+            return (WritableMap) ThreadUtils.submitToExecutor((Callable<Object>) () -> {
+                return doReceiverGetCapabilities();
+            }).get();
+        } catch (ExecutionException | InterruptedException e) {
+            Log.d(TAG, "receiverGetCapabilities() " + e.getMessage());
+            return null;
+        }
     }
 
 
-    @ReactMethod
-    public void senderGetCapabilities() {
-        ThreadUtils.runOnExecutor(() -> {
-            try {
-                WritableMap capabilities = doSenderGetCapabilities();
-                sendEvent("senderGetCapabilitiesSuccessful", capabilities);
-            } catch (Exception e) {
-                Log.d(TAG, "senderGetCapabilities() " + e.getMessage());
-                sendError("senderError", "getCapabilities", e.getMessage(), null);
-            }
-        });
+    @ReactMethod(isBlockingSynchronousMethod = true)
+    public WritableMap senderGetCapabilities() {
+        try {
+            return (WritableMap) ThreadUtils.submitToExecutor((Callable<Object>) () -> {
+                return doSenderGetCapabilities();
+            }).get();
+        } catch (ExecutionException | InterruptedException e) {
+            Log.d(TAG, "senderGetCapabilities() " + e.getMessage());
+            return null;
+        }
     }
+
     @ReactMethod
     public void peerConnectionAddICECandidate(int pcId,
                                               ReadableMap candidateMap,
