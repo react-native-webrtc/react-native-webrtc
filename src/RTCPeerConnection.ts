@@ -69,7 +69,7 @@ export default class RTCPeerConnection extends defineCustomEventTarget(...PEER_C
 
     _peerConnectionId: number;
     _subscriptions: any[] = [];
-    _transceivers: { timestamp: number, transceiver: RTCRtpTransceiver }[] = [];
+    _transceivers: { order: number, transceiver: RTCRtpTransceiver }[] = [];
     _remoteStreams: Map<string, MediaStream> = new Map<string, MediaStream>();
 
     constructor(configuration) {
@@ -176,7 +176,7 @@ export default class RTCPeerConnection extends defineCustomEventTarget(...PEER_C
         const streamIds = streams.map((s) => s.id);
         const result = WebRTCModule.peerConnectionAddTrack(this._peerConnectionId, track.id, { streamIds });
         if (result == null) throw new Error("Could not add sender");
-        const { timestamp, transceiver, sender } = result;
+        const { transceiverOrder, transceiver, sender } = result;
 
         // According to the W3C docs, the sender could have been reused, and 
         // so we check if that is the case, and update accordingly.
@@ -199,8 +199,8 @@ export default class RTCPeerConnection extends defineCustomEventTarget(...PEER_C
 
         // This is a new transceiver, should create a transceiver for it and add it
         const newTransceiver = new RTCRtpTransceiver(transceiver);
-        this._transceivers.push({ timestamp, transceiver: newTransceiver });
-        this._transceivers.sort((a, b) => a.timestamp - b.timestamp);
+        this._transceivers.push({ order: transceiverOrder, transceiver: newTransceiver });
+        this._transceivers.sort((a, b) => a.order - b.order);
 
         return newTransceiver.sender;
     }
@@ -227,7 +227,7 @@ export default class RTCPeerConnection extends defineCustomEventTarget(...PEER_C
             throw new Error("Transceiver could not be added");
         }
         const transceiver = new RTCRtpTransceiver(result.transceiver);
-        this._insertTransceiverSorted(parseInt(result.timestamp), transceiver);
+        this._insertTransceiverSorted(result.transceiverOrder, transceiver);
         return transceiver;
     }
 
@@ -282,7 +282,7 @@ export default class RTCPeerConnection extends defineCustomEventTarget(...PEER_C
         WebRTCModule.peerConnectionClose(this._peerConnectionId);
         // According to the W3C spec: https://w3c.github.io/webrtc-pc/#rtcpeerconnection-interface
         // transceivers have to be stopped
-        this._transceivers.forEach(({ timestamp, transceiver })=> {
+        this._transceivers.forEach(({ order, transceiver })=> {
             transceiver.stop();
         })
     }
@@ -341,16 +341,13 @@ export default class RTCPeerConnection extends defineCustomEventTarget(...PEER_C
                 const receiver = new RTCRtpReceiver({ ...ev.receiver, track });
                 // Make sure transceivers are stored in timestamp order. Also, we have to make
                 // sure we do not add a transceiver if it exists. 
-                let [{ timestamp, transceiver }] = this._transceivers.filter(({ timestamp, transceiver }) => {
+                let [{ order, transceiver }] = this._transceivers.filter(({ order, transceiver }) => {
                     return transceiver.id === ev.transceiver.id;
                 })
                 if (!transceiver) {
                     // Creating objects out of the event data
                     const newTransceiver = new RTCRtpTransceiver({ ...ev.transceiver, receiver: receiver });
-                    this._transceivers.push({ timestamp: parseInt(ev.timestamp), transceiver: newTransceiver });
-                    this._transceivers.sort((a, b) => {
-                        return a.timestamp - b.timestamp;
-                    })
+                    this._insertTransceiverSorted(ev.transceiverOrder, newTransceiver);
                     return newTransceiver;
                 } else {
                     transceiver._receiver._track = track;
@@ -513,13 +510,13 @@ export default class RTCPeerConnection extends defineCustomEventTarget(...PEER_C
 
     /**
      * Inserts transceiver into the transceiver array in the order they are created (timestamp).
-     * @param timestamp 
-     * @param transceiver 
+     * @param order an index that refers to when it it was created relatively.
+     * @param transceiver the transceiver object to be inserted.
      */
-    _insertTransceiverSorted(timestamp: number, transceiver: RTCRtpTransceiver) {
-        this._transceivers.push({ timestamp, transceiver });
+    _insertTransceiverSorted(order: number, transceiver: RTCRtpTransceiver) {
+        this._transceivers.push({ order, transceiver });
         this._transceivers.sort((a, b) => {
-            return a.timestamp - b.timestamp;
+            return a.order - b.order;
         })
     }
 }
