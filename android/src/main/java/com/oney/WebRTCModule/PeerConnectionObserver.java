@@ -380,7 +380,6 @@ class PeerConnectionObserver implements PeerConnection.Observer {
 
 
             WritableMap params = Arguments.createMap();
-            WritableMap eventInfo = Arguments.createMap();
             WritableArray streams = Arguments.createArray();
 
             for (MediaStream stream : mediaStreams) {
@@ -399,19 +398,18 @@ class PeerConnectionObserver implements PeerConnection.Observer {
                 streams.pushMap(serializeStream(streamReactTag, stream));
             }
 
-            eventInfo.putArray("streams", streams);
-            eventInfo.putMap("receiver", serializeReceiver(receiver));
-            eventInfo.putString("timestamp", ts);
+            params.putArray("streams", streams);
+            params.putMap("receiver", serializeReceiver(receiver));
+            params.putString("timestamp", ts);
             // Getting the transceiver object associated with the receiver for the event
             List<RtpTransceiver> transceivers = peerConnection.getTransceivers();
             for( RtpTransceiver transceiver : transceivers ) {
                 if(transceiver.getReceiver() != null && receiver.id().equals(transceiver.getReceiver().id())) {
-                    eventInfo.putMap("transceiver", serializeTransceiver(transceiver));
+                    params.putMap("transceiver", serializeTransceiver(transceiver));
                     break;
                 }
             }
             params.putInt("id", this.id);
-            params.putMap("info", eventInfo);
 
             webRTCModule.sendEvent("peerConnectionOnTrack", params);
         });
