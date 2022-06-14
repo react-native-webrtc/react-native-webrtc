@@ -576,15 +576,14 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
                     return null;
                 }
 
-                // We need the timestamp to reorder the transceivers array 
-                Long tsLong = System.currentTimeMillis()/1000;
-                String ts = tsLong.toString();      
                 if (transceiver == null) {
                     Log.d(TAG, "peerConnectionAddTransceiver() Error adding transceiver");
                     return null;
                 }
                 WritableMap params = Arguments.createMap();
-                params.putString("timestamp", ts);
+                // We need to get a unique order at which the transceiver was created
+                // to reorder the cached array of transceivers on the JS layer.
+                params.putInt("transceiverOrder", pco.getNextTransceiverId());
                 params.putMap("transceiver", pco.serializeTransceiver(transceiver));
                 return params;
             }).get();
@@ -621,11 +620,10 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
                 // Need to get the corresponding transceiver as well
                 RtpTransceiver transceiver = pco.getTransceiver(sender.id());
 
-                // We need the timestamp to reorder the transceivers array 
-                Long tsLong = System.currentTimeMillis()/1000;
-                String ts = tsLong.toString();      
+                // We need the tranceiver creation order to reorder the transceivers array 
+                // in the JS layer.
                 WritableMap params = Arguments.createMap();
-                params.putString("timestamp", ts);
+                params.putInt("transceiverOrder", pco.getNextTransceiverId());
                 params.putMap("transceiver", pco.serializeTransceiver(transceiver));
                 params.putMap("sender", pco.serializeSender(sender));
                 return params;

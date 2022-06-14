@@ -40,6 +40,8 @@ class PeerConnectionObserver implements PeerConnection.Observer {
 
     private final Map<String, DataChannelWrapper> dataChannels;
     private final int id;
+    private int transceiverNextId = 0;
+
     private PeerConnection peerConnection;
     final Map<String, MediaStream> remoteStreams;
     final Map<String, MediaStreamTrack> remoteTracks;
@@ -93,10 +95,9 @@ class PeerConnectionObserver implements PeerConnection.Observer {
         dataChannels.clear();
     }
 
-    public void removeTrack(MediaStreamTrack track) {
-        if(track.kind().equals(MediaStreamTrack.VIDEO_TRACK_KIND)){
-            videoTrackAdapters.removeAdapter((VideoTrack) track);
-        }
+
+    public synchronized int getNextTransceiverId() {
+        return transceiverNextId++;
     }
 
     RtpTransceiver addTransceiver(MediaStreamTrack.MediaType mediaType, RtpTransceiver.RtpTransceiverInit init) {
@@ -367,10 +368,6 @@ class PeerConnectionObserver implements PeerConnection.Observer {
         Log.d(TAG, "onAddTrack");
 
         ThreadUtils.runOnExecutor(() -> {
-            // Get The timestamp so that we can reorder the transceivers on the JS layer
-            Long tsLong = System.currentTimeMillis()/1000;
-            String ts = tsLong.toString();
-
             MediaStreamTrack track = receiver.track();
 
             if(track.kind().equals(MediaStreamTrack.VIDEO_TRACK_KIND)){
@@ -400,7 +397,7 @@ class PeerConnectionObserver implements PeerConnection.Observer {
 
             params.putArray("streams", streams);
             params.putMap("receiver", serializeReceiver(receiver));
-            params.putString("timestamp", ts);
+            params.putInt("transceiverOrder", getNextTransceiverId());
             // Getting the transceiver object associated with the receiver for the event
             List<RtpTransceiver> transceivers = peerConnection.getTransceivers();
             for( RtpTransceiver transceiver : transceivers ) {
@@ -427,11 +424,6 @@ class PeerConnectionObserver implements PeerConnection.Observer {
         ThreadUtils.runOnExecutor(() -> {
             RtpReceiver receiver = transceiver.getReceiver();
             MediaStreamTrack track = receiver.track();
-
-            // Get The timestamp so that we can reorder the transceivers on the JS layer
-            Long tsLong = System.currentTimeMillis()/1000;
-            String ts = tsLong.toString();
-
             if (track == null) {
                 return;
             }
@@ -446,7 +438,7 @@ class PeerConnectionObserver implements PeerConnection.Observer {
             params.putArray("streams", streams);
             params.putMap("receiver", serializeReceiver(receiver));
             params.putMap("transceiver", serializeTransceiver(transceiver));
-            params.putString("timestamp", ts);
+            params.putInt("transceiverOrder", getNextTransceiverId());
             params.putInt("id", this.id);
 
             webRTCModule.sendEvent("peerConnectionOnTrack", params);
