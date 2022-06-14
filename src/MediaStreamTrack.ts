@@ -19,10 +19,10 @@ class MediaStreamTrack extends defineCustomEventTarget(...MEDIA_STREAM_TRACK_EVE
     _peerConnectionId: number;
 
     readonly id: string;
-    kind: string;
-    label: string;
+    readonly kind: string;
+    readonly label: string = "";
     readyState: MediaStreamTrackState;
-    remote: boolean;
+    readonly remote: boolean;
     
     constructor(info) {
         super();
@@ -35,7 +35,6 @@ class MediaStreamTrack extends defineCustomEventTarget(...MEDIA_STREAM_TRACK_EVE
 
         this.id = info.id;
         this.kind = info.kind;
-        this.label = info.label;
         this.remote = info.remote;
 
         const _readyState = info.readyState.toLowerCase();

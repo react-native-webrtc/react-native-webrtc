@@ -1,6 +1,6 @@
 import { NativeModules } from 'react-native';
 import MediaStreamTrack from './MediaStreamTrack';
-import RTCRtpCapabilities, {receiverCapabilities } from './RTCRtpCapabilities';
+import RTCRtpCapabilities, {DEFAULT_AUDIO_CAPABILITIES, receiverCapabilities } from './RTCRtpCapabilities';
 
 const { WebRTCModule } = NativeModules;
 
@@ -16,10 +16,10 @@ export default class RTCRtpReceiver {
     }
 
     static getCapabilities(kind: "audio" | "video"): RTCRtpCapabilities {
-
         if (kind == "audio") {
-            throw new Error("Unimplemented capabilities for audio");
+          return DEFAULT_AUDIO_CAPABILITIES;    
         }
+
         if (!receiverCapabilities)
             throw new Error('Receiver Capabilities is null');
         return receiverCapabilities;

@@ -1,5 +1,5 @@
 
-import { defineCustomEventTarget } from 'event-target-shim';
+import { defineCustomEventTarget, Event } from 'event-target-shim';
 import { NativeModules } from 'react-native';
 
 import MediaStream from './MediaStream';
@@ -14,7 +14,7 @@ import RTCIceCandidateEvent from './RTCIceCandidateEvent';
 import RTCErrorEvent from './RTCErrorEvent';
 import RTCEvent from './RTCEvent';
 import * as RTCUtil from './RTCUtil';
-import { addListener, removeListener } from './EventEmitter';
+import EventEmitter, { addListener, removeListener } from './EventEmitter';
 import RTCRtpReceiver from './RTCRtpReceiver';
 import RTCRtpSender from './RTCRtpSender';
 
@@ -337,32 +337,32 @@ export default class RTCPeerConnection extends defineCustomEventTarget(...PEER_C
             }
             const transceiver = (() => {
                 // Creating a track and receiver objects
-                const track = new MediaStreamTrack(ev.info.receiver.track);
-                const receiver = new RTCRtpReceiver({ ...ev.info.receiver, track });
+                const track = new MediaStreamTrack(ev.receiver.track);
+                const receiver = new RTCRtpReceiver({ ...ev.receiver, track });
                 // Make sure transceivers are stored in timestamp order. Also, we have to make
                 // sure we do not add a transceiver if it exists. 
                 let [{ timestamp, transceiver }] = this._transceivers.filter(({ timestamp, transceiver }) => {
-                    return transceiver.id === ev.info.transceiver.id;
+                    return transceiver.id === ev.transceiver.id;
                 })
                 if (!transceiver) {
                     // Creating objects out of the event data
-                    const newTransceiver = new RTCRtpTransceiver({ ...ev.info.transceiver, receiver: receiver });
-                    this._transceivers.push({ timestamp: parseInt(ev.info.timestamp), transceiver: newTransceiver });
+                    const newTransceiver = new RTCRtpTransceiver({ ...ev.transceiver, receiver: receiver });
+                    this._transceivers.push({ timestamp: parseInt(ev.timestamp), transceiver: newTransceiver });
                     this._transceivers.sort((a, b) => {
                         return a.timestamp - b.timestamp;
                     })
                     return newTransceiver;
                 } else {
                     transceiver._receiver._track = track;
-                    transceiver._mid = ev.info.transceiver.mid;
-                    transceiver._currentDirection = ev.info.transceiver.currentDirection;
-                    transceiver._direction = ev.info.transceiver.direction;
+                    transceiver._mid = ev.transceiver.mid;
+                    transceiver._currentDirection = ev.transceiver.currentDirection;
+                    transceiver._direction = ev.transceiver.direction;
                     return transceiver;
                 }
             })();
 
             // Get the stream object from the event. Create if necessary.
-            const streams = ev.info.streams.map(stream => {
+            const streams = ev.streams.map(stream => {
                 // Here we are making sure that we don't create stream objects that already exist
                 // So that event listeners do get the same object if it has been created before.
                 if (!this._remoteStreams.has(stream.streamId)) {
@@ -403,6 +403,8 @@ export default class RTCPeerConnection extends defineCustomEventTarget(...PEER_C
                 .getTransceivers()
                 .filter((t) => t.sender.id === existingSender.id);
             existingTransceiver._direction = existingTransceiver.direction === 'sendrecv' ? 'recvonly' : 'inactive';
+
+            EventEmitter.emit('mediaStreamTrackOnMuteChanged', ev);
         });
 
         addListener(this, 'peerConnectionGotICECandidate', ev => {
