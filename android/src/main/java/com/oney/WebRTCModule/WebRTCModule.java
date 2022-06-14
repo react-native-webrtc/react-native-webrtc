@@ -606,7 +606,7 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
                     return null;
                 }
 
-                MediaStreamTrack track = getTrack(trackId);
+                MediaStreamTrack track = getLocalTrack(trackId);
                 List<String> streamIds = new ArrayList<>();
                 if (options.hasKey("streamIds")) {
                     ReadableArray rawStreamIds = options.getArray("streamIds");
@@ -620,11 +620,6 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
 
                 // Need to get the corresponding transceiver as well
                 RtpTransceiver transceiver = pco.getTransceiver(sender.id());
-
-                if (transceiver == null) {
-                    Log.d(TAG, "peerConnectionAddTrack() transceiver is null");
-                    return null;
-                }
 
                 // We need the timestamp to reorder the transceivers array 
                 Long tsLong = System.currentTimeMillis()/1000;
@@ -727,6 +722,7 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
 
                 RtpSender sender = transceiver.getSender();
                 MediaStreamTrack track = getLocalTrack(trackId);
+                //TODO: Discuss local track ownership.
                 sender.setTrack(track, false);
                 promise.resolve(true);
             } catch (Exception e) {
@@ -894,7 +890,7 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
      * This serializes the transceivers current direction and mid and returns them
      * for update when an sdp negotiation/renegotiation happens 
      */
-    private ReadableArray getTransceiversSdpInfo(int id) {
+    private ReadableArray getTransceiversInfo(int id) {
         Log.d(TAG, "sendTransceiverCurrentDirectionUpdate");
         PeerConnectionObserver pco = mPeerConnectionObservers.get(id);
         if (pco == null) {
@@ -955,7 +951,7 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
                     WritableMap sdpInfo = Arguments.createMap();
                     sdpInfo.putString("sdp", sdp.description);
                     sdpInfo.putString("type", sdp.type.canonicalForm());
-                    params.putArray("transceiverUpdates", getTransceiversSdpInfo(id));
+                    params.putArray("transceiverUpdates", getTransceiversInfo(id));
                     params.putMap("sdpInfo", sdpInfo);
                     callback.invoke(true, params);
                 }
@@ -994,7 +990,7 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
                     WritableMap sdpInfo = Arguments.createMap();
                     sdpInfo.putString("sdp", sdp.description);
                     sdpInfo.putString("type", sdp.type.canonicalForm());
-                    params.putArray("transceiverUpdates", getTransceiversSdpInfo(id));
+                    params.putArray("transceiverUpdates", getTransceiversInfo(id));
                     params.putMap("sdpInfo", sdpInfo);
                     callback.invoke(true, params);
                 }
@@ -1033,7 +1029,7 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
                     newSdpMap.putString("type", newSdp.type.canonicalForm());
                     newSdpMap.putString("sdp", newSdp.description);
                     params.putMap("sdpInfo", newSdpMap);
-                    params.putArray("transceiverUpdates", getTransceiversSdpInfo(pcId));
+                    params.putArray("transceiverUpdates", getTransceiversInfo(pcId));
                     promise.resolve(params);
                 }
 
@@ -1089,7 +1085,7 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
                     WritableMap params = Arguments.createMap();
                     newSdpMap.putString("type", newSdp.type.canonicalForm());
                     newSdpMap.putString("sdp", newSdp.description);
-                    params.putArray("transceiverUpdates", getTransceiversSdpInfo(id));
+                    params.putArray("transceiverUpdates", getTransceiversInfo(id));
                     params.putMap("sdpInfo", newSdpMap);
                     callback.invoke(true, params);
                 }
