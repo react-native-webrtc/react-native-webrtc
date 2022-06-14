@@ -891,7 +891,6 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
      * for update when an sdp negotiation/renegotiation happens 
      */
     private ReadableArray getTransceiversInfo(int id) {
-        Log.d(TAG, "sendTransceiverCurrentDirectionUpdate");
         PeerConnectionObserver pco = mPeerConnectionObservers.get(id);
         if (pco == null) {
             return null;
@@ -900,7 +899,6 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
         WritableArray transceiverUpdates = Arguments.createArray();
         for(RtpTransceiver transceiver: peerConnection.getTransceivers()) {
             RtpTransceiver.RtpTransceiverDirection direction = transceiver.getCurrentDirection();
-            Log.d(TAG, "sendTransceiverCurrentDirectionUpdate() direction checking");
             if (direction == null) continue;
             String directionSerialized = pco.serializeDirection(direction);
             WritableMap transceiverUpdate = Arguments.createMap();
