@@ -557,7 +557,6 @@ class PeerConnectionObserver implements PeerConnection.Observer {
 
     private WritableMap serializeStream(String streamReactTag, MediaStream stream) {
 
-        Log.d(TAG, "streamReactTag = " + streamReactTag);
         WritableMap params = Arguments.createMap();
         params.putInt("id", id);
         params.putString("streamId", stream.getId());
