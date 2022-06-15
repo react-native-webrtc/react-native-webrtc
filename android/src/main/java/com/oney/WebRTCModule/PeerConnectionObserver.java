@@ -141,7 +141,7 @@ class PeerConnectionObserver implements PeerConnection.Observer {
         List<RtpTransceiver> transceivers = this.peerConnection.getTransceivers();
         WritableArray transceiversArray = Arguments.createArray();
         for(RtpTransceiver transceiver: transceivers) {
-            transceiversArray.pushMap(serializeTransceiver(transceiver));
+            transceiversArray.pushMap(SerializeUtils.serializeTransceiver(id, transceiver));
         }
         return transceiversArray;
     }
@@ -392,17 +392,17 @@ class PeerConnectionObserver implements PeerConnection.Observer {
                     streamReactTag = UUID.randomUUID().toString();
                     remoteStreams.put(streamReactTag, stream);
                 }
-                streams.pushMap(serializeStream(streamReactTag, stream));
+                streams.pushMap(SerializeUtils.serializeStream(id, streamReactTag, stream));
             }
 
             params.putArray("streams", streams);
-            params.putMap("receiver", serializeReceiver(receiver));
+            params.putMap("receiver", SerializeUtils.serializeReceiver(id, receiver));
             params.putInt("transceiverOrder", getNextTransceiverId());
             // Getting the transceiver object associated with the receiver for the event
             List<RtpTransceiver> transceivers = peerConnection.getTransceivers();
             for( RtpTransceiver transceiver : transceivers ) {
                 if(transceiver.getReceiver() != null && receiver.id().equals(transceiver.getReceiver().id())) {
-                    params.putMap("transceiver", serializeTransceiver(transceiver));
+                    params.putMap("transceiver", SerializeUtils.serializeTransceiver(id, transceiver));
                     break;
                 }
             }
@@ -436,8 +436,8 @@ class PeerConnectionObserver implements PeerConnection.Observer {
             WritableArray streams = Arguments.createArray();
             
             params.putArray("streams", streams);
-            params.putMap("receiver", serializeReceiver(receiver));
-            params.putMap("transceiver", serializeTransceiver(transceiver));
+            params.putMap("receiver", SerializeUtils.serializeReceiver(id, receiver));
+            params.putMap("transceiver", SerializeUtils.serializeTransceiver(id, transceiver));
             params.putInt("transceiverOrder", getNextTransceiverId());
             params.putInt("id", this.id);
 
@@ -550,93 +550,4 @@ class PeerConnectionObserver implements PeerConnection.Observer {
         return null;
     }
 
-    /**
-     * Serialization and Parsing helpers
-     */
-    private WritableMap serializeStream(String streamReactTag, MediaStream stream) {
-
-        WritableMap params = Arguments.createMap();
-        params.putInt("id", id);
-        params.putString("streamId", stream.getId());
-        params.putString("streamReactTag", streamReactTag);
-
-        WritableArray tracks = Arguments.createArray();
-
-        for (VideoTrack track: stream.videoTracks) {
-            tracks.pushMap(serializeTrack(track));
-        }
-        for (AudioTrack track: stream.audioTracks) {
-            tracks.pushMap(serializeTrack(track));
-        }
-
-        params.putArray("tracks", tracks);
-
-        return params;
-    }
-
-    public String serializeDirection(RtpTransceiver.RtpTransceiverDirection src) {
-        switch(src) {
-            case INACTIVE:
-                return "inactive";
-            case RECV_ONLY:
-                return "recvonly";
-            case SEND_ONLY:
-                return "sendonly";
-            case SEND_RECV:
-                return "sendrecv";
-            default:
-                throw new Error("Invalid direction");
-        }
-    }
-
-    private ReadableMap serializeTrack(MediaStreamTrack track) {
-        WritableMap trackInfo = Arguments.createMap();
-        trackInfo.putString("id", track.id());
-        trackInfo.putInt("peerConnectionId", this.id);
-        trackInfo.putString("kind", track.kind());
-        trackInfo.putBoolean("enabled", track.enabled());
-        trackInfo.putString("readyState", track.state().toString().toLowerCase());
-        trackInfo.putBoolean("remote", true);
-        return trackInfo;
-    }
-
-    /**
-     * This method is currently missing serializing DtmfSender
-     * and transport.
-     * TODO: Add transport and dtmf fields to the serialized sender to match the web APIs.
-     */
-    public ReadableMap serializeSender(RtpSender sender) {
-        WritableMap res = Arguments.createMap();
-        res.putString("id", sender.id());
-        res.putInt("peerConnectionId", this.id);
-        if (sender.track() != null) {
-            res.putMap("track", serializeTrack(sender.track()));
-        }
-        return res;
-    }
-
-    private ReadableMap serializeReceiver(RtpReceiver receiver) {
-        WritableMap res = Arguments.createMap();
-        res.putString("id", receiver.id());
-        res.putInt("peerConnectionId", this.id);
-        res.putMap("track", serializeTrack(receiver.track()));
-        return res;
-    }
-
-    public ReadableMap serializeTransceiver(RtpTransceiver transceiver) {
-        WritableMap res = Arguments.createMap();
-        res.putString("id", transceiver.getSender().id());
-        res.putInt("peerConnectionId", this.id);
-        String mid = transceiver.getMid();
-        res.putString("mid", mid);
-        res.putString("direction", serializeDirection(transceiver.getDirection()));
-        RtpTransceiver.RtpTransceiverDirection currentDirection = transceiver.getCurrentDirection();
-        if (currentDirection != null) {
-            res.putString("currentDirection", serializeDirection(transceiver.getCurrentDirection()));
-        }
-        res.putBoolean("isStopped", transceiver.isStopped());
-        res.putMap("receiver", serializeReceiver(transceiver.getReceiver()));
-        res.putMap("sender", serializeSender(transceiver.getSender()));
-        return res;
-    }
 }

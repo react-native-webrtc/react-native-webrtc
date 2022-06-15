@@ -498,57 +498,6 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
     }
 
 
-    /**
-     * Transceiver Parsing Helpers
-     */
-
-    private MediaStreamTrack.MediaType mediaTypeForString(String type) {
-        switch(type) {
-            case "audio": 
-                return MediaStreamTrack.MediaType.MEDIA_TYPE_AUDIO;
-            case "video":
-                return MediaStreamTrack.MediaType.MEDIA_TYPE_VIDEO;
-            default:
-                throw new Error("Unknown media type");
-        }
-    }
-    
-    private RtpTransceiver.RtpTransceiverDirection parseDirection(String src) {
-        switch (src) {
-            case "sendrecv":
-                return RtpTransceiver.RtpTransceiverDirection.SEND_RECV;
-            case "sendonly":
-                return RtpTransceiver.RtpTransceiverDirection.SEND_ONLY;
-            case "recvonly":
-                return RtpTransceiver.RtpTransceiverDirection.RECV_ONLY;
-            case "inactive":
-                return RtpTransceiver.RtpTransceiverDirection.INACTIVE;
-        }
-        throw new Error("Invalid direction");
-    }
-
-    private RtpTransceiver.RtpTransceiverInit parseTransceiverOptions(ReadableMap map) {
-        RtpTransceiver.RtpTransceiverDirection direction = RtpTransceiver.RtpTransceiverDirection.INACTIVE;
-        ArrayList<String> streamIds = new ArrayList<>();
-        if (map != null) {
-            if (map.hasKey("direction")) {
-                String directionRaw = map.getString("direction");
-                if (directionRaw != null) {
-                    direction = this.parseDirection(directionRaw);
-                }
-            }
-            if (map.hasKey("streamIds")) {
-                ReadableArray rawStreamIds = map.getArray("streamIds");
-                if (rawStreamIds != null) {
-                    for (int i = 0; i < rawStreamIds.size(); i++) {
-                        streamIds.add(rawStreamIds.getString(i));
-                    }
-                }
-            }
-        }
-
-        return new RtpTransceiver.RtpTransceiverInit(direction, streamIds);
-    }
 
     @ReactMethod(isBlockingSynchronousMethod = true)
     public WritableMap peerConnectionAddTransceiver(int id, ReadableMap options) {
@@ -563,11 +512,13 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
                 RtpTransceiver transceiver = null;
                 if (options.hasKey("type")) {
                     String kind = options.getString("type");
-                    transceiver = pco.addTransceiver(mediaTypeForString(kind), parseTransceiverOptions(options.getMap("init")));
+                    transceiver = pco.addTransceiver(SerializeUtils.parseMediaType(kind), 
+                        SerializeUtils.parseTransceiverOptions(options.getMap("init")));
                 } else if (options.hasKey("trackId")) {
                     String trackId = options.getString("trackId");
                     MediaStreamTrack track = getTrack(trackId);
-                    transceiver = pco.addTransceiver(track, parseTransceiverOptions(options.getMap("init")));
+                    transceiver = pco.addTransceiver(track, 
+                        SerializeUtils.parseTransceiverOptions(options.getMap("init")));
 
                 } else {
                     // This should technically never happen as the JS side checks for that.
@@ -583,7 +534,7 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
                 // We need to get a unique order at which the transceiver was created
                 // to reorder the cached array of transceivers on the JS layer.
                 params.putInt("transceiverOrder", pco.getNextTransceiverId());
-                params.putMap("transceiver", pco.serializeTransceiver(transceiver));
+                params.putMap("transceiver", SerializeUtils.serializeTransceiver(id, transceiver));
                 return params;
             }).get();
         } catch (InterruptedException | ExecutionException e) {
@@ -623,8 +574,8 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
                 // in the JS layer.
                 WritableMap params = Arguments.createMap();
                 params.putInt("transceiverOrder", pco.getNextTransceiverId());
-                params.putMap("transceiver", pco.serializeTransceiver(transceiver));
-                params.putMap("sender", pco.serializeSender(sender));
+                params.putMap("transceiver", SerializeUtils.serializeTransceiver(id, transceiver));
+                params.putMap("sender", SerializeUtils.serializeSender(id, sender));
                 return params;
             }).get();
         } catch (InterruptedException | ExecutionException e) {
@@ -747,8 +698,8 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
                 }
 
                 RtpTransceiver.RtpTransceiverDirection oldDirection = transceiver.getDirection(); 
-                params.putString("oldDirection", pco.serializeDirection(oldDirection));
-                transceiver.setDirection(this.parseDirection(direction));
+                params.putString("oldDirection", SerializeUtils.serializeDirection(oldDirection));
+                transceiver.setDirection(SerializeUtils.parseDirection(direction));
             } catch (Exception e) {
                 Log.d(TAG, "transceiverSetDirection(): " + e.getMessage());
                 params.putMap("identifiers", identifier);
@@ -889,7 +840,7 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
         for(RtpTransceiver transceiver: peerConnection.getTransceivers()) {
             RtpTransceiver.RtpTransceiverDirection direction = transceiver.getCurrentDirection();
             if (direction == null) continue;
-            String directionSerialized = pco.serializeDirection(direction);
+            String directionSerialized = SerializeUtils.serializeDirection(direction);
             WritableMap transceiverUpdate = Arguments.createMap();
             transceiverUpdate.putString("transceiverId", transceiver.getSender().id());
             transceiverUpdate.putInt("peerConnectionId", id);
@@ -1089,11 +1040,6 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
         });
     }
 
-    private WritableMap mapForVideoCodecInfo(VideoCodecInfo info) {
-        WritableMap params = Arguments.createMap();
-        params.putString("mimeType", "video/" + info.name);
-        return params;
-    }
     
     @ReactMethod(isBlockingSynchronousMethod = true)
     public WritableMap receiverGetCapabilities() {
@@ -1103,7 +1049,7 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
                 WritableMap params = Arguments.createMap();
                 WritableArray codecs = Arguments.createArray();
                 for(VideoCodecInfo codecInfo: videoCodecInfos) {
-                    codecs.pushMap(mapForVideoCodecInfo(codecInfo));
+                    codecs.pushMap(SerializeUtils.serializeVideoCodecInfo(codecInfo));
                 }
                 params.putArray("codecs", codecs);
                 return params;
@@ -1123,7 +1069,7 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
                 WritableMap params = Arguments.createMap();
                 WritableArray codecs = Arguments.createArray();
                 for(VideoCodecInfo codecInfo: videoCodecInfos) {
-                    codecs.pushMap(mapForVideoCodecInfo(codecInfo));
+                    codecs.pushMap(SerializeUtils.serializeVideoCodecInfo(codecInfo));
                 }
                 params.putArray("codecs", codecs);
                 return params;
