@@ -551,8 +551,7 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
     }
 
     @ReactMethod(isBlockingSynchronousMethod = true)
-    public WritableMap peerConnectionAddTransceiver(int id,
-                                             ReadableMap options) {
+    public WritableMap peerConnectionAddTransceiver(int id, ReadableMap options) {
         try {
             return (WritableMap) ThreadUtils.submitToExecutor((Callable<Object>) () -> {
                 PeerConnectionObserver pco = mPeerConnectionObservers.get(id);
@@ -596,7 +595,7 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
     @ReactMethod(isBlockingSynchronousMethod = true)
     public WritableMap peerConnectionAddTrack(int id,
                                               String trackId,
-                                             ReadableMap options) {
+                                              ReadableMap options) {
         try {
             return (WritableMap) ThreadUtils.submitToExecutor((Callable<Object>) () -> {
                 PeerConnectionObserver pco = mPeerConnectionObservers.get(id);
@@ -635,8 +634,7 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
     }
 
     @ReactMethod
-    public void peerConnectionRemoveTrack(int id,
-                                            String senderId) {
+    public void peerConnectionRemoveTrack(int id, String senderId) {
             ThreadUtils.runOnExecutor(() -> {
                 WritableMap identifier = Arguments.createMap();
                 identifier.putInt("peerConnectionId", id);
@@ -649,13 +647,6 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
                         return;
                     }
                     RtpTransceiver transceiver = pco.getTransceiver(senderId);
-
-                    if (transceiver == null) {
-                        Log.d(TAG, "peerConnectionAddTrack() transceiver is null");
-                        sendError("peerConnectionOnError", "removeTrack", "transceiver is null", null);
-                        return;
-                    }
-
                     boolean successful = pco.getPeerConnection().removeTrack(transceiver.getSender());
                     if (successful) {
                         sendEvent("peerConnectionOnRemoveTrackSuccessful", identifier);
@@ -725,7 +716,7 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
                 promise.resolve(true);
             } catch (Exception e) {
                 Log.d(TAG, "senderReplaceTrack(): " + e.getMessage());
-                promise.reject(new Exception(e.getMessage()));
+                promise.reject(e);
             }
         });
     }
@@ -947,7 +938,7 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
                     WritableMap sdpInfo = Arguments.createMap();
                     sdpInfo.putString("sdp", sdp.description);
                     sdpInfo.putString("type", sdp.type.canonicalForm());
-                    params.putArray("transceiverUpdates", getTransceiversInfo(id));
+                    params.putArray("transceiversInfo", getTransceiversInfo(id));
                     params.putMap("sdpInfo", sdpInfo);
                     callback.invoke(true, params);
                 }
@@ -986,7 +977,7 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
                     WritableMap sdpInfo = Arguments.createMap();
                     sdpInfo.putString("sdp", sdp.description);
                     sdpInfo.putString("type", sdp.type.canonicalForm());
-                    params.putArray("transceiverUpdates", getTransceiversInfo(id));
+                    params.putArray("transceiversInfo", getTransceiversInfo(id));
                     params.putMap("sdpInfo", sdpInfo);
                     callback.invoke(true, params);
                 }
@@ -1025,7 +1016,7 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
                     newSdpMap.putString("type", newSdp.type.canonicalForm());
                     newSdpMap.putString("sdp", newSdp.description);
                     params.putMap("sdpInfo", newSdpMap);
-                    params.putArray("transceiverUpdates", getTransceiversInfo(pcId));
+                    params.putArray("transceiversInfo", getTransceiversInfo(pcId));
                     promise.resolve(params);
                 }
 
@@ -1081,7 +1072,7 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
                     WritableMap params = Arguments.createMap();
                     newSdpMap.putString("type", newSdp.type.canonicalForm());
                     newSdpMap.putString("sdp", newSdp.description);
-                    params.putArray("transceiverUpdates", getTransceiversInfo(id));
+                    params.putArray("transceiversInfo", getTransceiversInfo(id));
                     params.putMap("sdpInfo", newSdpMap);
                     callback.invoke(true, params);
                 }
@@ -1103,35 +1094,19 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
         params.putString("mimeType", "video/" + info.name);
         return params;
     }
-
-    private WritableMap doReceiverGetCapabilities() {
-        VideoCodecInfo[] videoCodecInfos = mVideoDecoderFactory.getSupportedCodecs();
-        WritableMap params = Arguments.createMap();
-        WritableArray codecs = Arguments.createArray();
-        for(VideoCodecInfo codecInfo: videoCodecInfos) {
-            codecs.pushMap(mapForVideoCodecInfo(codecInfo));
-        }
-        params.putArray("codecs", codecs);
-        return params;
-    }
-
-    private WritableMap doSenderGetCapabilities() {
-        VideoCodecInfo[] videoCodecInfos = mVideoEncoderFactory.getSupportedCodecs();
-        WritableMap params = Arguments.createMap();
-        WritableArray codecs = Arguments.createArray();
-        for(VideoCodecInfo codecInfo: videoCodecInfos) {
-            codecs.pushMap(mapForVideoCodecInfo(codecInfo));
-        }
-        params.putArray("codecs", codecs);
-        return params;
-
-    }
-
+    
     @ReactMethod(isBlockingSynchronousMethod = true)
     public WritableMap receiverGetCapabilities() {
         try {
             return (WritableMap) ThreadUtils.submitToExecutor((Callable<Object>) () -> {
-                return doReceiverGetCapabilities();
+                VideoCodecInfo[] videoCodecInfos = mVideoDecoderFactory.getSupportedCodecs();
+                WritableMap params = Arguments.createMap();
+                WritableArray codecs = Arguments.createArray();
+                for(VideoCodecInfo codecInfo: videoCodecInfos) {
+                    codecs.pushMap(mapForVideoCodecInfo(codecInfo));
+                }
+                params.putArray("codecs", codecs);
+                return params;
             }).get();
         } catch (ExecutionException | InterruptedException e) {
             Log.d(TAG, "receiverGetCapabilities() " + e.getMessage());
@@ -1144,7 +1119,14 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
     public WritableMap senderGetCapabilities() {
         try {
             return (WritableMap) ThreadUtils.submitToExecutor((Callable<Object>) () -> {
-                return doSenderGetCapabilities();
+                VideoCodecInfo[] videoCodecInfos = mVideoEncoderFactory.getSupportedCodecs();
+                WritableMap params = Arguments.createMap();
+                WritableArray codecs = Arguments.createArray();
+                for(VideoCodecInfo codecInfo: videoCodecInfos) {
+                    codecs.pushMap(mapForVideoCodecInfo(codecInfo));
+                }
+                params.putArray("codecs", codecs);
+                return params;
             }).get();
         } catch (ExecutionException | InterruptedException e) {
             Log.d(TAG, "senderGetCapabilities() " + e.getMessage());

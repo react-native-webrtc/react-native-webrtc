@@ -188,10 +188,7 @@ public class WebRTCView extends ViewGroup {
                 }
             }
         }
-
-        if (videoTrack == null) {
-            Log.d(TAG, "No video track found for stream tag or track id");
-        }
+        
         return videoTrack;
     }
 

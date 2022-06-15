@@ -460,7 +460,6 @@ class PeerConnectionObserver implements PeerConnection.Observer {
             WritableMap params = Arguments.createMap();
             params.putInt("id", this.id);
             params.putString("trackId", track.id());
-            params.putBoolean("mute", true);
             
             webRTCModule.sendEvent("peerConnectionOnRemoveTrack", params);
             
@@ -554,7 +553,6 @@ class PeerConnectionObserver implements PeerConnection.Observer {
     /**
      * Serialization and Parsing helpers
      */
-
     private WritableMap serializeStream(String streamReactTag, MediaStream stream) {
 
         WritableMap params = Arguments.createMap();
@@ -611,8 +609,9 @@ class PeerConnectionObserver implements PeerConnection.Observer {
         WritableMap res = Arguments.createMap();
         res.putString("id", sender.id());
         res.putInt("peerConnectionId", this.id);
-        if (sender.track() != null)
+        if (sender.track() != null) {
             res.putMap("track", serializeTrack(sender.track()));
+        }
         return res;
     }
 
