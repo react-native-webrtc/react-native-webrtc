@@ -86,7 +86,7 @@ export default class RTCPeerConnection extends defineCustomEventTarget(...PEER_C
                 RTCUtil.normalizeOfferOptions(options),
                 (successful, data) => {
                     if (successful) {
-                        this._updateTransceivers(data.transceiverUpdates);
+                        this._updateTransceivers(data.transceiversInfo);
                         resolve(data.sdpInfo);
                     } else {
                         reject(data);
@@ -103,7 +103,7 @@ export default class RTCPeerConnection extends defineCustomEventTarget(...PEER_C
                 {},
                 (successful, data) => {
                     if (successful) {
-                        this._updateTransceivers(data.transceiverUpdates);
+                        this._updateTransceivers(data.transceiversInfo);
                         resolve(data.sdpInfo);
                     } else {
                         reject(data);
@@ -123,10 +123,10 @@ export default class RTCPeerConnection extends defineCustomEventTarget(...PEER_C
                 ? sessionDescription.toJSON()
                 : sessionDescription
             : null;
-        const { sdpInfo, transceiverUpdates } = await WebRTCModule.peerConnectionSetLocalDescription(this._peerConnectionId, desc);
+        const { sdpInfo, transceiversInfo } = await WebRTCModule.peerConnectionSetLocalDescription(this._peerConnectionId, desc);
 
         this.localDescription = new RTCSessionDescription(sdpInfo);
-        this._updateTransceivers(transceiverUpdates);
+        this._updateTransceivers(transceiversInfo);
     }
 
     setRemoteDescription(sessionDescription: RTCSessionDescription): Promise<void> {
@@ -137,7 +137,7 @@ export default class RTCPeerConnection extends defineCustomEventTarget(...PEER_C
                 (successful, data) => {
                     if (successful) {
                         this.remoteDescription = new RTCSessionDescription(data.sdpInfo);
-                        this._updateTransceivers(data.transceiverUpdates);
+                        this._updateTransceivers(data.transceiversInfo);
                         resolve();
                     } else {
                         reject(data);
@@ -401,6 +401,7 @@ export default class RTCPeerConnection extends defineCustomEventTarget(...PEER_C
                 .filter((t) => t.sender.id === existingSender.id);
             existingTransceiver._direction = existingTransceiver.direction === 'sendrecv' ? 'recvonly' : 'inactive';
 
+            ev.mute = true;
             EventEmitter.emit('mediaStreamTrackOnMuteChanged', ev);
         });
 
