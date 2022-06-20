@@ -87,6 +87,7 @@ public class SerializeUtils {
         if (sender.track() != null) {
             res.putMap("track", SerializeUtils.serializeTrack(id, sender.track()));
         }
+        res.putMap("rtpParameters", SerializeUtils.serializeRtpParameters(sender.getParameters()));
         return res;
     }
 
@@ -140,7 +141,6 @@ public class SerializeUtils {
       // Preparing encodings
       params.encodings.forEach(encoding -> {
         WritableMap encodingMap = Arguments.createMap();
-        encodingMap.putString("rid", encoding.rid);
         encodingMap.putBoolean("active", encoding.active);
         // Since they return integer objects that are nullable,
         // while the map does not accept nullable integer values.

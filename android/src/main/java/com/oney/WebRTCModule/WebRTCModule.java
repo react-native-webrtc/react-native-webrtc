@@ -585,6 +585,37 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
     }
 
     @ReactMethod
+    public void senderSetParameters(int id, String senderId, ReadableMap options, Promise promise) {
+        ThreadUtils.runOnExecutor(() ->{
+            try {
+                PeerConnectionObserver pco = mPeerConnectionObservers.get(id);
+                if (pco == null) {
+                    Log.d(TAG, "senderSetParameters() peerConnectionObserver is null");
+                    promise.reject(new Exception("Peer Connection is not initialized"));
+                    return;
+                }
+                RtpTransceiver transceiver = pco.getTransceiver(senderId); // transceiver Id is not a thing, we identify them by sender Ids
+
+                if (transceiver == null) {
+                    Log.d(TAG, "senderSetParameters() transceiver is null");
+                    promise.reject(new Exception("Could not get transceiver"));
+                    return;
+                }
+
+                RtpSender sender = transceiver.getSender();
+                RtpParameters params = sender.getParameters();
+                params = SerializeUtils.updateRtpParameters(options, params);
+                sender.setParameters(params);
+                promise.resolve(
+                    SerializeUtils.serializeRtpParameters(
+                        sender.getParameters()));
+            } catch (Exception e) {
+                Log.d(TAG, "senderSetParameters: " + e.getMessage());
+                promise.reject(e);
+            }
+        });
+    } 
+    @ReactMethod
     public void peerConnectionRemoveTrack(int id, String senderId) {
             ThreadUtils.runOnExecutor(() -> {
                 WritableMap identifier = Arguments.createMap();
