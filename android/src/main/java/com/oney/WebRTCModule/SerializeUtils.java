@@ -115,9 +115,109 @@ public class SerializeUtils {
         return res;
     }
 
+    public static ReadableMap serializeRtpParameters(RtpParameters params) {
+      WritableMap result = Arguments.createMap();
+      WritableArray encodings = Arguments.createArray();
+      WritableArray codecs = Arguments.createArray();
+      WritableArray headerExtensions = Arguments.createArray();
+      WritableMap rtcp = Arguments.createMap();
+
+      
+      // Preparing RTCP
+      rtcp.putString("cname", params.getRtcp().getCname());
+      rtcp.putBoolean("reducedSize", params.getRtcp().getReducedSize());
+      
+      
+      // Preparing header extensions
+      params.getHeaderExtensions().forEach(extension -> {
+        WritableMap extensionMap = Arguments.createMap();
+        extensionMap.putInt("id", extension.getId());
+        extensionMap.putString("uri", extension.getUri());
+        extensionMap.putBoolean("encrypted", extension.getEncrypted());
+        headerExtensions.pushMap(extensionMap);
+      });
+
+      // Preparing encodings
+      params.encodings.forEach(encoding -> {
+        WritableMap encodingMap = Arguments.createMap();
+        encodingMap.putString("rid", encoding.rid);
+        encodingMap.putBoolean("active", encoding.active);
+        // Since they return integer objects that are nullable,
+        // while the map does not accept nullable integer values.
+        if (encoding.maxBitrateBps != null) {
+          encodingMap.putInt("maxBitrate", encoding.maxBitrateBps);
+        }
+        if (encoding.maxFramerate != null) {
+          encodingMap.putInt("maxFramerate", encoding.maxFramerate);
+        }
+        if (encoding.scaleResolutionDownBy != null) {
+          encodingMap.putDouble("scaleResolutionDownBy", encoding.scaleResolutionDownBy);
+        }
+        encodings.pushMap(encodingMap);
+      });
+
+      // Preparing codecs
+      params.codecs.forEach(codec -> {
+        WritableMap codecMap = Arguments.createMap();
+        WritableMap sdpFmptLineParams = Arguments.createMap();
+        codecMap.putInt("payloadType", codec.payloadType);
+        codecMap.putString("mimeType", codec.name);
+        codecMap.putInt("clockRate", codec.clockRate);
+        codecMap.putInt("channels", codec.numChannels);
+        // Serializing sdpFmptLine. 
+        codec.parameters.forEach((k, v) -> {
+          sdpFmptLineParams.putString((String) k, (String) v);
+        });
+        codecMap.putMap("sdpFmtpLine", sdpFmptLineParams);
+        codecs.pushMap(codecMap);
+      });
+
+      result.putString("transactionId", params.transactionId);
+      result.putMap("rtcp", rtcp);
+      result.putArray("encodings", encodings);
+      result.putArray("codecs", codecs);
+      result.putArray("headerExtensions", headerExtensions);
+      if (params.degradationPreference != null) {
+        result.putString("degradationPreference", params.degradationPreference.toString());
+      }
+
+      return result;
+    }
+
     /**
      * Parsing APIs
      */
+
+    public static RtpParameters updateRtpParameters(ReadableMap updateParams, RtpParameters rtpParams) {
+      
+      // Preparing encodings
+      ReadableArray encodingsArray = updateParams.getArray("encodings");
+      List<RtpParameters.Encoding> encodings = rtpParams.encodings;
+      if (encodingsArray.size() != encodings.size()) {
+        return null;
+      }
+
+      for (int i = 0; i < encodingsArray.size(); i++) {
+        ReadableMap encodingUpdate = encodingsArray.getMap(i);
+        RtpParameters.Encoding encoding = encodings.get(i);
+        // Dealing with nullable Integers
+        Integer maxBitrate = encodingUpdate.hasKey("maxBitrate")? encodingUpdate.getInt("maxBitrate") : null;
+        Integer maxFramerate = encodingUpdate.hasKey("maxFramerate")? encodingUpdate.getInt("maxFramerate") : null;
+        Double scaleResolutionDownBy = encodingUpdate.hasKey("scaleResolutionDownBy")? 
+          encodingUpdate.getDouble("scaleResolutionDownBy") : null;
+        
+        encoding.maxBitrateBps = maxBitrate;
+        encoding.maxFramerate = maxFramerate;
+        encoding.scaleResolutionDownBy = scaleResolutionDownBy;
+      }
+
+      if (updateParams.hasKey("degradationPreference")) {
+        rtpParams.degradationPreference = 
+          RtpParameters.DegradationPreference.valueOf(updateParams.getString("degradationPreference"));
+      }
+
+      return rtpParams;
+    }
 
     public static MediaStreamTrack.MediaType parseMediaType(String type) {
         switch(type) {
