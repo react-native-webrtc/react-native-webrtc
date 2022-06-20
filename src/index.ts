@@ -5,6 +5,13 @@ import RTCRtpSender from './RTCRtpSender';
 import RTCRtpTransceiver from './RTCRtpTransceiver';
 import RTCRtpCapabilities from './RTCRtpCapabilities';
 import RTCRtpCodecCapability from './RTCRtpCodecCapability';
+import RTCRtpEncodingParameters from './RTCRtpEncodingParameters';
+import RTCRtpCodecParameters from './RTCRtpCodecParameters';
+import RTCRtpParameters from './RTCRtpParameters';
+import RTCRtcpParameters from './RTCRtcpParameters';
+import RTCRtpHeaderExtension from './RTCRtpHeaderExtension';
+import RTCRtpSendParameters from './RTCRtpSendParameters';
+import RTCRtpReceiveParameters from './RTCRtpReceiveParameters';
 import RTCSessionDescription from './RTCSessionDescription';
 import RTCErrorEvent from './RTCErrorEvent';
 import RTCView from './RTCView';
@@ -26,6 +33,13 @@ export {
     RTCErrorEvent,
     RTCRtpCapabilities,
     RTCRtpCodecCapability,
+    RTCRtpCodecParameters,
+    RTCRtpEncodingParameters,
+    RTCRtpParameters,
+    RTCRtpSendParameters,
+    RTCRtpReceiveParameters,
+    RTCRtcpParameters,
+    RTCRtpHeaderExtension,
     MediaStream,
     MediaStreamTrack,
     mediaDevices,
@@ -60,4 +74,11 @@ function registerGlobals(): void {
     global.RTCErrorEvent = RTCErrorEvent;
     global.RTCRtpCapabilities = RTCRtpCapabilities;
     global.RTCRtpCodecCapability = RTCRtpCodecCapability;
+    global.RTCRtpCodecParameters = RTCRtpCodecParameters;
+    global.RTCRtpEncodingParameters = RTCRtpEncodingParameters;
+    global.RTCRtpParameters = RTCRtpParameters;
+    global.RTCRtpSendParameters = RTCRtpSendParameters;
+    global.RTCRtpReceiverParameters = RTCRtpReceiveParameters;
+    global.RTCRtcpParameters = RTCRtcpParameters;
+    global.RTCRtpHeaderExtension = RTCRtpHeaderExtension;
 }
