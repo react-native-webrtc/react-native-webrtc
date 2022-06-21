@@ -50,7 +50,7 @@ export default class RTCRtpSender {
     setParameters(parameters: RTCRtpSendParameters): Promise<void> {
         return WebRTCModule.senderSetParameters(this._peerConnectionId,
                 this._id,
-                JSON.stringify(parameters))
+                JSON.parse(JSON.stringify(parameters)))// This allows us to get rid of private "underscore properties"
             .then((newParameters) => {
                 this._rtpParameters = new RTCRtpSendParameters(newParameters);
             });

@@ -17,6 +17,5 @@ export default class RTCRtpParameters {
         this.codecs = init.codecs;
         this.headerExtensions = init.headerExtensions;
         this.rtcp = init.rtcp;
-        Object.freeze(this);
     }
 }

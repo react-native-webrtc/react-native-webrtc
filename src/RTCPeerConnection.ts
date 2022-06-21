@@ -17,6 +17,7 @@ import * as RTCUtil from './RTCUtil';
 import EventEmitter, { addListener, removeListener } from './EventEmitter';
 import RTCRtpReceiver from './RTCRtpReceiver';
 import RTCRtpSender from './RTCRtpSender';
+import RTCRtpSendParameters from './RTCRtpSendParameters';
 
 const { WebRTCModule } = NativeModules;
 
@@ -516,6 +517,7 @@ export default class RTCPeerConnection extends defineCustomEventTarget(...PEER_C
             if (!transceiver) continue;
             transceiver._currentDirection = update.currentDirection;
             transceiver._mid = update.mid;
+            transceiver._sender._rtpParameters = new RTCRtpSendParameters(update.senderRtpParameters);
         }
     }
 

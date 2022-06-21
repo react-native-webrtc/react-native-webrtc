@@ -1,6 +1,6 @@
 
 export default class RTCRtpEncodingParameters {
-    active: boolean;
+    readonly active: boolean;
     _maxFramerate: number | null;
     _maxBitrate: number | null;
     _scaleResolutionDownBy: number | null;
@@ -42,12 +42,12 @@ export default class RTCRtpEncodingParameters {
     }
     
     set scaleResolutionDownBy(resolutionScale) {
-        if (resolutionScale && resolutionScale > 0 && resolutionScale <= 1) {
+        if (resolutionScale && resolutionScale >= 1) {
             this._scaleResolutionDownBy = resolutionScale;
         }
     }
 
-    toString(): string {
+    toJSON() {
         let obj = {
             active: this.active,
         }
@@ -62,6 +62,6 @@ export default class RTCRtpEncodingParameters {
         if (this._scaleResolutionDownBy !== null) {
             obj['scaleResolutionDownBy'] = this._scaleResolutionDownBy;
         } 
-        return JSON.stringify(obj);
+        return obj;
     }
 }   
