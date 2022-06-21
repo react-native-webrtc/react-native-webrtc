@@ -117,6 +117,8 @@ public class SerializeUtils {
     }
 
     public static ReadableMap serializeRtpParameters(RtpParameters params) {
+      if (params == null) return null;
+
       WritableMap result = Arguments.createMap();
       WritableArray encodings = Arguments.createArray();
       WritableArray codecs = Arguments.createArray();
@@ -163,7 +165,9 @@ public class SerializeUtils {
         codecMap.putInt("payloadType", codec.payloadType);
         codecMap.putString("mimeType", codec.name);
         codecMap.putInt("clockRate", codec.clockRate);
-        codecMap.putInt("channels", codec.numChannels);
+        if (codec.numChannels != null) {
+          codecMap.putInt("channels", codec.numChannels);
+        }
         // Serializing sdpFmptLine. 
         codec.parameters.forEach((k, v) -> {
           sdpFmptLineParams.putString((String) k, (String) v);
@@ -178,7 +182,8 @@ public class SerializeUtils {
       result.putArray("codecs", codecs);
       result.putArray("headerExtensions", headerExtensions);
       if (params.degradationPreference != null) {
-        result.putString("degradationPreference", params.degradationPreference.toString());
+        result.putString("degradationPreference", params.degradationPreference
+          .toString());
       }
 
       return result;
@@ -206,6 +211,7 @@ public class SerializeUtils {
         Double scaleResolutionDownBy = encodingUpdate.hasKey("scaleResolutionDownBy")? 
           encodingUpdate.getDouble("scaleResolutionDownBy") : null;
         
+        encoding.active = encodingUpdate.getBoolean("active");
         encoding.maxBitrateBps = maxBitrate;
         encoding.maxFramerate = maxFramerate;
         encoding.scaleResolutionDownBy = scaleResolutionDownBy;
