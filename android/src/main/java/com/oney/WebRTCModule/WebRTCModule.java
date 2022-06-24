@@ -133,6 +133,13 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
         getUserMediaImpl = new GetUserMediaImpl(this, reactContext);
     }
 
+    public void addDecryptors() {
+        for (int i = 0, size = mPeerConnectionObservers.size(); i < size; i++) {
+            PeerConnectionObserver pco = mPeerConnectionObservers.valueAt(i);
+            pco.addDecryptors();
+        }
+    }
+
     @NonNull
     @Override
     public String getName() {

@@ -31,6 +31,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import org.webrtc.GCMFrameDecryptor;
 
 class PeerConnectionObserver implements PeerConnection.Observer {
     private final static String TAG = WebRTCModule.TAG;
@@ -452,9 +453,25 @@ class PeerConnectionObserver implements PeerConnection.Observer {
         webRTCModule.sendEvent("peerConnectionSignalingStateChanged", params);
     }
 
+    List<RtpReceiver> receivers = new ArrayList<>();
+
     @Override
     public void onAddTrack(final RtpReceiver receiver, final MediaStream[] mediaStreams) {
         Log.d(TAG, "onAddTrack");
+        receivers.add(receiver);
+
+    }
+
+    private static boolean isAdded = false;
+
+    public void addDecryptors() {
+    if(!isAdded) {
+        isAdded = true;
+    }
+    for(RtpReceiver receiver : receivers) {
+           receiver.setFrameDecryptor(new GCMFrameDecryptor());
+        }
+
     }
 
     @Nullable
