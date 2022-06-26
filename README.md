@@ -15,19 +15,17 @@ A WebRTC module for React Native.
 | Audio/Video | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | - | :heavy_check_mark: | :heavy_check_mark: |
 | Data Channels | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | - | :heavy_check_mark: | :heavy_check_mark: |
 | Screen Capture | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | - | :heavy_check_mark: | :heavy_check_mark: |
-| Plan B | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | - | :heavy_check_mark: | :heavy_check_mark: |
-| Unified Plan* | - | - | - | - | - | - |
+| Unified Plan | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | - | :heavy_check_mark: | :heavy_check_mark: |
+| Plan B* | - | - | - | - | - | - |
 
 > **Windows** - We don't currently support the [react-native-windows](https://github.com/microsoft/react-native-windows) platform at this time.  
 Anyone interested in getting the ball rolling? We're open to contributions.
 
-> **Web** - The [react-native-webrtc-web-shim](https://github.com/react-native-webrtc/react-native-webrtc-web-shim) project provides a shim for [react-native-web](https://github.com/necolas/react-native-web) support.  
-Which will allow you to use [(almost)](https://github.com/react-native-webrtc/react-native-webrtc-web-shim/tree/main#setup) the exact same code in your [react-native-web](https://github.com/necolas/react-native-web) project as you would with [react-native](https://reactnative.dev/) directly.  
+> **Web** - The [react-native-webrtc-web-shim](https://github.com/react-native-webrtc/react-native-webrtc-web-shim) package provides a shim for [react-native-web](https://github.com/necolas/react-native-web) which will allow you to use [(almost)](https://github.com/react-native-webrtc/react-native-webrtc-web-shim/tree/main#setup) the exact same code in your project as you would with [react-native](https://reactnative.dev/) directly.  
 
-> **Expo** - Sadly this module is not available in the [Expo Go](https://expo.dev/client) app by default due to including much needed native code. However you can get things working via the [expo-dev-client](https://docs.expo.dev/development/getting-started/) library and out-of-tree [config-plugins/react-native-webrtc](https://github.com/expo/config-plugins/tree/master/packages/react-native-webrtc) package.  
+> **Expo** - Due to much needed native code this module is not available in the [Expo Go](https://expo.dev/client) app by default.  You can however get things working via the [expo-dev-client](https://docs.expo.dev/development/getting-started/) library and out-of-tree [config-plugins/react-native-webrtc](https://github.com/expo/config-plugins/tree/master/packages/react-native-webrtc) package.  
 
-> **Unified Plan** - Currently in development but expected to be released sometime in the near future.  
-Plan B will remain default until adequate support and testing has been completed.  
+> **Plan B** - Deprecated and removed.  
 
 ## WebRTC Revision
 
@@ -40,23 +38,18 @@ Plan B will remain default until adequate support and testing has been completed
 ## Getting Started
 
 Use one of the following preferred package install methods to immediately get going.  
-Don't forget to follow platform guides below to cover any extra required steps.  
+Don't forget to follow platform guides which covers extra required steps.  
 
 **npm:** `npm install react-native-webrtc --save`  
 **yarn:** `yarn add react-native-webrtc`  
 
 ## Guides
 
-- [Android Install](./Documentation/AndroidInstallation.md)
-- [iOS Install](./Documentation/iOSInstallation.md)
-- [Basic Usage](./Documentation/BasicUsage.md)
-- [Step by Step Call Guide](./Documentation/CallGuide.md)
-- [Improving Call Reliability](./Documentation/ImprovingCallReliability.md)
+Link the new handbook here ^_^
 
 ## Example Projects
 
-We have some very basic example projects included in the [examples](./examples) directory.  
-Don't worry, there are plans to include a much more broader example with backend included.  
+Link the new example projects here ^_^
 
 ## Community
 
