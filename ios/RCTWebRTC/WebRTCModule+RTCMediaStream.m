@@ -45,10 +45,22 @@
   RTCVideoTrack *videoTrack = [self.peerConnectionFactory videoTrackWithSource:videoSource trackId:trackUUID];
 
 #if !TARGET_IPHONE_SIMULATOR
-  RTCCameraVideoCapturer *videoCapturer = [[RTCCameraVideoCapturer alloc] initWithDelegate:videoSource];
+  NSDictionary *videoContraints = constraints[@"video"];
+  RTCCameraVideoCapturer *videoCapturer;
+  
+  // If virtual backround is enabled, use video source interceptor before video source
+  if (videoContraints[@"vb"]) {
+      self.videoSourceInterceptor = [[VideoSourceInterceptor alloc]initWithVideoSource:videoSource];
+      videoCapturer = [[RTCCameraVideoCapturer alloc] initWithDelegate:self.videoSourceInterceptor];
+  }
+  else {
+      // videoCapturer = [[RTCCameraVideoCapturer alloc] initWithDelegate:videoSource];
+      self.videoSourceInterceptor = [[VideoSourceInterceptor alloc]initWithVideoSource:videoSource];
+      videoCapturer = [[RTCCameraVideoCapturer alloc] initWithDelegate:self.videoSourceInterceptor];
+  }
   VideoCaptureController *videoCaptureController
         = [[VideoCaptureController alloc] initWithCapturer:videoCapturer
-                                            andConstraints:constraints[@"video"]];
+                                            andConstraints:videoContraints];
   videoTrack.captureController = videoCaptureController;
   [videoCaptureController startCapture];
 #endif
@@ -278,6 +290,9 @@ RCT_EXPORT_METHOD(mediaStreamTrackRelease:(nonnull NSString *)trackID)
         track.isEnabled = NO;
         [track.captureController stopCapture];
         [self.localTracks removeObjectForKey:trackID];
+        if([track.kind isEqualToString:kRTCMediaStreamTrackKindVideo]) {
+            self.videoSourceInterceptor = nil;
+        }
     }
 }
 

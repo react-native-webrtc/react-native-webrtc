@@ -15,6 +15,7 @@
 @property (nonatomic, assign) int width;
 @property (nonatomic, assign) int height;
 @property (nonatomic, assign) int frameRate;
+@property (nonatomic, assign) BOOL vb;
 
 @end
 
@@ -34,6 +35,9 @@
         self.width = [constraints[@"width"] intValue];
         self.height = [constraints[@"height"] intValue];
         self.frameRate = [constraints[@"frameRate"] intValue];
+        if(constraints[@"vb"]) {
+            self.vb = YES;
+        }
 
         id facingMode = constraints[@"facingMode"];
 
@@ -96,6 +100,17 @@
     dispatch_semaphore_t semaphore = dispatch_semaphore_create(0);
     
     __weak VideoCaptureController *weakSelf = self;
+    
+    if (self.vb) {
+        // Selfie Segmentator library requires kCVPixelFormatType_32BGRA format
+        for (AVCaptureOutput *output in _capturer.captureSession.outputs) {
+            RCTLog(@"Changing capturer output to %@", ((AVCaptureVideoDataOutput*)output).videoSettings);
+            if([output isKindOfClass:AVCaptureVideoDataOutput.class]) {
+                ((AVCaptureVideoDataOutput*)output).videoSettings = @{(NSString *)kCVPixelBufferPixelFormatTypeKey: [NSNumber numberWithUnsignedInt:kCVPixelFormatType_32BGRA]};
+            }
+        }
+    }
+    
     [self.capturer startCaptureWithDevice:self.device format:format fps:self.frameRate completionHandler:^(NSError *err) {
         if (err) {
             RCTLogError(@"[VideoCaptureController] Error starting capture: %@", err);
