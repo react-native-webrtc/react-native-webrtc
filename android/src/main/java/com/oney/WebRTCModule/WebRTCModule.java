@@ -43,6 +43,9 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
     final Map<String, MediaStream> localStreams;
 
     private final GetUserMediaImpl getUserMediaImpl;
+    private final ReactApplicationContext reactContext;
+
+    private boolean latestRunHardwareAccelerated = false;
 
     public static class Options {
         private VideoEncoderFactory videoEncoderFactory = null;
@@ -83,6 +86,7 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
 
         mPeerConnectionObservers = new SparseArray<>();
         localStreams = new HashMap<>();
+        this.reactContext = reactContext;
 
         AudioDeviceModule adm = null;
         VideoEncoderFactory encoderFactory = null;
@@ -104,6 +108,31 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
                 .setInjectableLogger(injectableLogger, loggingSeverity)
                 .createInitializationOptions());
 
+        mFactory = buildPeerConnectionFactory(adm, encoderFactory, decoderFactory);
+
+        getUserMediaImpl = new GetUserMediaImpl(this, reactContext);
+    }
+
+    /**
+     * Recreates the peer connection factory, if needed. "Needed" is when
+     * [WebRTCModulePreferences.isHardwareAccelerationEnabled()] has changed after the last init.
+     */
+    public void rebuildFreshPeerConnectionFactory(){
+        if(latestRunHardwareAccelerated == WebRTCModulePreferences.get(
+                reactContext).isHardwareAccelerationEnabled()){
+            Log.i(TAG, "hardware acceleration preference has NOT changed, skipping rebuilding...");
+        } else {
+            Log.i(TAG, "hardware acceleration preference has changed, rebuilding peer connection factory");
+
+            latestRunHardwareAccelerated = !latestRunHardwareAccelerated;
+
+            mFactory = buildPeerConnectionFactory(null, null, null);
+        }
+    }
+
+    private PeerConnectionFactory buildPeerConnectionFactory(AudioDeviceModule adm,
+                                                             VideoEncoderFactory encoderFactory,
+                                                             VideoDecoderFactory decoderFactory) {
         if (encoderFactory == null || decoderFactory == null) {
             boolean enableHardwareAccel = WebRTCModulePreferences.get(
                     reactContext).isHardwareAccelerationEnabled();
@@ -112,15 +141,17 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
 
             if (eglContext != null) {
                 Log.i(TAG, "initializing default encoder/decoder (with hardware acceleration)");
+                latestRunHardwareAccelerated = true;
 
                 encoderFactory
-                    = new DefaultVideoEncoderFactory(
-                    eglContext,
-                    /* enableIntelVp8Encoder */ true,
-                    /* enableH264HighProfile */ false);
+                        = new DefaultVideoEncoderFactory(
+                        eglContext,
+                        /* enableIntelVp8Encoder */ true,
+                        /* enableH264HighProfile */ false);
                 decoderFactory = new DefaultVideoDecoderFactory(eglContext);
             } else {
                 Log.i(TAG, "initializing default encoder/decoder (without hardware acceleration)");
+                latestRunHardwareAccelerated = false;
 
                 encoderFactory = new SoftwareVideoEncoderFactory();
                 decoderFactory = new SoftwareVideoDecoderFactory();
@@ -131,14 +162,11 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
             adm = JavaAudioDeviceModule.builder(reactContext).createAudioDeviceModule();
         }
 
-        mFactory
-            = PeerConnectionFactory.builder()
+       return PeerConnectionFactory.builder()
                 .setAudioDeviceModule(adm)
                 .setVideoEncoderFactory(encoderFactory)
                 .setVideoDecoderFactory(decoderFactory)
                 .createPeerConnectionFactory();
-
-        getUserMediaImpl = new GetUserMediaImpl(this, reactContext);
     }
 
     @NonNull
@@ -701,6 +729,8 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
                                           ReadableMap options,
                                           Callback callback) {
         ThreadUtils.runOnExecutor(() -> {
+            rebuildFreshPeerConnectionFactory();
+
             PeerConnection peerConnection = getPeerConnection(id);
 
             if (peerConnection == null) {
