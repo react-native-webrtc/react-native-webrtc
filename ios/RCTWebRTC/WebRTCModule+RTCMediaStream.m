@@ -54,9 +54,7 @@
       videoCapturer = [[RTCCameraVideoCapturer alloc] initWithDelegate:self.videoSourceInterceptor];
   }
   else {
-      // videoCapturer = [[RTCCameraVideoCapturer alloc] initWithDelegate:videoSource];
-      self.videoSourceInterceptor = [[VideoSourceInterceptor alloc]initWithVideoSource:videoSource];
-      videoCapturer = [[RTCCameraVideoCapturer alloc] initWithDelegate:self.videoSourceInterceptor];
+      videoCapturer = [[RTCCameraVideoCapturer alloc] initWithDelegate:videoSource];
   }
   VideoCaptureController *videoCaptureController
         = [[VideoCaptureController alloc] initWithCapturer:videoCapturer
