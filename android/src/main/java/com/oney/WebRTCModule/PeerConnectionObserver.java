@@ -15,6 +15,7 @@ import com.facebook.react.bridge.WritableMap;
 
 import org.webrtc.AudioTrack;
 import org.webrtc.DataChannel;
+import org.webrtc.GCMFrameEncryptor;
 import org.webrtc.IceCandidate;
 import org.webrtc.MediaStream;
 import org.webrtc.MediaStreamTrack;
@@ -34,6 +35,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import org.webrtc.GCMFrameDecryptor;
+import org.webrtc.RtpSender;
 
 class PeerConnectionObserver implements PeerConnection.Observer {
     private final static String TAG = WebRTCModule.TAG;
@@ -261,6 +264,12 @@ class PeerConnectionObserver implements PeerConnection.Observer {
         webRTCModule.sendEvent("peerConnectionGotICECandidate", params);
     }
 
+    public void addEncryptors() {
+        for (RtpSender sender:peerConnection.getSenders()) {
+            sender.setFrameEncryptor(new GCMFrameEncryptor());
+        }
+    }
+
     @Override
     public void onIceCandidatesRemoved(final IceCandidate[] candidates) {
         Log.d(TAG, "onIceCandidatesRemoved");
@@ -380,7 +389,7 @@ class PeerConnectionObserver implements PeerConnection.Observer {
             WritableArray streams = Arguments.createArray();
 
             for (MediaStream stream : mediaStreams) {
-                // Getting the streamReactTag 
+                // Getting the streamReactTag
                 String streamReactTag = null;
                 for (Map.Entry<String, MediaStream> e : remoteStreams.entrySet()) {
                     if (e.getValue().equals(stream)) {
@@ -412,6 +421,8 @@ class PeerConnectionObserver implements PeerConnection.Observer {
         });
     }
 
+    List<RtpReceiver> receivers = new ArrayList<>();
+
     /**
      * Triggered when the signaling from SetRemoteDescription indicates that a transceiver
      * will be receiving media from a remote endpoint. This is only called if UNIFIED_PLAN
@@ -434,7 +445,7 @@ class PeerConnectionObserver implements PeerConnection.Observer {
 
             WritableMap params = Arguments.createMap();
             WritableArray streams = Arguments.createArray();
-            
+
             params.putArray("streams", streams);
             params.putMap("receiver", SerializeUtils.serializeReceiver(id, receiver));
             params.putMap("transceiver", SerializeUtils.serializeTransceiver(id, transceiver));
@@ -451,18 +462,18 @@ class PeerConnectionObserver implements PeerConnection.Observer {
      */
     @Override
     public void onRemoveTrack(RtpReceiver receiver){
-        // According to the W3C spec, we need to send out 
+        // According to the W3C spec, we need to send out
         // the track Id so that we can remove it from the MediaStream objects stored
-        // at the JS layer, which are the same stream objects passed down to 
+        // at the JS layer, which are the same stream objects passed down to
         // the `track` event.
         ThreadUtils.runOnExecutor(() -> {
             MediaStreamTrack track = receiver.track();
             WritableMap params = Arguments.createMap();
             params.putInt("id", this.id);
             params.putString("trackId", track.id());
-            
+
             webRTCModule.sendEvent("peerConnectionOnRemoveTrack", params);
-            
+
         });
     };
 
@@ -476,6 +487,13 @@ class PeerConnectionObserver implements PeerConnection.Observer {
     @Override
     public void onAddStream(MediaStream stream) {
 
+    }
+
+    public void addDecryptors() {
+        for(RtpReceiver receiver : receivers) {
+                int[] myIntArray = { 97, 145, 133, 203, 63, 197, 49, 232, 87, 159, 169, 200, 59, 195, 77, 75, 150, 173, 189, 232, 44, 39, 8, 149, 250, 6, 238, 170, 255, 17, 110, 107};
+                receiver.setFrameDecryptor(new GCMFrameDecryptor(myIntArray));
+            }
     }
 
     @Nullable
