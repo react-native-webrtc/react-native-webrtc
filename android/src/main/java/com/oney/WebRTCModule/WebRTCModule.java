@@ -150,7 +150,7 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
                         /* enableH264HighProfile */ false);
                 decoderFactory = new DefaultVideoDecoderFactory(eglContext);
             } else {
-                Log.i(TAG, "initializing default encoder/decoder (without hardware acceleration)");
+                Log.i(TAG, "initializing encoder/decoder (without hardware acceleration)");
                 latestRunHardwareAccelerated = false;
 
                 encoderFactory = new SoftwareVideoEncoderFactory();
