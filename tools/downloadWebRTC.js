@@ -53,11 +53,8 @@ async function download(url, filePath) {
     //
 
     if (process.platform === 'darwin') {
-        const bitcode = process.env.RN_WEBRTC_BITCODE;
-        const url = bitcode ? builds['ios-bitcode'] : builds['ios'];
-
         items.push({
-            url,
+            url: builds['ios'],
             dstFileName: 'WebRTC.xcframework.tgz',
             dstDir: `${__dirname}/../apple/`
         });
