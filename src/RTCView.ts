@@ -57,4 +57,9 @@ import { requireNativeComponent } from 'react-native';
  * zOrder: number
  */
 
-export default requireNativeComponent('RTCVideoView');
+export default requireNativeComponent('RTCVideoView') as HostComponent<{
+  mirror?: boolean;
+  objectFit?: "contain" | "cover";
+  streamURL: string;
+  zOrder?: number;
+}>;
