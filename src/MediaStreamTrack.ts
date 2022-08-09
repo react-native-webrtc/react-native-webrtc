@@ -100,11 +100,7 @@ class MediaStreamTrack extends defineCustomEventTarget(...MEDIA_STREAM_TRACK_EVE
 
     
     _setVideoEffect(name : String){
-        WebRTCModule.registerVideoEffect(name,this.id);
-    }
-
-    _discardVideoEffect(){
-        WebRTCModule.discardVideoEffect(this.id);
+        WebRTCModule.registerVideoEffect(this.id, name);
     }
 
     release(): void {

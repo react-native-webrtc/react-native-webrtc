@@ -392,7 +392,7 @@ class GetUserMediaImpl {
     }
 
     
-    void setVideoEffect(String name, String trackId) {
+    void setVideoEffect(String trackId, String name) {
         TrackPrivate oldTrack = tracks.get(trackId);
 
         if (oldTrack != null && oldTrack.videoCaptureController instanceof CameraCaptureController) {
@@ -416,8 +416,13 @@ class GetUserMediaImpl {
             ///////////////////////////////////////////////////////////////////////////////////////
             /// here set videoSource processer VideoProcessor
             ///////////////////////////////////////////////////////////////////////////////////////
-            VideoFrameProcessor videoFrameProcessor = new VideoFrameProcessor(surfaceTextureHelper);
-            videoSource.setVideoProcessor(videoFrameProcessor);
+            if (name != null) {
+                BgBlurProcessor bgBlurProcessor = new BgBlurProcessor(name, surfaceTextureHelper);
+                videoSource.setVideoProcessor(bgBlurProcessor);
+            } else {
+                videoSource.setVideoProcessor(null);
+            }
+
             ////////////////////////////////////////////////////////////////////////////////////
 
             videoCapturer.initialize(surfaceTextureHelper, reactContext, videoSource.getCapturerObserver());
@@ -427,46 +432,6 @@ class GetUserMediaImpl {
             VideoTrack newTrack = pcFactory.createVideoTrack(id, videoSource);
 
             newTrack.setEnabled(true);
-            // rewrite the current trackprivate with new trackprivate
-            tracks.put(id, new TrackPrivate(newTrack, videoSource, cameraCaptureController, surfaceTextureHelper));
-
-            cameraCaptureController.startCapture();
-            // dispose currect track to prevent memory leakage
-            videoTrack = null;
-            oldTrack = null;
-        }
-    }
-
-    void removeVideoEffect(String trackId) {
-        TrackPrivate oldTrack = tracks.get(trackId);
-        if (oldTrack != null && oldTrack.videoCaptureController instanceof CameraCaptureController) {
-            CameraCaptureController cameraCaptureController = (CameraCaptureController) oldTrack.videoCaptureController;
-            VideoSource videoSource = (VideoSource) oldTrack.mediaSource;
-            SurfaceTextureHelper surfaceTextureHelper = (SurfaceTextureHelper) oldTrack.surfaceTextureHelper;
-            VideoTrack videoTrack = (VideoTrack) oldTrack.track;
-
-            VideoCapturer videoCapturer = cameraCaptureController.videoCapturer;
-            if (videoCapturer == null) {
-                return;
-            }
-
-            PeerConnectionFactory pcFactory = webRTCModule.mFactory;
-
-            if (surfaceTextureHelper == null) {
-                Log.d(TAG, "Error creating SurfaceTextureHelper");
-                return;
-            }
-            // here remove videoSource processer VideoProcessor set it to null
-            videoSource.setVideoProcessor(null);
-
-            videoCapturer.initialize(surfaceTextureHelper, reactContext, videoSource.getCapturerObserver());
-
-            String id = trackId; // id will be trackId
-
-            VideoTrack newTrack = pcFactory.createVideoTrack(id, videoSource);
-
-            newTrack.setEnabled(true);
-
             // rewrite the current trackprivate with new trackprivate
             tracks.put(id, new TrackPrivate(newTrack, videoSource, cameraCaptureController, surfaceTextureHelper));
 
