@@ -98,6 +98,15 @@ class MediaStreamTrack extends defineCustomEventTarget(...MEDIA_STREAM_TRACK_EVE
         return deepClone(this._settings);
     }
 
+    
+    _setVideoEffect(name : String){
+        WebRTCModule.registerVideoEffect(name,this.id);
+    }
+
+    _discardVideoEffect(){
+        WebRTCModule.discardVideoEffect(this.id);
+    }
+
     release(): void {
         WebRTCModule.mediaStreamTrackRelease(this.id);
     }

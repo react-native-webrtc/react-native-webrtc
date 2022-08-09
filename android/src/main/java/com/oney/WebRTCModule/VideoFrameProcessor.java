@@ -1,9 +1,12 @@
 package com.oney.WebRTCModule;
 
 import org.webrtc.*;
+import org.webrtc.YuvConverter;
 
 import java.io.ByteArrayOutputStream;
-import java.nio.Buffer;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.nio.ByteBuffer;
 
 import android.graphics.Bitmap;
@@ -11,12 +14,17 @@ import android.graphics.BitmapFactory;
 import android.graphics.Matrix;
 import android.graphics.Color;
 import android.opengl.GLES20;
-import android.opengl.GLSurfaceView;
 import android.opengl.GLUtils;
+import android.os.Build;
+import android.os.Environment;
 
 public class VideoFrameProcessor implements VideoProcessor {
     private SurfaceTextureHelper textureHelper;
     private VideoSink mSink;
+
+    public VideoFrameProcessor(String name, SurfaceTextureHelper textureHelper) {
+        this.textureHelper = textureHelper;
+    }
 
     public VideoFrameProcessor(SurfaceTextureHelper textureHelper) {
         this.textureHelper = textureHelper;
@@ -40,14 +48,27 @@ public class VideoFrameProcessor implements VideoProcessor {
     @Override
     public void onFrameCaptured(VideoFrame frame) {
         // do all image processing to the
-        int rotation = 180;
-        VideoFrame outputFrame = new VideoFrame(frame.getBuffer(), rotation, frame.getTimestampNs());
+        // frame.retain();
+        // YuvFrame yuvFrame = new YuvFrame(frame, YuvFrame.PROCESSING_NONE,
+        // frame.getTimestampNs());
+        // Bitmap bit2 = yuvFrame.getBitmap();
 
-        // Send VideoFrame back to WebRTC
-        mSink.onFrame(outputFrame);
+        // VideoFrame outputFrame = bitmap2videoFrame(bit2, bit2.getWidth(),
+        // bit2.getHeight(), frame);
+        // // Send VideoFrame back to WebRTC
+        // mSink.onFrame(outputFrame);
+        // outputFrame.release();
+        // frame.release();
+        // if (bit2 != null) {
+        // bit2.recycle();
+        // }
+        // bit2 = null;
+        // yuvFrame = null;
+
+        mSink.onFrame(new VideoFrame(frame.getBuffer().toI420(), 0, frame.getTimestampNs()));
+        frame.release();
     }
-    
-    
+
     private Bitmap blackAndWhite(Bitmap image) {
         int blackColor = Color.parseColor("#000000");
         int whiteColor = Color.parseColor("#FFFFFF");
@@ -60,48 +81,57 @@ public class VideoFrameProcessor implements VideoProcessor {
                 // sets the color of the pixel, depending if background or not
                 int bgPixel = image.getPixel(x, y);
                 if (bgPixel >= 128) {
-                    bgBitmap.setPixel(x, y, blackColor);
-                } else {
                     bgBitmap.setPixel(x, y, whiteColor);
+                } else {
+                    bgBitmap.setPixel(x, y, blackColor);
                 }
             }
         }
         return bgBitmap;
     }
 
-    private byte[] I420BuffertoNV21(VideoFrame.I420Buffer image) {
-        byte[] nv21;
-        ByteBuffer yBuffer = image.getDataY();
-        ByteBuffer uBuffer = image.getDataU();
-        ByteBuffer vBuffer = image.getDataV();
-        int ySize = yBuffer.remaining();
-        int uSize = uBuffer.remaining();
-        int vSize = vBuffer.remaining();
-        nv21 = new byte[ySize + uSize + vSize];
-        // U and V are swapped
-        yBuffer.get(nv21, 0, ySize);
-        vBuffer.get(nv21, ySize, vSize);
-        uBuffer.get(nv21, ySize + vSize, uSize);
-        return nv21;
-    }
+    private VideoFrame bitmap2videoFrame(Bitmap bitmap, int width, int height, VideoFrame frame) {
 
-    private Bitmap createBitmapFromByteArray(byte[] data) {
-        return BitmapFactory.decodeByteArray(data, 0, data.length);
-    }
+        if (bitmap == null)
+            return new VideoFrame(frame.getBuffer().toI420(), 0, frame.getTimestampNs());
 
-    private VideoFrame bitmap2videoFrame(Bitmap bitmap, long timestampNs) {
-        YuvConverter yuvConverter = new YuvConverter();
         int[] textures = new int[1];
-        GLES20.glGenTextures(1, textures, 0);
-        GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, textures[0]);
-        GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MIN_FILTER, GLES20.GL_NEAREST);
-        GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MAG_FILTER, GLES20.GL_NEAREST);
+        long start = System.nanoTime();
+        GLES20.glGenTextures(0, textures, 1);
+
+        // TextureBuffer 생성
+        Matrix transform = new Matrix();
+        YuvConverter yuvConverter = new YuvConverter();
+        TextureBufferImpl buffer = new TextureBufferImpl(width, height,
+                VideoFrame.TextureBuffer.Type.RGB,
+                textures[0],
+                transform,
+                textureHelper.getHandler(),
+                yuvConverter,
+                null);
+
+        // 텍스처에 특정 Bitmap bitmap 이미지 로드
+
+        GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MIN_FILTER,
+                GLES20.GL_NEAREST);
+
+        GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MAG_FILTER,
+                GLES20.GL_NEAREST);
+
         GLUtils.texImage2D(GLES20.GL_TEXTURE_2D, 0, bitmap, 0);
-        TextureBufferImpl buffer = new TextureBufferImpl(bitmap.getWidth(), bitmap.getHeight(),
-                VideoFrame.TextureBuffer.Type.RGB, textures[0], new Matrix(), textureHelper.getHandler(),
-                yuvConverter, null);
-        VideoFrame.I420Buffer i420Buf = yuvConverter.convert(buffer);
-        VideoFrame CONVERTED_FRAME = new VideoFrame(i420Buf, 180, timestampNs);
-        return CONVERTED_FRAME;
+
+        // 텍스처버퍼를 i420 버퍼로 변경
+        VideoFrame.I420Buffer i420buffer = yuvConverter.convert(buffer);
+        // buffer.toI420();
+        long timestamp = System.nanoTime() - start;
+        // 비디오 프레임 생성
+        VideoFrame videoFrame = new VideoFrame(i420buffer, 180, timestamp);
+        if (bitmap != null) {
+            bitmap.recycle();
+        }
+        bitmap = null;
+        return videoFrame;
+
     }
+
 }

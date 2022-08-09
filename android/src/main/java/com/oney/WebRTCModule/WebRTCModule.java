@@ -964,4 +964,27 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
     public void removeListeners(Integer count) {
         // Keep: Required for RN built in Event Emitter Calls.
     }
+
+    
+    @ReactMethod
+    public void registerVideoEffect(String name, String id) {
+        // regster video effect here
+        ThreadUtils.runOnExecutor(() -> {
+            MediaStreamTrack track = getLocalTrack(id);
+            if (track != null) {
+                getUserMediaImpl.setVideoEffect(name, id);
+            }
+        });
+    }
+
+    @ReactMethod
+    public void discardVideoEffect(String id) {
+        // regster video effect here
+        ThreadUtils.runOnExecutor(() -> {
+            MediaStreamTrack track = getLocalTrack(id);
+            if (track != null) {
+                getUserMediaImpl.removeVideoEffect(id);
+            }
+        });
+    }
 }

@@ -3,6 +3,8 @@ xcuserdata
 project.xcworkspace
 .DS_Store
 .idea
+.vscode
+.gradle
 android/build
 Podfile.lock
 WebRTC.xcframework
