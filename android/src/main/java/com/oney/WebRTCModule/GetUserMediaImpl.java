@@ -412,10 +412,7 @@ class GetUserMediaImpl {
                 Log.d(TAG, "Error creating SurfaceTextureHelper");
                 return;
             }
-
-            ///////////////////////////////////////////////////////////////////////////////////////
-            /// here set videoSource processer VideoProcessor
-            ///////////////////////////////////////////////////////////////////////////////////////
+          
             if (name != null) {
                 BgBlurProcessor bgBlurProcessor = new BgBlurProcessor(name, surfaceTextureHelper);
                 videoSource.setVideoProcessor(bgBlurProcessor);
@@ -423,20 +420,17 @@ class GetUserMediaImpl {
                 videoSource.setVideoProcessor(null);
             }
 
-            ////////////////////////////////////////////////////////////////////////////////////
-
             videoCapturer.initialize(surfaceTextureHelper, reactContext, videoSource.getCapturerObserver());
 
-            String id = trackId; // id will be trackId
+            String id = trackId;
 
             VideoTrack newTrack = pcFactory.createVideoTrack(id, videoSource);
 
             newTrack.setEnabled(true);
-            // rewrite the current trackprivate with new trackprivate
             tracks.put(id, new TrackPrivate(newTrack, videoSource, cameraCaptureController, surfaceTextureHelper));
 
             cameraCaptureController.startCapture();
-            // dispose currect track to prevent memory leakage
+
             videoTrack = null;
             oldTrack = null;
         }
