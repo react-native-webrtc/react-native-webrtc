@@ -1,8 +1,8 @@
 # Expo installation
 
-> **Notice:** Tested Expo SDK 46.
+> **Note** Tested Expo SDK 46.
 
-> **Warning:** This package cannot be used in the [Expo Go](https://expo.dev/expo-go) app because [it requires custom native code](https://docs.expo.io/workflow/customizing/).
+> **Warning** This package cannot be used in the [Expo Go](https://expo.dev/expo-go) app because [it requires custom native code](https://docs.expo.io/workflow/customizing/).
 
 First install the package with yarn, npm, or `npx expo install`.
 
