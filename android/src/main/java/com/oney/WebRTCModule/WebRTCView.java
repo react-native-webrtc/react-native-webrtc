@@ -46,32 +46,7 @@ public class WebRTCView extends ViewGroup {
     private static final ScalingType DEFAULT_SCALING_TYPE
         = ScalingType.SCALE_ASPECT_FIT;
 
-    /**
-     * {@link View#isInLayout()} as a <tt>Method</tt> to be invoked via
-     * reflection in order to accommodate its lack of availability before API
-     * level 18. {@link ViewCompat#isInLayout(View)} is the best solution but I
-     * could not make it available along with
-     * {@link ViewCompat#isAttachedToWindow(View)} at the time of this writing.
-     */
-    private static final Method IS_IN_LAYOUT;
-
     private static final String TAG = WebRTCModule.TAG;
-
-    static {
-        // IS_IN_LAYOUT
-        Method isInLayout = null;
-
-        try {
-            Method m = WebRTCView.class.getMethod("isInLayout");
-
-            if (boolean.class.isAssignableFrom(m.getReturnType())) {
-                isInLayout = m;
-            }
-        } catch (NoSuchMethodException e) {
-            // Fall back to the behavior of ViewCompat#isInLayout(View).
-        }
-        IS_IN_LAYOUT = isInLayout;
-    }
 
     /**
      * The number of instances for {@link SurfaceViewRenderer}, used for logging.
@@ -196,27 +171,6 @@ public class WebRTCView extends ViewGroup {
         surfaceViewRenderer.clearImage();
     }
 
-    /**
-     * Gets the {@link VideoTrack}, if any, (to be) rendered by this
-     * {@code WebRTCView}.
-     *
-     * @return The {@code VideoTrack} (to be) rendered by this
-     * {@code WebRTCView}.
-     */
-    private VideoTrack getVideoTrack() {
-        VideoTrack videoTrack = this.videoTrack;
-
-        // XXX If WebRTCModule#mediaStreamTrackRelease has already been invoked
-        // on videoTrack, then it is no longer safe to call methods (e.g.
-        // addRenderer, removeRenderer) on videoTrack.
-        if (videoTrack != null
-                && videoTrack != getVideoTrackForStreamURL(this.streamURL)) {
-            videoTrack = null;
-        }
-
-        return videoTrack;
-    }
-
     private VideoTrack getVideoTrackForStreamURL(String streamURL) {
         VideoTrack videoTrack = null;
 
@@ -236,28 +190,6 @@ public class WebRTCView extends ViewGroup {
         }
 
         return videoTrack;
-    }
-
-    /**
-     * If this <tt>View</tt> has {@link View#isInLayout()}, invokes it and
-     * returns its return value; otherwise, returns <tt>false</tt> like
-     * {@link ViewCompat#isInLayout(View)}.
-     *
-     * @return If this <tt>View</tt> has <tt>View#isInLayout()</tt>, invokes it
-     * and returns its return value; otherwise, returns <tt>false</tt>.
-     */
-    private boolean invokeIsInLayout() {
-        Method m = IS_IN_LAYOUT;
-        boolean b = false;
-
-        if (m != null) {
-            try {
-                b = (boolean) m.invoke(this);
-            } catch (IllegalAccessException | InvocationTargetException e) {
-                // Fall back to the behavior of ViewCompat#isInLayout(View).
-            }
-        }
-        return b;
     }
 
     @Override
@@ -402,20 +334,15 @@ public class WebRTCView extends ViewGroup {
      */
     private void removeRendererFromVideoTrack() {
         if (rendererAttached) {
-            // XXX If WebRTCModule#mediaStreamTrackRelease has already been
-            // invoked on videoTrack, then it is no longer safe to call methods
-            // (e.g. addSink, removeSink) on videoTrack. It is OK to
-            // skip the removeSink invocation in such a case because
-            // VideoTrack#dispose() has performed it already.
-            VideoTrack videoTrack = getVideoTrack();
-
             if (videoTrack != null) {
+                // XXX If WebRTCModule#mediaStreamTrackRelease has already been
+                // invoked on videoTrack, then it is no longer safe to call removeSink
+                // on the instance, it will throw IllegalStateException.
                 try {
                     videoTrack.removeSink(surfaceViewRenderer);
                 } catch (Throwable tr) {
                     // Releasing streams happens in the WebRTC thread, thus we might (briefly) hold
-                    // a reference to a released stream.
-                    Log.e(TAG, "Failed to remove renderer", tr);
+                    // a reference to a released stream. Just ignore the error and move on.
                 }
             }
 
@@ -446,7 +373,7 @@ public class WebRTCView extends ViewGroup {
         surfaceViewRenderer.requestLayout();
         // The above is not enough though when the video frame's dimensions or
         // rotation change. The following will suffice.
-        if (!invokeIsInLayout()) {
+        if (!ViewCompat.isInLayout(this)) {
             onLayout(
                 /* changed */ false,
                 getLeft(), getTop(), getRight(), getBottom());
@@ -597,13 +524,8 @@ public class WebRTCView extends ViewGroup {
      * all preconditions for the start of rendering are met.
      */
     private void tryAddRendererToVideoTrack() {
-        VideoTrack videoTrack;
-
         if (!rendererAttached
-                // XXX If WebRTCModule#mediaStreamTrackRelease has already been
-                // invoked on videoTrack, then it is no longer safe to call
-                // methods (e.g. addRenderer, removeRenderer) on videoTrack.
-                && (videoTrack = getVideoTrack()) != null
+                && videoTrack != null
                 && ViewCompat.isAttachedToWindow(this)) {
             EglBase.Context sharedContext = EglUtils.getRootEglBaseContext();
 
@@ -622,6 +544,9 @@ public class WebRTCView extends ViewGroup {
                 surfaceViewRendererInstances--;
             }
 
+            // XXX If WebRTCModule#mediaStreamTrackRelease has already been
+            // invoked on videoTrack, then it is no longer safe to call addSink
+            // on the instance, it will throw IllegalStateException.
             try {
                 videoTrack.addSink(surfaceViewRenderer);
             } catch (Throwable tr) {

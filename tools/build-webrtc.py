@@ -22,17 +22,11 @@ ANDROID_BUILD_CPUS = [
     'x86',
     'x64'
 ]
-IOS_ARCH_MAP = {
-    'arm64': 'ios-arm64',
-    'x64'  : 'ios-x86_64-simulator'
-}
 IOS_BUILD_ARCHS = [
-    'arm64',
-    'x64'
+    'device:arm64',
+    'simulator:arm64',
+    'simulator:x64'
 ]
-MACOS_ARCH_MAP = {
-    'x64'  : 'macos-x86_64'
-}
 MACOS_BUILD_ARCHS = [
     'x64'
 ]
@@ -41,32 +35,37 @@ def build_gn_args(platform_args):
     return "--args='" + ' '.join(GN_COMMON_ARGS + platform_args) + "'"
 
 GN_COMMON_ARGS = [
-    # Xcode 12 Clang consider warning as error by default 
-    # See https://bugs.chromium.org/p/webrtc/issues/detail?id=11729
-    'treat_warnings_as_errors=false',
     'is_component_build=false',
     'rtc_libvpx_build_vp9=true',
+    'rtc_build_dcsctp=true',
+    'rtc_build_usrsctp=false',
+    'rtc_enable_protobuf=false',
+    'rtc_include_tests=false',
     'is_debug=%s',
     'target_cpu="%s"'
 ]
 
 _GN_APPLE_COMMON = [
-    'enable_dsyms=true',
+    'enable_dsyms=false',
+    'enable_stripping=true',
+    'rtc_enable_symbol_export=false',
+    'rtc_enable_objc_symbol_export=true',
     'rtc_include_tests=false'
 ]
 
 _GN_IOS_ARGS = [
     'enable_ios_bitcode=true',
-    'ios_deployment_target="11.0"',
+    'ios_deployment_target="12.0"',
     'ios_enable_code_signing=false',
+    'use_lld=false',
+    'use_custom_libcxx=false',
     'target_os="ios"',
-    'use_xcode_clang=true',
+    'target_environment="%s"'
 ]
 GN_IOS_ARGS = build_gn_args(_GN_APPLE_COMMON + _GN_IOS_ARGS)
 
 _GN_MACOS_ARGS = [
-    'target_os="mac"',
-    'use_xcode_clang=false'
+    'target_os="mac"'
 ]
 GN_MACOS_ARGS = build_gn_args(_GN_APPLE_COMMON + _GN_MACOS_ARGS)
 
@@ -78,10 +77,10 @@ GN_ANDROID_ARGS = build_gn_args(_GN_ANDROID_ARGS)
 
 # Utilities
 
-def sh(cmd, env=None):
+def sh(cmd, env=None, cwd=None):
     print('Running cmd: %s' % cmd)
     try:
-        subprocess.check_call(cmd, env=env, shell=True, stdin=sys.stdin, stdout=sys.stdout, stderr=subprocess.STDOUT)
+        subprocess.check_call(cmd, env=env, cwd=cwd, shell=True, stdin=sys.stdin, stdout=sys.stdout, stderr=subprocess.STDOUT)
     except subprocess.CalledProcessError as e:
         sys.exit(e.returncode)
     except KeyboardInterrupt:
@@ -189,16 +188,17 @@ def build(target_dir, platform, debug):
 
     # Run GN
     if platform == 'ios':
-        for arch in MACOS_BUILD_ARCHS:
-            gn_out_dir = 'out/%s-macos-%s' % (build_type, arch)
-            gn_args = GN_MACOS_ARGS % (str(debug).lower(), arch)
+        for item in IOS_BUILD_ARCHS:
+            tenv, arch = item.split(':')
+            gn_out_dir = 'out/%s-ios-%s-%s' % (build_type, tenv, arch)
+            gn_args = GN_IOS_ARGS % (str(debug).lower(), arch, tenv)
             gn_cmd = 'gn gen %s %s' % (gn_out_dir, gn_args)
             sh(gn_cmd, env)
-        for arch in IOS_BUILD_ARCHS:
-            gn_out_dir = 'out/%s-ios-%s' % (build_type, arch)
-            gn_args = GN_IOS_ARGS % (str(debug).lower(), arch)
-            gn_cmd = 'gn gen %s %s' % (gn_out_dir, gn_args)
-            sh(gn_cmd, env)
+        #for arch in MACOS_BUILD_ARCHS:
+        #    gn_out_dir = 'out/%s-macos-%s' % (build_type, arch)
+        #    gn_args = GN_MACOS_ARGS % (str(debug).lower(), arch)
+        #    gn_cmd = 'gn gen %s %s' % (gn_out_dir, gn_args)
+        #    sh(gn_cmd, env)
     else:
         for cpu in ANDROID_BUILD_CPUS:
             gn_out_dir = 'out/%s-%s' % (build_type, cpu)
@@ -208,14 +208,15 @@ def build(target_dir, platform, debug):
 
     # Build with Ninja
     if platform == 'ios':
-        for arch in MACOS_BUILD_ARCHS:
-            gn_out_dir = 'out/%s-macos-%s' % (build_type, arch)
-            ninja_cmd = 'ninja -C %s mac_framework_objc' % gn_out_dir
-            sh(ninja_cmd, env)
-        for arch in IOS_BUILD_ARCHS:
-            gn_out_dir = 'out/%s-ios-%s' % (build_type, arch)
+        for item in IOS_BUILD_ARCHS:
+            tenv, arch = item.split(':')
+            gn_out_dir = 'out/%s-ios-%s-%s' % (build_type, tenv, arch)
             ninja_cmd = 'ninja -C %s framework_objc' % gn_out_dir
             sh(ninja_cmd, env)
+        #for arch in MACOS_BUILD_ARCHS:
+        #    gn_out_dir = 'out/%s-macos-%s' % (build_type, arch)
+        #    ninja_cmd = 'ninja -C %s mac_framework_objc' % gn_out_dir
+        #    sh(ninja_cmd, env)
     else:
         for cpu in ANDROID_BUILD_CPUS:
             gn_out_dir = 'out/%s-%s' % (build_type, cpu)
@@ -228,37 +229,41 @@ def build(target_dir, platform, debug):
 
     # Copy build artifacts to build directory
     if platform == 'ios':
+        # Fat simulators (we need a single slice for both simulators)
+        simulators = [item for item in IOS_BUILD_ARCHS if item.startswith('simulator')]
+        tenv, arch = simulators[0].split(':')
+        gn_out_dir = 'out/%s-ios-%s-%s' % (build_type, tenv, arch)
+        shutil.copytree(os.path.join(gn_out_dir, 'WebRTC.framework'), os.path.join(gn_out_dir, 'fat-WebRTC.framework'))
+        out_lib_path = os.path.join(gn_out_dir, 'fat-WebRTC.framework', 'WebRTC')
+        slice_paths = []
+        for item in simulators:
+            tenv, arch = item.split(':')
+            lib_path = os.path.join('out/%s-ios-%s-%s' % (build_type, tenv, arch), 'WebRTC.framework', 'WebRTC')
+            slice_paths.append(lib_path)
+        sh('lipo %s -create -output %s' % (' '.join(slice_paths), out_lib_path))
+
+        orig_framework_path = os.path.join(gn_out_dir, 'WebRTC.framework')
+        bak_framework_path = os.path.join(gn_out_dir, 'bak-WebRTC.framework')
+        fat_framework_path = os.path.join(gn_out_dir, 'fat-WebRTC.framework')
+        shutil.move(orig_framework_path, bak_framework_path)
+        shutil.move(fat_framework_path, orig_framework_path)
+
+        _IOS_BUILD_ARCHS = [item for item in IOS_BUILD_ARCHS if not item.startswith('simulator')]
+        _IOS_BUILD_ARCHS.append(simulators[0])
+
         # XCFramework
-        xcodebuild_cmd = 'xcodebuild -create-xcframework -output %s' % os.path.join(build_dir, 'WebRTC.xcframework')
-        for arch in MACOS_BUILD_ARCHS:
-            gn_out_dir = 'out/%s-macos-%s' % (build_type, arch)
+        xcframework_path = os.path.join(build_dir, 'WebRTC.xcframework')
+        xcodebuild_cmd = 'xcodebuild -create-xcframework -output %s' % xcframework_path
+        for item in _IOS_BUILD_ARCHS:
+            tenv, arch = item.split(':')
+            gn_out_dir = 'out/%s-ios-%s-%s' % (build_type, tenv, arch)
             xcodebuild_cmd += ' -framework %s' % os.path.join(gn_out_dir, 'WebRTC.framework')
-        for arch in IOS_BUILD_ARCHS:
-            gn_out_dir = 'out/%s-ios-%s' % (build_type, arch)
-            xcodebuild_cmd += ' -framework %s' % os.path.join(gn_out_dir, 'WebRTC.framework')
+        #for arch in MACOS_BUILD_ARCHS:
+        #    gn_out_dir = 'out/%s-macos-%s' % (build_type, arch)
+        #    xcodebuild_cmd += ' -framework %s' % os.path.join(gn_out_dir, 'WebRTC.framework')
         sh(xcodebuild_cmd)
-
-        # XCFramework (stripped)
-        xcodebuild_cmd = 'xcodebuild -create-xcframework -output %s' % os.path.join(build_dir, 'stripped', 'WebRTC.xcframework')
-        bitcode_strip_cmd = 'xcrun bitcode_strip -r %s -o %s'
-        for arch in MACOS_BUILD_ARCHS:
-            gn_out_dir = 'out/%s-macos-%s' % (build_type, arch)
-            xcodebuild_cmd += ' -framework %s' % os.path.join(gn_out_dir, 'WebRTC.framework')
-        for arch in IOS_BUILD_ARCHS:
-            gn_out_dir = 'out/%s-ios-%s' % (build_type, arch)
-            framework_path = os.path.join(gn_out_dir, 'WebRTC.framework', 'WebRTC')
-            sh(bitcode_strip_cmd % (framework_path, framework_path))
-            xcodebuild_cmd += ' -framework %s' % os.path.join(gn_out_dir, 'WebRTC.framework')
-        sh(xcodebuild_cmd)
-
-        # dSYMs
-        dsyms_dir = os.path.join(build_dir, 'WebRTC.dSYMs')
-        for arch in MACOS_BUILD_ARCHS:
-            gn_out_dir = 'out/%s-macos-%s' % (build_type, arch)
-            shutil.copytree(os.path.join(gn_out_dir, 'WebRTC.dSYM'), os.path.join(dsyms_dir, 'WebRTC.framework.%s.dSYM' % MACOS_ARCH_MAP[arch]))
-        for arch in IOS_BUILD_ARCHS:
-            gn_out_dir = 'out/%s-ios-%s' % (build_type, arch)
-            shutil.copytree(os.path.join(gn_out_dir, 'WebRTC.dSYM'), os.path.join(dsyms_dir, 'WebRTC.framework.%s.dSYM' % IOS_ARCH_MAP[arch]))
+        sh('tar zcf WebRTC.xcframework.tgz WebRTC.xcframework', cwd=build_dir)
+        rmr(xcframework_path)
     else:
         gn_out_dir = 'out/%s-%s' % (build_type, ANDROID_BUILD_CPUS[0])
         shutil.copy(os.path.join(gn_out_dir, 'lib.java/sdk/android/libwebrtc.jar'), build_dir)
@@ -269,9 +274,9 @@ def build(target_dir, platform, debug):
             gn_out_dir = 'out/%s-%s' % (build_type, cpu)
             shutil.copy(os.path.join(gn_out_dir, 'libjingle_peerconnection_so.so'), lib_dir)
 
-        os.chdir(build_dir)
-        sh('jar cvfM libjingle_peerconnection.so.jar lib')
-        rmr('lib')
+        sh('jar cvfM libjingle_peerconnection.so.jar lib', cwd=build_dir)
+        rmr(os.path.join(build_dir, 'lib'))
+        sh('tar zcf android-webrtc.tgz *.jar', cwd=build_dir)
 
 
 if __name__ == "__main__":
@@ -323,4 +328,3 @@ if __name__ == "__main__":
         build(target_dir, platform, args.debug)
         print('WebRTC build for %s completed in %s' % (platform, target_dir))
         sys.exit(0)
-

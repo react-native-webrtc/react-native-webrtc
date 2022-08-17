@@ -35,6 +35,10 @@ NSString* const kRTCAppGroupIdentifier = @"RTCAppGroupIdentifier";
     return self;
 }
 
+- (void)dealloc {
+    [self.capturer stopCapture];
+}
+
 - (void)startCapture {
     if (!self.appGroupIdentifier) {
         return;

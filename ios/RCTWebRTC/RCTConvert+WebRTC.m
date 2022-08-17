@@ -68,10 +68,7 @@
   }
 
   NSArray<NSString *> *urls;
-  if ([json[@"url"] isKindOfClass:[NSString class]]) {
-    // TODO: 'url' is non-standard
-    urls = @[json[@"url"]];
-  } else if ([json[@"urls"] isKindOfClass:[NSString class]]) {
+  if ([json[@"urls"] isKindOfClass:[NSString class]]) {
     urls = @[json[@"urls"]];
   } else {
     urls = [RCTConvert NSArray:json[@"urls"]];
@@ -89,6 +86,12 @@
 + (nonnull RTCConfiguration *)RTCConfiguration:(id)json
 {
   RTCConfiguration *config = [[RTCConfiguration alloc] init];
+
+  // Required for perfect negotiation.
+  config.enableImplicitRollback = YES;
+
+  // Plan B, just a little longer.
+  config.sdpSemantics = RTCSdpSemanticsPlanB;
 
   if (!json) {
     return config;

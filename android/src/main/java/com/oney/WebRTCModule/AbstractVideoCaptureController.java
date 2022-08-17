@@ -30,6 +30,18 @@ public abstract class AbstractVideoCaptureController {
         }
     }
 
+    public int getHeight() {
+        return height;
+    }
+
+    public int getWidth() {
+        return width;
+    }
+
+    public int getFrameRate() {
+        return fps;
+    }
+
     public VideoCapturer getVideoCapturer() {
         return videoCapturer;
     }
