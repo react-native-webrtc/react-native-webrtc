@@ -30,7 +30,11 @@
   "scripts": {
     "check": "tsc --noEmit",
     "postinstall": "node tools/downloadWebRTC.js",
-    "prepare": "husky install && bob build"
+    "build:plugin": "tsc --build plugin",
+    "clean:plugin": "expo-module clean plugin",
+    "lint:plugin": "eslint plugin/src/*",
+    "prepare:plugin": "yarn clean:plugin && yarn build:plugin",
+    "prepare": "npm run prepare:plugin && husky install && bob build"
   },
   "bugs": {
     "url": "https://github.com/react-native-webrtc/react-native-webrtc/issues"
@@ -38,6 +42,7 @@
   "devDependencies": {
     "@types/react": "17.0.40",
     "@types/react-native": "0.67.3",
+    "@expo/config-plugins": "~5.0.1",
     "husky": "7.0.2",
     "lint-staged": "11.2.3",
     "prettier": "2.4.1",

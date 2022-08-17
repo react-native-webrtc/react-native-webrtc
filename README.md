@@ -24,7 +24,7 @@ Anyone interested in getting the ball rolling? We're open to contributions.
 > **Web** - The [react-native-webrtc-web-shim](https://github.com/react-native-webrtc/react-native-webrtc-web-shim) project provides a shim for [react-native-web](https://github.com/necolas/react-native-web) support.  
 Which will allow you to use [(almost)](https://github.com/react-native-webrtc/react-native-webrtc-web-shim/tree/main#setup) the exact same code in your [react-native-web](https://github.com/necolas/react-native-web) project as you would with [react-native](https://reactnative.dev/) directly.  
 
-> **Expo** - Sadly this module is not available in the [Expo Go](https://expo.dev/client) app by default due to including much needed native code. However you can get things working via the [expo-dev-client](https://docs.expo.dev/development/getting-started/) library and out-of-tree [config-plugins/react-native-webrtc](https://github.com/expo/config-plugins/tree/master/packages/react-native-webrtc) package.  
+> **Expo Prebuild** - This package supports [Expo Prebuild](https://docs.expo.dev/workflow/prebuild) by providing a Config Plugin: [Setup guide](https://github.com/react-native-webrtc/react-native-webrtc/blob/master/Documentation/ExpoInstallation.md). This package is not available in the [Expo Go](https://expo.dev/expo-go) app. You can use this package without Expo Prebuild by following the manual iOS and Android setup.
 
 > **Unified Plan** - Currently in development but expected to be released sometime in the near future.  
 Plan B will remain default until adequate support and testing has been completed.  
