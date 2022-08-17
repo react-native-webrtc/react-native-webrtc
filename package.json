@@ -43,6 +43,8 @@
     "@types/react": "17.0.40",
     "@types/react-native": "0.67.3",
     "@expo/config-plugins": "~5.0.1",
+    "expo-build-properties": "^0.3.0",
+    "expo-module-scripts": "^2.0.0",
     "husky": "7.0.2",
     "lint-staged": "11.2.3",
     "prettier": "2.4.1",

@@ -1,11 +1,13 @@
 # Expo installation
 
-> This package cannot be used in the "Expo Go" app because [it requires custom native code](https://docs.expo.io/workflow/customizing/).
+> **Notice:** Tested Expo SDK 46.
+
+> **Warning:** This package cannot be used in the [Expo Go](https://expo.dev/expo-go) app because [it requires custom native code](https://docs.expo.io/workflow/customizing/).
 
 First install the package with yarn, npm, or `npx expo install`.
 
 ```sh
-npx expo install react-native-webrtc
+npx expo install react-native-webrtc expo-build-properties
 ```
 
 ## With Prebuild
@@ -56,5 +58,8 @@ The plugin provides props for extra customization. Every time you change the pro
 };
 ```
 
-This plugin will also disable desugaring in the Android `gradle.properties`: `android.enableDexingArtifactTransform.desugaring=false`
+## Prebuild Implementation
+
+- For iOS, this plugin disables Bitcodes for all builds (required).
+- For Android, this plugin disables desugaring in `gradle.properties`: `android.enableDexingArtifactTransform.desugaring=false` and the [minimum deployment target is changed to `24`](https://github.com/react-native-webrtc/react-native-webrtc/issues/720#issuecomment-552374206) (from `21`) which may break other packages in your app!
 
