@@ -262,22 +262,6 @@ def build(target_dir, platform, debug):
         #    gn_out_dir = 'out/%s-macos-%s' % (build_type, arch)
         #    xcodebuild_cmd += ' -framework %s' % os.path.join(gn_out_dir, 'WebRTC.framework')
         sh(xcodebuild_cmd)
-        sh('tar zcf WebRTC.xcframework-bitcode.tgz WebRTC.xcframework', cwd=build_dir)
-        rmr(xcframework_path)
-
-        # XCFramework (stripped)
-        xcodebuild_cmd = 'xcodebuild -create-xcframework -output %s' % xcframework_path
-        bitcode_strip_cmd = 'xcrun bitcode_strip -r %s -o %s'
-        for item in _IOS_BUILD_ARCHS:
-            tenv, arch = item.split(':')
-            gn_out_dir = 'out/%s-ios-%s-%s' % (build_type, tenv, arch)
-            xcodebuild_cmd += ' -framework %s' % os.path.join(gn_out_dir, 'WebRTC.framework')
-            framework_path = os.path.join(gn_out_dir, 'WebRTC.framework', 'WebRTC')
-            sh(bitcode_strip_cmd % (framework_path, framework_path))
-        #for arch in MACOS_BUILD_ARCHS:
-        #    gn_out_dir = 'out/%s-macos-%s' % (build_type, arch)
-        #    xcodebuild_cmd += ' -framework %s' % os.path.join(gn_out_dir, 'WebRTC.framework')
-        sh(xcodebuild_cmd)
         sh('tar zcf WebRTC.xcframework.tgz WebRTC.xcframework', cwd=build_dir)
         rmr(xcframework_path)
     else:
