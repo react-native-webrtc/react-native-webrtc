@@ -60,6 +60,13 @@ RCT_EXPORT_METHOD(enableNoOpRecordingEnsuringBackgroundContinuity:(BOOL)enable) 
   if (enable) {
     [RTCAudioSession.sharedInstance addDelegate:self];
   }
+    
+  // Enable for us to manually control the webrtc audio session
+  /**If YES, WebRTC will not initialize the audio unit automatically when an
+    *  audio track is ready for playout or recording. Instead, applications should
+    *  call setIsAudioEnabled. If NO, WebRTC will initialize the audio unit
+    *  as soon as an audio track is ready for playout or recording.**/
+  [RTCAudioSession.sharedInstance setUseManualAudio: true];
   
   dispatch_async(self.captureSessionQueue, ^{
     if (enable) {
@@ -117,6 +124,25 @@ RCT_EXPORT_METHOD(enableNoOpRecordingEnsuringBackgroundContinuity:(BOOL)enable) 
   [self applyAudioMode:self.audioMode toSession:audioSession];
 }
 
+RCT_EXPORT_METHOD(setDailyAudioSessionEnabled:(BOOL)enabled) {
+    RTCAudioSession *audioSession = RTCAudioSession.sharedInstance;
+    NSLog(@"[Daily] setDailyAudioSessionEnabled: %s", enabled ? "true" : "false");
+    /** This property is only effective if useManualAudio is YES.
+     *  Represents permission for WebRTC to initialize the VoIP audio unit.
+     *  When set to NO, if the VoIP audio unit used by WebRTC is active, it will be
+     *  stopped and uninitialized. This will stop incoming and outgoing audio.
+     *  When set to YES, WebRTC will initialize and start the audio unit when it is
+     *  needed (e.g. due to establishing an audio connection).
+     *  This property was introduced to work around an issue where if an AVPlayer is
+     *  playing audio while the VoIP audio unit is initialized, its audio would be
+     *  either cut off completely or played at a reduced volume. By preventing
+     *  the audio unit from being initialized until after the audio has completed,
+     *  we are able to prevent the abrupt cutoff.
+     */
+    [audioSession setIsAudioEnabled:enabled];
+    //[audioSession setActive:enabled error:nil];
+}
+
 RCT_EXPORT_METHOD(setDailyAudioMode:(NSString *)audioMode) {
   // Validate input
   if (![@[AUDIO_MODE_VIDEO_CALL, AUDIO_MODE_VOICE_CALL, AUDIO_MODE_IDLE] containsObject:audioMode]) {
@@ -129,6 +155,8 @@ RCT_EXPORT_METHOD(setDailyAudioMode:(NSString *)audioMode) {
   // Apply the chosen audio mode right away if the audio session is already
   // active. Otherwise, it will be applied when the session becomes active.
   RTCAudioSession *audioSession = RTCAudioSession.sharedInstance;
+  [audioSession setIsAudioEnabled: true];
+  
   NSLog(@"[Daily] setDailyAudioMode: %@", audioMode);
   if (audioSession.isActive) {
     [self applyAudioMode:audioMode toSession:audioSession];
@@ -153,7 +181,7 @@ RCT_EXPORT_METHOD(setDailyAudioMode:(NSString *)audioMode) {
   // other apps, which allows this app to stay alive in the backgrounnd during
   // a call (assuming it has the voip background mode set).
   AVAudioSessionCategoryOptions categoryOptions = (AVAudioSessionCategoryOptionAllowBluetooth |
-                                                   AVAudioSessionCategoryOptionDuckOthers);
+                                                   AVAudioSessionCategoryOptionMixWithOthers);
   if ([audioMode isEqualToString:AUDIO_MODE_VIDEO_CALL]) {
     categoryOptions |= AVAudioSessionCategoryOptionDefaultToSpeaker;
   }
