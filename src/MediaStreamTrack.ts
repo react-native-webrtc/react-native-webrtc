@@ -98,13 +98,18 @@ class MediaStreamTrack extends defineCustomEventTarget(...MEDIA_STREAM_TRACK_EVE
         return deepClone(this._settings);
     }
 
-    
-    _setVideoEffect(name : String){
-        WebRTCModule.registerVideoEffect(this.id, name);
-    }
-
     release(): void {
         WebRTCModule.mediaStreamTrackRelease(this.id);
+    }
+
+    _setVideoEffect(name:String){
+        if (this.remote) {
+            throw new Error('Not implemented for remote tracks');
+        }
+        if (this.kind !== 'video') {
+            throw new Error('Only implemented for video tracks');
+        }
+        WebRTCModule.setVideoEffect(this.id, name);
     }
 }
 

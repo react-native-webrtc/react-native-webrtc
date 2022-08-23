@@ -967,7 +967,7 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
 
    
     @ReactMethod
-    public void registerVideoEffect(String id, String name) {
+    public void setVideoEffect(String id, String name) {
         // regster video effect here
         ThreadUtils.runOnExecutor(() -> {
             MediaStreamTrack track = getLocalTrack(id);

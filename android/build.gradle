@@ -28,6 +28,5 @@ android {
 
 dependencies {
     implementation 'com.facebook.react:react-native:+'
-    implementation 'io.github.zncmn.libyuv:core:0.0.7'
     api fileTree(dir: 'libs', include: ['*.jar'])
 }

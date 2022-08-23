@@ -25,6 +25,12 @@ import java.util.UUID;
 
 import org.webrtc.*;
 
+
+
+import com.oney.WebRTCModule.videoEffect.ProcessorMap;
+import com.oney.WebRTCModule.videoEffect.VideoFrameProcessor;
+import com.oney.WebRTCModule.videoEffect.VideoEffectProcessor;
+
 /**
  * The implementation of {@code getUserMedia} extracted into a separate file in
  * order to reduce complexity and to (somewhat) separate concerns.
@@ -390,51 +396,40 @@ class GetUserMediaImpl {
 
         return track;
     }
+    
 
     
     void setVideoEffect(String trackId, String name) {
         TrackPrivate oldTrack = tracks.get(trackId);
 
         if (oldTrack != null && oldTrack.videoCaptureController instanceof CameraCaptureController) {
-            CameraCaptureController cameraCaptureController = (CameraCaptureController) oldTrack.videoCaptureController;
             VideoSource videoSource = (VideoSource) oldTrack.mediaSource;
             SurfaceTextureHelper surfaceTextureHelper = (SurfaceTextureHelper) oldTrack.surfaceTextureHelper;
-            VideoTrack videoTrack = (VideoTrack) oldTrack.track;
-
-            VideoCapturer videoCapturer = cameraCaptureController.videoCapturer;
-            if (videoCapturer == null) {
-                return;
-            }
-
-            PeerConnectionFactory pcFactory = webRTCModule.mFactory;
 
             if (surfaceTextureHelper == null) {
                 Log.d(TAG, "Error creating SurfaceTextureHelper");
-                return;
+                return null;
             }
-          
+            /// here set videoSource processer VideoProcessor
             if (name != null) {
-                BgBlurProcessor bgBlurProcessor = new BgBlurProcessor(name, surfaceTextureHelper);
-                videoSource.setVideoProcessor(bgBlurProcessor);
+                VideoFrameProcessor videoFrameProcessor = ProcessorMap.getProcessor(name);
+                // no videoFrameProcessor found
+                if (videoFrameProcessor == null) {
+                    Log.d(TAG, "no videoFrameProcessor associated with this name");
+                    return;
+                }
+
+                VideoEffectProcessor videoEffectProcessor = new VideoEffectProcessor(videoFrameProcessor,
+                        surfaceTextureHelper);
+                videoSource.setVideoProcessor(videoEffectProcessor);
             } else {
+                // set videoProcessor = null to remove video effect
                 videoSource.setVideoProcessor(null);
             }
 
-            videoCapturer.initialize(surfaceTextureHelper, reactContext, videoSource.getCapturerObserver());
-
-            String id = trackId;
-
-            VideoTrack newTrack = pcFactory.createVideoTrack(id, videoSource);
-
-            newTrack.setEnabled(true);
-            tracks.put(id, new TrackPrivate(newTrack, videoSource, cameraCaptureController, surfaceTextureHelper));
-
-            cameraCaptureController.startCapture();
-
-            videoTrack = null;
-            oldTrack = null;
         }
     }
+
 
 
     /**
