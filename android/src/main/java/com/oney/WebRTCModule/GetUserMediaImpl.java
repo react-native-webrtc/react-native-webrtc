@@ -408,7 +408,7 @@ class GetUserMediaImpl {
 
             if (surfaceTextureHelper == null) {
                 Log.d(TAG, "Error creating SurfaceTextureHelper");
-                return null;
+                return;
             }
             /// here set videoSource processer VideoProcessor
             if (name != null) {
