@@ -895,6 +895,13 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
     }
 
     @ReactMethod
+    public void mediaStreamTrackSetVideoEffect(String id, String name) {
+        ThreadUtils.runOnExecutor(() -> {
+                getUserMediaImpl.setVideoEffect(id, name);
+        });
+    }
+
+    @ReactMethod
     public void peerConnectionSetConfiguration(ReadableMap configuration,
                                                int id) {
         ThreadUtils.runOnExecutor(() -> {
