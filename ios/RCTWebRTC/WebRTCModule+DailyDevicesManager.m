@@ -179,7 +179,7 @@ RCT_EXPORT_METHOD(setAudioDevice:(NSString*)deviceId) {
     // Ducking other apps' audio implicitly enables allowing mixing audio with
     // other apps, which allows this app to stay alive in the backgrounnd during
     // a call (assuming it has the voip background mode set).
-    AVAudioSessionCategoryOptions categoryOptions = (AVAudioSessionCategoryOptionDuckOthers);
+    AVAudioSessionCategoryOptions categoryOptions = (AVAudioSessionCategoryOptionMixWithOthers);
     NSString *mode = AVAudioSessionModeVoiceChat;
     
     // Earpiece: is default route for a call.

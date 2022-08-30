@@ -100,6 +100,12 @@ public class DailyAudioManager implements AudioManager.OnAudioFocusChangeListene
         });
     }
 
+    private boolean isInCall(){
+        int currentAudioMode = this.audioManager.getMode();
+        boolean inCall = (AudioManager.MODE_IN_CALL == currentAudioMode || AudioManager.MODE_RINGTONE == currentAudioMode);
+        return inCall;
+    }
+
     @Override
     public void onAudioFocusChange(int focusChange) {
         executor.execute(() -> {
@@ -114,8 +120,13 @@ public class DailyAudioManager implements AudioManager.OnAudioFocusChangeListene
                 case AudioManager.AUDIOFOCUS_LOSS:
                 case AudioManager.AUDIOFOCUS_LOSS_TRANSIENT:
                 case AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK:
-                    Log.d(TAG, "onAudioFocusChange: LOSS");
-                    sendAudioFocusChangeEvent(false);
+                    Log.d(TAG, "onAudioFocusChange: LOSS " + focusChange);
+                    // Before Android 12, we are receiving audio focus loss event even if we are not in a call
+                    // So we are going to check if we are or not in a call before we emit this event to daily-js,
+                    // so It can mute the remote participants and not influentiate in the call
+                    if(this.isInCall()){
+                        sendAudioFocusChangeEvent(false);
+                    }
                     break;
                 default:
                     break;

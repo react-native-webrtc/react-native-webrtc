@@ -60,7 +60,7 @@ RCT_EXPORT_METHOD(enableNoOpRecordingEnsuringBackgroundContinuity:(BOOL)enable) 
   if (enable) {
     [RTCAudioSession.sharedInstance addDelegate:self];
   }
-  
+
   dispatch_async(self.captureSessionQueue, ^{
     if (enable) {
       if (self.captureSession) {
@@ -153,7 +153,7 @@ RCT_EXPORT_METHOD(setDailyAudioMode:(NSString *)audioMode) {
   // other apps, which allows this app to stay alive in the backgrounnd during
   // a call (assuming it has the voip background mode set).
   AVAudioSessionCategoryOptions categoryOptions = (AVAudioSessionCategoryOptionAllowBluetooth |
-                                                   AVAudioSessionCategoryOptionDuckOthers);
+                                                   AVAudioSessionCategoryOptionMixWithOthers);
   if ([audioMode isEqualToString:AUDIO_MODE_VIDEO_CALL]) {
     categoryOptions |= AVAudioSessionCategoryOptionDefaultToSpeaker;
   }
