@@ -20,6 +20,7 @@
   "main": "lib/commonjs/index.js",
   "module": "lib/module/index.js",
   "dependencies": {
+    "adm-zip": "0.5.9",
     "base64-js": "1.5.1",
     "event-target-shim": "6.0.2",
     "tar": "6.1.11"
@@ -58,6 +59,6 @@
   },
   "webrtc-builds": {
     "android": "https://github.com/jitsi/webrtc/releases/download/v100.0.0/android-webrtc.tgz",
-    "ios": "https://github.com/jitsi/webrtc/releases/download/v100.0.0/WebRTC.xcframework-bitcode.tgz"
+    "ios": "https://github.com/jitsi/webrtc/releases/download/v106.0.0-rc.1/WebRTC.xcframework.zip"
   }
 }

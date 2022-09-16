@@ -3,6 +3,8 @@ const fs = require('fs');
 const https = require('https');
 const path = require('path');
 const process = require('process');
+
+const AdmZip = require('adm-zip');
 const tar = require('tar');
 
 const pkg = require('../package.json');
@@ -53,9 +55,11 @@ async function download(url, filePath) {
     //
 
     if (process.platform === 'darwin') {
+        const iosUrl = builds['ios'];
+
         items.push({
-            url: builds['ios'],
-            dstFileName: 'WebRTC.xcframework.tgz',
+            url: iosUrl,
+            dstFileName: path.basename(iosUrl),
             dstDir: `${__dirname}/../apple/`
         });
     }
@@ -63,9 +67,11 @@ async function download(url, filePath) {
     // Android
     //
 
+    const androidUrl = builds['android'];
+
     items.push({
-        url: builds['android'],
-        dstFileName: 'android-webrtc.tgz',
+        url: androidUrl,
+        dstFileName: path.basename(androidUrl),
         dstDir: `${__dirname}/../android/libs/`
     });
 
@@ -85,12 +91,18 @@ async function download(url, filePath) {
 
         await download(url, dstPath);
 
-        tar.extract({
-            file: dstPath,
-            cwd: dstDir,
-            sync: true,
-            strict: true
-        });
+        if (path.extname(dstPath) === '.zip') {
+            const zip = AdmZip(dstPath);
+
+            zip.extractAllTo(dstDir, true);
+        } else {
+            tar.extract({
+                file: dstPath,
+                cwd: dstDir,
+                sync: true,
+                strict: true
+            });
+        }
 
         console.log('Done!');
     }
