@@ -120,7 +120,9 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
         }
 
         if (adm == null) {
-            adm = JavaAudioDeviceModule.builder(reactContext).createAudioDeviceModule();
+            adm = JavaAudioDeviceModule.builder(reactContext)
+                .setEnableVolumeLogger(false)
+                .createAudioDeviceModule();
         }
 
         mFactory
