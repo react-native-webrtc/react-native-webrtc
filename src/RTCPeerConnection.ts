@@ -398,9 +398,10 @@ export default class RTCPeerConnection extends defineCustomEventTarget(...PEER_C
 
             if (!oldTransceiver) {
                 // Creating objects out of the event data.
+                const sender = new RTCRtpSender({ ...ev.sender });
                 const receiver = new RTCRtpReceiver({ ...ev.receiver, track });
 
-                transceiver = new RTCRtpTransceiver({ ...ev.transceiver, receiver });
+                transceiver = new RTCRtpTransceiver({ ...ev.transceiver, receiver, sender });
                 this._insertTransceiverSorted(ev.transceiverOrder, transceiver);
             } else {
                 transceiver = oldTransceiver;
