@@ -534,6 +534,23 @@ export default class RTCPeerConnection extends defineCustomEventTarget(...PEER_C
             // @ts-ignore
             this.dispatchEvent(new RTCErrorEvent('error', ev.func, ev.message));
         });
+
+        addListener(this, 'mediaStreamTrackMuteChanged', ev => {
+            if (ev.peerConnectionId !== this._peerConnectionId) {
+                return;
+            }
+
+            const [ track ] = this.getReceivers()
+                                .map(r => r.track)
+                                .filter(t => t?.id === ev.trackId);
+            if (track) {
+                track._muted = ev.muted;
+                const eventName = ev.muted ? 'mute' : 'unmute';
+
+                // @ts-ignore
+                track.dispatchEvent(new MediaStreamTrackEvent(eventName, { track }));
+            }
+        });
     }
 
     /**
