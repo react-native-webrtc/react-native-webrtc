@@ -228,10 +228,12 @@ export default class RTCPeerConnection extends defineCustomEventTarget(...PEER_C
 
         // This is a new transceiver, should create a transceiver for it and add it
         const newSender = new RTCRtpSender({ ...transceiver.sender, track });
+        const remoteTrack = transceiver.receiver.track ? new MediaStreamTrack(transceiver.receiver.track) : null;
+        const newReceiver = new RTCRtpReceiver({ ...transceiver.receiver, track: remoteTrack });
         const newTransceiver = new RTCRtpTransceiver({
             ...transceiver,
             sender: newSender,
-            receiver: new RTCRtpReceiver(transceiver.receiver),
+            receiver: newReceiver,
         });
 
         this._insertTransceiverSorted(transceiverOrder, newTransceiver);
@@ -262,11 +264,11 @@ export default class RTCPeerConnection extends defineCustomEventTarget(...PEER_C
             console.log("Error adding transceiver");
             throw new Error("Transceiver could not be added");
         }
-        const sender = new RTCRtpSender(result.transceiver.sender);
-        if (source instanceof MediaStreamTrack) {
-            sender._track = source;
-        }
-        const receiver = new RTCRtpReceiver(result.transceiver.receiver);
+        const t = result.transceiver;
+        const track = typeof source === 'string' ? new MediaStreamTrack(t.sender.track) : source;
+        const sender = new RTCRtpSender({ ...t.sender, track });
+        const remoteTrack = t.receiver.track ? new MediaStreamTrack(t.receiver.track) : null;
+        const receiver = new RTCRtpReceiver({ ...t.receiver, track: remoteTrack });
         const transceiver = new RTCRtpTransceiver({
             ...result.transceiver,
             sender,
