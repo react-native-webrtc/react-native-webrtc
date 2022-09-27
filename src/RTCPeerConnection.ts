@@ -348,6 +348,7 @@ export default class RTCPeerConnection extends defineCustomEventTarget(...PEER_C
             // @ts-ignore
             this.dispatchEvent(new RTCEvent('negotiationneeded'));
         });
+
         addListener(this, 'peerConnectionIceConnectionChanged', ev => {
             if (ev.id !== this._peerConnectionId) {
                 return;
@@ -360,6 +361,7 @@ export default class RTCPeerConnection extends defineCustomEventTarget(...PEER_C
             // @ts-ignore
             this.dispatchEvent(new RTCEvent('iceconnectionstatechange'));
         });
+
         addListener(this, 'peerConnectionStateChanged', ev => {
             if (ev.id !== this._peerConnectionId) {
                 return;
@@ -372,6 +374,7 @@ export default class RTCPeerConnection extends defineCustomEventTarget(...PEER_C
             // @ts-ignore
             this.dispatchEvent(new RTCEvent('connectionstatechange'));
         });
+
         addListener(this, 'peerConnectionSignalingStateChanged', ev => {
             if (ev.id !== this._peerConnectionId) {
                 return;
@@ -379,7 +382,8 @@ export default class RTCPeerConnection extends defineCustomEventTarget(...PEER_C
             this.signalingState = ev.signalingState;
             // @ts-ignore
             this.dispatchEvent(new RTCEvent('signalingstatechange'));
-        })
+        });
+
         addListener(this, 'peerConnectionOnTrack', ev => {
             if (ev.id !== this._peerConnectionId) {
                 return;
