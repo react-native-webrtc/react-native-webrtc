@@ -385,6 +385,7 @@ export default class RTCPeerConnection extends defineCustomEventTarget(...PEER_C
             this.dispatchEvent(new RTCEvent('signalingstatechange'));
         });
 
+        // Consider moving away from this event: https://github.com/WebKit/WebKit/pull/3953
         addListener(this, 'peerConnectionOnTrack', ev => {
             if (ev.id !== this._peerConnectionId) {
                 return;
