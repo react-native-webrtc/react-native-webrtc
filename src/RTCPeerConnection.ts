@@ -10,7 +10,7 @@ import RTCRtpTransceiver from './RTCRtpTransceiver';
 import RTCDataChannel from './RTCDataChannel';
 import RTCDataChannelEvent from './RTCDataChannelEvent';
 import RTCTrackEvent from './RTCTrackEvent';
-import RTCSessionDescription from './RTCSessionDescription';
+import RTCSessionDescription, { RTCSessionDescriptionInit } from './RTCSessionDescription';
 import RTCIceCandidate from './RTCIceCandidate';
 import RTCIceCandidateEvent from './RTCIceCandidateEvent';
 import RTCErrorEvent from './RTCErrorEvent';
@@ -135,14 +135,24 @@ export default class RTCPeerConnection extends defineCustomEventTarget(...PEER_C
         WebRTCModule.peerConnectionSetConfiguration(configuration, this._peerConnectionId);
     }
 
-    async setLocalDescription(sessionDescription?: RTCSessionDescription): Promise<void> {
+    async setLocalDescription(sessionDescription?: RTCSessionDescription | RTCSessionDescriptionInit): Promise<void> {
         log.debug(`${this._peerConnectionId} setLocalDescription`);
 
-        const desc = sessionDescription
-            ? sessionDescription.toJSON
-                ? sessionDescription.toJSON()
-                : sessionDescription
-            : null;
+        let desc;
+
+        if (sessionDescription) {
+            desc = {
+                type: sessionDescription.type,
+                sdp: sessionDescription.sdp ?? ''
+            };
+
+            if (!RTCUtil.isSdpTypeValid(desc.type)) {
+                throw new Error(`Invalid session description: invalid type: ${desc.type}`);
+            }
+        } else {
+            desc = null;
+        }
+
         const { sdpInfo, transceiversInfo } = await WebRTCModule.peerConnectionSetLocalDescription(this._peerConnectionId, desc);
 
         this.localDescription = new RTCSessionDescription(sdpInfo);
@@ -151,12 +161,25 @@ export default class RTCPeerConnection extends defineCustomEventTarget(...PEER_C
         log.debug(`${this._peerConnectionId} setLocalDescription OK`);
     }
 
-    setRemoteDescription(sessionDescription: RTCSessionDescription): Promise<void> {
+    setRemoteDescription(sessionDescription: RTCSessionDescription | RTCSessionDescriptionInit): Promise<void> {
         log.debug(`${this._peerConnectionId} setRemoteDescription`);
+
+        if (!sessionDescription) {
+            return Promise.reject(new Error('No session description provided'));
+        }
+
+        const desc = {
+            type: sessionDescription.type,
+            sdp: sessionDescription.sdp ?? ''
+        };
+
+        if (!RTCUtil.isSdpTypeValid(desc.type ?? '')) {
+            throw new Error(`Invalid session description: invalid type: ${desc.type}`);
+        }
 
         return new Promise((resolve, reject) => {
             WebRTCModule.peerConnectionSetRemoteDescription(
-                sessionDescription.toJSON ? sessionDescription.toJSON() : sessionDescription,
+                desc,
                 this._peerConnectionId,
                 (successful, data) => {
                     if (successful) {

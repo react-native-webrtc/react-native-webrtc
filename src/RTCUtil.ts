@@ -19,6 +19,13 @@ const STANDARD_OFFER_OPTIONS = {
     voiceactivitydetection: 'VoiceActivityDetection'
 };
 
+const SDP_TYPES = [
+    'offer',
+    'pranswer',
+    'answer',
+    'rollback'
+];
+
 function getDefaultMediaConstraints(mediaType) {
     switch (mediaType) {
         case 'audio':
@@ -130,6 +137,16 @@ export function uniqueID(): string {
  */
 export function deepClone<T>(obj: T): T {
     return JSON.parse(JSON.stringify(obj));
+}
+
+/**
+ * Checks whether an SDP type is valid or not.
+ *
+ * @param type SDP type to check.
+ * @returns Whether the SDP type is valid or not.
+ */
+export function isSdpTypeValid(type: string): boolean {
+    return SDP_TYPES.includes(type);
 }
 
 /**
