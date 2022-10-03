@@ -240,6 +240,11 @@ RCT_EXPORT_METHOD(peerConnectionSetRemoteDescription:(RTCSessionDescription *)sd
     return;
   }
 
+  NSMutableArray *receiversIds = [NSMutableArray new];
+  for (RTCRtpTransceiver *transceiver in peerConnection.transceivers) {
+      [receiversIds addObject:transceiver.receiver.receiverId];
+  }
+  
   [peerConnection setRemoteDescription: sdp completionHandler: ^(NSError *error) {
       if (error) {
         id errorResponse = @{
@@ -248,11 +253,22 @@ RCT_EXPORT_METHOD(peerConnectionSetRemoteDescription:(RTCSessionDescription *)sd
         };
         callback(@[@(NO), errorResponse]);
       } else {
+        NSMutableArray *newTransceivers = [NSMutableArray new];
+        for (RTCRtpTransceiver *transceiver in peerConnection.transceivers) {
+            if (![receiversIds containsObject:transceiver.receiver.receiverId]) {
+                NSMutableDictionary *newTransceiver = [NSMutableDictionary new];
+                newTransceiver[@"transceiverOrder"] = [NSNumber numberWithInt:_transceiverNextId++];
+                newTransceiver[@"transceiver"] = [SerializeUtils transceiverToJSONWithPeerConnectionId:objectID transceiver:transceiver];
+                [newTransceivers addObject:newTransceiver];
+            }
+        }
+          
         id newSdp = @{
             @"sdpInfo": @{
                           @"type": [RTCSessionDescription stringForType:peerConnection.remoteDescription.type],
                           @"sdp": peerConnection.remoteDescription.sdp},
-            @"transceiversInfo": [SerializeUtils constructTransceiversInfoArrayWithPeerConnection:peerConnection peerConnectionId: objectID]
+            @"transceiversInfo": [SerializeUtils constructTransceiversInfoArrayWithPeerConnection:peerConnection peerConnectionId: objectID],
+            @"newTransceivers": newTransceivers
         };
         callback(@[@(YES), newSdp]);
       }

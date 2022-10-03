@@ -1042,7 +1042,9 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
                                                    int id,
                                                    Callback callback) {
         ThreadUtils.runOnExecutor(() -> {
-            PeerConnection peerConnection = getPeerConnection(id);
+            PeerConnectionObserver pco = mPeerConnectionObservers.get(id);
+            PeerConnection peerConnection = pco.getPeerConnection();
+            
             if (peerConnection == null) {
                 Log.d(TAG, "peerConnectionSetRemoteDescription() peerConnection is null");
                 callback.invoke(false, "peerConnection is null");
@@ -1054,6 +1056,10 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
                 sdpMap.getString("sdp")
             );
 
+            List<String> receiversIds = new ArrayList<>();
+            for(RtpTransceiver transceiver: peerConnection.getTransceivers()) {
+                receiversIds.add(transceiver.getReceiver().id());
+            }
             peerConnection.setRemoteDescription(new SdpObserver() {
                 @Override
                 public void onCreateSuccess(final SessionDescription sdp) {
@@ -1068,6 +1074,19 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
                     newSdpMap.putString("sdp", newSdp.description);
                     params.putArray("transceiversInfo", getTransceiversInfo(id));
                     params.putMap("sdpInfo", newSdpMap);
+
+                    WritableArray newTransceivers = Arguments.createArray();
+                    for(RtpTransceiver transceiver: peerConnection.getTransceivers()) {
+                        if(!receiversIds.contains(transceiver.getReceiver().id())) {
+                            WritableMap newTransceiver = Arguments.createMap();
+                            newTransceiver.putInt("transceiverOrder", pco.getNextTransceiverId());
+                            newTransceiver.putMap("transceiver", SerializeUtils.serializeTransceiver(id, transceiver));
+                            newTransceivers.pushMap(newTransceiver);
+                        }
+                    }
+
+                    params.putArray("newTransceivers", newTransceivers);
+
                     callback.invoke(true, params);
                 }
 

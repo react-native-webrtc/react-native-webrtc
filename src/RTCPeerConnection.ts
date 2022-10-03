@@ -186,7 +186,21 @@ export default class RTCPeerConnection extends defineCustomEventTarget(...PEER_C
                         log.debug(`${this._peerConnectionId} setRemoteDescription OK`);
 
                         this.remoteDescription = new RTCSessionDescription(data.sdpInfo);
+
+                        data.newTransceivers?.forEach( t => {
+                            const { transceiverOrder, transceiver } = t; 
+                            const newSender = new RTCRtpSender(transceiver.sender);
+                            const newReceiver = new RTCRtpReceiver(transceiver.receiver);
+                            const newTransceiver = new RTCRtpTransceiver({
+                                ...transceiver,
+                                sender: newSender,
+                                receiver: newReceiver,
+                            });
+                            this._insertTransceiverSorted(transceiverOrder, newTransceiver);
+                        });
+
                         this._updateTransceivers(data.transceiversInfo);
+
                         resolve();
                     } else {
                         reject(data);
