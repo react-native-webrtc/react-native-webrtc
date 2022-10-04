@@ -1,9 +1,10 @@
-import {NativeModules} from 'react-native';
+import { NativeModules } from 'react-native';
+
 import MediaStreamTrack from './MediaStreamTrack';
 import RTCRtpCapabilities, { senderCapabilities, DEFAULT_AUDIO_CAPABILITIES } from './RTCRtpCapabilities';
 import RTCRtpSendParameters from './RTCRtpSendParameters';
 
-const {WebRTCModule} = NativeModules;
+const { WebRTCModule } = NativeModules;
 
 
 export default class RTCRtpSender {
@@ -30,21 +31,22 @@ export default class RTCRtpSender {
     async replaceTrack(track: MediaStreamTrack | null): Promise<void> {
         try {
             await WebRTCModule.senderReplaceTrack(this._peerConnectionId, this._id, track ? track.id : null);
-        } catch(e) {
+        } catch (e) {
             return;
         }
 
         this._track = track;
     }
 
-    static getCapabilities(kind: "audio" | "video"): RTCRtpCapabilities {
-        if (kind === "audio") {
+    static getCapabilities(kind: 'audio' | 'video'): RTCRtpCapabilities {
+        if (kind === 'audio') {
             return DEFAULT_AUDIO_CAPABILITIES;
         }
 
         if (!senderCapabilities) {
-            throw new Error("sender Capabilities are null");
+            throw new Error('sender Capabilities are null');
         }
+
         return senderCapabilities;
     }
 
@@ -54,9 +56,9 @@ export default class RTCRtpSender {
 
     setParameters(parameters: RTCRtpSendParameters): Promise<void> {
         return WebRTCModule.senderSetParameters(this._peerConnectionId,
-                this._id,
-                JSON.parse(JSON.stringify(parameters)))// This allows us to get rid of private "underscore properties"
-            .then((newParameters) => {
+            this._id,
+            JSON.parse(JSON.stringify(parameters)))// This allows us to get rid of private "underscore properties"
+            .then(newParameters => {
                 this._rtpParameters = new RTCRtpSendParameters(newParameters);
             });
     }

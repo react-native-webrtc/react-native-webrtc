@@ -1,16 +1,17 @@
 
-import { EmitterSubscription, NativeModules } from 'react-native';
 import * as base64 from 'base64-js';
 import { defineCustomEventTarget } from 'event-target-shim';
+import { EmitterSubscription, NativeModules } from 'react-native';
+
+import EventEmitter from './EventEmitter';
 import MessageEvent from './MessageEvent';
 import RTCDataChannelEvent from './RTCDataChannelEvent';
-import EventEmitter from './EventEmitter';
 
 const { WebRTCModule } = NativeModules;
 
 type RTCDataChannelState = 'connecting' | 'open' | 'closing' | 'closed';
 
-const DATA_CHANNEL_EVENTS = ['open', 'message', 'bufferedamountlow', 'closing', 'close', 'error'];
+const DATA_CHANNEL_EVENTS = [ 'open', 'message', 'bufferedamountlow', 'closing', 'close', 'error' ];
 
 export default class RTCDataChannel extends defineCustomEventTarget(...DATA_CHANNEL_EVENTS) {
     _peerConnectionId: number;
@@ -85,6 +86,7 @@ export default class RTCDataChannel extends defineCustomEventTarget(...DATA_CHAN
     send(data: string | ArrayBuffer | ArrayBufferView): void {
         if (typeof data === 'string') {
             WebRTCModule.dataChannelSend(this._peerConnectionId, this._reactTag, data, 'text');
+
             return;
         }
 
@@ -106,6 +108,7 @@ export default class RTCDataChannel extends defineCustomEventTarget(...DATA_CHAN
         if (this._readyState === 'closing' || this._readyState === 'closed') {
             return;
         }
+
         WebRTCModule.dataChannelClose(this._peerConnectionId, this._reactTag);
     }
 
@@ -120,10 +123,13 @@ export default class RTCDataChannel extends defineCustomEventTarget(...DATA_CHAN
                 if (ev.reactTag !== this._reactTag) {
                     return;
                 }
+
                 this._readyState = ev.state;
+
                 if (this._id === null && ev.id !== -1) {
                     this._id = ev.id;
                 }
+
                 if (this._readyState === 'open') {
                     // @ts-ignore
                     this.dispatchEvent(new RTCDataChannelEvent('open', { channel: this }));
@@ -141,10 +147,13 @@ export default class RTCDataChannel extends defineCustomEventTarget(...DATA_CHAN
                 if (ev.reactTag !== this._reactTag) {
                     return;
                 }
+
                 let data = ev.data;
+
                 if (ev.type === 'binary') {
                     data = base64.toByteArray(ev.data).buffer;
                 }
+
                 // @ts-ignore
                 this.dispatchEvent(new MessageEvent('message', { data }));
             })

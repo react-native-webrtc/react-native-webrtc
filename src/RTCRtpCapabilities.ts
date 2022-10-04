@@ -1,4 +1,5 @@
-import {NativeModules} from 'react-native';
+import { NativeModules } from 'react-native';
+
 import RTCRtpCodecCapability from './RTCRtpCodecCapability';
 const { WebRTCModule } = NativeModules;
 
@@ -13,7 +14,7 @@ export default class RTCRtpCapabilities {
         this._codecs = codecs;
         Object.freeze(this);
     }
-    
+
     get codecs() {
         return this._codecs;
     }
@@ -24,14 +25,24 @@ function getCapabilities(endpoint: 'sender' | 'receiver'): RTCRtpCapabilities | 
     switch (endpoint) {
         case 'sender': {
             const capabilities = WebRTCModule.senderGetCapabilities();
-            if (!capabilities) return null;
+
+            if (!capabilities) {
+                return null;
+            }
+
             return new RTCRtpCapabilities(capabilities.codecs);
         }
+
         case 'receiver': {
             const capabilities = WebRTCModule.receiverGetCapabilities();
-            if (!capabilities) return null;
+
+            if (!capabilities) {
+                return null;
+            }
+
             return new RTCRtpCapabilities(capabilities.codecs);
         }
+
         default:
             throw new TypeError('Invalid endpoint: ' + endpoint);
     }

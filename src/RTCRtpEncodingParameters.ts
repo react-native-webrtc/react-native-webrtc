@@ -50,18 +50,20 @@ export default class RTCRtpEncodingParameters {
     toJSON() {
         const obj = {
             active: this.active,
-        }
+        };
+
         if (this._maxBitrate !== null) {
             obj['maxBitrate'] = this._maxBitrate;
-        } 
+        }
 
         if (this._maxFramerate !== null) {
             obj['maxFramerate'] = this._maxFramerate;
-        } 
-        
+        }
+
         if (this._scaleResolutionDownBy !== null) {
             obj['scaleResolutionDownBy'] = this._scaleResolutionDownBy;
-        } 
+        }
+
         return obj;
     }
 }

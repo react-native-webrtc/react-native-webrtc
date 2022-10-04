@@ -3,7 +3,7 @@ import debug from 'debug';
 
 export default class Logger {
     static ROOT_PREFIX = 'rn-webrtc';
- 
+
     private _debug: debug.Debugger;
     private _info: debug.Debugger;
     private _warn: debug.Debugger;

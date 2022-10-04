@@ -364,7 +364,7 @@ RCT_EXPORT_BLOCKING_SYNCHRONOUS_METHOD(peerConnectionAddTrack:(nonnull NSNumber 
                                                       trackId:(NSString *)trackId
                                                       options:(NSDictionary *)options)
 {
-   __block id params;
+   __block id params = nil;
 
     dispatch_sync(self.workerQueue, ^{
         RTCPeerConnection *peerConnection = self.peerConnections[objectID];
@@ -404,7 +404,7 @@ RCT_EXPORT_BLOCKING_SYNCHRONOUS_METHOD(peerConnectionAddTrack:(nonnull NSNumber 
 RCT_EXPORT_BLOCKING_SYNCHRONOUS_METHOD(peerConnectionAddTransceiver:(nonnull NSNumber *)objectID
                                                             options:(NSDictionary *)options)
 {
-    __block id params;
+    __block id params = nil;
 
     dispatch_sync(self.workerQueue, ^{
         RTCPeerConnection *peerConnection = self.peerConnections[objectID];

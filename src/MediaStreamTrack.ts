@@ -1,12 +1,12 @@
 
-import { NativeModules } from 'react-native';
 import { defineCustomEventTarget } from 'event-target-shim';
+import { NativeModules } from 'react-native';
 
 import { deepClone } from './RTCUtil';
 
 const { WebRTCModule } = NativeModules;
 
-const MEDIA_STREAM_TRACK_EVENTS = ['ended', 'mute', 'unmute'];
+const MEDIA_STREAM_TRACK_EVENTS = [ 'ended', 'mute', 'unmute' ];
 
 type MediaStreamTrackState = 'live' | 'ended';
 
@@ -19,10 +19,10 @@ class MediaStreamTrack extends defineCustomEventTarget(...MEDIA_STREAM_TRACK_EVE
 
     readonly id: string;
     readonly kind: string;
-    readonly label: string = "";
+    readonly label: string = '';
     readyState: MediaStreamTrackState;
     readonly remote: boolean;
-    
+
     constructor(info) {
         super();
 
@@ -37,6 +37,7 @@ class MediaStreamTrack extends defineCustomEventTarget(...MEDIA_STREAM_TRACK_EVE
         this.remote = info.remote;
 
         const _readyState = info.readyState.toLowerCase();
+
         this.readyState = _readyState === 'initializing' || _readyState === 'live' ? 'live' : 'ended';
     }
 
@@ -48,6 +49,7 @@ class MediaStreamTrack extends defineCustomEventTarget(...MEDIA_STREAM_TRACK_EVE
         if (enabled === this._enabled) {
             return;
         }
+
         WebRTCModule.mediaStreamTrackSetEnabled(this.id, !this._enabled);
         this._enabled = !this._enabled;
     }
@@ -73,19 +75,23 @@ class MediaStreamTrack extends defineCustomEventTarget(...MEDIA_STREAM_TRACK_EVE
         if (this.remote) {
             throw new Error('Not implemented for remote tracks');
         }
+
         if (this.kind !== 'video') {
             throw new Error('Only implemented for video tracks');
         }
+
         WebRTCModule.mediaStreamTrackSwitchCamera(this.id);
     }
 
-    _setVideoEffect(name:string){
+    _setVideoEffect(name:string) {
         if (this.remote) {
             throw new Error('Not implemented for remote tracks');
         }
+
         if (this.kind !== 'video') {
             throw new Error('Only implemented for video tracks');
         }
+
         WebRTCModule.mediaStreamTrackSetVideoEffect(this.id, name);
     }
 
@@ -108,7 +114,7 @@ class MediaStreamTrack extends defineCustomEventTarget(...MEDIA_STREAM_TRACK_EVE
     getSettings() {
         return deepClone(this._settings);
     }
-    
+
     release(): void {
         WebRTCModule.mediaStreamTrackRelease(this.id);
     }

@@ -15,7 +15,7 @@ export default function getDisplayMedia(): Promise<MediaStream> {
                 const info = {
                     streamId: streamId,
                     streamReactTag: streamId,
-                    tracks: [track]
+                    tracks: [ track ]
                 };
 
                 const stream = new MediaStream(info);

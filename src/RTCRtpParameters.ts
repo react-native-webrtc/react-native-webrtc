@@ -1,6 +1,6 @@
-import RTCRtcpParameters from "./RTCRtcpParameters";
-import RTCRtpCodecParameters from "./RTCRtpCodecParameters";
-import RTCRtpHeaderExtension from "./RTCRtpHeaderExtension";
+import RTCRtcpParameters from './RTCRtcpParameters';
+import RTCRtpCodecParameters from './RTCRtpCodecParameters';
+import RTCRtpHeaderExtension from './RTCRtpHeaderExtension';
 
 
 export type RTCRtpParametersInit = {

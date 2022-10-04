@@ -1,11 +1,12 @@
 import { defineCustomEventTarget } from 'event-target-shim';
 import { NativeModules } from 'react-native';
+
 import { addListener, removeListener } from './EventEmitter';
-import RTCRtpSender from './RTCRtpSender';
 import RTCErrorEvent from './RTCErrorEvent';
 import RTCRtpReceiver from './RTCRtpReceiver';
+import RTCRtpSender from './RTCRtpSender';
 
-const {WebRTCModule} = NativeModules;
+const { WebRTCModule } = NativeModules;
 
 const TRANSCEIVER_EVENTS = [
     'error'
@@ -61,7 +62,7 @@ export default class RTCRtpTransceiver extends defineCustomEventTarget(...TRANSC
     }
 
     set direction(val) {
-        if (!['sendonly', 'recvonly', 'sendrecv', 'inactive'].includes(val)) {
+        if (![ 'sendonly', 'recvonly', 'sendrecv', 'inactive' ].includes(val)) {
             throw new TypeError('Invalid direction provided');
         }
 
@@ -73,7 +74,7 @@ export default class RTCRtpTransceiver extends defineCustomEventTarget(...TRANSC
             return;
         }
 
-        WebRTCModule.transceiverSetDirection(this._peerConnectionId, this.id, val)
+        WebRTCModule.transceiverSetDirection(this._peerConnectionId, this.id, val);
         this._direction = val;
     }
 
@@ -93,6 +94,7 @@ export default class RTCRtpTransceiver extends defineCustomEventTarget(...TRANSC
         if (this._stopped) {
             return;
         }
+
         WebRTCModule.transceiverStop(this._peerConnectionId, this.id);
     }
 
@@ -101,8 +103,9 @@ export default class RTCRtpTransceiver extends defineCustomEventTarget(...TRANSC
             if (ev.peerConnectionId !== this._peerConnectionId || ev.transceiverId !== this._id) {
                 return;
             }
+
             this._stopped = true;
-            this._direction = 'stopped'
+            this._direction = 'stopped';
             this._currentDirection = 'stopped';
             this._mid = null;
             removeListener(this);
@@ -112,6 +115,7 @@ export default class RTCRtpTransceiver extends defineCustomEventTarget(...TRANSC
             if (ev.info.peerConnectionId !== this._peerConnectionId || ev.info.transceiverId !== this._id) {
                 return;
             }
+
             if (ev.func === 'stopTransceiver') {
                 this._stopped = false;
             } else if (ev.func === 'setDirection') {

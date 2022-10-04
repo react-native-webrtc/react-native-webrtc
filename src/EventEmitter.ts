@@ -9,7 +9,7 @@ export default EventEmitter;
 type EventHandler = (event: unknown) => void;
 type Listener = unknown;
 
-const _subscriptions: Map<Listener, EmitterSubscription[]> = new Map(); 
+const _subscriptions: Map<Listener, EmitterSubscription[]> = new Map();
 
 export function addListener(listener: Listener, eventName: string, eventHandler: EventHandler): void {
     if (!_subscriptions.has(listener)) {

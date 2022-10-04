@@ -1,29 +1,29 @@
-import RTCIceCandidate from './RTCIceCandidate';
-import RTCPeerConnection from './RTCPeerConnection';
-import RTCRtpReceiver from './RTCRtpReceiver';
-import RTCRtpSender from './RTCRtpSender';
-import RTCRtpTransceiver from './RTCRtpTransceiver';
-import RTCRtpCapabilities from './RTCRtpCapabilities';
-import RTCRtpCodecCapability from './RTCRtpCodecCapability';
-import RTCRtpEncodingParameters from './RTCRtpEncodingParameters';
-import RTCRtpCodecParameters from './RTCRtpCodecParameters';
-import RTCRtpParameters from './RTCRtpParameters';
-import RTCRtcpParameters from './RTCRtcpParameters';
-import RTCRtpHeaderExtension from './RTCRtpHeaderExtension';
-import RTCRtpSendParameters from './RTCRtpSendParameters';
-import RTCRtpReceiveParameters from './RTCRtpReceiveParameters';
-import RTCSessionDescription from './RTCSessionDescription';
-import RTCErrorEvent from './RTCErrorEvent';
-import RTCView from './RTCView';
-import ScreenCapturePickerView from './ScreenCapturePickerView';
+import Logger from './Logger';
+import mediaDevices from './MediaDevices';
 import MediaStream from './MediaStream';
 import MediaStreamTrack from './MediaStreamTrack';
-import mediaDevices from './MediaDevices';
 import permissions from './Permissions';
-import Logger from './Logger';
+import RTCErrorEvent from './RTCErrorEvent';
+import RTCIceCandidate from './RTCIceCandidate';
+import RTCPeerConnection from './RTCPeerConnection';
+import RTCRtcpParameters from './RTCRtcpParameters';
+import RTCRtpCapabilities from './RTCRtpCapabilities';
+import RTCRtpCodecCapability from './RTCRtpCodecCapability';
+import RTCRtpCodecParameters from './RTCRtpCodecParameters';
+import RTCRtpEncodingParameters from './RTCRtpEncodingParameters';
+import RTCRtpHeaderExtension from './RTCRtpHeaderExtension';
+import RTCRtpParameters from './RTCRtpParameters';
+import RTCRtpReceiveParameters from './RTCRtpReceiveParameters';
+import RTCRtpReceiver from './RTCRtpReceiver';
+import RTCRtpSendParameters from './RTCRtpSendParameters';
+import RTCRtpSender from './RTCRtpSender';
+import RTCRtpTransceiver from './RTCRtpTransceiver';
+import RTCSessionDescription from './RTCSessionDescription';
+import RTCView from './RTCView';
+import ScreenCapturePickerView from './ScreenCapturePickerView';
 
 Logger.enable('*');
-//Logger.enable(`*,-${Logger.ROOT_PREFIX}:*:DEBUG`);
+// Logger.enable(`*,-${Logger.ROOT_PREFIX}:*:DEBUG`);
 
 export {
     RTCIceCandidate,

@@ -1,5 +1,5 @@
 import MediaStreamTrack from './MediaStreamTrack';
-import RTCRtpCapabilities, {DEFAULT_AUDIO_CAPABILITIES, receiverCapabilities } from './RTCRtpCapabilities';
+import RTCRtpCapabilities, { DEFAULT_AUDIO_CAPABILITIES, receiverCapabilities } from './RTCRtpCapabilities';
 
 
 export default class RTCRtpReceiver {
@@ -13,13 +13,15 @@ export default class RTCRtpReceiver {
         this._track = info.track;
     }
 
-    static getCapabilities(kind: "audio" | "video"): RTCRtpCapabilities {
-        if (kind == "audio") {
-          return DEFAULT_AUDIO_CAPABILITIES;    
+    static getCapabilities(kind: 'audio' | 'video'): RTCRtpCapabilities {
+        if (kind === 'audio') {
+            return DEFAULT_AUDIO_CAPABILITIES;
         }
 
-        if (!receiverCapabilities)
+        if (!receiverCapabilities) {
             throw new Error('Receiver Capabilities is null');
+        }
+
         return receiverCapabilities;
     }
 

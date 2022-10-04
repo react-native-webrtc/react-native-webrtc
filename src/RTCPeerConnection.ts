@@ -2,24 +2,24 @@
 import { defineCustomEventTarget } from 'event-target-shim';
 import { NativeModules } from 'react-native';
 
+import { addListener, removeListener } from './EventEmitter';
 import Logger from './Logger';
 import MediaStream from './MediaStream';
 import MediaStreamTrack from './MediaStreamTrack';
 import MediaStreamTrackEvent from './MediaStreamTrackEvent';
-import RTCRtpTransceiver from './RTCRtpTransceiver';
 import RTCDataChannel from './RTCDataChannel';
 import RTCDataChannelEvent from './RTCDataChannelEvent';
-import RTCTrackEvent from './RTCTrackEvent';
-import RTCSessionDescription, { RTCSessionDescriptionInit } from './RTCSessionDescription';
-import RTCIceCandidate from './RTCIceCandidate';
-import RTCIceCandidateEvent from './RTCIceCandidateEvent';
 import RTCErrorEvent from './RTCErrorEvent';
 import RTCEvent from './RTCEvent';
-import * as RTCUtil from './RTCUtil';
-import { addListener, removeListener } from './EventEmitter';
+import RTCIceCandidate from './RTCIceCandidate';
+import RTCIceCandidateEvent from './RTCIceCandidateEvent';
 import RTCRtpReceiver from './RTCRtpReceiver';
-import RTCRtpSender from './RTCRtpSender';
 import RTCRtpSendParameters from './RTCRtpSendParameters';
+import RTCRtpSender from './RTCRtpSender';
+import RTCRtpTransceiver from './RTCRtpTransceiver';
+import RTCSessionDescription, { RTCSessionDescriptionInit } from './RTCSessionDescription';
+import RTCTrackEvent from './RTCTrackEvent';
+import * as RTCUtil from './RTCUtil';
 
 const log = new Logger('pc');
 const { WebRTCModule } = NativeModules;
@@ -190,7 +190,7 @@ export default class RTCPeerConnection extends defineCustomEventTarget(...PEER_C
                         this.remoteDescription = new RTCSessionDescription(data.sdpInfo);
 
                         data.newTransceivers?.forEach( t => {
-                            const { transceiverOrder, transceiver } = t; 
+                            const { transceiverOrder, transceiver } = t;
                             const newSender = new RTCRtpSender(transceiver.sender);
                             const newReceiver = new RTCRtpReceiver(transceiver.receiver);
                             const newTransceiver = new RTCRtpTransceiver({
@@ -198,6 +198,7 @@ export default class RTCPeerConnection extends defineCustomEventTarget(...PEER_C
                                 sender: newSender,
                                 receiver: newReceiver,
                             });
+
                             this._insertTransceiverSorted(transceiverOrder, newTransceiver);
                         });
 
@@ -229,7 +230,7 @@ export default class RTCPeerConnection extends defineCustomEventTarget(...PEER_C
     }
 
     /**
-     * @brief Adds a new track to the {@link RTCPeerConnection}, 
+     * @brief Adds a new track to the {@link RTCPeerConnection},
      * and indicates that it is contained in the specified {@link MediaStream} array.
      * This method has to be synchronous as the W3C API expects a track to be return
      * @param {MediaStreamTrack} track The track to be added
@@ -239,30 +240,41 @@ export default class RTCPeerConnection extends defineCustomEventTarget(...PEER_C
     addTrack(track: MediaStreamTrack, streams: MediaStream[] = []): RTCRtpSender {
         log.debug(`${this._peerConnectionId} addTrack`);
 
-        if (this.connectionState === 'closed') throw new Error("Peer Connection is closed");
-        if (this._trackExists(track)) throw new Error("Track already exists in a sender");
+        if (this.connectionState === 'closed') {
+            throw new Error('Peer Connection is closed');
+        }
 
-        const streamIds = streams.map((s) => s.id);
+        if (this._trackExists(track)) {
+            throw new Error('Track already exists in a sender');
+        }
+
+        const streamIds = streams.map(s => s.id);
         const result = WebRTCModule.peerConnectionAddTrack(this._peerConnectionId, track.id, { streamIds });
-        if (result == null) throw new Error("Could not add sender");
+
+        if (result === null) {
+            throw new Error('Could not add sender');
+        }
+
         const { transceiverOrder, transceiver, sender } = result;
 
-        // According to the W3C docs, the sender could have been reused, and 
+        // According to the W3C docs, the sender could have been reused, and
         // so we check if that is the case, and update accordingly.
-        const [existingSender] = this
+        const [ existingSender ] = this
             .getSenders()
-            .filter((s) => s.id === sender.id);
-        
+            .filter(s => s.id === sender.id);
+
         if (existingSender) {
             // Update sender
             existingSender._track = track;
 
             // Update the corresponding transceiver as well
-            const [existingTransceiver] = this
+            const [ existingTransceiver ] = this
                 .getTransceivers()
-                .filter((t) => t.sender.id === existingSender.id);
+                .filter(t => t.sender.id === existingSender.id);
+
             existingTransceiver._direction = transceiver.direction;
             existingTransceiver._currentDirection = transceiver.currentDirection;
+
             return existingSender;
         }
 
@@ -285,6 +297,7 @@ export default class RTCPeerConnection extends defineCustomEventTarget(...PEER_C
         log.debug(`${this._peerConnectionId} addTransceiver`);
 
         let src = {};
+
         if (source === 'audio') {
             src = { type: 'audio' };
         } else if (source === 'video') {
@@ -292,20 +305,21 @@ export default class RTCPeerConnection extends defineCustomEventTarget(...PEER_C
         } else {
             src = { trackId: source.id };
         }
-        // Extract the stream ids 
+
+        // Extract the stream ids
         if (init && init.streams) {
-            init.streamIds = init.streams.map((stream) => {
-                return stream.id;
-            });
+            init.streamIds = init.streams.map(stream => stream.id);
         }
 
         const result = WebRTCModule.peerConnectionAddTransceiver(this._peerConnectionId, { ...src, init: { ...init } });
-        if (result == null) {
-            throw new Error("Transceiver could not be added");
+
+        if (result === null) {
+            throw new Error('Transceiver could not be added');
         }
 
         const t = result.transceiver;
         let track: MediaStreamTrack | null = null;
+
         if (typeof source === 'string') {
             if (t.sender.track) {
                 track = new MediaStreamTrack(t.sender.track);
@@ -314,6 +328,7 @@ export default class RTCPeerConnection extends defineCustomEventTarget(...PEER_C
             // 'source' is a MediaStreamTrack
             track = source;
         }
+
         const sender = new RTCRtpSender({ ...t.sender, track });
         const remoteTrack = t.receiver.track ? new MediaStreamTrack(t.receiver.track) : null;
         const receiver = new RTCRtpReceiver({ ...t.receiver, track: remoteTrack });
@@ -322,22 +337,34 @@ export default class RTCPeerConnection extends defineCustomEventTarget(...PEER_C
             sender,
             receiver
         });
+
         this._insertTransceiverSorted(result.transceiverOrder, transceiver);
+
         return transceiver;
     }
 
     removeTrack(sender: RTCRtpSender) {
         log.debug(`${this._peerConnectionId} removeTrack`);
 
-        if (this._peerConnectionId !== sender._peerConnectionId)
-            throw new Error("Sender does not belong to this peer connection");
-        if (this.connectionState === 'closed') throw new Error("Peer Connection is closed");
-        
+        if (this._peerConnectionId !== sender._peerConnectionId) {
+            throw new Error('Sender does not belong to this peer connection');
+        }
+
+        if (this.connectionState === 'closed') {
+            throw new Error('Peer Connection is closed');
+        }
+
         const existingSender = this
             .getSenders()
-            .find((s) => s === sender);
-        if (!existingSender) throw new Error("Sender does not exist");
-        if (existingSender.track === null) return;
+            .find(s => s === sender);
+
+        if (!existingSender) {
+            throw new Error('Sender does not exist');
+        }
+
+        if (existingSender.track === null) {
+            return;
+        }
 
         WebRTCModule.peerConnectionRemoveTrack(this._peerConnectionId, sender.id);
     }
@@ -345,7 +372,7 @@ export default class RTCPeerConnection extends defineCustomEventTarget(...PEER_C
     getStats() {
         log.debug(`${this._peerConnectionId} getStats`);
 
-        return WebRTCModule.peerConnectionGetStats(this._peerConnectionId).then(data => {
+        return WebRTCModule.peerConnectionGetStats(this._peerConnectionId).then(data =>
             /* On both Android and iOS it is faster to construct a single
             JSON string representing the Map of StatsReports and have it
             pass through the React Native bridge rather than the Map of
@@ -354,11 +381,11 @@ export default class RTCPeerConnection extends defineCustomEventTarget(...PEER_C
             Native bridge which is a bottleneck that tends to be visible in
             the UI when there is congestion involving UI-related passing.
 
-            TODO Implement the logic for filtering the stats based on 
+            TODO Implement the logic for filtering the stats based on
             the sender/receiver
             */
-            return new Map(JSON.parse(data));
-        });
+            new Map(JSON.parse(data))
+        );
     }
 
     getTransceivers(): RTCRtpTransceiver[] {
@@ -380,7 +407,7 @@ export default class RTCPeerConnection extends defineCustomEventTarget(...PEER_C
         // transceivers have to be stopped
         this._transceivers.forEach(({ transceiver })=> {
             transceiver.stop();
-        })
+        });
         WebRTCModule.peerConnectionClose(this._peerConnectionId);
     }
 
@@ -393,6 +420,7 @@ export default class RTCPeerConnection extends defineCustomEventTarget(...PEER_C
             if (ev.id !== this._peerConnectionId) {
                 return;
             }
+
             // @ts-ignore
             this.dispatchEvent(new RTCEvent('negotiationneeded'));
         });
@@ -401,11 +429,14 @@ export default class RTCPeerConnection extends defineCustomEventTarget(...PEER_C
             if (ev.id !== this._peerConnectionId) {
                 return;
             }
+
             this.iceConnectionState = ev.iceConnectionState;
+
             if (ev.iceConnectionState === 'closed') {
                 // This PeerConnection is done, clean up event handlers.
                 removeListener(this);
             }
+
             // @ts-ignore
             this.dispatchEvent(new RTCEvent('iceconnectionstatechange'));
         });
@@ -414,11 +445,14 @@ export default class RTCPeerConnection extends defineCustomEventTarget(...PEER_C
             if (ev.id !== this._peerConnectionId) {
                 return;
             }
+
             this.connectionState = ev.connectionState;
+
             if (ev.connectionState === 'closed') {
                 // This PeerConnection is done, clean up event handlers.
                 removeListener(this);
             }
+
             // @ts-ignore
             this.dispatchEvent(new RTCEvent('connectionstatechange'));
         });
@@ -427,6 +461,7 @@ export default class RTCPeerConnection extends defineCustomEventTarget(...PEER_C
             if (ev.id !== this._peerConnectionId) {
                 return;
             }
+
             this.signalingState = ev.signalingState;
             // @ts-ignore
             this.dispatchEvent(new RTCEvent('signalingstatechange'));
@@ -444,11 +479,9 @@ export default class RTCPeerConnection extends defineCustomEventTarget(...PEER_C
             let transceiver;
 
             // Make sure transceivers are stored in timestamp order. Also, we have to make
-            // sure we do not add a transceiver if it exists. 
-            const [{ transceiver: oldTransceiver } = { transceiver: null }]
-                    = this._transceivers.filter(({ transceiver }) => {
-                return transceiver.id === ev.transceiver.id;
-            });
+            // sure we do not add a transceiver if it exists.
+            const [ { transceiver: oldTransceiver } = { transceiver: null } ]
+                    = this._transceivers.filter(({ transceiver }) => transceiver.id === ev.transceiver.id);
 
             if (!oldTransceiver) {
                 // Creating objects out of the event data.
@@ -475,10 +508,14 @@ export default class RTCPeerConnection extends defineCustomEventTarget(...PEER_C
                         streamReactTag: streamInfo.streamReactTag,
                         tracks: []
                     });
+
                     this._remoteStreams.set(streamInfo.streamId, stream);
                 }
+
                 const stream = this._remoteStreams.get(streamInfo.streamId);
+
                 stream?._tracks.push(track);
+
                 return stream;
             });
 
@@ -502,9 +539,10 @@ export default class RTCPeerConnection extends defineCustomEventTarget(...PEER_C
 
             // Based on the W3C specs https://w3c.github.io/webrtc-pc/#dom-rtcpeerconnection-removetrack,
             // we need to remove the track from any media streams
-            // that were previously passed to the `track` event. 
+            // that were previously passed to the `track` event.
             for (const stream of this._remoteStreams.values()) {
                 const trackIdx = stream._tracks.findIndex(t => t.id === ev.trackId);
+
                 if (trackIdx !== -1) {
                     stream._tracks.splice(trackIdx, 1);
                 }
@@ -515,9 +553,10 @@ export default class RTCPeerConnection extends defineCustomEventTarget(...PEER_C
             if (ev.peerConnectionId !== this._peerConnectionId) {
                 return;
             }
-            const [existingSender] = this
+
+            const [ existingSender ] = this
                 .getSenders()
-                .filter((s) => s.id === ev.senderId);
+                .filter(s => s.id === ev.senderId);
 
             const oldTrack = existingSender._track;
 
@@ -527,9 +566,10 @@ export default class RTCPeerConnection extends defineCustomEventTarget(...PEER_C
 
             existingSender._track = null;
 
-            const [existingTransceiver] = this
+            const [ existingTransceiver ] = this
                 .getTransceivers()
-                .filter((t) => t.sender.id === existingSender.id);
+                .filter(t => t.sender.id === existingSender.id);
+
             existingTransceiver._direction = existingTransceiver.direction === 'sendrecv' ? 'recvonly' : 'inactive';
         });
 
@@ -537,8 +577,10 @@ export default class RTCPeerConnection extends defineCustomEventTarget(...PEER_C
             if (ev.id !== this._peerConnectionId) {
                 return;
             }
+
             this.localDescription = new RTCSessionDescription(ev.sdp);
             const candidate = new RTCIceCandidate(ev.candidate);
+
             // @ts-ignore
             this.dispatchEvent(new RTCIceCandidateEvent('icecandidate', { candidate }));
         });
@@ -547,6 +589,7 @@ export default class RTCPeerConnection extends defineCustomEventTarget(...PEER_C
             if (ev.id !== this._peerConnectionId) {
                 return;
             }
+
             this.iceGatheringState = ev.iceGatheringState;
 
             if (this.iceGatheringState === 'complete') {
@@ -563,7 +606,9 @@ export default class RTCPeerConnection extends defineCustomEventTarget(...PEER_C
             if (ev.id !== this._peerConnectionId) {
                 return;
             }
+
             const channel = new RTCDataChannel(ev.dataChannel);
+
             // @ts-ignore
             this.dispatchEvent(new RTCDataChannelEvent('datachannel', { channel }));
         });
@@ -576,7 +621,7 @@ export default class RTCPeerConnection extends defineCustomEventTarget(...PEER_C
             if (ev.info.peerConnectionId !== this._peerConnectionId) {
                 return;
             }
-            
+
             log.error(`onerror: ${JSON.stringify(ev)}`);
 
             // @ts-ignore
@@ -616,6 +661,7 @@ export default class RTCPeerConnection extends defineCustomEventTarget(...PEER_C
     createDataChannel(label: string, dataChannelDict?: RTCDataChannelInit): RTCDataChannel {
         if (dataChannelDict && 'id' in dataChannelDict) {
             const id = dataChannelDict.id;
+
             if (typeof id !== 'number') {
                 throw new TypeError('DataChannel id must be a number: ' + id);
             }
@@ -629,17 +675,18 @@ export default class RTCPeerConnection extends defineCustomEventTarget(...PEER_C
 
         return new RTCDataChannel(channelInfo);
     }
-    
+
     /**
-     * Check whether a media stream track exists already in a sender. 
+     * Check whether a media stream track exists already in a sender.
      * See https://w3c.github.io/webrtc-pc/#dom-rtcpeerconnection-addtrack for more information
      */
     _trackExists(track: MediaStreamTrack): boolean {
-        const [sender] = this
+        const [ sender ] = this
             .getSenders()
             .filter(
-                (sender) => sender.track?.id === track.id
-            )
+                sender => sender.track?.id === track.id
+            );
+
         return sender? true : false;
     }
 
@@ -648,11 +695,14 @@ export default class RTCPeerConnection extends defineCustomEventTarget(...PEER_C
      */
     _updateTransceivers(transceiverUpdates) {
         for (const update of transceiverUpdates) {
-            const [transceiver] = this
+            const [ transceiver ] = this
                 .getTransceivers()
-                .filter((t) => t.id === update.transceiverId);
-            
-            if (!transceiver) continue;
+                .filter(t => t.id === update.transceiverId);
+
+            if (!transceiver) {
+                continue;
+            }
+
             transceiver._currentDirection = update.currentDirection;
             transceiver._mid = update.mid;
             transceiver._sender._rtpParameters = new RTCRtpSendParameters(update.senderRtpParameters);
@@ -666,8 +716,6 @@ export default class RTCPeerConnection extends defineCustomEventTarget(...PEER_C
      */
     _insertTransceiverSorted(order: number, transceiver: RTCRtpTransceiver) {
         this._transceivers.push({ order, transceiver });
-        this._transceivers.sort((a, b) => {
-            return a.order - b.order;
-        })
+        this._transceivers.sort((a, b) => a.order - b.order);
     }
 }

@@ -42,7 +42,7 @@ function extractString(constraints, prop) {
     const type = typeof value;
 
     if (type === 'object') {
-        for (const v of ['exact', 'ideal']) {
+        for (const v of [ 'exact', 'ideal' ]) {
             if (value[v]) {
                 return value[v];
             }
@@ -59,7 +59,7 @@ function extractNumber(constraints, prop) {
     if (type === 'number') {
         return Number.parseInt(value);
     } else if (type === 'object') {
-        for (const v of ['exact', 'ideal', 'min', 'max']) {
+        for (const v of [ 'exact', 'ideal', 'min', 'max' ]) {
             if (value[v]) {
                 return Number.parseInt(value[v]);
             }
@@ -71,6 +71,7 @@ function normalizeMediaConstraints(constraints, mediaType) {
     switch (mediaType) {
         case 'audio':
             return constraints;
+
         case 'video': {
             const c = {
                 deviceId: extractString(constraints, 'deviceId'),
@@ -103,6 +104,7 @@ function normalizeMediaConstraints(constraints, mediaType) {
 
             return c;
         }
+
         default:
             throw new TypeError(`Invalid media type: ${mediaType}`);
     }
@@ -164,8 +166,9 @@ export function normalizeOfferOptions(options: object = {}): object {
 
     // Convert standard options into WebRTC internal constant names.
     // See: https://github.com/jitsi/webrtc/blob/0cd6ce4de669bed94ba47b88cb71b9be0341bb81/sdk/media_constraints.cc#L113
-    for (const [key, value] of Object.entries(options)) {
+    for (const [ key, value ] of Object.entries(options)) {
         const newKey = STANDARD_OFFER_OPTIONS[key.toLowerCase()];
+
         if (newKey) {
             newOptions[newKey] = String(Boolean(value));
         }
@@ -180,7 +183,7 @@ export function normalizeOfferOptions(options: object = {}): object {
 export function normalizeConstraints(constraints) {
     const c = deepClone(constraints);
 
-    for (const mediaType of ['audio', 'video']) {
+    for (const mediaType of [ 'audio', 'video' ]) {
         const mediaTypeConstraints = c[mediaType];
         const typeofMediaTypeConstraints = typeof mediaTypeConstraints;
 
