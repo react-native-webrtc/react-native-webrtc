@@ -31,7 +31,7 @@ class Permissions {
      */
     VALID_PERMISSIONS = ['camera', 'microphone'];
 
-    _lastReq: Promise<any> = Promise.resolve();
+    _lastReq: Promise<unknown> = Promise.resolve();
 
     /**
      * Helper for requesting Android permissions. On Android only one permission
@@ -44,7 +44,7 @@ class Permissions {
      * https://facebook.github.io/react-native/docs/permissionsandroid#permissions-that-require-prompting-the-user
      */
     _requestPermissionAndroid(perm: Permission) {
-        return new Promise((resolve, reject) => {
+        return new Promise(resolve => {
             PermissionsAndroid.request(perm).then(
                 granted => resolve(granted === PermissionsAndroid.RESULTS.GRANTED),
                 () => resolve(false)

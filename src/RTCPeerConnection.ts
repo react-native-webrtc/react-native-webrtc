@@ -1,5 +1,5 @@
 
-import { defineCustomEventTarget, Event } from 'event-target-shim';
+import { defineCustomEventTarget } from 'event-target-shim';
 import { NativeModules } from 'react-native';
 
 import Logger from './Logger';
@@ -72,7 +72,6 @@ export default class RTCPeerConnection extends defineCustomEventTarget(...PEER_C
     iceConnectionState: RTCIceConnectionState = 'new';
 
     _peerConnectionId: number;
-    _subscriptions: any[] = [];
     _transceivers: { order: number, transceiver: RTCRtpTransceiver }[] = [];
     _remoteStreams: Map<string, MediaStream> = new Map<string, MediaStream>();
 
@@ -153,7 +152,10 @@ export default class RTCPeerConnection extends defineCustomEventTarget(...PEER_C
             desc = null;
         }
 
-        const { sdpInfo, transceiversInfo } = await WebRTCModule.peerConnectionSetLocalDescription(this._peerConnectionId, desc);
+        const {
+            sdpInfo,
+            transceiversInfo
+        } = await WebRTCModule.peerConnectionSetLocalDescription(this._peerConnectionId, desc);
 
         this.localDescription = new RTCSessionDescription(sdpInfo);
         this._updateTransceivers(transceiversInfo);
@@ -387,7 +389,7 @@ export default class RTCPeerConnection extends defineCustomEventTarget(...PEER_C
     }
 
     _registerEvents(): void {
-        addListener(this, 'peerConnectionOnRenegotiationNeeded', ev => {
+        addListener(this, 'peerConnectionOnRenegotiationNeeded', (ev: any) => {
             if (ev.id !== this._peerConnectionId) {
                 return;
             }
@@ -395,7 +397,7 @@ export default class RTCPeerConnection extends defineCustomEventTarget(...PEER_C
             this.dispatchEvent(new RTCEvent('negotiationneeded'));
         });
 
-        addListener(this, 'peerConnectionIceConnectionChanged', ev => {
+        addListener(this, 'peerConnectionIceConnectionChanged', (ev: any) => {
             if (ev.id !== this._peerConnectionId) {
                 return;
             }
@@ -408,7 +410,7 @@ export default class RTCPeerConnection extends defineCustomEventTarget(...PEER_C
             this.dispatchEvent(new RTCEvent('iceconnectionstatechange'));
         });
 
-        addListener(this, 'peerConnectionStateChanged', ev => {
+        addListener(this, 'peerConnectionStateChanged', (ev: any) => {
             if (ev.id !== this._peerConnectionId) {
                 return;
             }
@@ -421,7 +423,7 @@ export default class RTCPeerConnection extends defineCustomEventTarget(...PEER_C
             this.dispatchEvent(new RTCEvent('connectionstatechange'));
         });
 
-        addListener(this, 'peerConnectionSignalingStateChanged', ev => {
+        addListener(this, 'peerConnectionSignalingStateChanged', (ev: any) => {
             if (ev.id !== this._peerConnectionId) {
                 return;
             }
@@ -431,7 +433,7 @@ export default class RTCPeerConnection extends defineCustomEventTarget(...PEER_C
         });
 
         // Consider moving away from this event: https://github.com/WebKit/WebKit/pull/3953
-        addListener(this, 'peerConnectionOnTrack', ev => {
+        addListener(this, 'peerConnectionOnTrack', (ev: any) => {
             if (ev.id !== this._peerConnectionId) {
                 return;
             }
@@ -443,9 +445,8 @@ export default class RTCPeerConnection extends defineCustomEventTarget(...PEER_C
 
             // Make sure transceivers are stored in timestamp order. Also, we have to make
             // sure we do not add a transceiver if it exists. 
-                // sure we do not add a transceiver if it exists. 
-            // sure we do not add a transceiver if it exists. 
-            let [{ transceiver: oldTransceiver } = { transceiver: null }] = this._transceivers.filter(({ transceiver }) => {
+            const [{ transceiver: oldTransceiver } = { transceiver: null }]
+                    = this._transceivers.filter(({ transceiver }) => {
                 return transceiver.id === ev.transceiver.id;
             });
 
@@ -492,7 +493,7 @@ export default class RTCPeerConnection extends defineCustomEventTarget(...PEER_C
             this.dispatchEvent(new RTCTrackEvent('track', eventData));
         });
 
-        addListener(this, 'peerConnectionOnRemoveTrack', ev => {
+        addListener(this, 'peerConnectionOnRemoveTrack', (ev: any) => {
             if (ev.peerConnectionId !== this._peerConnectionId) {
                 return;
             }
@@ -510,7 +511,7 @@ export default class RTCPeerConnection extends defineCustomEventTarget(...PEER_C
             }
         });
 
-        addListener(this, 'peerConnectionOnRemoveTrackSuccessful', ev => {
+        addListener(this, 'peerConnectionOnRemoveTrackSuccessful', (ev: any) => {
             if (ev.peerConnectionId !== this._peerConnectionId) {
                 return;
             }
@@ -532,7 +533,7 @@ export default class RTCPeerConnection extends defineCustomEventTarget(...PEER_C
             existingTransceiver._direction = existingTransceiver.direction === 'sendrecv' ? 'recvonly' : 'inactive';
         });
 
-        addListener(this, 'peerConnectionGotICECandidate', ev => {
+        addListener(this, 'peerConnectionGotICECandidate', (ev: any) => {
             if (ev.id !== this._peerConnectionId) {
                 return;
             }
@@ -542,7 +543,7 @@ export default class RTCPeerConnection extends defineCustomEventTarget(...PEER_C
             this.dispatchEvent(new RTCIceCandidateEvent('icecandidate', { candidate }));
         });
 
-        addListener(this, 'peerConnectionIceGatheringChanged', ev => {
+        addListener(this, 'peerConnectionIceGatheringChanged', (ev: any) => {
             if (ev.id !== this._peerConnectionId) {
                 return;
             }
@@ -558,7 +559,7 @@ export default class RTCPeerConnection extends defineCustomEventTarget(...PEER_C
             this.dispatchEvent(new RTCEvent('icegatheringstatechange'));
         });
 
-        addListener(this, 'peerConnectionDidOpenDataChannel', ev => {
+        addListener(this, 'peerConnectionDidOpenDataChannel', (ev: any) => {
             if (ev.id !== this._peerConnectionId) {
                 return;
             }
@@ -571,7 +572,7 @@ export default class RTCPeerConnection extends defineCustomEventTarget(...PEER_C
         // Asynchronously when the outer web API expects synchronous behaviour
         // This is the only way to report error on operations for those who wish
         // to handle them.
-        addListener(this, 'peerConnectionOnError', ev => {
+        addListener(this, 'peerConnectionOnError', (ev: any) => {
             if (ev.info.peerConnectionId !== this._peerConnectionId) {
                 return;
             }
@@ -582,14 +583,15 @@ export default class RTCPeerConnection extends defineCustomEventTarget(...PEER_C
             this.dispatchEvent(new RTCErrorEvent('error', ev.func, ev.message));
         });
 
-        addListener(this, 'mediaStreamTrackMuteChanged', ev => {
+        addListener(this, 'mediaStreamTrackMuteChanged', (ev: any) => {
             if (ev.peerConnectionId !== this._peerConnectionId) {
                 return;
             }
 
-            const [ track ] = this.getReceivers()
-                                .map(r => r.track)
-                                .filter(t => t?.id === ev.trackId);
+            const [
+                track
+            ] = this.getReceivers().map(r => r.track).filter(t => t?.id === ev.trackId);
+
             if (track) {
                 track._muted = ev.muted;
                 const eventName = ev.muted ? 'mute' : 'unmute';
@@ -645,7 +647,7 @@ export default class RTCPeerConnection extends defineCustomEventTarget(...PEER_C
      * updates transceivers after offer/answer updates if necessary
      */
     _updateTransceivers(transceiverUpdates) {
-        for (var update of transceiverUpdates) {
+        for (const update of transceiverUpdates) {
             const [transceiver] = this
                 .getTransceivers()
                 .filter((t) => t.id === update.transceiverId);

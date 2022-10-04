@@ -23,7 +23,6 @@ class DegradationPreference {
 } 
 
 export default class RTCRtpSendParameters extends RTCRtpParameters {
-
     readonly transactionId: string;
     readonly encodings: RTCRtpEncodingParameters[];
     degradationPreference: DegradationPreferenceType | null;
@@ -40,7 +39,7 @@ export default class RTCRtpSendParameters extends RTCRtpParameters {
     }
 
     toJSON() {
-        let obj = {
+        const obj = {
             encodings: this.encodings,
         };
         if (this.degradationPreference !== null) {

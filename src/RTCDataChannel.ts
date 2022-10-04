@@ -1,5 +1,5 @@
 
-import { NativeModules } from 'react-native';
+import { EmitterSubscription, NativeModules } from 'react-native';
 import * as base64 from 'base64-js';
 import { defineCustomEventTarget } from 'event-target-shim';
 import MessageEvent from './MessageEvent';
@@ -23,7 +23,7 @@ export default class RTCDataChannel extends defineCustomEventTarget(...DATA_CHAN
     _ordered: boolean;
     _protocol: string;
     _readyState: RTCDataChannelState;
-    _subscriptions: any[] = [];
+    _subscriptions: EmitterSubscription[] = [];
 
     binaryType = 'arraybuffer'; // we only support 'arraybuffer'
     bufferedAmount = 0;
@@ -96,7 +96,10 @@ export default class RTCDataChannel extends defineCustomEventTarget(...DATA_CHAN
         } else {
             throw new TypeError('Data must be either string, ArrayBuffer, or ArrayBufferView');
         }
-        WebRTCModule.dataChannelSend(this._peerConnectionId, this._reactTag, base64.fromByteArray(data as Uint8Array), 'binary');
+
+        const base64data = base64.fromByteArray(data as Uint8Array);
+
+        WebRTCModule.dataChannelSend(this._peerConnectionId, this._reactTag, base64data, 'binary');
     }
 
     close(): void {

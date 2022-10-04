@@ -1,8 +1,6 @@
-import { NativeModules } from 'react-native';
 import MediaStreamTrack from './MediaStreamTrack';
 import RTCRtpCapabilities, {DEFAULT_AUDIO_CAPABILITIES, receiverCapabilities } from './RTCRtpCapabilities';
 
-const { WebRTCModule } = NativeModules;
 
 export default class RTCRtpReceiver {
     _id: string;

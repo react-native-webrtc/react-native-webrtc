@@ -51,6 +51,8 @@ export {
     registerGlobals
 };
 
+declare const global: any;
+
 function registerGlobals(): void {
     // Should not happen. React Native has a global navigator object.
     if (typeof global.navigator !== 'object') {

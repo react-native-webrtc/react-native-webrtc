@@ -6,11 +6,12 @@ const EventEmitter = new NativeEventEmitter(WebRTCModule);
 
 export default EventEmitter;
 
-const _subscriptions: Map<any, EmitterSubscription[]> = new Map(); 
+type EventHandler = (event: unknown) => void;
+type Listener = unknown;
 
-type EventHandler = (event: any) => void;
+const _subscriptions: Map<Listener, EmitterSubscription[]> = new Map(); 
 
-export function addListener(listener: any, eventName: string, eventHandler: EventHandler): void {
+export function addListener(listener: Listener, eventName: string, eventHandler: EventHandler): void {
     if (!_subscriptions.has(listener)) {
         _subscriptions.set(listener, []);
     }
@@ -18,7 +19,7 @@ export function addListener(listener: any, eventName: string, eventHandler: Even
     _subscriptions.get(listener)?.push(EventEmitter.addListener(eventName, eventHandler));
 }
 
-export function removeListener(listener: any): void {
+export function removeListener(listener: Listener): void {
     _subscriptions.get(listener)?.forEach(sub => {
         sub.remove();
     });

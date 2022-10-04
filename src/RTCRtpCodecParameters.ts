@@ -4,14 +4,14 @@ export default class RTCRtpCodecParameters {
     readonly clockRate: number;
     readonly channels: number;
     readonly mimeType: string;
-    readonly sdpFmtpLine: Map<String, String>;
+    readonly sdpFmtpLine: Map<string, string>;
 
     constructor(init: {
         payloadType: number,
         clockRate: number,
         channels: number,
         mimeType: string,
-        sdpFmtpLine: Map<String, String>
+        sdpFmtpLine: Map<string, string>
     }) {
         this.payloadType = init.payloadType;
         this.clockRate = init.clockRate;

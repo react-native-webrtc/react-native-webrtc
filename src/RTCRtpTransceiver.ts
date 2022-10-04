@@ -97,7 +97,7 @@ export default class RTCRtpTransceiver extends defineCustomEventTarget(...TRANSC
     }
 
     _registerEvents(): void {
-        addListener(this, 'transceiverStopSuccessful', ev => {
+        addListener(this, 'transceiverStopSuccessful', (ev: any) => {
             if (ev.peerConnectionId !== this._peerConnectionId || ev.transceiverId !== this._id) {
                 return;
             }
@@ -108,7 +108,7 @@ export default class RTCRtpTransceiver extends defineCustomEventTarget(...TRANSC
             removeListener(this);
         });
 
-        addListener(this, 'transceiverOnError', ev => {
+        addListener(this, 'transceiverOnError', (ev: any) => {
             if (ev.info.peerConnectionId !== this._peerConnectionId || ev.info.transceiverId !== this._id) {
                 return;
             }
