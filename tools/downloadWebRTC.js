@@ -57,11 +57,13 @@ async function download(url, filePath) {
     if (process.platform === 'darwin') {
         const iosUrl = builds['ios'];
 
-        items.push({
-            url: iosUrl,
-            dstFileName: path.basename(iosUrl),
-            dstDir: `${__dirname}/../apple/`
-        });
+        if (iosUrl) {
+            items.push({
+                url: iosUrl,
+                dstFileName: path.basename(iosUrl),
+                dstDir: `${__dirname}/../apple/`
+            });
+        }
     }
 
     // Android

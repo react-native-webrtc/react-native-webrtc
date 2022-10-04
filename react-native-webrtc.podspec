@@ -18,7 +18,6 @@ Pod::Spec.new do |s|
   s.source_files        = 'ios/**/*.{h,m}'
   s.libraries           = 'c', 'sqlite3', 'stdc++'
   s.framework           = 'AudioToolbox','AVFoundation', 'CoreAudio', 'CoreGraphics', 'CoreVideo', 'GLKit', 'VideoToolbox'
-  s.ios.vendored_frameworks   = 'apple/WebRTC.xcframework'
-  s.macos.vendored_frameworks = 'apple/WebRTC.xcframework'
   s.dependency          'React-Core'
+  s.dependency          'JitsiWebRTC', '~> 106.0.0'
 end

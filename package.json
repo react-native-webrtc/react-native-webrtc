@@ -64,7 +64,6 @@
     ]
   },
   "webrtc-builds": {
-    "android": "https://github.com/jitsi/webrtc/releases/download/v106.0.0/android-webrtc.zip",
-    "ios": "https://github.com/jitsi/webrtc/releases/download/v106.0.0/WebRTC.xcframework.zip"
+    "android": "https://github.com/jitsi/webrtc/releases/download/v106.0.0/android-webrtc.zip"
   }
 }
