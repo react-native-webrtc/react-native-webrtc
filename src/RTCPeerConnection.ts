@@ -299,11 +299,19 @@ export default class RTCPeerConnection extends defineCustomEventTarget(...PEER_C
 
         const result = WebRTCModule.peerConnectionAddTransceiver(this._peerConnectionId, { ...src, init: { ...init } });
         if (result == null) {
-            console.log("Error adding transceiver");
             throw new Error("Transceiver could not be added");
         }
+
         const t = result.transceiver;
-        const track = typeof source === 'string' ? new MediaStreamTrack(t.sender.track) : source;
+        let track: MediaStreamTrack | null = null;
+        if (typeof source === 'string') {
+            if (t.sender.track) {
+                track = new MediaStreamTrack(t.sender.track);
+            }
+        } else {
+            // 'source' is a MediaStreamTrack
+            track = source;
+        }
         const sender = new RTCRtpSender({ ...t.sender, track });
         const remoteTrack = t.receiver.track ? new MediaStreamTrack(t.receiver.track) : null;
         const receiver = new RTCRtpReceiver({ ...t.receiver, track: remoteTrack });
