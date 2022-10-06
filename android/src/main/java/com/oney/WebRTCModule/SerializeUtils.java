@@ -253,27 +253,58 @@ public class SerializeUtils {
         throw new Error("Invalid direction");
     }
 
+    private static RtpParameters.Encoding parseEncoding(ReadableMap params) {
+        RtpParameters.Encoding encoding = new RtpParameters.Encoding(params.getString("rid"), true, 1.0);
+
+        if (params.hasKey("active")) {
+            encoding.active = params.getBoolean("active");
+        }
+        if (params.hasKey("maxBitrate")) {
+            encoding.maxBitrateBps = params.getInt("maxBitrate");
+        }
+        if (params.hasKey("maxFramerate")) {
+            encoding.maxFramerate = params.getInt("maxFramerate");
+        }
+        if (params.hasKey("scaleResolutionDownBy")) {
+            encoding.scaleResolutionDownBy = params.getDouble("scaleResolutionDownBy");
+        }
+
+        return encoding;
+    }
+
     public static RtpTransceiver.RtpTransceiverInit parseTransceiverOptions(ReadableMap map) {
+        if (map == null) {
+            return null;
+        }
+
         RtpTransceiver.RtpTransceiverDirection direction = RtpTransceiver.RtpTransceiverDirection.INACTIVE;
-        ArrayList<String> streamIds = new ArrayList<>();
-        if (map != null) {
-            if (map.hasKey("direction")) {
-                String directionRaw = map.getString("direction");
-                if (directionRaw != null) {
-                    direction = SerializeUtils.parseDirection(directionRaw);
+        List<String> streamIds = new ArrayList<>();
+        List<RtpParameters.Encoding> sendEncodings = new ArrayList<>();
+
+        if (map.hasKey("direction")) {
+            String directionRaw = map.getString("direction");
+            if (directionRaw != null) {
+                direction = SerializeUtils.parseDirection(directionRaw);
+            }
+        }
+        if (map.hasKey("streamIds")) {
+            ReadableArray rawStreamIds = map.getArray("streamIds");
+            if (rawStreamIds != null) {
+                for (int i = 0; i < rawStreamIds.size(); i++) {
+                    streamIds.add(rawStreamIds.getString(i));
                 }
             }
-            if (map.hasKey("streamIds")) {
-                ReadableArray rawStreamIds = map.getArray("streamIds");
-                if (rawStreamIds != null) {
-                    for (int i = 0; i < rawStreamIds.size(); i++) {
-                        streamIds.add(rawStreamIds.getString(i));
-                    }
+        }
+        if (map.hasKey("sendEncodings")) {
+            ReadableArray encodingsArray = map.getArray("sendEncodings");
+            if (encodingsArray != null) {
+                for (int i = 0; i < encodingsArray.size(); i++){
+                    ReadableMap encoding = encodingsArray.getMap(i);
+                    sendEncodings.add(SerializeUtils.parseEncoding(encoding));
                 }
             }
         }
 
-        return new RtpTransceiver.RtpTransceiverInit(direction, streamIds);
+        return new RtpTransceiver.RtpTransceiverInit(direction, streamIds, sendEncodings);
     }
-
 }
