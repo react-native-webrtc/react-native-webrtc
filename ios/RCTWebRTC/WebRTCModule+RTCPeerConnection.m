@@ -451,8 +451,17 @@ RCT_EXPORT_BLOCKING_SYNCHRONOUS_METHOD(peerConnectionAddTransceiver:(nonnull NSN
                 if (streamIds) {
                     [transceiverInit setStreamIds:streamIds];
                 }
+
+                NSArray *encodingsArray = [initOptions objectForKey:@"sendEncodings"];
+                if (encodingsArray) {
+                    NSMutableArray<RTCRtpEncodingParameters *> *sendEncodings = [NSMutableArray new];
+                    for (NSDictionary* encoding in encodingsArray) {
+                        [sendEncodings addObject:[self parseEncoding:encoding]];
+                    }
+                    [transceiverInit setSendEncodings:sendEncodings];
+                }
             }
-            
+
             transceiver = [peerConnection addTransceiverWithTrack:track init:transceiverInit];
         } else {
             RCTLogWarn(@"peerConnectionAddTransceiver() no type nor trackId provided in options");
@@ -516,6 +525,29 @@ RCT_EXPORT_METHOD(peerConnectionRemoveTrack:(nonnull NSNumber *)objectID
 }
 
 // TODO: move these below to some SerializeUrils file
+
+- (RTCRtpEncodingParameters*)parseEncoding:(NSDictionary*)params
+{
+    RTCRtpEncodingParameters *encoding = [RTCRtpEncodingParameters new];
+
+    if (params[@"rid"] != nil) {
+      [encoding setRid:params[@"rid"]];
+    }
+    if (params[@"active"] != nil) {
+      [encoding setIsActive:((NSNumber*)params[@"active"]).boolValue];
+    }
+    if (params[@"maxBitrate"] != nil) {
+      [encoding setMaxBitrateBps:(NSNumber*)params[@"maxBitrate"]];
+    }
+    if (params[@"maxFramerate"] != nil) {
+      [encoding setMaxFramerate:(NSNumber*)params[@"maxFramerate"]];
+    }
+    if (params[@"scaleResolutionDownBy"] != nil) {
+      [encoding setScaleResolutionDownBy:(NSNumber*)params[@"scaleResolutionDownBy"]];
+    }
+
+    return encoding;
+}
 
 /**
  * Constructs a JSON <tt>NSString</tt> representation of a specific
