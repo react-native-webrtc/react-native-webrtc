@@ -29,20 +29,28 @@ export default class RTCRtpSendParameters extends RTCRtpParameters {
     degradationPreference: DegradationPreferenceType | null;
     constructor(init: RTCRtpParametersInit & {
         transactionId: string,
-        encodings: RTCRtpEncodingParameters[],
+        encodings: any[],
         degradationPreference?: string
     }) {
         super(init);
         this.transactionId = init.transactionId;
-        this.encodings = init.encodings;
+        this.encodings = [];
         this.degradationPreference = init.degradationPreference ?
             DegradationPreference.fromNative(init.degradationPreference) : null;
+
+        for (const enc of init.encodings) {
+            this.encodings.push(new RTCRtpEncodingParameters(enc));
+        }
     }
 
     toJSON() {
-        const obj = {
-            encodings: this.encodings,
+        const obj: any = {
+            encodings: [],
         };
+
+        for (const enc of this.encodings) {
+            obj.encodings.push(enc.toJSON());
+        }
 
         if (this.degradationPreference !== null) {
             obj['degradationPreference'] = DegradationPreference.toNative(this.degradationPreference);

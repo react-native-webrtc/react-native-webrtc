@@ -199,17 +199,18 @@ RCT_EXPORT_METHOD(transceiverStop:(nonnull NSNumber *) objectID
     for (int i = 0; i < [encodingsArray count]; i++) {
         NSDictionary *encodingUpdate = encodingsArray[i];
         RTCRtpEncodingParameters *encoding = encodings[i];
-        
-        [encoding setIsActive: encodingUpdate[@"active"]];
+
+        encoding.isActive = encodingUpdate[@"active"];
+        encoding.rid = encodingUpdate[@"rid"];
         encoding.maxBitrateBps = encodingUpdate[@"maxBitrate"];
         encoding.maxFramerate =  encodingUpdate[@"maxFramerate"];
         encoding.scaleResolutionDownBy = encodingUpdate[@"scaleResolutionDownBy"];
     }
-    
+
     if ([options objectForKey:@"degradationPreference"]) {
         params.degradationPreference = [options objectForKey:@"degradationPreference"];
     }
-    
+
     return params;
 }
 

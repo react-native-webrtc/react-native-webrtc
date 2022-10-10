@@ -95,9 +95,12 @@
     
     for (RTCRtpEncodingParameters *encoding in params.encodings) {
         NSMutableDictionary *encodingDictionary = [NSMutableDictionary new];
-        
+
         encodingDictionary[@"active"] = [NSNumber numberWithBool: encoding.isActive];
-               
+
+        if (encoding.rid) {
+            encodingDictionary[@"rid"] = encoding.rid;
+        }
         if (encoding.maxBitrateBps) {
             encodingDictionary[@"maxBitrate"] = encoding.maxBitrateBps;
         }
