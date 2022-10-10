@@ -126,8 +126,15 @@
         if (codec.numChannels) {
             codecDictionary[@"channels"] = codec.numChannels;
         }
-        
-        codecDictionary[@"sdpFmtpLine"] = codec.parameters;
+
+        if (codec.parameters.count) {
+            NSMutableArray *parts = [NSMutableArray arrayWithCapacity:codec.parameters.count];
+            [codec.parameters enumerateKeysAndObjectsUsingBlock:^(id _Nonnull key, id _Nonnull value, BOOL * _Nonnull stop) {
+                [parts addObject:[NSString stringWithFormat:@"%@=%@", key, value]];
+            }];
+
+            codecDictionary[@"sdpFmtpLine"] = [parts componentsJoinedByString:@";"];
+        }
 
         [codecs addObject: codecDictionary];
     }

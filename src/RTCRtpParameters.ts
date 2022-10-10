@@ -1,21 +1,36 @@
-import RTCRtcpParameters from './RTCRtcpParameters';
-import RTCRtpCodecParameters from './RTCRtpCodecParameters';
-import RTCRtpHeaderExtension from './RTCRtpHeaderExtension';
+import RTCRtcpParameters, { RTCRtcpParametersInit } from './RTCRtcpParameters';
+import RTCRtpCodecParameters, { RTCRtpCodecParametersInit } from './RTCRtpCodecParameters';
+import RTCRtpHeaderExtension, { RTCRtpHeaderExtensionInit } from './RTCRtpHeaderExtension';
 
 
-export type RTCRtpParametersInit = {
-    codecs: RTCRtpCodecParameters[],
-    headerExtensions: RTCRtpHeaderExtension[],
-    rtcp: RTCRtcpParameters
+export interface RTCRtpParametersInit {
+    codecs: RTCRtpCodecParametersInit[],
+    headerExtensions: RTCRtpHeaderExtensionInit[],
+    rtcp: RTCRtcpParametersInit
 }
 
 export default class RTCRtpParameters {
     readonly codecs: RTCRtpCodecParameters[] = [];
     readonly headerExtensions: RTCRtpHeaderExtension[] = [];
     readonly rtcp: RTCRtcpParameters;
+
     constructor(init: RTCRtpParametersInit) {
-        this.codecs = init.codecs;
-        this.headerExtensions = init.headerExtensions;
-        this.rtcp = init.rtcp;
+        for (const codec of init.codecs) {
+            this.codecs.push(new RTCRtpCodecParameters(codec));
+        }
+
+        for (const ext of init.headerExtensions) {
+            this.headerExtensions.push(new RTCRtpHeaderExtension(ext));
+        }
+
+        this.rtcp = new RTCRtcpParameters(init.rtcp);
+    }
+
+    toJSON(): RTCRtpParametersInit {
+        return {
+            codecs: this.codecs.map(c => c.toJSON()),
+            headerExtensions: this.headerExtensions.map(he => he.toJSON()),
+            rtcp: this.rtcp.toJSON()
+        };
     }
 }

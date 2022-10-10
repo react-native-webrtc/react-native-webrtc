@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import org.webrtc.*;
 
@@ -163,7 +164,6 @@ public class SerializeUtils {
       // Preparing codecs
       params.codecs.forEach(codec -> {
         WritableMap codecMap = Arguments.createMap();
-        WritableMap sdpFmptLineParams = Arguments.createMap();
         codecMap.putInt("payloadType", codec.payloadType);
         codecMap.putString("mimeType", codec.name);
         codecMap.putInt("clockRate", codec.clockRate);
@@ -171,10 +171,13 @@ public class SerializeUtils {
           codecMap.putInt("channels", codec.numChannels);
         }
         // Serializing sdpFmptLine. 
-        codec.parameters.forEach((k, v) -> {
-          sdpFmptLineParams.putString((String) k, (String) v);
-        });
-        codecMap.putMap("sdpFmtpLine", sdpFmptLineParams);
+        if (!codec.parameters.isEmpty()) {
+            final String sdpFmptLineParams = codec.parameters.keySet().stream()
+                .map(key -> key + "=" + map.get(key))
+                .collect(Collectors.joining(";"));
+            codecMap.putString("sdpFmtpLine", sdpFmptLineParams);
+        }
+
         codecs.pushMap(codecMap);
       });
 
