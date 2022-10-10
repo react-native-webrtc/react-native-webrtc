@@ -1,16 +1,28 @@
 import MediaStreamTrack from './MediaStreamTrack';
 import RTCRtpCapabilities, { DEFAULT_AUDIO_CAPABILITIES, receiverCapabilities } from './RTCRtpCapabilities';
+import { RTCRtpParametersInit } from './RTCRtpParameters';
+import RTCRtpReceiveParameters from './RTCRtpReceiveParameters';
 
 
 export default class RTCRtpReceiver {
     _id: string;
     _peerConnectionId: number;
-    _track: MediaStreamTrack;
+    _track: MediaStreamTrack | null = null;
+    _rtpParameters: RTCRtpReceiveParameters;
 
-    constructor(info: { peerConnectionId: number, id: string, track: MediaStreamTrack }) {
+    constructor(info: {
+        peerConnectionId: number,
+        id: string,
+        track?: MediaStreamTrack,
+        rtpParameters: RTCRtpParametersInit
+    }) {
         this._id = info.id;
         this._peerConnectionId = info.peerConnectionId;
-        this._track = info.track;
+        this._rtpParameters = new RTCRtpReceiveParameters(info.rtpParameters);
+
+        if (info.track) {
+            this._track = info.track;
+        }
     }
 
     static getCapabilities(kind: 'audio' | 'video'): RTCRtpCapabilities {
@@ -23,6 +35,10 @@ export default class RTCRtpReceiver {
         }
 
         return receiverCapabilities;
+    }
+
+    getParameters(): RTCRtpReceiveParameters {
+        return this._rtpParameters;
     }
 
     get id() {

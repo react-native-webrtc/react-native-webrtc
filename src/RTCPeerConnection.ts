@@ -13,6 +13,7 @@ import RTCErrorEvent from './RTCErrorEvent';
 import RTCEvent from './RTCEvent';
 import RTCIceCandidate from './RTCIceCandidate';
 import RTCIceCandidateEvent from './RTCIceCandidateEvent';
+import RTCRtpReceiveParameters from './RTCRtpReceiveParameters';
 import RTCRtpReceiver from './RTCRtpReceiver';
 import RTCRtpSendParameters from './RTCRtpSendParameters';
 import RTCRtpSender from './RTCRtpSender';
@@ -691,7 +692,7 @@ export default class RTCPeerConnection extends defineCustomEventTarget(...PEER_C
     }
 
     /**
-     * updates transceivers after offer/answer updates if necessary
+     * Updates transceivers after offer/answer updates if necessary.
      */
     _updateTransceivers(transceiverUpdates) {
         for (const update of transceiverUpdates) {
@@ -706,6 +707,7 @@ export default class RTCPeerConnection extends defineCustomEventTarget(...PEER_C
             transceiver._currentDirection = update.currentDirection;
             transceiver._mid = update.mid;
             transceiver._sender._rtpParameters = new RTCRtpSendParameters(update.senderRtpParameters);
+            transceiver._receiver._rtpParameters = new RTCRtpReceiveParameters(update.receiverRtpParameters);
         }
     }
 

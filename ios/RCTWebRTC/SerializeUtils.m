@@ -36,7 +36,8 @@
             NSString *currentDirectionSerialized = [SerializeUtils serializeDirection: currentDirection];
             transceiverUpdate[@"currentDirection"] = currentDirectionSerialized;
             transceiverUpdate[@"senderRtpParameters"] = [SerializeUtils parametersToJSON:transceiver.sender.parameters];
-            
+            transceiverUpdate[@"receiverRtpParameters"] = [SerializeUtils parametersToJSON:transceiver.receiver.parameters];
+
             [transceiverUpdates addObject:transceiverUpdate];
         }
     }
@@ -69,6 +70,8 @@
     if (receiver.track) {
         receiverDictionary[@"track"] = [SerializeUtils trackToJSONWithPeerConnectionId: id track: receiver.track];
     }
+
+    receiverDictionary[@"rtpParameters"] = [SerializeUtils parametersToJSON: receiver.parameters];
    
    return receiverDictionary;
 }

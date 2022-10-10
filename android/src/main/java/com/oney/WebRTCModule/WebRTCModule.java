@@ -889,6 +889,9 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
             transceiverUpdate.putMap("senderRtpParameters",
                 SerializeUtils.serializeRtpParameters(
                     transceiver.getSender().getParameters()));
+            transceiverUpdate.putMap("receiverRtpParameters",
+                SerializeUtils.serializeRtpParameters(
+                    transceiver.getReceiver().getParameters()));
             transceiverUpdates.pushMap(transceiverUpdate);
         }
         return transceiverUpdates;

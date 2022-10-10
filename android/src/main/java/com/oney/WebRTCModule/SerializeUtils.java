@@ -97,7 +97,10 @@ public class SerializeUtils {
         WritableMap res = Arguments.createMap();
         res.putString("id", receiver.id());
         res.putInt("peerConnectionId", id);
-        res.putMap("track", SerializeUtils.serializeTrack(id, receiver.track()));
+        if (receiver.track() != null) {
+            res.putMap("track", SerializeUtils.serializeTrack(id, receiver.track()));
+        }
+        res.putMap("rtpParameters", SerializeUtils.serializeRtpParameters(receiver.getParameters()));
         return res;
     }
 
