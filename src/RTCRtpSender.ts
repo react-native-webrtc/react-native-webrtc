@@ -2,7 +2,7 @@ import { NativeModules } from 'react-native';
 
 import MediaStreamTrack from './MediaStreamTrack';
 import RTCRtpCapabilities, { senderCapabilities, DEFAULT_AUDIO_CAPABILITIES } from './RTCRtpCapabilities';
-import RTCRtpSendParameters from './RTCRtpSendParameters';
+import RTCRtpSendParameters, { RTCRtpSendParametersInit } from './RTCRtpSendParameters';
 
 const { WebRTCModule } = NativeModules;
 
@@ -17,11 +17,11 @@ export default class RTCRtpSender {
         peerConnectionId: number,
         id: string,
         track?: MediaStreamTrack,
-        rtpParameters: RTCRtpSendParameters
+        rtpParameters: RTCRtpSendParametersInit
     }) {
         this._peerConnectionId = info.peerConnectionId;
         this._id = info.id;
-        this._rtpParameters = info.rtpParameters;
+        this._rtpParameters = new RTCRtpSendParameters(info.rtpParameters);
 
         if (info.track) {
             this._track = info.track;
@@ -62,7 +62,6 @@ export default class RTCRtpSender {
                 this._rtpParameters = new RTCRtpSendParameters(newParameters);
             });
     }
-
 
     get track() {
         return this._track;

@@ -23,7 +23,7 @@ class DegradationPreference {
     }
 }
 
-interface RTCRtpSendParametersInit extends RTCRtpParametersInit {
+export interface RTCRtpSendParametersInit extends RTCRtpParametersInit {
     transactionId: string;
     encodings: RTCRtpEncodingParametersInit[];
     degradationPreference?: string;
