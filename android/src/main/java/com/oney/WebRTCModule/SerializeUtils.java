@@ -126,12 +126,10 @@ public class SerializeUtils {
       WritableArray headerExtensions = Arguments.createArray();
       WritableMap rtcp = Arguments.createMap();
 
-      
       // Preparing RTCP
       rtcp.putString("cname", params.getRtcp().getCname());
       rtcp.putBoolean("reducedSize", params.getRtcp().getReducedSize());
-      
-      
+
       // Preparing header extensions
       params.getHeaderExtensions().forEach(extension -> {
         WritableMap extensionMap = Arguments.createMap();
@@ -145,6 +143,9 @@ public class SerializeUtils {
       params.encodings.forEach(encoding -> {
         WritableMap encodingMap = Arguments.createMap();
         encodingMap.putBoolean("active", encoding.active);
+        if (encoding.rid != null) {
+            encodingMap.putString("rid", encoding.rid);
+        }
         // Since they return integer objects that are nullable,
         // while the map does not accept nullable integer values.
         if (encoding.maxBitrateBps != null) {
@@ -207,12 +208,13 @@ public class SerializeUtils {
         ReadableMap encodingUpdate = encodingsArray.getMap(i);
         RtpParameters.Encoding encoding = encodings.get(i);
         // Dealing with nullable Integers
-        Integer maxBitrate = encodingUpdate.hasKey("maxBitrate")? encodingUpdate.getInt("maxBitrate") : null;
-        Integer maxFramerate = encodingUpdate.hasKey("maxFramerate")? encodingUpdate.getInt("maxFramerate") : null;
-        Double scaleResolutionDownBy = encodingUpdate.hasKey("scaleResolutionDownBy")? 
+        Integer maxBitrate = encodingUpdate.hasKey("maxBitrate") ? encodingUpdate.getInt("maxBitrate") : null;
+        Integer maxFramerate = encodingUpdate.hasKey("maxFramerate") ? encodingUpdate.getInt("maxFramerate") : null;
+        Double scaleResolutionDownBy = encodingUpdate.hasKey("scaleResolutionDownBy") ? 
           encodingUpdate.getDouble("scaleResolutionDownBy") : null;
         
         encoding.active = encodingUpdate.getBoolean("active");
+        encoding.rid = encodingUpdate.getString("rid");
         encoding.maxBitrateBps = maxBitrate;
         encoding.maxFramerate = maxFramerate;
         encoding.scaleResolutionDownBy = scaleResolutionDownBy;

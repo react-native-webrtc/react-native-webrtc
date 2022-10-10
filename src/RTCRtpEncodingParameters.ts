@@ -1,20 +1,27 @@
 
 export default class RTCRtpEncodingParameters {
     readonly active: boolean;
+    _rid: string | null;
     _maxFramerate: number | null;
     _maxBitrate: number | null;
     _scaleResolutionDownBy: number | null;
 
     constructor(init: {
         active: boolean,
+        rid?: string;
         maxFramerate?: number;
         maxBitrate?: number;
         scaleResolutionDownBy?: number;
     }) {
         this.active = init.active;
+        this._rid = init.rid ?? null;
         this._maxBitrate = init.maxBitrate ?? null;
         this._maxFramerate = init.maxFramerate ?? null;
         this._scaleResolutionDownBy = init.scaleResolutionDownBy ?? null;
+    }
+
+    get rid() {
+        return this._rid;
     }
 
     get maxFramerate() {
@@ -51,6 +58,10 @@ export default class RTCRtpEncodingParameters {
         const obj = {
             active: this.active,
         };
+
+        if (this._rid !== null) {
+            obj['rid'] = this._rid;
+        }
 
         if (this._maxBitrate !== null) {
             obj['maxBitrate'] = this._maxBitrate;
