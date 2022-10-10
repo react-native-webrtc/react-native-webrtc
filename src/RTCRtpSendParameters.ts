@@ -1,4 +1,4 @@
-import RTCRtpEncodingParameters from './RTCRtpEncodingParameters';
+import RTCRtpEncodingParameters, { RTCRtpEncodingParametersInit } from './RTCRtpEncodingParameters';
 import RTCRtpParameters, { RTCRtpParametersInit } from './RTCRtpParameters';
 
 type DegradationPreferenceType = 'maintain-framerate'
@@ -23,16 +23,20 @@ class DegradationPreference {
     }
 }
 
+interface RTCRtpSendParametersInit extends RTCRtpParametersInit {
+    transactionId: string;
+    encodings: RTCRtpEncodingParametersInit[];
+    degradationPreference?: string;
+}
+
 export default class RTCRtpSendParameters extends RTCRtpParameters {
     readonly transactionId: string;
     readonly encodings: RTCRtpEncodingParameters[];
     degradationPreference: DegradationPreferenceType | null;
-    constructor(init: RTCRtpParametersInit & {
-        transactionId: string,
-        encodings: any[],
-        degradationPreference?: string
-    }) {
+
+    constructor(init: RTCRtpSendParametersInit) {
         super(init);
+
         this.transactionId = init.transactionId;
         this.encodings = [];
         this.degradationPreference = init.degradationPreference ?
@@ -43,19 +47,17 @@ export default class RTCRtpSendParameters extends RTCRtpParameters {
         }
     }
 
-    toJSON() {
-        const obj: any = {
-            encodings: [],
-        };
+    toJSON(): RTCRtpSendParametersInit {
+        const obj = super.toJSON();
 
-        for (const enc of this.encodings) {
-            obj.encodings.push(enc.toJSON());
-        }
+        obj['transactionId'] = this.transactionId;
+
+        obj['encodings'] = this.encodings.map(e => e.toJSON());
 
         if (this.degradationPreference !== null) {
             obj['degradationPreference'] = DegradationPreference.toNative(this.degradationPreference);
         }
 
-        return obj;
+        return obj as RTCRtpSendParametersInit;
     }
 }

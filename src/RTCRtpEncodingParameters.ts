@@ -1,3 +1,10 @@
+export interface RTCRtpEncodingParametersInit {
+    active: boolean,
+    rid?: string;
+    maxFramerate?: number;
+    maxBitrate?: number;
+    scaleResolutionDownBy?: number;
+}
 
 export default class RTCRtpEncodingParameters {
     readonly active: boolean;
@@ -6,13 +13,7 @@ export default class RTCRtpEncodingParameters {
     _maxBitrate: number | null;
     _scaleResolutionDownBy: number | null;
 
-    constructor(init: {
-        active: boolean,
-        rid?: string;
-        maxFramerate?: number;
-        maxBitrate?: number;
-        scaleResolutionDownBy?: number;
-    }) {
+    constructor(init: RTCRtpEncodingParametersInit) {
         this.active = init.active;
         this._rid = init.rid ?? null;
         this._maxBitrate = init.maxBitrate ?? null;
@@ -54,7 +55,7 @@ export default class RTCRtpEncodingParameters {
         }
     }
 
-    toJSON() {
+    toJSON(): RTCRtpEncodingParametersInit {
         const obj = {
             active: this.active,
         };
