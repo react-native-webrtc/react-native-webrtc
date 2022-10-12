@@ -498,7 +498,7 @@ RCT_EXPORT_METHOD(peerConnectionRemoveTrack:(nonnull NSNumber *)objectID
         RTCRtpTransceiver *transceiver = nil;
         
         for (RTCRtpTransceiver *t in peerConnection.transceivers) {
-            if (t.sender.senderId == senderId) {
+            if([t.sender.senderId isEqual: senderId])
                 transceiver = t;
                 break;
             }
