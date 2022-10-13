@@ -176,7 +176,7 @@ public class SerializeUtils {
         // Serializing sdpFmptLine. 
         if (!codec.parameters.isEmpty()) {
             final String sdpFmptLineParams = codec.parameters.keySet().stream()
-                .map(key -> key + "=" + map.get(key))
+                .map(key -> key + "=" + codec.parameters.get(key))
                 .collect(Collectors.joining(";"));
             codecMap.putString("sdpFmtpLine", sdpFmptLineParams);
         }
