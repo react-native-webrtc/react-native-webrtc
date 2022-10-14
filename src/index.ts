@@ -2,6 +2,7 @@ import Logger from './Logger';
 import mediaDevices from './MediaDevices';
 import MediaStream from './MediaStream';
 import MediaStreamTrack from './MediaStreamTrack';
+import MediaStreamTrackEvent from './MediaStreamTrackEvent';
 import permissions from './Permissions';
 import RTCErrorEvent from './RTCErrorEvent';
 import RTCIceCandidate from './RTCIceCandidate';
@@ -56,6 +57,7 @@ function registerGlobals(): void {
     global.RTCSessionDescription = RTCSessionDescription;
     global.MediaStream = MediaStream;
     global.MediaStreamTrack = MediaStreamTrack;
+    global.MediaStreamTrackEvent = MediaStreamTrackEvent;
     global.RTCRtpTransceiver = RTCRtpTransceiver;
     global.RTCRtpReceiver = RTCRtpReceiver;
     global.RTCRtpSender = RTCRtpSender;
