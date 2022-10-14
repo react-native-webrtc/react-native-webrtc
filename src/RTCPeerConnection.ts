@@ -532,7 +532,7 @@ export default class RTCPeerConnection extends defineCustomEventTarget(...PEER_C
         });
 
         addListener(this, 'peerConnectionOnRemoveTrack', (ev: any) => {
-            if (ev.peerConnectionId !== this._peerConnectionId) {
+            if (ev.id !== this._peerConnectionId) {
                 return;
             }
 
