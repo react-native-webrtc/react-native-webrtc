@@ -232,13 +232,13 @@ export default class RTCPeerConnection extends defineCustomEventTarget(...PEER_C
 
     /**
      * @brief Adds a new track to the {@link RTCPeerConnection},
-     * and indicates that it is contained in the specified {@link MediaStream} array.
-     * This method has to be synchronous as the W3C API expects a track to be return
+     * and indicates that it is contained in the specified {@link MediaStream}s.
+     * This method has to be synchronous as the W3C API expects a track to be returned
      * @param {MediaStreamTrack} track The track to be added
-     * @param {MediaStream[]} streams An array of streams the track needs to be added to
+     * @param {...MediaStream} streams One or more {@link MediaStream}s the track needs to be added to
      * https://w3c.github.io/webrtc-pc/#dom-rtcpeerconnection-addtrack
      */
-    addTrack(track: MediaStreamTrack, streams: MediaStream[] = []): RTCRtpSender {
+    addTrack(track: MediaStreamTrack, ...streams: MediaStream[]): RTCRtpSender {
         log.debug(`${this._peerConnectionId} addTrack`);
 
         if (this.connectionState === 'closed') {
