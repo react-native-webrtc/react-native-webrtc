@@ -45,6 +45,16 @@
     RCTLogConvertError(json, @".candidate must not be null");
     return nil;
   }
+  
+  if (json[@"sdpMid"] == nil) {
+    RCTLogConvertError(json, @".sdpMid must not be null");
+    return nil;
+  }
+
+  if (json[@"sdpMLineIndex"] == nil) {
+    RCTLogConvertError(json, @".sdpMLineIndex must not be null");
+    return nil;
+  }
 
   NSString *sdp = json[@"candidate"];
   RCTLogTrace(@"%@ <- candidate", sdp);
