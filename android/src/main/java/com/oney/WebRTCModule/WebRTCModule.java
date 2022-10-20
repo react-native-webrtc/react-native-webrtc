@@ -623,9 +623,9 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
     @ReactMethod
     public void peerConnectionRemoveTrack(int id, String senderId) {
             ThreadUtils.runOnExecutor(() -> {
-                WritableMap identifier = Arguments.createMap();
-                identifier.putInt("peerConnectionId", id);
-                identifier.putString("senderId", senderId);
+                WritableMap params = Arguments.createMap();
+                params.putInt("pcId", id);
+
                 try {
                     PeerConnectionObserver pco = mPeerConnectionObservers.get(id);
                     if (pco == null) {
@@ -642,13 +642,14 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
 
                     boolean successful = pco.getPeerConnection().removeTrack(sender);
                     if (successful) {
-                        sendEvent("peerConnectionOnRemoveTrackSuccessful", identifier);
+                        params.putString("senderId", senderId);
+                        sendEvent("peerConnectionOnRemoveTrackSuccessful", params);
                         return;
                     }
-                    sendError("peerConnectionOnError", "removeTrack", "Internal Error", identifier);
+                    sendError("peerConnectionOnError", "removeTrack", "Internal Error", params);
                 } catch (Exception e) {
                     Log.d(TAG, "peerConnectionRemoveTrack() " + e.getMessage());
-                    sendError("peerConnectionOnError", "removeTrack", e.getMessage(), identifier);
+                    sendError("peerConnectionOnError", "removeTrack", e.getMessage(), params);
                 }
             });
     }

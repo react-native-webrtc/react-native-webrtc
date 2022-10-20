@@ -115,7 +115,7 @@ public class VideoTrackAdapter {
 
         private void emitMuteEvent(boolean muted) {
             WritableMap params = Arguments.createMap();
-            params.putInt("peerConnectionId", peerConnectionId);
+            params.putInt("pcId", peerConnectionId);
             params.putString("trackId", trackId);
             params.putBoolean("muted", muted);
 
