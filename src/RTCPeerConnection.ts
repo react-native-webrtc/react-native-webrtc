@@ -546,14 +546,19 @@ export default class RTCPeerConnection extends defineCustomEventTarget(...PEER_C
 
             log.debug(`${this._pcId} onremovetrack`);
 
-            // Based on the W3C specs https://w3c.github.io/webrtc-pc/#dom-rtcpeerconnection-removetrack,
-            // we need to remove the track from any media streams
-            // that were previously passed to the `track` event.
+            // As per the spec:
+            // - Remove the track from any media streams that were previously passed to the `track` event.
+            // https://w3c.github.io/webrtc-pc/#dom-rtcpeerconnection-removetrack,
+            // - Mark the track as muted:
+            // https://w3c.github.io/webrtc-pc/#process-remote-track-removal
             for (const stream of this._remoteStreams.values()) {
-                const trackIdx = stream._tracks.findIndex(t => t.id === ev.trackId);
+                const [ track ] = stream._tracks.filter(t => t.id === ev.trackId);
 
-                if (trackIdx !== -1) {
+                if (track) {
+                    const trackIdx = stream._tracks.indexOf(track);
+
                     stream._tracks.splice(trackIdx, 1);
+                    track._muted = true;
                 }
             }
         });

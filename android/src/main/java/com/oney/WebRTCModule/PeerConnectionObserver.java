@@ -424,10 +424,6 @@ class PeerConnectionObserver implements PeerConnection.Observer {
      */
     @Override
     public void onRemoveTrack(RtpReceiver receiver){
-        // According to the W3C spec, we need to send out
-        // the track Id so that we can remove it from the MediaStream objects stored
-        // at the JS layer, which are the same stream objects passed down to
-        // the `track` event.
         ThreadUtils.runOnExecutor(() -> {
             MediaStreamTrack track = receiver.track();
             WritableMap params = Arguments.createMap();

@@ -835,8 +835,21 @@ RCT_EXPORT_BLOCKING_SYNCHRONOUS_METHOD(peerConnectionRemoveTrack:(nonnull NSNumb
         params[@"transceiver"] = [SerializeUtils transceiverToJSONWithPeerConnectionId: peerConnection.reactTag transceiver: transceiver];
         params[@"pcId"] = peerConnection.reactTag;
         
-        [self sendEventWithName: kEventPeerConnectionOnTrack
-                           body: params];
+        [self sendEventWithName: kEventPeerConnectionOnTrack body: params];
+    });
+}
+
+- (void)peerConnection:(RTC_OBJC_TYPE(RTCPeerConnection) *)peerConnection
+     didRemoveReceiver:(RTC_OBJC_TYPE(RTCRtpReceiver) *)rtpReceiver {
+    dispatch_async(self.workerQueue, ^{
+        RTCMediaStreamTrack *track = rtpReceiver.track;
+
+        NSMutableDictionary *params = [NSMutableDictionary new];
+
+        params[@"pcId"] = peerConnection.reactTag;
+        params[@"trackId"] = track.trackId;
+
+        [self sendEventWithName: kEventPeerConnectionOnRemoveTrack body: params];
     });
 }
 
