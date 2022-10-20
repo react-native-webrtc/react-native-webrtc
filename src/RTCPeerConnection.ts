@@ -9,7 +9,6 @@ import MediaStreamTrack from './MediaStreamTrack';
 import MediaStreamTrackEvent from './MediaStreamTrackEvent';
 import RTCDataChannel from './RTCDataChannel';
 import RTCDataChannelEvent from './RTCDataChannelEvent';
-import RTCErrorEvent from './RTCErrorEvent';
 import RTCEvent from './RTCEvent';
 import RTCIceCandidate from './RTCIceCandidate';
 import RTCIceCandidateEvent from './RTCIceCandidateEvent';
@@ -603,21 +602,6 @@ export default class RTCPeerConnection extends defineCustomEventTarget(...PEER_C
 
             // @ts-ignore
             this.dispatchEvent(new RTCDataChannelEvent('datachannel', { channel }));
-        });
-
-        // Since the current underlying architecture performs certain actions
-        // Asynchronously when the outer web API expects synchronous behaviour
-        // This is the only way to report error on operations for those who wish
-        // to handle them.
-        addListener(this, 'peerConnectionOnError', (ev: any) => {
-            if (ev.info.peerConnectionId !== this._pcId) {
-                return;
-            }
-
-            log.error(`onerror: ${JSON.stringify(ev)}`);
-
-            // @ts-ignore
-            this.dispatchEvent(new RTCErrorEvent('error', ev.func, ev.message));
         });
 
         addListener(this, 'mediaStreamTrackMuteChanged', (ev: any) => {
