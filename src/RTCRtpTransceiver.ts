@@ -94,11 +94,13 @@ export default class RTCRtpTransceiver {
         }
 
         WebRTCModule.transceiverStop(this._peerConnectionId, this.id)
-            .then(() => {
-                this._stopped = true;
-                this._direction = 'stopped';
-                this._currentDirection = 'stopped';
-                this._mid = null;
-            });
+            .then(() => this._setStopped());
+    }
+
+    _setStopped() {
+        this._stopped = true;
+        this._direction = 'stopped';
+        this._currentDirection = 'stopped';
+        this._mid = null;
     }
 }
