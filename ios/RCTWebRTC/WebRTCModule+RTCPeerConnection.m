@@ -801,11 +801,7 @@ RCT_EXPORT_METHOD(peerConnectionRemoveTrack:(nonnull NSNumber *)objectID
         }
         
         RTCMediaStreamTrack *track = rtpReceiver.track;
-        
-        if (peerConnection.remoteTracks[track.trackId]) {
-            return;
-        }
-        
+
         if (track.kind == kRTCMediaStreamTrackKindVideo) {
             RTCVideoTrack *videoTrack = (RTCVideoTrack *)track;
             [peerConnection addVideoTrackAdapter: videoTrack];

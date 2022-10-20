@@ -367,13 +367,6 @@ class PeerConnectionObserver implements PeerConnection.Observer {
 
             final MediaStreamTrack track = receiver.track();
 
-            if (remoteTracks.containsKey(track.id())) {
-                // Unlike in the WebRTC spec, the libwebrtc native implementation
-                // fires onTrack on every sRD which has an active receiving transceiver.
-                // So, if we are already keeping track of this transceiver, ignore the event.
-                return;
-            }
-
             if (track.kind().equals(MediaStreamTrack.VIDEO_TRACK_KIND)){
                 videoTrackAdapters.addAdapter((VideoTrack) track);
             }
