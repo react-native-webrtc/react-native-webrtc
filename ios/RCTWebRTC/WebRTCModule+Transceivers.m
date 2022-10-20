@@ -112,6 +112,8 @@ RCT_EXPORT_METHOD(senderSetParameters:(nonnull NSNumber *) objectID
         RTCRtpSender *sender = transceiver.sender;
         RTCRtpParameters *parameters = sender.parameters;
         [sender setParameters:[self updateParametersWithOptions: options params: parameters]];
+
+        resolve([SerializeUtils parametersToJSON: sender.parameters]);
 }
 
 RCT_EXPORT_METHOD(transceiverSetDirection:(nonnull NSNumber *) objectID
