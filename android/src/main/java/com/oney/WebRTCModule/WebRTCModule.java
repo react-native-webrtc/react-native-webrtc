@@ -592,35 +592,6 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
     }
 
     @ReactMethod
-    public void senderSetParameters(int id, String senderId, ReadableMap options, Promise promise) {
-        ThreadUtils.runOnExecutor(() ->{
-            try {
-                PeerConnectionObserver pco = mPeerConnectionObservers.get(id);
-                if (pco == null) {
-                    Log.d(TAG, "senderSetParameters() peerConnectionObserver is null");
-                    promise.reject(new Exception("Peer Connection is not initialized"));
-                    return;
-                }
-
-                RtpSender sender = pco.getSender(senderId);
-                if (sender == null) {
-                    Log.w(TAG, "senderSetParameters() sender is null");
-                    promise.reject(new Exception("Could not get sender"));
-                    return;
-                }
-
-                RtpParameters params = sender.getParameters();
-                params = SerializeUtils.updateRtpParameters(options, params);
-                sender.setParameters(params);
-                promise.resolve(SerializeUtils.serializeRtpParameters(sender.getParameters()));
-            } catch (Exception e) {
-                Log.d(TAG, "senderSetParameters: " + e.getMessage());
-                promise.reject(e);
-            }
-        });
-    }
-
-    @ReactMethod
     public void peerConnectionRemoveTrack(int id, String senderId) {
             ThreadUtils.runOnExecutor(() -> {
                 WritableMap params = Arguments.createMap();
@@ -652,6 +623,35 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
                     sendError("peerConnectionOnError", "removeTrack", e.getMessage(), params);
                 }
             });
+    }
+
+    @ReactMethod
+    public void senderSetParameters(int id, String senderId, ReadableMap options, Promise promise) {
+        ThreadUtils.runOnExecutor(() ->{
+            try {
+                PeerConnectionObserver pco = mPeerConnectionObservers.get(id);
+                if (pco == null) {
+                    Log.d(TAG, "senderSetParameters() peerConnectionObserver is null");
+                    promise.reject(new Exception("Peer Connection is not initialized"));
+                    return;
+                }
+
+                RtpSender sender = pco.getSender(senderId);
+                if (sender == null) {
+                    Log.w(TAG, "senderSetParameters() sender is null");
+                    promise.reject(new Exception("Could not get sender"));
+                    return;
+                }
+
+                RtpParameters params = sender.getParameters();
+                params = SerializeUtils.updateRtpParameters(options, params);
+                sender.setParameters(params);
+                promise.resolve(SerializeUtils.serializeRtpParameters(sender.getParameters()));
+            } catch (Exception e) {
+                Log.d(TAG, "senderSetParameters: " + e.getMessage());
+                promise.reject(e);
+            }
+        });
     }
 
     @ReactMethod
