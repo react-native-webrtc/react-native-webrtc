@@ -132,7 +132,6 @@ RCT_EXPORT_MODULE();
     kEventTransceiverStopSuccessful,
     kEventTransceiverOnError,
     kEventPeerConnectionOnRemoveTrack,
-    kEventPeerConnectionOnRemoveTrackSuccessful,
     kEventPeerConnectionOnTrack,
     kEventPeerConnectionOnError
   ];

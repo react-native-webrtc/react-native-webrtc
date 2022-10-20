@@ -591,38 +591,27 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
         }
     }
 
-    @ReactMethod
-    public void peerConnectionRemoveTrack(int id, String senderId) {
-            ThreadUtils.runOnExecutor(() -> {
-                WritableMap params = Arguments.createMap();
-                params.putInt("pcId", id);
-
-                try {
-                    PeerConnectionObserver pco = mPeerConnectionObservers.get(id);
-                    if (pco == null) {
-                        Log.d(TAG, "peerConnectionRemoveTrack() peerConnection is null");
-                        sendError("peerConnectionOnError", "removeTrack", "Peer Connection is not initialized", null);
-                        return;
-                    }
-                    RtpSender sender = pco.getSender(senderId);
-                    if (sender == null) {
-                        Log.w(TAG, "peerConnectionRemoveTrack() sender is null");
-                        sendError("peerConnectionOnError", "removeTrack", "Sender is null", null);
-                        return;
-                    }
-
-                    boolean successful = pco.getPeerConnection().removeTrack(sender);
-                    if (successful) {
-                        params.putString("senderId", senderId);
-                        sendEvent("peerConnectionOnRemoveTrackSuccessful", params);
-                        return;
-                    }
-                    sendError("peerConnectionOnError", "removeTrack", "Internal Error", params);
-                } catch (Exception e) {
-                    Log.d(TAG, "peerConnectionRemoveTrack() " + e.getMessage());
-                    sendError("peerConnectionOnError", "removeTrack", e.getMessage(), params);
+    @ReactMethod(isBlockingSynchronousMethod = true)
+    public boolean peerConnectionRemoveTrack(int id, String senderId) {
+        try {
+            return (boolean) ThreadUtils.submitToExecutor((Callable<Object>) () -> {
+                PeerConnectionObserver pco = mPeerConnectionObservers.get(id);
+                if (pco == null) {
+                    Log.d(TAG, "peerConnectionRemoveTrack() peerConnection is null");
+                    return false;
                 }
-            });
+                RtpSender sender = pco.getSender(senderId);
+                if (sender == null) {
+                    Log.w(TAG, "peerConnectionRemoveTrack() sender is null");
+                    return false;
+                }
+
+                return pco.getPeerConnection().removeTrack(sender);
+            }).get();
+        } catch (InterruptedException | ExecutionException e) {
+            Log.d(TAG, "peerConnectionRemoveTrack() " + e.getMessage());
+            return false;
+        }
     }
 
     @ReactMethod
