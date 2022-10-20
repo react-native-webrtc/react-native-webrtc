@@ -369,12 +369,6 @@ export default class RTCPeerConnection extends defineCustomEventTarget(...PEER_C
         // Blocking!
         WebRTCModule.peerConnectionRemoveTrack(this._pcId, sender.id);
 
-        const oldTrack = existingSender._track;
-
-        if (oldTrack) {
-            oldTrack._muted = true;
-        }
-
         existingSender._track = null;
 
         const [ existingTransceiver ] = this
