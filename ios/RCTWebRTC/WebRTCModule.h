@@ -33,7 +33,6 @@ static NSString *const kEventMediaStreamTrackMuteChanged = @"mediaStreamTrackMut
 static NSString *const kEventTransceiverStopSuccessful = @"transceiverStopSuccessful";
 static NSString *const kEventTransceiverOnError = @"transceiverOnError";
 static NSString *const kEventPeerConnectionOnRemoveTrack = @"peerConnectionOnRemoveTrack";
-static NSString *const kEventPeerConnectionOnRemoveTrackSuccessful = @"peerConnectionOnRemoveTrackSuccessful";
 static NSString *const kEventPeerConnectionOnTrack = @"peerConnectionOnTrack";
 static NSString *const kEventPeerConnectionOnError = @"peerConnectionOnError";
 

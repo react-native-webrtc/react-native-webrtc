@@ -367,7 +367,22 @@ export default class RTCPeerConnection extends defineCustomEventTarget(...PEER_C
             return;
         }
 
+        // Blocking!
         WebRTCModule.peerConnectionRemoveTrack(this._pcId, sender.id);
+
+        const oldTrack = existingSender._track;
+
+        if (oldTrack) {
+            oldTrack._muted = true;
+        }
+
+        existingSender._track = null;
+
+        const [ existingTransceiver ] = this
+            .getTransceivers()
+            .filter(t => t.sender.id === existingSender.id);
+
+        existingTransceiver._direction = existingTransceiver.direction === 'sendrecv' ? 'recvonly' : 'inactive';
     }
 
     getStats() {
@@ -548,30 +563,6 @@ export default class RTCPeerConnection extends defineCustomEventTarget(...PEER_C
                     stream._tracks.splice(trackIdx, 1);
                 }
             }
-        });
-
-        addListener(this, 'peerConnectionOnRemoveTrackSuccessful', (ev: any) => {
-            if (ev.pcId !== this._pcId) {
-                return;
-            }
-
-            const [ existingSender ] = this
-                .getSenders()
-                .filter(s => s.id === ev.senderId);
-
-            const oldTrack = existingSender._track;
-
-            if (oldTrack) {
-                oldTrack._muted = true;
-            }
-
-            existingSender._track = null;
-
-            const [ existingTransceiver ] = this
-                .getTransceivers()
-                .filter(t => t.sender.id === existingSender.id);
-
-            existingTransceiver._direction = existingTransceiver.direction === 'sendrecv' ? 'recvonly' : 'inactive';
         });
 
         addListener(this, 'peerConnectionGotICECandidate', (ev: any) => {

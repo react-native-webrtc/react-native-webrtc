@@ -482,46 +482,36 @@ RCT_EXPORT_BLOCKING_SYNCHRONOUS_METHOD(peerConnectionAddTransceiver:(nonnull NSN
     return params;
 }
 
-RCT_EXPORT_METHOD(peerConnectionRemoveTrack:(nonnull NSNumber *)objectID
-                                   senderId:(nonnull NSString *)senderId)
+RCT_EXPORT_BLOCKING_SYNCHRONOUS_METHOD(peerConnectionRemoveTrack:(nonnull NSNumber *)objectID
+                                                        senderId:(nonnull NSString *)senderId)
 {
+    __block BOOL ret = NO;
+
+    dispatch_sync(self.workerQueue, ^{
         RTCPeerConnection *peerConnection = self.peerConnections[objectID];
         if (!peerConnection) {
           RCTLogWarn(@"PeerConnection %@ not found in peerConnectionRemoveTrack()", objectID);
-          [self sendErrorWithEventName: kEventPeerConnectionOnError
-                              funcName: @"removeTrack"
-                               message: @"Peer Connection is not initialized"
-                                  info: nil];
           return;
         }
-        
-        RTCRtpTransceiver *transceiver = nil;
-        
-        for (RTCRtpTransceiver *t in peerConnection.transceivers) {
-            if ([t.sender.senderId isEqual: senderId]) {
-                transceiver = t;
+
+        RTCRtpSender *sender = nil;
+
+        for (RTCRtpSender *s in peerConnection.senders) {
+            if ([s.senderId isEqual: senderId]) {
+                sender = s;
                 break;
             }
         }
-        
-        if (!transceiver) {
-            RCTLogWarn(@"Transceiver not found in peerConnectionRemoveTrack()");
+
+        if (!sender) {
+            RCTLogWarn(@"Sender not found in peerConnectionRemoveTrack()");
             return;
         }
-        
-        NSMutableDictionary *identifier = [NSMutableDictionary new];
-        identifier[@"peerConnectionId"] = objectID;
-        identifier[@"senderId"] = senderId;
-        
-        if ([peerConnection removeTrack: transceiver.sender]) {
-            [self sendEventWithName: kEventPeerConnectionOnRemoveTrackSuccessful
-                               body: identifier];
-        } else {
-            [self sendErrorWithEventName: kEventPeerConnectionOnError
-                                funcName: @"removeTrack"
-                                 message: @"Cannot remove track"
-                                    info: identifier];
-        }
+
+        ret = [peerConnection removeTrack: sender];
+    });
+
+    return ret;
 }
 
 // TODO: move these below to some SerializeUrils file
