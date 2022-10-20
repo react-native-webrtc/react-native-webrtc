@@ -511,7 +511,7 @@ RCT_EXPORT_BLOCKING_SYNCHRONOUS_METHOD(peerConnectionRemoveTrack:(nonnull NSNumb
         ret = [peerConnection removeTrack: sender];
     });
 
-    return ret;
+    return @(ret);
 }
 
 // TODO: move these below to some SerializeUrils file
