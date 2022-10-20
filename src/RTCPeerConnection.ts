@@ -418,12 +418,12 @@ export default class RTCPeerConnection extends defineCustomEventTarget(...PEER_C
     close(): void {
         log.debug(`${this._pcId} close`);
 
-        // According to the W3C spec: https://w3c.github.io/webrtc-pc/#rtcpeerconnection-interface
-        // transceivers have to be stopped
-        this._transceivers.forEach(({ transceiver })=> {
-            transceiver.stop();
-        });
         WebRTCModule.peerConnectionClose(this._pcId);
+
+        // Mark transceivers as stopped.
+        this._transceivers.forEach(({ transceiver })=> {
+            transceiver._setStopped();
+        });
     }
 
     restartIce(): void {
