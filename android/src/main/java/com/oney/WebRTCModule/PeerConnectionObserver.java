@@ -243,7 +243,7 @@ class PeerConnectionObserver implements PeerConnection.Observer {
     public void onIceCandidate(final IceCandidate candidate) {
         Log.d(TAG, "onIceCandidate");
         WritableMap params = Arguments.createMap();
-        params.putInt("id", id);
+        params.putInt("pcId", id);
         WritableMap candidateParams = Arguments.createMap();
         candidateParams.putInt("sdpMLineIndex", candidate.sdpMLineIndex);
         candidateParams.putString("sdpMid", candidate.sdpMid);
@@ -266,7 +266,7 @@ class PeerConnectionObserver implements PeerConnection.Observer {
     @Override
     public void onIceConnectionChange(PeerConnection.IceConnectionState iceConnectionState) {
         WritableMap params = Arguments.createMap();
-        params.putInt("id", id);
+        params.putInt("pcId", id);
         params.putString("iceConnectionState", iceConnectionStateString(iceConnectionState));
         webRTCModule.sendEvent("peerConnectionIceConnectionChanged", params);
     }
@@ -274,7 +274,7 @@ class PeerConnectionObserver implements PeerConnection.Observer {
     @Override
     public void onConnectionChange(PeerConnection.PeerConnectionState peerConnectionState) {
         WritableMap params = Arguments.createMap();
-        params.putInt("id", id);
+        params.putInt("pcId", id);
         params.putString("connectionState", peerConnectionStateString(peerConnectionState));
 
         webRTCModule.sendEvent("peerConnectionStateChanged", params);
@@ -288,7 +288,7 @@ class PeerConnectionObserver implements PeerConnection.Observer {
     public void onIceGatheringChange(PeerConnection.IceGatheringState iceGatheringState) {
         Log.d(TAG, "onIceGatheringChange" + iceGatheringState.name());
         WritableMap params = Arguments.createMap();
-        params.putInt("id", id);
+        params.putInt("pcId", id);
         params.putString("iceGatheringState", iceGatheringStateString(iceGatheringState));
         if (iceGatheringState == PeerConnection.IceGatheringState.COMPLETE) {
             SessionDescription newSdp = peerConnection.getLocalDescription();
@@ -323,7 +323,7 @@ class PeerConnectionObserver implements PeerConnection.Observer {
         info.putString("readyState", dcw.dataChannelStateString(dataChannel.state()));
 
         WritableMap params = Arguments.createMap();
-        params.putInt("id", id);
+        params.putInt("pcId", id);
         params.putMap("dataChannel", info);
 
         webRTCModule.sendEvent("peerConnectionDidOpenDataChannel", params);
@@ -332,14 +332,14 @@ class PeerConnectionObserver implements PeerConnection.Observer {
     @Override
     public void onRenegotiationNeeded() {
         WritableMap params = Arguments.createMap();
-        params.putInt("id", id);
+        params.putInt("pcId", id);
         webRTCModule.sendEvent("peerConnectionOnRenegotiationNeeded", params);
     }
 
     @Override
     public void onSignalingChange(PeerConnection.SignalingState signalingState) {
         WritableMap params = Arguments.createMap();
-        params.putInt("id", id);
+        params.putInt("pcId", id);
         params.putString("signalingState", signalingStateString(signalingState));
         webRTCModule.sendEvent("peerConnectionSignalingStateChanged", params);
     }
@@ -403,7 +403,7 @@ class PeerConnectionObserver implements PeerConnection.Observer {
             params.putInt("transceiverOrder", getNextTransceiverId());
             params.putMap("transceiver", SerializeUtils.serializeTransceiver(id, transceiver));
 
-            params.putInt("id", this.id);
+            params.putInt("pcId", this.id);
 
             webRTCModule.sendEvent("peerConnectionOnTrack", params);
         });
@@ -431,11 +431,10 @@ class PeerConnectionObserver implements PeerConnection.Observer {
         ThreadUtils.runOnExecutor(() -> {
             MediaStreamTrack track = receiver.track();
             WritableMap params = Arguments.createMap();
-            params.putInt("id", this.id);
+            params.putInt("pcId", this.id);
             params.putString("trackId", track.id());
 
             webRTCModule.sendEvent("peerConnectionOnRemoveTrack", params);
-
         });
     };
 

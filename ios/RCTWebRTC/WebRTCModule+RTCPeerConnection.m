@@ -703,25 +703,25 @@ RCT_EXPORT_METHOD(peerConnectionRemoveTrack:(nonnull NSNumber *)objectID
 - (void)peerConnection:(RTCPeerConnection *)peerConnection didChangeSignalingState:(RTCSignalingState)newState {
   [self sendEventWithName:kEventPeerConnectionSignalingStateChanged
                      body:@{
-                       @"id": peerConnection.reactTag,
+                       @"pcId": peerConnection.reactTag,
                        @"signalingState": [self stringForSignalingState:newState]
                      }];
 }
 
 - (void)peerConnectionShouldNegotiate:(RTCPeerConnection *)peerConnection {
   [self sendEventWithName:kEventPeerConnectionOnRenegotiationNeeded
-                     body:@{ @"id": peerConnection.reactTag }];
+                     body:@{ @"pcId": peerConnection.reactTag }];
 }
 
 - (void)peerConnection:(RTCPeerConnection *)peerConnection didChangeConnectionState:(RTCPeerConnectionState)newState {
   [self sendEventWithName:kEventPeerConnectionStateChanged
-                     body:@{@"id": peerConnection.reactTag, @"connectionState": [self stringForPeerConnectionState:newState]}];
+                     body:@{@"pcId": peerConnection.reactTag, @"connectionState": [self stringForPeerConnectionState:newState]}];
 }
 
 - (void)peerConnection:(RTCPeerConnection *)peerConnection didChangeIceConnectionState:(RTCIceConnectionState)newState {
   [self sendEventWithName:kEventPeerConnectionIceConnectionChanged
                      body:@{
-                       @"id": peerConnection.reactTag,
+                       @"pcId": peerConnection.reactTag,
                        @"iceConnectionState": [self stringForICEConnectionState:newState]
                      }];
 }
@@ -736,7 +736,7 @@ RCT_EXPORT_METHOD(peerConnectionRemoveTrack:(nonnull NSNumber *)objectID
   }
   [self sendEventWithName:kEventPeerConnectionIceGatheringChanged
                      body:@{
-                       @"id": peerConnection.reactTag,
+                       @"pcId": peerConnection.reactTag,
                        @"iceGatheringState": [self stringForICEGatheringState:newState],
                        @"sdp": newSdp
                      }];
@@ -745,7 +745,7 @@ RCT_EXPORT_METHOD(peerConnectionRemoveTrack:(nonnull NSNumber *)objectID
 - (void)peerConnection:(RTCPeerConnection *)peerConnection didGenerateIceCandidate:(RTCIceCandidate *)candidate {
   [self sendEventWithName:kEventPeerConnectionGotICECandidate
                      body:@{
-                       @"id": peerConnection.reactTag,
+                       @"pcId": peerConnection.reactTag,
                        @"candidate": @{
                            @"candidate": candidate.sdp,
                            @"sdpMLineIndex": @(candidate.sdpMLineIndex),
@@ -778,7 +778,7 @@ RCT_EXPORT_METHOD(peerConnectionRemoveTrack:(nonnull NSNumber *)objectID
         @"readyState": [self stringForDataChannelState:dataChannel.readyState]
       };
     NSDictionary *body = @{
-        @"id": peerConnection.reactTag,
+        @"pcId": peerConnection.reactTag,
         @"dataChannel": dataChannelInfo
     };
     [self sendEventWithName:kEventPeerConnectionDidOpenDataChannel body:body];
@@ -843,7 +843,7 @@ RCT_EXPORT_METHOD(peerConnectionRemoveTrack:(nonnull NSNumber *)objectID
         params[@"receiver"] = [SerializeUtils receiverToJSONWithPeerConnectionId: peerConnection.reactTag receiver: rtpReceiver];
         params[@"transceiverOrder"] = [NSNumber numberWithInt:_transceiverNextId++];
         params[@"transceiver"] = [SerializeUtils transceiverToJSONWithPeerConnectionId: peerConnection.reactTag transceiver: transceiver];
-        params[@"id"] = peerConnection.reactTag;
+        params[@"pcId"] = peerConnection.reactTag;
         
         [self sendEventWithName: kEventPeerConnectionOnTrack
                            body: params];

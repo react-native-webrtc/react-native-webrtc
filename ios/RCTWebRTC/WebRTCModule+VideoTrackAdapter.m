@@ -70,7 +70,7 @@ static const NSTimeInterval MUTE_DELAY = 1.5;
 - (void)emitMuteEvent:(BOOL)muted {
     [self.module sendEventWithName:kEventMediaStreamTrackMuteChanged
                               body:@{
-                                @"peerConnectionId": self.peerConnectionId,
+                                @"pcId": self.peerConnectionId,
                                 @"trackId": self.trackId,
                                 @"muted": @(muted)
                               }];
