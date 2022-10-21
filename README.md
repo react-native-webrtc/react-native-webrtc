@@ -34,7 +34,7 @@ Which will allow you to use [(almost)](https://github.com/react-native-webrtc/r
 * Supported architectures
   * Android: armeabi-v7a, arm64-v8a, x86, x86_64
   * iOS: arm64, x86_64
-  * macOS: ~~~x86_64~~~ (temporarily disabled)
+  * macOS: (temporarily disabled)
 
 ## Getting Started
 

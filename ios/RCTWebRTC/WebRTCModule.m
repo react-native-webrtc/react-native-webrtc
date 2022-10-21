@@ -94,22 +94,6 @@
   return stream;
 }
 
-- (void)sendErrorWithEventName: (NSString *) eventName
-                      funcName: (NSString *) funcName
-                       message: (NSString *) message
-                          info: (NSDictionary *) info {
-    NSMutableDictionary *errorInfo = [NSMutableDictionary new];
-    
-    errorInfo[@"func"] = funcName;
-    if (info)
-        errorInfo[@"info"] = info;
-    if (message)
-        errorInfo[@"message"] = message;
-
-    [self sendEventWithName: kEventPeerConnectionOnError
-                       body: errorInfo];
-}
-
 RCT_EXPORT_MODULE();
 
 - (dispatch_queue_t)methodQueue
@@ -129,12 +113,9 @@ RCT_EXPORT_MODULE();
     kEventDataChannelStateChanged,
     kEventDataChannelReceiveMessage,
     kEventMediaStreamTrackMuteChanged,
-    kEventTransceiverStopSuccessful,
     kEventTransceiverOnError,
     kEventPeerConnectionOnRemoveTrack,
-    kEventPeerConnectionOnRemoveTrackSuccessful,
-    kEventPeerConnectionOnTrack,
-    kEventPeerConnectionOnError
+    kEventPeerConnectionOnTrack
   ];
 }
 

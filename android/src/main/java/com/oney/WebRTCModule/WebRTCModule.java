@@ -161,16 +161,6 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
             .emit(eventName, params);
     }
 
-    void sendError(String eventName, String funcName, @Nullable String message, @Nullable ReadableMap info) {
-        WritableMap errorInfo = Arguments.createMap();
-        errorInfo.putString("func", funcName);
-        if (info != null)
-            errorInfo.putMap("info", info);
-        if (message != null)
-            errorInfo.putString("message", message);
-        sendEvent(eventName, errorInfo);
-    }
-
     private PeerConnection.IceServer createIceServer(String url) {
         return PeerConnection.IceServer.builder(url).createIceServer();
     }
@@ -591,6 +581,29 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
         }
     }
 
+    @ReactMethod(isBlockingSynchronousMethod = true)
+    public boolean peerConnectionRemoveTrack(int id, String senderId) {
+        try {
+            return (boolean) ThreadUtils.submitToExecutor((Callable<Object>) () -> {
+                PeerConnectionObserver pco = mPeerConnectionObservers.get(id);
+                if (pco == null) {
+                    Log.d(TAG, "peerConnectionRemoveTrack() peerConnection is null");
+                    return false;
+                }
+                RtpSender sender = pco.getSender(senderId);
+                if (sender == null) {
+                    Log.w(TAG, "peerConnectionRemoveTrack() sender is null");
+                    return false;
+                }
+
+                return pco.getPeerConnection().removeTrack(sender);
+            }).get();
+        } catch (InterruptedException | ExecutionException e) {
+            Log.d(TAG, "peerConnectionRemoveTrack() " + e.getMessage());
+            return false;
+        }
+    }
+
     @ReactMethod
     public void senderSetParameters(int id, String senderId, ReadableMap options, Promise promise) {
         ThreadUtils.runOnExecutor(() ->{
@@ -621,62 +634,27 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
     }
 
     @ReactMethod
-    public void peerConnectionRemoveTrack(int id, String senderId) {
-            ThreadUtils.runOnExecutor(() -> {
-                WritableMap identifier = Arguments.createMap();
-                identifier.putInt("peerConnectionId", id);
-                identifier.putString("senderId", senderId);
-                try {
-                    PeerConnectionObserver pco = mPeerConnectionObservers.get(id);
-                    if (pco == null) {
-                        Log.d(TAG, "peerConnectionRemoveTrack() peerConnection is null");
-                        sendError("peerConnectionOnError", "removeTrack", "Peer Connection is not initialized", null);
-                        return;
-                    }
-                    RtpSender sender = pco.getSender(senderId);
-                    if (sender == null) {
-                        Log.w(TAG, "peerConnectionRemoveTrack() sender is null");
-                        sendError("peerConnectionOnError", "removeTrack", "Sender is null", null);
-                        return;
-                    }
-
-                    boolean successful = pco.getPeerConnection().removeTrack(sender);
-                    if (successful) {
-                        sendEvent("peerConnectionOnRemoveTrackSuccessful", identifier);
-                        return;
-                    }
-                    sendError("peerConnectionOnError", "removeTrack", "Internal Error", identifier);
-                } catch (Exception e) {
-                    Log.d(TAG, "peerConnectionRemoveTrack() " + e.getMessage());
-                    sendError("peerConnectionOnError", "removeTrack", e.getMessage(), identifier);
-                }
-            });
-    }
-
-    @ReactMethod
-    public void transceiverStop(int id,
-                                String senderId) {
+    public void transceiverStop(int id, String senderId, Promise promise) {
         ThreadUtils.runOnExecutor(() -> {
-            WritableMap identifier = Arguments.createMap();
-            identifier.putInt("peerConnectionId", id);
-            identifier.putString("transceiverId", senderId);
             try {
                 PeerConnectionObserver pco = mPeerConnectionObservers.get(id);
                 if (pco == null) {
                     Log.d(TAG, "transceiverStop() peerConnectionObserver is null");
-                    // Cannot really report an error specific to RTCRtpTransceiver as the peer connection
-                    // hasn't really been initialized, this call from the web API should technically
-                    // not happen unless both peer connection and transceivers are initialized properly
-                    // That is why constructors or create methods should always be synchronous.
+                    promise.reject(new Exception("Peer Connection is not initialized"));
                     return;
                 }
                 RtpTransceiver transceiver = pco.getTransceiver(senderId);
+                if (transceiver == null) {
+                    Log.w(TAG, "transceiverStop() transceiver is null");
+                    promise.reject(new Exception("Could not get transceiver"));
+                    return;
+                }
 
                 transceiver.stopStandard();
-                sendEvent("transceiverStopSuccessful", identifier);
+                promise.resolve(true);
             } catch (Exception e) {
                 Log.d(TAG, "transceiverStop(): " + e.getMessage());
-                sendError("transceiverOnError", "stopTransceiver", e.getMessage(), identifier);
+                promise.reject(e);
             }
         });
     }
@@ -715,7 +693,8 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
     @ReactMethod
     public void transceiverSetDirection(int id,
                                         String senderId,
-                                        String direction) {
+                                        String direction,
+                                        Promise promise) {
 
         ThreadUtils.runOnExecutor(() -> {
             WritableMap identifier = Arguments.createMap();
@@ -726,24 +705,22 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
                 PeerConnectionObserver pco = mPeerConnectionObservers.get(id);
                 if (pco == null) {
                     Log.d(TAG, "transceiverSetDirection() peerConnectionObserver is null");
-                    // Cannot really report an error specific to RTCRtpSender as the peer connection
-                    // hasn't really been initialized, this call from the web API should technically
-                    // not happen unless both peer connection and sender are initialized
+                    promise.reject(new Exception("Peer Connection is not initialized"));
                     return;
                 }
                 RtpTransceiver transceiver = pco.getTransceiver(senderId);
                 if (transceiver == null){
                     Log.d(TAG, "transceiverSetDirection() transceiver is null");
+                    promise.reject(new Exception("Could not get sender"));
                     return;
                 }
 
-                RtpTransceiver.RtpTransceiverDirection oldDirection = transceiver.getDirection();
-                params.putString("oldDirection", SerializeUtils.serializeDirection(oldDirection));
                 transceiver.setDirection(SerializeUtils.parseDirection(direction));
+
+                promise.resolve(true);
             } catch (Exception e) {
                 Log.d(TAG, "transceiverSetDirection(): " + e.getMessage());
-                params.putMap("identifiers", identifier);
-                sendError("transceiverOnError", "setDirection", e.getMessage(), params);
+                promise.reject(e);
             }
         });
     }

@@ -94,6 +94,7 @@ RCT_EXPORT_METHOD(senderSetParameters:(nonnull NSNumber *) objectID
         if (peerConnection == nil) {
             RCTLogWarn(@"PeerConnection %@ not found in senderSetParameters()", objectID);
             reject(@"E_INVALID", @"Peer Connection is not initialized", nil);
+            return;
         }
 
         RTCRtpTransceiver *transceiver = nil;
@@ -106,22 +107,28 @@ RCT_EXPORT_METHOD(senderSetParameters:(nonnull NSNumber *) objectID
 
         if (transceiver == nil) {
             RCTLogWarn(@"senderSetParameters() transceiver is null");
-            reject(@"E_INVALID", @"Could not get transceive", nil);
+            reject(@"E_INVALID", @"Could not get transceiver", nil);
+            return;
         }
         
         RTCRtpSender *sender = transceiver.sender;
         RTCRtpParameters *parameters = sender.parameters;
         [sender setParameters:[self updateParametersWithOptions: options params: parameters]];
+
+        resolve([SerializeUtils parametersToJSON: sender.parameters]);
 }
 
 RCT_EXPORT_METHOD(transceiverSetDirection:(nonnull NSNumber *) objectID
-                            senderId:(NSString *)senderId
-                            direction:(NSString *)direction)
+                                 senderId:(NSString *)senderId
+                                direction:(NSString *)direction
+                                 resolver:(RCTPromiseResolveBlock)resolve
+                                 rejecter:(RCTPromiseRejectBlock)reject)
 {
         RTCPeerConnection *peerConnection = self.peerConnections[objectID];
 
         if (peerConnection == nil) {
             RCTLogWarn(@"transceiverSetDirection() PeerConnection %@ not found in transceiverSetDirection()", objectID);
+            reject(@"E_INVALID", @"Peer Connection is not initialized", nil);
             return;
         }
 
@@ -135,34 +142,30 @@ RCT_EXPORT_METHOD(transceiverSetDirection:(nonnull NSNumber *) objectID
 
         if (transceiver == nil) {
             RCTLogWarn(@"transceiverSetDirection() transceiver is null");
+            reject(@"E_INVALID", @"Could not get transceiver", nil);
             return;
         }
-        
-        NSMutableDictionary *identifier = [NSMutableDictionary new];
-        identifier[@"peerConnectionId"] = objectID;
-        identifier[@"transceiverId"] = senderId;
-        
-        NSMutableDictionary *params = [NSMutableDictionary new];
-        RTCRtpTransceiverDirection oldDirrection = transceiver.direction;
-        params[@"oldDirection"] = [SerializeUtils serializeDirection: oldDirrection];
+
         NSError *error;
         [transceiver setDirection:[SerializeUtils parseDirection:direction] error: &error];
-        
+
         if (error) {
-            [self sendErrorWithEventName: kEventTransceiverOnError
-                                funcName: @"transceiverSetDirection"
-                                 message: [error localizedDescription]
-                                    info: nil];
+            reject(@"E_SET_DIRECTION", @"Could not set direction", error);
+        } else {
+            resolve(@true);
         }
 }
 
 RCT_EXPORT_METHOD(transceiverStop:(nonnull NSNumber *) objectID
-                            senderId:(NSString *)senderId)
+                         senderId:(NSString *)senderId
+                         resolver:(RCTPromiseResolveBlock)resolve
+                         rejecter:(RCTPromiseRejectBlock)reject)
 {
         RTCPeerConnection *peerConnection = self.peerConnections[objectID];
 
         if (peerConnection == nil) {
             RCTLogWarn(@"PeerConnection %@ not found in transceiverStop()", objectID);
+            reject(@"E_INVALID", @"Peer Connection is not initialized", nil);
             return;
         }
 
@@ -176,15 +179,13 @@ RCT_EXPORT_METHOD(transceiverStop:(nonnull NSNumber *) objectID
 
         if (transceiver == nil) {
             RCTLogWarn(@"senderSetParameters() transceiver is null");
+            reject(@"E_INVALID", @"Could not get transceiver", nil);
             return;
         }
 
         [transceiver stopInternal];
-        [self sendEventWithName:kEventTransceiverStopSuccessful
-                              body:@{
-                                @"peerConnectionId": objectID,
-                                @"transceiverId": senderId
-                              }];
+
+        resolve(@true);
 }
 
 - (RTCRtpParameters *) updateParametersWithOptions: (NSDictionary *) options

@@ -64,6 +64,6 @@
     ]
   },
   "webrtc-builds": {
-    "android": "https://github.com/jitsi/webrtc/releases/download/v106.0.0/android-webrtc.zip"
+    "android": "https://github.com/jitsi/webrtc/releases/download/v106.0.1/android-webrtc.zip"
   }
 }

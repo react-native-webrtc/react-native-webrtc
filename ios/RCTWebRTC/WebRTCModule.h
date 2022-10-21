@@ -30,12 +30,9 @@ static NSString *const kEventPeerConnectionDidOpenDataChannel = @"peerConnection
 static NSString *const kEventDataChannelStateChanged = @"dataChannelStateChanged";
 static NSString *const kEventDataChannelReceiveMessage = @"dataChannelReceiveMessage";
 static NSString *const kEventMediaStreamTrackMuteChanged = @"mediaStreamTrackMuteChanged";
-static NSString *const kEventTransceiverStopSuccessful = @"transceiverStopSuccessful";
 static NSString *const kEventTransceiverOnError = @"transceiverOnError";
 static NSString *const kEventPeerConnectionOnRemoveTrack = @"peerConnectionOnRemoveTrack";
-static NSString *const kEventPeerConnectionOnRemoveTrackSuccessful = @"peerConnectionOnRemoveTrackSuccessful";
 static NSString *const kEventPeerConnectionOnTrack = @"peerConnectionOnTrack";
-static NSString *const kEventPeerConnectionOnError = @"peerConnectionOnError";
 
 @interface WebRTCModule : RCTEventEmitter <RCTBridgeModule>
 
@@ -53,10 +50,5 @@ static NSString *const kEventPeerConnectionOnError = @"peerConnectionOnError";
                         decoderFactory:(id<RTCVideoDecoderFactory>)decoderFactory;
 
 - (RTCMediaStream*)streamForReactTag:(NSString*)reactTag;
-
-- (void)sendErrorWithEventName: (NSString *) eventName
-                      funcName: (NSString *) funcName
-                       message: (NSString *) message
-                          info: (NSDictionary *) info;
 
 @end
