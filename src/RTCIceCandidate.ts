@@ -1,9 +1,13 @@
 export default class RTCIceCandidate {
     candidate: string;
-    sdpMLineIndex: number | null;
-    sdpMid: string | null;
+    sdpMLineIndex: number;
+    sdpMid: string;
 
     constructor({ candidate = '', sdpMLineIndex = null, sdpMid = null }) {
+        if (sdpMLineIndex === null || sdpMid === null) {
+            throw new TypeError('`sdpMLineIndex` and `sdpMid` must not null');
+        }
+
         this.candidate = candidate;
         this.sdpMLineIndex = sdpMLineIndex;
         this.sdpMid = sdpMid;

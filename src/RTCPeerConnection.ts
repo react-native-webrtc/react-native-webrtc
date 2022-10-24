@@ -227,7 +227,9 @@ export default class RTCPeerConnection extends defineCustomEventTarget(...PEER_C
             candidate.sdpMLineIndex === undefined ||
             candidate.sdpMid === null ||
             candidate.sdpMid === undefined
-        ) throw new TypeError('`sdpMLineIndex` and `sdpMid` must not null or undefined')
+        ) {
+            throw new TypeError('`sdpMLineIndex` and `sdpMid` must not null or undefined');
+        }
 
         const newSdp = await WebRTCModule.peerConnectionAddICECandidate(
             this._peerConnectionId,
