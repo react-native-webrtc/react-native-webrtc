@@ -792,16 +792,19 @@ RCT_EXPORT_BLOCKING_SYNCHRONOUS_METHOD(peerConnectionRemoveTrack:(nonnull NSNumb
         
         RTCMediaStreamTrack *track = rtpReceiver.track;
         
-        if (peerConnection.remoteTracks[track.trackId]) {
-            return;
+        // We need to fire this event for an existing track sometimes, like
+        // when the transceiver direction (on the sending side) switches from
+        // sendrecv to recvonly and then back.
+        BOOL existingTrack = peerConnection.remoteTracks[track.trackId] != nil;
+
+        if (!existingTrack) {
+            if (track.kind == kRTCMediaStreamTrackKindVideo) {
+                RTCVideoTrack *videoTrack = (RTCVideoTrack *)track;
+                [peerConnection addVideoTrackAdapter: videoTrack];
+            }
+            
+            peerConnection.remoteTracks[track.trackId] = track;
         }
-        
-        if (track.kind == kRTCMediaStreamTrackKindVideo) {
-            RTCVideoTrack *videoTrack = (RTCVideoTrack *)track;
-            [peerConnection addVideoTrackAdapter: videoTrack];
-        }
-        
-        peerConnection.remoteTracks[track.trackId] = track;
         
         NSMutableDictionary *params = [NSMutableDictionary new];
         NSMutableArray *streams = [NSMutableArray new];

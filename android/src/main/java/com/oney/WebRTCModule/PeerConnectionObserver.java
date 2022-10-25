@@ -367,17 +367,17 @@ class PeerConnectionObserver implements PeerConnection.Observer {
 
             final MediaStreamTrack track = receiver.track();
 
-            if (remoteTracks.containsKey(track.id())) {
-                // Unlike in the WebRTC spec, the libwebrtc native implementation
-                // fires onTrack on every sRD which has an active receiving transceiver.
-                // So, if we are already keeping track of this transceiver, ignore the event.
-                return;
-            }
+            // We need to fire this event for an existing track sometimes, like
+            // when the transceiver direction (on the sending side) switches from
+            // sendrecv to recvonly and then back.
+            final boolean existingTrack = remoteTracks.containsKey(track.id());
 
-            if (track.kind().equals(MediaStreamTrack.VIDEO_TRACK_KIND)){
-                videoTrackAdapters.addAdapter((VideoTrack) track);
+            if (!existingTrack) {
+                if (track.kind().equals(MediaStreamTrack.VIDEO_TRACK_KIND)){
+                    videoTrackAdapters.addAdapter((VideoTrack) track);
+                }
+                remoteTracks.put(track.id(), track);
             }
-            remoteTracks.put(track.id(), track);
 
             WritableMap params = Arguments.createMap();
             WritableArray streams = Arguments.createArray();
@@ -402,7 +402,6 @@ class PeerConnectionObserver implements PeerConnection.Observer {
             params.putMap("receiver", SerializeUtils.serializeReceiver(id, receiver));
             params.putInt("transceiverOrder", getNextTransceiverId());
             params.putMap("transceiver", SerializeUtils.serializeTransceiver(id, transceiver));
-
             params.putInt("pcId", this.id);
 
             webRTCModule.sendEvent("peerConnectionOnTrack", params);
