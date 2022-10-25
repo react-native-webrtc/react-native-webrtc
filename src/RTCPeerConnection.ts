@@ -484,7 +484,7 @@ export default class RTCPeerConnection extends defineCustomEventTarget(...PEER_C
 
             log.debug(`${this._pcId} ontrack`);
 
-            const track = new MediaStreamTrack(ev.receiver.track);
+            let track;
             let transceiver;
 
             // Make sure transceivers are stored in timestamp order. Also, we have to make
@@ -492,19 +492,23 @@ export default class RTCPeerConnection extends defineCustomEventTarget(...PEER_C
             const [ { transceiver: oldTransceiver } = { transceiver: null } ]
                     = this._transceivers.filter(({ transceiver }) => transceiver.id === ev.transceiver.id);
 
-            if (!oldTransceiver) {
-                // Creating objects out of the event data.
+            // We need to fire this event for an existing track sometimes, like
+            // when the transceiver direction (on the sending side) switches from
+            // sendrecv to recvonly and then back.
+
+            if (oldTransceiver) {
+                transceiver = oldTransceiver;
+                track = transceiver._receiver._track;
+                transceiver._mid = ev.transceiver.mid;
+                transceiver._currentDirection = ev.transceiver.currentDirection;
+                transceiver._direction = ev.transceiver.direction;
+            } else {
+                track = new MediaStreamTrack(ev.receiver.track);
                 const sender = new RTCRtpSender({ ...ev.transceiver.sender });
                 const receiver = new RTCRtpReceiver({ ...ev.receiver, track });
 
                 transceiver = new RTCRtpTransceiver({ ...ev.transceiver, receiver, sender });
                 this._insertTransceiverSorted(ev.transceiverOrder, transceiver);
-            } else {
-                transceiver = oldTransceiver;
-                transceiver._receiver._track = track;
-                transceiver._mid = ev.transceiver.mid;
-                transceiver._currentDirection = ev.transceiver.currentDirection;
-                transceiver._direction = ev.transceiver.direction;
             }
 
             // Get the stream object from the event. Create if necessary.
@@ -523,7 +527,9 @@ export default class RTCPeerConnection extends defineCustomEventTarget(...PEER_C
 
                 const stream = this._remoteStreams.get(streamInfo.streamId);
 
-                stream?._tracks.push(track);
+                if (!stream?._tracks.includes(track)) {
+                    stream?._tracks.push(track);
+                }
 
                 return stream;
             });
