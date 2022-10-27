@@ -1,8 +1,7 @@
 
-import { defineCustomEventTarget } from 'event-target-shim';
+import { defineCustomEventTarget, Event } from 'event-target-shim';
 import { NativeModules } from 'react-native';
 
-import MediaStreamTrackEvent from './MediaStreamTrackEvent';
 import { deepClone } from './RTCUtil';
 
 const { WebRTCModule } = NativeModules;
@@ -108,9 +107,7 @@ class MediaStreamTrack extends defineCustomEventTarget(...MEDIA_STREAM_TRACK_EVE
         }
 
         this._muted = muted;
-
-        // @ts-ignore
-        this.dispatchEvent(new MediaStreamTrackEvent(muted ? 'mute' : 'unmute', { track: this }));
+        this.dispatchEvent(new Event(muted ? 'mute' : 'unmute'));
     }
 
     applyConstraints(): never {
