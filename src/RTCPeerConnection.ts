@@ -6,7 +6,6 @@ import { addListener, removeListener } from './EventEmitter';
 import Logger from './Logger';
 import MediaStream from './MediaStream';
 import MediaStreamTrack from './MediaStreamTrack';
-import MediaStreamTrackEvent from './MediaStreamTrackEvent';
 import RTCDataChannel from './RTCDataChannel';
 import RTCDataChannelEvent from './RTCDataChannelEvent';
 import RTCEvent from './RTCEvent';
@@ -543,6 +542,9 @@ export default class RTCPeerConnection extends defineCustomEventTarget(...PEER_C
 
             // @ts-ignore
             this.dispatchEvent(new RTCTrackEvent('track', eventData));
+
+            // Dispatch an unmute event for the track.
+            track._setMutedInternal(false);
         });
 
         addListener(this, 'peerConnectionOnRemoveTrack', (ev: any) => {
@@ -564,7 +566,9 @@ export default class RTCPeerConnection extends defineCustomEventTarget(...PEER_C
                     const trackIdx = stream._tracks.indexOf(track);
 
                     stream._tracks.splice(trackIdx, 1);
-                    track._muted = true;
+
+                    // Dispatch a mute event for the track.
+                    track._setMutedInternal(true);
                 }
             }
         });
@@ -619,11 +623,7 @@ export default class RTCPeerConnection extends defineCustomEventTarget(...PEER_C
             ] = this.getReceivers().map(r => r.track).filter(t => t?.id === ev.trackId);
 
             if (track) {
-                track._muted = ev.muted;
-                const eventName = ev.muted ? 'mute' : 'unmute';
-
-                // @ts-ignore
-                track.dispatchEvent(new MediaStreamTrackEvent(eventName, { track }));
+                track._setMutedInternal(ev.muted);
             }
         });
     }
