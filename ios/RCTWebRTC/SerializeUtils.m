@@ -161,8 +161,10 @@
     switch (track.readyState) {
         case RTCMediaStreamTrackStateLive:
             readyState = @"Live";
+            break;
         case RTCMediaStreamTrackStateEnded:
             readyState = @"Ended";
+            break;
     }
     
     return @{
