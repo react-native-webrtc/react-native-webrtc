@@ -160,9 +160,11 @@
     NSString *readyState;
     switch (track.readyState) {
         case RTCMediaStreamTrackStateLive:
-            readyState = @"Live";
+            readyState = @"live";
+            break;
         case RTCMediaStreamTrackStateEnded:
-            readyState = @"Ended";
+            readyState = @"ended";
+            break;
     }
     
     return @{
