@@ -156,7 +156,12 @@ export default class RTCPeerConnection extends defineCustomEventTarget(...PEER_C
             transceiversInfo
         } = await WebRTCModule.peerConnectionSetLocalDescription(this._pcId, desc);
 
-        this.localDescription = new RTCSessionDescription(sdpInfo);
+        if (sdpInfo.type && sdpInfo.sdp) {
+            this.localDescription = new RTCSessionDescription(sdpInfo);
+        } else {
+            this.localDescription = null;
+        }
+
         this._updateTransceivers(transceiversInfo);
 
         log.debug(`${this._pcId} setLocalDescription OK`);
@@ -186,9 +191,19 @@ export default class RTCPeerConnection extends defineCustomEventTarget(...PEER_C
                     if (successful) {
                         log.debug(`${this._pcId} setRemoteDescription OK`);
 
-                        this.remoteDescription = new RTCSessionDescription(data.sdpInfo);
+                        const {
+                            sdpInfo,
+                            newTransceivers,
+                            transceiversInfo
+                        } = data;
 
-                        data.newTransceivers?.forEach( t => {
+                        if (sdpInfo.type && sdpInfo.sdp) {
+                            this.remoteDescription = new RTCSessionDescription(sdpInfo);
+                        } else {
+                            this.remoteDescription = null;
+                        }
+
+                        newTransceivers?.forEach( t => {
                             const { transceiverOrder, transceiver } = t;
                             const newSender = new RTCRtpSender(transceiver.sender);
                             const newReceiver = new RTCRtpReceiver(transceiver.receiver);
@@ -201,7 +216,7 @@ export default class RTCPeerConnection extends defineCustomEventTarget(...PEER_C
                             this._insertTransceiverSorted(transceiverOrder, newTransceiver);
                         });
 
-                        this._updateTransceivers(data.transceiversInfo);
+                        this._updateTransceivers(transceiversInfo);
 
                         resolve();
                     } else {

@@ -991,11 +991,16 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
 
                 @Override
                 public void onSetSuccess() {
-                    SessionDescription newSdp = peerConnection.getLocalDescription();
                     WritableMap newSdpMap = Arguments.createMap();
                     WritableMap params = Arguments.createMap();
-                    newSdpMap.putString("type", newSdp.type.canonicalForm());
-                    newSdpMap.putString("sdp", newSdp.description);
+
+                    SessionDescription newSdp = peerConnection.getLocalDescription();
+                    // Can happen when doing a rollback.
+                    if (newSdp != null) {
+                        newSdpMap.putString("type", newSdp.type.canonicalForm());
+                        newSdpMap.putString("sdp", newSdp.description);
+                    }
+
                     params.putMap("sdpInfo", newSdpMap);
                     params.putArray("transceiversInfo", getTransceiversInfo(pcId));
                     promise.resolve(params);
@@ -1054,11 +1059,16 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
 
                 @Override
                 public void onSetSuccess() {
-                    SessionDescription newSdp = peerConnection.getRemoteDescription();
                     WritableMap newSdpMap = Arguments.createMap();
                     WritableMap params = Arguments.createMap();
-                    newSdpMap.putString("type", newSdp.type.canonicalForm());
-                    newSdpMap.putString("sdp", newSdp.description);
+
+                    SessionDescription newSdp = peerConnection.getRemoteDescription();
+                    // Be defensive for the rollback cases.
+                    if (newSdp != null) {
+                        newSdpMap.putString("type", newSdp.type.canonicalForm());
+                        newSdpMap.putString("sdp", newSdp.description);
+                    }
+
                     params.putArray("transceiversInfo", getTransceiversInfo(id));
                     params.putMap("sdpInfo", newSdpMap);
 

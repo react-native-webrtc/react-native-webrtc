@@ -215,14 +215,17 @@ RCT_EXPORT_METHOD(peerConnectionSetLocalDescription:(nonnull NSNumber *)objectID
           reject(@"E_OPERATION_ERROR", error.localizedDescription, nil);
       } else {
         RTCPeerConnection *strongPc = weakPc;
-        id newSdp = @{
-
-            @"sdpInfo": @{@"type": [RTCSessionDescription stringForType:strongPc.localDescription.type],
-                          @"sdp": strongPc.localDescription.sdp
-            },
+        NSMutableDictionary *sdpInfo = [NSMutableDictionary new];
+        RTCSessionDescription *localDesc = strongPc.localDescription;
+        if (localDesc) {
+            sdpInfo[@"type"] = [RTCSessionDescription stringForType:localDesc.type];
+            sdpInfo[@"sdp"] = localDesc.sdp;
+        }
+        id data = @{
+            @"sdpInfo": sdpInfo,
             @"transceiversInfo": [SerializeUtils constructTransceiversInfoArrayWithPeerConnection:peerConnection peerConnectionId: objectID]
         };
-        resolve(newSdp);
+        resolve(data);
       }
   };
 
@@ -262,15 +265,19 @@ RCT_EXPORT_METHOD(peerConnectionSetRemoteDescription:(RTCSessionDescription *)sd
                 [newTransceivers addObject:newTransceiver];
             }
         }
-          
-        id newSdp = @{
-            @"sdpInfo": @{
-                          @"type": [RTCSessionDescription stringForType:peerConnection.remoteDescription.type],
-                          @"sdp": peerConnection.remoteDescription.sdp},
+
+        NSMutableDictionary *sdpInfo = [NSMutableDictionary new];
+        RTCSessionDescription *remoteDesc = peerConnection.remoteDescription;
+        if (remoteDesc) {
+            sdpInfo[@"type"] = [RTCSessionDescription stringForType:remoteDesc.type];
+            sdpInfo[@"sdp"] = remoteDesc.sdp;
+        }
+        id data = @{
+            @"sdpInfo": sdpInfo,
             @"transceiversInfo": [SerializeUtils constructTransceiversInfoArrayWithPeerConnection:peerConnection peerConnectionId: objectID],
             @"newTransceivers": newTransceivers
         };
-        callback(@[@(YES), newSdp]);
+        callback(@[@(YES), data]);
       }
   }];
 }
