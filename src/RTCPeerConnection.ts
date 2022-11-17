@@ -553,7 +553,9 @@ export default class RTCPeerConnection extends defineCustomEventTarget(...PEER_C
             this.dispatchEvent(new RTCTrackEvent('track', eventData));
 
             // Dispatch an unmute event for the track.
-            track._setMutedInternal(false);
+            if (track instanceof MediaStreamTrack) {
+                track._setMutedInternal(false);
+            }
         });
 
         addListener(this, 'peerConnectionOnRemoveTrack', (ev: any) => {
@@ -631,6 +633,10 @@ export default class RTCPeerConnection extends defineCustomEventTarget(...PEER_C
                 track
             ] = this.getReceivers().map(r => r.track).filter(t => t?.id === ev.trackId);
 
+            if (track?.readyState.toLowerCase() === 'ended') {
+                return;
+            }
+            
             if (track) {
                 track._setMutedInternal(ev.muted);
             }
