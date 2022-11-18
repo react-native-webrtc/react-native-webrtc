@@ -633,7 +633,7 @@ export default class RTCPeerConnection extends defineCustomEventTarget(...PEER_C
                 track
             ] = this.getReceivers().map(r => r.track).filter(t => t?.id === ev.trackId);
 
-            if (track?.readyState.toLowerCase() === 'ended') {
+            if (track?.readyState === 'ended') {
                 return;
             }
             
