@@ -510,8 +510,9 @@ export default class RTCPeerConnection extends defineCustomEventTarget(...PEER_C
             let track;
             let transceiver;
 
-            const [ { transceiver: oldTransceiver } = { transceiver: null } ]
-                    = this._transceivers.filter(({ transceiver }) => transceiver.receiver.id === ev.receiver.id);
+            const [ oldTransceiver ] = this
+                .getTransceivers()
+                .filter(t => t.receiver.id ===  ev.receiver.id);
 
             // We need to fire this event for an existing track sometimes, like
             // when the transceiver direction (on the sending side) switches from
