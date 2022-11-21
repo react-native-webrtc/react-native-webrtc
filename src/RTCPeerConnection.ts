@@ -510,10 +510,8 @@ export default class RTCPeerConnection extends defineCustomEventTarget(...PEER_C
             let track;
             let transceiver;
 
-            // Make sure transceivers are stored in timestamp order. Also, we have to make
-            // sure we do not add a transceiver if it exists.
             const [ { transceiver: oldTransceiver } = { transceiver: null } ]
-                    = this._transceivers.filter(({ transceiver }) => transceiver.id === ev.transceiver.id);
+                    = this._transceivers.filter(({ transceiver }) => transceiver.receiver.id === ev.receiver.id);
 
             // We need to fire this event for an existing track sometimes, like
             // when the transceiver direction (on the sending side) switches from
@@ -521,7 +519,7 @@ export default class RTCPeerConnection extends defineCustomEventTarget(...PEER_C
 
             if (oldTransceiver) {
                 transceiver = oldTransceiver;
-                track = transceiver._receiver._track;
+                track = transceiver.receiver.track;
                 transceiver._mid = ev.transceiver.mid;
                 transceiver._currentDirection = ev.transceiver.currentDirection;
                 transceiver._direction = ev.transceiver.direction;
@@ -702,7 +700,7 @@ export default class RTCPeerConnection extends defineCustomEventTarget(...PEER_C
         for (const update of transceiverUpdates) {
             const [ transceiver ] = this
                 .getTransceivers()
-                .filter(t => t.id === update.transceiverId);
+                .filter(t => t.sender.id === update.transceiverId);
 
             if (!transceiver) {
                 continue;
