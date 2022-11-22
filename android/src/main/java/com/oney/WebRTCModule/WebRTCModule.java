@@ -107,6 +107,10 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
                 .setInjectableLogger(injectableLogger, loggingSeverity)
                 .createInitializationOptions());
 
+        if (injectableLogger == null && loggingSeverity != null) {
+            Logging.enableLogToDebugOutput(loggingSeverity);
+        }
+
         if (encoderFactory == null || decoderFactory == null) {
             // Initialize EGL context required for HW acceleration.
             EglBase.Context eglContext = EglUtils.getRootEglBaseContext();
