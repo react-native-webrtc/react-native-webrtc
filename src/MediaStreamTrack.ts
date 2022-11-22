@@ -16,11 +16,11 @@ class MediaStreamTrack extends defineCustomEventTarget(...MEDIA_STREAM_TRACK_EVE
     _settings: object;
     _muted: boolean;
     _peerConnectionId: number;
+    _readyState: MediaStreamTrackState;
 
     readonly id: string;
     readonly kind: string;
     readonly label: string = '';
-    readyState: MediaStreamTrackState;
     readonly remote: boolean;
 
     constructor(info) {
@@ -31,14 +31,11 @@ class MediaStreamTrack extends defineCustomEventTarget(...MEDIA_STREAM_TRACK_EVE
         this._settings = info.settings || {};
         this._muted = false;
         this._peerConnectionId = info.peerConnectionId;
+        this._readyState = info.readyState;
 
         this.id = info.id;
         this.kind = info.kind;
         this.remote = info.remote;
-
-        const _readyState = info.readyState.toLowerCase();
-
-        this.readyState = _readyState === 'initializing' || _readyState === 'live' ? 'live' : 'ended';
     }
 
     get enabled(): boolean {
@@ -58,9 +55,13 @@ class MediaStreamTrack extends defineCustomEventTarget(...MEDIA_STREAM_TRACK_EVE
         return this._muted;
     }
 
+    get readyState(): string {
+        return this._readyState;
+    }
+
     stop(): void {
         WebRTCModule.mediaStreamTrackSetEnabled(this.id, false);
-        this.readyState = 'ended';
+        this._readyState = 'ended';
         // TODO: save some stopped flag?
     }
 
