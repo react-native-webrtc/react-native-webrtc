@@ -233,7 +233,7 @@ export default class RTCPeerConnection extends defineCustomEventTarget(...PEER_C
         log.debug(`${this._pcId} addIceCandidate`);
 
         if (!candidate || !candidate.candidate) {
-            // XXX end-of cantidates is not implemented: https://bugs.chromium.org/p/webrtc/issues/detail?id=9218
+            // XXX end-of candidates is not implemented: https://bugs.chromium.org/p/webrtc/issues/detail?id=9218
             return;
         }
 
