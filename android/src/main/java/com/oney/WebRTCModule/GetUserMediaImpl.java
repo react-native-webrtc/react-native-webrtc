@@ -331,7 +331,7 @@ class GetUserMediaImpl {
             trackInfo.putString("id", trackId);
             trackInfo.putString("kind", track.kind());
             trackInfo.putString("label", trackId);
-            trackInfo.putString("readyState", track.state().toString());
+            trackInfo.putString("readyState", track.state().toString().toLowerCase());
             trackInfo.putBoolean("remote", false);
 
             if (track instanceof VideoTrack) {
