@@ -205,7 +205,7 @@ export default class RTCPeerConnection extends defineCustomEventTarget(...PEER_C
 
                         newTransceivers?.forEach( t => {
                             const { transceiverOrder, transceiver } = t;
-                            const newSender = new RTCRtpSender(transceiver.sender);
+                            const newSender = new RTCRtpSender({ ...transceiver.sender, track: null });
                             const remoteTrack
                                 = transceiver.receiver.track ? new MediaStreamTrack(transceiver.receiver.track) : null;
                             const newReceiver = new RTCRtpReceiver({ ...transceiver.receiver, track: remoteTrack });
@@ -528,7 +528,7 @@ export default class RTCPeerConnection extends defineCustomEventTarget(...PEER_C
                 transceiver._direction = ev.transceiver.direction;
             } else {
                 track = new MediaStreamTrack(ev.receiver.track);
-                const sender = new RTCRtpSender({ ...ev.transceiver.sender });
+                const sender = new RTCRtpSender({ ...ev.transceiver, track: null });
                 const receiver = new RTCRtpReceiver({ ...ev.receiver, track });
 
                 transceiver = new RTCRtpTransceiver({ ...ev.transceiver, receiver, sender });
