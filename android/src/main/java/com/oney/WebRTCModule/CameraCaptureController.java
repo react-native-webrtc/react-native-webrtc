@@ -76,7 +76,7 @@ public class CameraCaptureController extends AbstractVideoCaptureController {
         // If we try to switch the camera while the session is destroyed
         // we receive this error from libwebrtc: "switchCamera: camera is not running."
         if(!this.isCapturing) {
-            // So we are just persisting the state that we wise so we can apply It in the future
+            // So we are just persisting the state that we want so we can apply it in the future
             this.isFrontFacing = !this.isFrontFacing;
             handler.onSwitchCameraDone(facingMode());
             return;
