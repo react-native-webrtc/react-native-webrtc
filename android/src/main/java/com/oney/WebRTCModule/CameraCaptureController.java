@@ -19,6 +19,8 @@ public class CameraCaptureController extends AbstractVideoCaptureController {
         = CameraCaptureController.class.getSimpleName();
 
     private boolean isFrontFacing;
+    private boolean isCapturing = false;
+    private String facingModeWhenStoppedCapturing = null;
 
     private final CameraEnumerator cameraEnumerator;
     private final ReadableMap constraints;
@@ -31,10 +33,33 @@ public class CameraCaptureController extends AbstractVideoCaptureController {
      */
     private final CameraEventsHandler cameraEventsHandler = new CameraEventsHandler();
 
+    @Override
+    public void startCapture() {
+        super.startCapture();
+        this.isCapturing = true;
+        // Checking if we need to switch the camera
+        if(facingModeWhenStoppedCapturing != null && facingModeWhenStoppedCapturing != facingMode()) {
+            CameraCaptureController.this.switchCamera(new SwitchCameraHandler() {
+                @Override
+                public void onSwitchCameraDone(String facingMode) {
+                    Log.d(TAG, "Restoring to the right camera facing mode: " + facingMode);
+                }
+            });
+        }
+        this.facingModeWhenStoppedCapturing = null;
+    }
+
+    @Override
+    public boolean stopCapture() {
+        this.isCapturing = false;
+        this.facingModeWhenStoppedCapturing = this.facingMode();
+        return super.stopCapture();
+    }
+
     public CameraCaptureController(CameraEnumerator cameraEnumerator, ReadableMap constraints) {
         super(
              constraints.getInt("width"),
-             constraints.getInt("height"), 
+             constraints.getInt("height"),
              constraints.getInt("frameRate"));
 
         this.cameraEnumerator = cameraEnumerator;
@@ -47,6 +72,15 @@ public class CameraCaptureController extends AbstractVideoCaptureController {
     }
 
     public void switchCamera(SwitchCameraHandler handler) {
+        // When the video is muted, the camera session is destroyed
+        // If we try to switch the camera while the session is destroyed
+        // we receive this error from libwebrtc: "switchCamera: camera is not running."
+        if(!this.isCapturing) {
+            // So we are just persisting the state that we want so we can apply it in the future
+            this.isFrontFacing = !this.isFrontFacing;
+            handler.onSwitchCameraDone(facingMode());
+            return;
+        }
         if (videoCapturer instanceof CameraVideoCapturer) {
             CameraVideoCapturer capturer = (CameraVideoCapturer) videoCapturer;
             String[] deviceNames = cameraEnumerator.getDeviceNames();
@@ -73,6 +107,7 @@ public class CameraCaptureController extends AbstractVideoCaptureController {
                         handler.onSwitchCameraDone(facingMode());
                     }
                 });
+                return;
             }
 
             // If we are here the device has more than 2 cameras. Cycle through them
