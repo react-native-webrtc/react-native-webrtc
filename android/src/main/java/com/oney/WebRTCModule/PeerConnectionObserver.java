@@ -19,6 +19,8 @@ import org.webrtc.IceCandidate;
 import org.webrtc.MediaStream;
 import org.webrtc.MediaStreamTrack;
 import org.webrtc.PeerConnection;
+import org.webrtc.RTCStats;
+import org.webrtc.RTCStatsReport;
 import org.webrtc.RtpReceiver;
 import org.webrtc.RtpSender;
 import org.webrtc.RtpTransceiver;
@@ -29,11 +31,14 @@ import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.UUID;
 
 class PeerConnectionObserver implements PeerConnection.Observer {
@@ -237,6 +242,124 @@ class PeerConnectionObserver implements PeerConnection.Observer {
         peerConnection.getStats(rtcStatsReport -> {
             promise.resolve(StringUtils.statsToJSON(rtcStatsReport));
         });
+    }
+
+
+    /**
+     * @param trackIdentifier sender or receiver id
+     * @param streamType "outbound-rtp" for sender or "inbound-rtp" for receiver
+     */
+    void getFilteredStats(String trackIdentifier, boolean isReceiver, Promise promise) {
+        
+        peerConnection.getStats(rtcStatsReport -> {
+            Map<String, RTCStats> statsMap = rtcStatsReport.getStatsMap();
+            Set<RTCStats> filteredStats = new HashSet<>();
+            // Get track stats
+            RTCStats trackStats = getTrackStats(trackIdentifier, statsMap);
+            if (trackStats == null) {
+                Log.w(TAG, "getStats: couldn't find track stats!");
+                RTCStatsReport report = new RTCStatsReport((long) rtcStatsReport.getTimestampUs(), new HashMap<>());
+                promise.resolve(StringUtils.statsToJSON(report));
+                return;
+            }
+
+            filteredStats.add(trackStats);
+            String trackId = trackStats.getId();
+
+            // Get stream stats
+            RTCStats streamStats = getStreamStats(trackId, statsMap);
+            if (streamStats != null) {
+                filteredStats.add(streamStats);
+            }
+
+            // Get streamType stats and associated information
+            Set<Long> ssrcs = new HashSet<>();
+            Set<String> codecIds = new HashSet<>();
+
+            String streamType;
+            if (isReceiver) {
+                streamType = "inbound-rtp";
+            } else {
+                streamType = "outbound-rtp";
+            }
+
+            for (RTCStats stats : statsMap.values()) {
+                if (stats.getType().equals(streamType) && trackId.equals(stats.getMembers().get("trackId"))) {
+                    ssrcs.add((Long) stats.getMembers().get("ssrc"));
+                    codecIds.add((String) stats.getMembers().get("codecId"));
+                    filteredStats.add(stats);
+                }
+            }
+
+            // Sweep for any remaining stats we want.
+            filteredStats.addAll(getExtraStats(trackIdentifier, ssrcs, codecIds, statsMap));
+
+            Map<String, RTCStats> filteredStatsMap = new HashMap<>();
+            int count = 0;
+            for (RTCStats stats : filteredStats) {
+                filteredStatsMap.put(stats.getId(), stats);
+                count++;
+                if(count == 2) {
+                    break;
+                }
+            }
+            RTCStatsReport filteredStatsReport = new RTCStatsReport((long) rtcStatsReport.getTimestampUs(), filteredStatsMap);
+            promise.resolve(StringUtils.statsToJSON(filteredStatsReport));
+        });
+    }
+
+    // Note: trackIdentifier can differ from the internal stats trackId
+    // trackIdentifier refers to the sender or receiver id
+    @Nullable
+    private RTCStats getTrackStats(String trackIdentifier, Map<String, RTCStats> statsMap) {
+        for (RTCStats stats : statsMap.values()) {
+            if (stats.getType().equals("track") && trackIdentifier.equals(stats.getMembers().get("trackIdentifier"))) {
+                return stats;
+            }
+        }
+        return null;
+    }
+
+
+    @Nullable
+    private RTCStats getStreamStats(String trackId, Map<String, RTCStats> statsMap) {
+        for (RTCStats stats : statsMap.values()) {
+            if (stats.getType().equals("stream")
+                    && Arrays.asList((String[]) stats.getMembers().get("trackIds")).contains(trackId)) {
+                return stats;
+            }
+        }
+        return null;
+    }
+
+    // Note: trackIdentifier can differ from the internal stats trackId
+    // trackIdentifier refers to the sender or receiver id
+    private Set<RTCStats> getExtraStats(String trackIdentifier, Set<Long> ssrcs, Set<String> codecIds, Map<String, RTCStats> statsMap) {
+        Set<RTCStats> extraStats = new HashSet<>();
+        for (RTCStats stats : statsMap.values()) {
+            switch (stats.getType()) {
+                case "candidate-pair":
+                case "certificate":
+                case "local-candidate":
+                case "transport":
+                    extraStats.add(stats);
+                    break;
+            }
+
+            if (ssrcs.contains(stats.getMembers().get("ssrc"))) {
+                extraStats.add(stats);
+                continue;
+            }
+            if (trackIdentifier.equals(stats.getMembers().get("trackIdentifier"))) {
+                extraStats.add(stats);
+                continue;
+            }
+            if (codecIds.contains(stats.getId())) {
+                extraStats.add(stats);
+            }
+        }
+
+        return extraStats;
     }
 
     @Override
