@@ -291,17 +291,30 @@ class PeerConnectionObserver implements PeerConnection.Observer {
                 }
             }
 
-            // Sweep for any remaining stats we want.
-            filteredStats.addAll(getExtraStats(trackIdentifier, ssrcs, codecIds, statsMap));
 
-            Map<String, RTCStats> filteredStatsMap = new HashMap<>();
-            int count = 0;
-            for (RTCStats stats : filteredStats) {
-                filteredStatsMap.put(stats.getId(), stats);
-                count++;
-                if(count == 2) {
+            // Get candidate information
+            RTCStats candidatePairStats = null;
+            for (RTCStats stats : statsMap.values()) {
+                if (stats.getType().equals("candidate-pair") && stats.getMembers().get("nominated").equals(true)) {
+                    candidatePairStats = stats;
                     break;
                 }
+            }
+
+            String localCandidateId = null;
+            String remoteCandidateId = null;
+            if (candidatePairStats != null) {
+                filteredStats.add(candidatePairStats);
+                localCandidateId = (String) candidatePairStats.getMembers().get("localCandidateId");
+                remoteCandidateId = (String) candidatePairStats.getMembers().get("remoteCandidateId");
+            }
+
+            // Sweep for any remaining stats we want.
+            filteredStats.addAll(getExtraStats(trackIdentifier, ssrcs, codecIds, localCandidateId, remoteCandidateId, statsMap));
+
+            Map<String, RTCStats> filteredStatsMap = new HashMap<>();
+            for (RTCStats stats : filteredStats) {
+                filteredStatsMap.put(stats.getId(), stats);
             }
             RTCStatsReport filteredStatsReport = new RTCStatsReport((long) rtcStatsReport.getTimestampUs(), filteredStatsMap);
             promise.resolve(StringUtils.statsToJSON(filteredStatsReport));
@@ -334,16 +347,25 @@ class PeerConnectionObserver implements PeerConnection.Observer {
 
     // Note: trackIdentifier can differ from the internal stats trackId
     // trackIdentifier refers to the sender or receiver id
-    private Set<RTCStats> getExtraStats(String trackIdentifier, Set<Long> ssrcs, Set<String> codecIds, Map<String, RTCStats> statsMap) {
+    public Set<RTCStats> getExtraStats(
+            String trackIdentifier,
+            Set<Long> ssrcs,
+            Set<String> codecIds,
+            @Nullable String localCandidateId,
+            @Nullable String remoteCandidateId,
+            Map<String, RTCStats> statsMap) {
         Set<RTCStats> extraStats = new HashSet<>();
         for (RTCStats stats : statsMap.values()) {
             switch (stats.getType()) {
-                case "candidate-pair":
                 case "certificate":
-                case "local-candidate":
                 case "transport":
                     extraStats.add(stats);
                     break;
+            }
+
+            if (stats.getId().equals(localCandidateId) || stats.getId().equals(remoteCandidateId)) {
+                extraStats.add(stats);
+                continue;
             }
 
             if (ssrcs.contains(stats.getMembers().get("ssrc"))) {
