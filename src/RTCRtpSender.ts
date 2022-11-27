@@ -63,7 +63,7 @@ export default class RTCRtpSender {
     }
 
     getStats() {
-        return WebRTCModule.receiverGetStats(this._peerConnectionId, this._id).then(data =>
+        return WebRTCModule.senderGetStats(this._peerConnectionId, this._id).then(data =>
             /* On both Android and iOS it is faster to construct a single
             JSON string representing the Map of StatsReports and have it
             pass through the React Native bridge rather than the Map of
