@@ -357,6 +357,64 @@ RCT_EXPORT_METHOD(peerConnectionGetStats:(nonnull NSNumber *) objectID
   }];
 }
 
+RCT_EXPORT_METHOD(receiverGetStats:(nonnull NSNumber *) pcId
+                        receiverId:(nonnull NSString *) receiverId
+                          resolver:(RCTPromiseResolveBlock)resolve
+                          rejecter:(RCTPromiseRejectBlock)reject)
+{
+  RTCPeerConnection *peerConnection = self.peerConnections[pcId];
+  if (!peerConnection) {
+    reject(@"invalid_id", @"PeerConnection ID not found", nil);
+    return;
+  }
+  
+  RTCRtpReceiver *receiver;
+  for (RTCRtpReceiver *findRecv in peerConnection.receivers) {
+    if ([findRecv.receiverId isEqualToString:receiverId]) {
+      receiver = findRecv;
+      break;
+    }
+  }
+  
+  if (!receiver) {
+    reject(@"invalid_id", @"Receiver ID not found", nil);
+    return;
+  }
+  
+  [peerConnection statisticsForReceiver:receiver completionHandler:^(RTCStatisticsReport *report) {
+    resolve([self statsToJSON:report]);
+  }];
+}
+
+RCT_EXPORT_METHOD(senderGetStats:(nonnull NSNumber *) pcId
+                        senderId:(nonnull NSString *) senderId
+                        resolver:(RCTPromiseResolveBlock)resolve
+                        rejecter:(RCTPromiseRejectBlock)reject)
+{
+  RTCPeerConnection *peerConnection = self.peerConnections[pcId];
+  if (!peerConnection) {
+    reject(@"invalid_id", @"PeerConnection ID not found", nil);
+    return;
+  }
+  
+  RTCRtpSender *sender;
+  for (RTCRtpSender *findSend in peerConnection.senders) {
+    if ([findSend.senderId isEqualToString:senderId]) {
+      sender = findSend;
+      break;
+    }
+  }
+  
+  if(!sender) {
+    reject(@"invalid_id", @"Sender ID not found", nil);
+    return;
+  }
+  
+  [peerConnection statisticsForSender:sender completionHandler:^(RTCStatisticsReport *report) {
+    resolve([self statsToJSON:report]);
+  }];
+}
+
 RCT_EXPORT_METHOD(peerConnectionRestartIce:(nonnull NSNumber *)objectID)
 {
   RTCPeerConnection *peerConnection = self.peerConnections[objectID];
