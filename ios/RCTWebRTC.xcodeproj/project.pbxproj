@@ -71,6 +71,7 @@
 		4EE3A8CD25B841DD00FAA24A /* ScreenCapturer.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = ScreenCapturer.m; path = RCTWebRTC/ScreenCapturer.m; sourceTree = SOURCE_ROOT; };
 		4EE3A8CE25B841DD00FAA24A /* SocketConnection.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = SocketConnection.h; path = RCTWebRTC/SocketConnection.h; sourceTree = SOURCE_ROOT; };
 		A20F721AD842563B66292D5B /* Pods_RCTWebRTC.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_RCTWebRTC.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		D7F99C122938F4E0000A2450 /* WebRTCModule+RTCMediaStream.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = "WebRTCModule+RTCMediaStream.h"; path = "RCTWebRTC/WebRTCModule+RTCMediaStream.h"; sourceTree = SOURCE_ROOT; };
 		DEC96576264176C10052DB35 /* DataChannelWrapper.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = DataChannelWrapper.m; path = RCTWebRTC/DataChannelWrapper.m; sourceTree = "<group>"; };
 		DEC96579264176DF0052DB35 /* DataChannelWrapper.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = DataChannelWrapper.h; path = RCTWebRTC/DataChannelWrapper.h; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -129,6 +130,7 @@
 				4EE3A8B525B8414A00FAA24A /* WebRTCModule+Permissions.m */,
 				4EE3A8B825B8415900FAA24A /* WebRTCModule+RTCDataChannel.h */,
 				4EE3A8B925B8415900FAA24A /* WebRTCModule+RTCDataChannel.m */,
+				D7F99C122938F4E0000A2450 /* WebRTCModule+RTCMediaStream.h */,
 				4EE3A8BC25B8416500FAA24A /* WebRTCModule+RTCMediaStream.m */,
 				4EE3A8C025B8416F00FAA24A /* WebRTCModule+RTCPeerConnection.h */,
 				4EE3A8BF25B8416F00FAA24A /* WebRTCModule+RTCPeerConnection.m */,

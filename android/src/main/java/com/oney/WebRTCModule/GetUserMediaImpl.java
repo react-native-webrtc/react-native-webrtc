@@ -307,7 +307,7 @@ class GetUserMediaImpl {
         displayMediaPromise = null;
     }
 
-    private void createStream(MediaStreamTrack[] tracks, BiConsumer<String, ArrayList<WritableMap>> successCallback) {
+    void createStream(MediaStreamTrack[] tracks, BiConsumer<String, ArrayList<WritableMap>> successCallback) {
         String streamId = UUID.randomUUID().toString();
         MediaStream mediaStream = webRTCModule.mFactory.createLocalMediaStream(streamId);
 
@@ -362,7 +362,7 @@ class GetUserMediaImpl {
         return createVideoTrack(screenCaptureController);
     }
 
-    private VideoTrack createVideoTrack(AbstractVideoCaptureController videoCaptureController) {
+    VideoTrack createVideoTrack(AbstractVideoCaptureController videoCaptureController) {
         videoCaptureController.initializeVideoCapturer();
 
         VideoCapturer videoCapturer = videoCaptureController.videoCapturer;
@@ -499,7 +499,7 @@ class GetUserMediaImpl {
         }
     }
 
-    private interface BiConsumer<T, U> {
+    public interface BiConsumer<T, U> {
         void accept(T t, U u);
     }
 }
