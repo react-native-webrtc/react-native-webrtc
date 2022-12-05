@@ -101,20 +101,23 @@ public class DailyWebRTCDevicesManager {
 
     private void fillVideoInputDevices(WritableArray enumerateDevicesArray) {
         String[] devices = cameraEnumerator.getDeviceNames();
-        for (int i = 0; i < devices.length; ++i) {
-            String deviceName = devices[i];
-            boolean isFrontFacing;
-            try {
-                // This can throw an exception when using the Camera 1 API.
-                isFrontFacing = cameraEnumerator.isFrontFacing(deviceName);
-            } catch (Exception e) {
-                Log.e(TAG, "Failed to check the facing mode of camera");
-                continue;
-            }
-            String label = isFrontFacing ? "Front camera" : "Rear camera";
-            String deviceID = isFrontFacing ? "CAMERA_USER" : "CAMERA_ENVIRONMENT";
-            WritableMap params = this.createWritableMap(deviceID, label, DeviceKind.VIDEO_INPUT.getKind());
-            params.putString("facing", isFrontFacing ? "user" : "environment");
+        Log.d(TAG, "fillVideoInputDevices video devices: " + Arrays.toString(devices));
+        // FIXME Filipi
+        // We are just considering to always return up to two camera devices
+        // If we return more than two, we are going to need to change our API
+        // And create a method to switch the camera that also allow to receive the camera device name
+        // That we wish to switch to, and test It to see If It is working fine
+        // We may plan to implement that in the future.
+        boolean hasFrontCamera = Arrays.stream(devices).anyMatch(cameraEnumerator::isFrontFacing);
+        if(hasFrontCamera) {
+            WritableMap params = this.createWritableMap("CAMERA_USER", "Front camera", DeviceKind.VIDEO_INPUT.getKind());
+            params.putString("facing",  "user");
+            enumerateDevicesArray.pushMap(params);
+        }
+        boolean hasRearCamera = Arrays.stream(devices).anyMatch(cameraEnumerator::isBackFacing);
+        if(hasRearCamera) {
+            WritableMap params = this.createWritableMap("CAMERA_ENVIRONMENT", "Rear camera", DeviceKind.VIDEO_INPUT.getKind());
+            params.putString("facing",  "environment");
             enumerateDevicesArray.pushMap(params);
         }
     }
