@@ -1,4 +1,5 @@
 import { NativeModules, NativeEventEmitter, EmitterSubscription } from 'react-native';
+// @ts-ignore
 import EventEmitter from 'react-native/Libraries/vendor/emitter/EventEmitter';
 
 const { WebRTCModule } = NativeModules;
