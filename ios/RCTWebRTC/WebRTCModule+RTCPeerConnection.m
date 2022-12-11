@@ -484,50 +484,27 @@ RCT_EXPORT_BLOCKING_SYNCHRONOUS_METHOD(peerConnectionAddTransceiver:(nonnull NSN
         RTCRtpMediaType type = RTCRtpMediaTypeUnsupported;
         
         if (kind) {
-            if ([kind  isEqual: @"audio"]) {
+            if ([kind isEqual: @"audio"]) {
                 type = RTCRtpMediaTypeAudio;
-            } else if ([kind  isEqual: @"video"]) {
+            } else if ([kind isEqual: @"video"]) {
                 type = RTCRtpMediaTypeVideo;
             }
-            transceiver = [peerConnection addTransceiverOfType:type];
+
+            NSDictionary *initOptions = [options objectForKey: @"init"];
+            RTCRtpTransceiverInit *transceiverInit = [SerializeUtils parseTransceiverOptions: initOptions];
+
+            transceiver = [peerConnection addTransceiverOfType: type init: transceiverInit];
         } else if (trackId) {
             RTCMediaStreamTrack *track = self.localTracks[trackId];
             
-            if(!track) {
+            if (!track) {
                 track = peerConnection.remoteTracks[trackId];
             }
             
-            NSDictionary *initOptions = [options objectForKey:@"init"];
-            RTCRtpTransceiverInit *transceiverInit = [RTCRtpTransceiverInit new];
-           
-            if (initOptions) {
-                NSString *dirrection = [initOptions objectForKey:@"direction"];
-                if ([dirrection isEqual: @"sendrecv"]) {
-                    [transceiverInit setDirection:RTCRtpTransceiverDirectionSendRecv];
-                } else if ([dirrection isEqual: @"sendonly"]) {
-                     [transceiverInit setDirection:RTCRtpTransceiverDirectionSendOnly];
-                } else if ([dirrection isEqual: @"recvonly"]) {
-                     [transceiverInit setDirection:RTCRtpTransceiverDirectionRecvOnly];
-                } else if ([dirrection isEqual: @"inactive"]) {
-                     [transceiverInit setDirection:RTCRtpTransceiverDirectionInactive];
-                }
-                
-                NSArray *streamIds = [initOptions objectForKey:@"streamIds"];
-                if (streamIds) {
-                    [transceiverInit setStreamIds:streamIds];
-                }
+            NSDictionary *initOptions = [options objectForKey: @"init"];
+            RTCRtpTransceiverInit *transceiverInit = [SerializeUtils parseTransceiverOptions: initOptions];
 
-                NSArray *encodingsArray = [initOptions objectForKey:@"sendEncodings"];
-                if (encodingsArray) {
-                    NSMutableArray<RTCRtpEncodingParameters *> *sendEncodings = [NSMutableArray new];
-                    for (NSDictionary* encoding in encodingsArray) {
-                        [sendEncodings addObject:[self parseEncoding:encoding]];
-                    }
-                    [transceiverInit setSendEncodings:sendEncodings];
-                }
-            }
-
-            transceiver = [peerConnection addTransceiverWithTrack:track init:transceiverInit];
+            transceiver = [peerConnection addTransceiverWithTrack: track init: transceiverInit];
         } else {
             RCTLogWarn(@"peerConnectionAddTransceiver() no type nor trackId provided in options");
             return;
@@ -539,8 +516,8 @@ RCT_EXPORT_BLOCKING_SYNCHRONOUS_METHOD(peerConnectionAddTransceiver:(nonnull NSN
         }
         
         params = @{
-           @"transceiverOrder": [NSNumber numberWithInt:_transceiverNextId++],
-           @"transceiver": [SerializeUtils transceiverToJSONWithPeerConnectionId: objectID transceiver: transceiver ]
+           @"transceiverOrder": [NSNumber numberWithInt: _transceiverNextId++],
+           @"transceiver": [SerializeUtils transceiverToJSONWithPeerConnectionId: objectID transceiver: transceiver]
         };
     });
 
@@ -579,30 +556,7 @@ RCT_EXPORT_BLOCKING_SYNCHRONOUS_METHOD(peerConnectionRemoveTrack:(nonnull NSNumb
     return @(ret);
 }
 
-// TODO: move these below to some SerializeUrils file
-
-- (RTCRtpEncodingParameters*)parseEncoding:(NSDictionary*)params
-{
-    RTCRtpEncodingParameters *encoding = [RTCRtpEncodingParameters new];
-
-    if (params[@"rid"] != nil) {
-      [encoding setRid:params[@"rid"]];
-    }
-    if (params[@"active"] != nil) {
-      [encoding setIsActive:((NSNumber*)params[@"active"]).boolValue];
-    }
-    if (params[@"maxBitrate"] != nil) {
-      [encoding setMaxBitrateBps:(NSNumber*)params[@"maxBitrate"]];
-    }
-    if (params[@"maxFramerate"] != nil) {
-      [encoding setMaxFramerate:(NSNumber*)params[@"maxFramerate"]];
-    }
-    if (params[@"scaleResolutionDownBy"] != nil) {
-      [encoding setScaleResolutionDownBy:(NSNumber*)params[@"scaleResolutionDownBy"]];
-    }
-
-    return encoding;
-}
+// TODO: move these below to some SerializeUtils file
 
 /**
  * Constructs a JSON <tt>NSString</tt> representation of a specific
