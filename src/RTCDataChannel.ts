@@ -16,6 +16,8 @@ const DATA_CHANNEL_EVENTS = [ 'open', 'message', 'bufferedamountlow', 'closing',
 export default class RTCDataChannel extends defineCustomEventTarget(...DATA_CHANNEL_EVENTS) {
     _peerConnectionId: number;
     _reactTag: string;
+
+    _bufferedAmount: number;
     _id: number;
     _label: string;
     _maxPacketLifeTime?: number;
@@ -26,7 +28,6 @@ export default class RTCDataChannel extends defineCustomEventTarget(...DATA_CHAN
     _readyState: RTCDataChannelState;
 
     binaryType = 'arraybuffer'; // we only support 'arraybuffer'
-    bufferedAmount = 0;
     bufferedAmountLowThreshold = 0;
 
     constructor(info) {
@@ -35,6 +36,7 @@ export default class RTCDataChannel extends defineCustomEventTarget(...DATA_CHAN
         this._peerConnectionId = info.peerConnectionId;
         this._reactTag = info.reactTag;
 
+        this._bufferedAmount = 0;
         this._label = info.label;
         this._id = info.id === -1 ? null : info.id; // null until negotiated.
         this._ordered = Boolean(info.ordered);
@@ -45,6 +47,10 @@ export default class RTCDataChannel extends defineCustomEventTarget(...DATA_CHAN
         this._readyState = info.readyState;
 
         this._registerEvents();
+    }
+
+    get bufferedAmount(): number {
+        return this._bufferedAmount;
     }
 
     get label(): string {
@@ -153,6 +159,19 @@ export default class RTCDataChannel extends defineCustomEventTarget(...DATA_CHAN
 
             // @ts-ignore
             this.dispatchEvent(new MessageEvent('message', { data }));
+        });
+
+        addListener(this, 'dataChannelDidChangeBufferedAmount', (ev: any) => {
+            if (ev.reactTag !== this._reactTag) {
+                return;
+            }
+
+            this._bufferedAmount = ev.bufferedAmount;
+
+            if (this._bufferedAmount < this.bufferedAmountLowThreshold) {
+                // @ts-ignore
+                this.dispatchEvent(new RTCDataChannelEvent('bufferedamountlow', { channel: this }));
+            }
         });
     }
 }

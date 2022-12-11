@@ -20,6 +20,7 @@ const NATIVE_EVENTS = [
     'peerConnectionOnTrack',
     'dataChannelStateChanged',
     'dataChannelReceiveMessage',
+    'dataChannelDidChangeBufferedAmount',
     'mediaStreamTrackMuteChanged',
 ];
 
