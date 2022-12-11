@@ -25,9 +25,6 @@ const NATIVE_EVENTS = [
 
 const eventEmitter = new EventEmitter();
 
-// TODO: migrate RTCDataChannel to the new API and stop exporting this.
-export default eventEmitter;
-
 export function setupNativeEvents() {
     for (const eventName of NATIVE_EVENTS) {
         nativeEmitter.addListener(eventName, (...args) => {
