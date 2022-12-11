@@ -16,7 +16,7 @@
                                                         track: (RTCMediaStreamTrack *_Nonnull) track;
 + (NSString *_Nonnull)serializeDirection: (RTCRtpTransceiverDirection) direction;
 + (RTCRtpTransceiverDirection)parseDirection: (NSString *_Nonnull) direction;
-+ (RTCRtpTransceiverInit)parseTransceiverOptions: (NSDictionary *_Nonnull) parameters;
++ (RTCRtpTransceiverInit *_Nonnull)parseTransceiverOptions: (NSDictionary *_Nonnull) parameters;
 + (NSDictionary *_Nonnull)parametersToJSON: (RTCRtpParameters *_Nonnull) parameters;
 + (NSMutableArray *_Nonnull)constructTransceiversInfoArrayWithPeerConnection: (RTCPeerConnection *_Nonnull) peerConnection
                                                              peerConnectionId: (NSNumber *_Nonnull) peerConnectionId;

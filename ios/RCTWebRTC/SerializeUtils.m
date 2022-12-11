@@ -208,7 +208,7 @@
     return RTCRtpTransceiverDirectionInactive;
 }
 
-- (RTCRtpEncodingParameters*) parseEncoding: (NSDictionary *) params {
++ (RTCRtpEncodingParameters *) parseEncoding: (NSDictionary *) params {
     RTCRtpEncodingParameters *encoding = [RTCRtpEncodingParameters new];
 
     if (params[@"rid"] != nil) {
@@ -230,18 +230,18 @@
     return encoding;
 }
 
-+ (RTCRtpTransceiverInit) parseTransceiverOptions: (NSDictionary *) params {
++ (RTCRtpTransceiverInit *) parseTransceiverOptions: (NSDictionary *) params {
     RTCRtpTransceiverInit *transceiverInit = [RTCRtpTransceiverInit new];
     
-    NSString *direction = [initOptions objectForKey: @"direction"];
+    NSString *direction = [params objectForKey: @"direction"];
     [transceiverInit setDirection: [SerializeUtils parseDirection: direction]];
     
-    NSArray *streamIds = [initOptions objectForKey: @"streamIds"];
+    NSArray *streamIds = [params objectForKey: @"streamIds"];
     if (streamIds) {
         [transceiverInit setStreamIds: streamIds];
     }
 
-    NSArray *encodingsArray = [initOptions objectForKey: @"sendEncodings"];
+    NSArray *encodingsArray = [params objectForKey: @"sendEncodings"];
     if (encodingsArray) {
         NSMutableArray<RTCRtpEncodingParameters *> *sendEncodings = [NSMutableArray new];
         for (NSDictionary* encoding in encodingsArray) {
