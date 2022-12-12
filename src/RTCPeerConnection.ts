@@ -19,6 +19,7 @@ import RTCRtpTransceiver from './RTCRtpTransceiver';
 import RTCSessionDescription, { RTCSessionDescriptionInit } from './RTCSessionDescription';
 import RTCTrackEvent from './RTCTrackEvent';
 import * as RTCUtil from './RTCUtil';
+import MediaStreamTrackEvent from './MediaStreamTrackEvent';
 
 const log = new Logger('pc');
 const { WebRTCModule } = NativeModules;
@@ -509,8 +510,8 @@ export default class RTCPeerConnection extends defineCustomEventTarget(...PEER_C
 
             log.debug(`${this._pcId} ontrack`);
 
-            let track;
-            let transceiver;
+            let track: MediaStreamTrack;
+            let transceiver: RTCRtpTransceiver;
 
             const [ oldTransceiver ] = this
                 .getTransceivers()
@@ -522,7 +523,7 @@ export default class RTCPeerConnection extends defineCustomEventTarget(...PEER_C
 
             if (oldTransceiver) {
                 transceiver = oldTransceiver;
-                track = transceiver.receiver.track;
+                track = transceiver.receiver.track!;
                 transceiver._mid = ev.transceiver.mid;
                 transceiver._currentDirection = ev.transceiver.currentDirection;
                 transceiver._direction = ev.transceiver.direction;
@@ -538,7 +539,7 @@ export default class RTCPeerConnection extends defineCustomEventTarget(...PEER_C
             }
 
             // Get the stream object from the event. Create if necessary.
-            const streams = ev.streams.map(streamInfo => {
+            const streams: MediaStream[] = ev.streams.map(streamInfo => {
                 // Here we are making sure that we don't create stream objects that already exist
                 // So that event listeners do get the same object if it has been created before.
                 if (!this._remoteStreams.has(streamInfo.streamId)) {
@@ -570,6 +571,11 @@ export default class RTCPeerConnection extends defineCustomEventTarget(...PEER_C
             // @ts-ignore
             this.dispatchEvent(new RTCTrackEvent('track', eventData));
 
+            streams.forEach(stream => {
+                // @ts-ignore
+                stream.dispatchEvent(new MediaStreamTrackEvent('addtrack', {track}))
+            })
+
             // Dispatch an unmute event for the track.
             track._setMutedInternal(false);
         });
@@ -593,6 +599,9 @@ export default class RTCPeerConnection extends defineCustomEventTarget(...PEER_C
                     const trackIdx = stream._tracks.indexOf(track);
 
                     stream._tracks.splice(trackIdx, 1);
+
+                    // @ts-ignore
+                    stream.dispatchEvent(new MediaStreamTrackEvent('removetrack', {track}))
 
                     // Dispatch a mute event for the track.
                     track._setMutedInternal(true);
