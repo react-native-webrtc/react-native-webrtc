@@ -193,21 +193,67 @@
 }
 
 + (RTCRtpTransceiverDirection) parseDirection: (NSString *) direction {
-    if ([direction  isEqual: @"inactive"]) {
+    if ([direction isEqual: @"inactive"]) {
         return RTCRtpTransceiverDirectionInactive;
-    } else if ([direction  isEqual: @"recvonly"]) {
+    } else if ([direction isEqual: @"recvonly"]) {
         return RTCRtpTransceiverDirectionRecvOnly;
-    } else if ([direction  isEqual: @"sendonly"]) {
+    } else if ([direction isEqual: @"sendonly"]) {
         return RTCRtpTransceiverDirectionSendOnly;
-    } else if ([direction  isEqual: @"sendrecv"]) {
+    } else if ([direction isEqual: @"sendrecv"]) {
         return RTCRtpTransceiverDirectionSendRecv;
-    } else if ([direction  isEqual: @"stopped"]) {
+    } else if ([direction isEqual: @"stopped"]) {
         return RTCRtpTransceiverDirectionStopped;
     }
     
     return RTCRtpTransceiverDirectionInactive;
 }
 
++ (RTCRtpEncodingParameters *) parseEncoding: (NSDictionary *) params {
+    RTCRtpEncodingParameters *encoding = [RTCRtpEncodingParameters new];
+
+    if (params[@"rid"] != nil) {
+      [encoding setRid: params[@"rid"]];
+    }
+    if (params[@"active"] != nil) {
+      [encoding setIsActive: ((NSNumber *) params[@"active"]).boolValue];
+    }
+    if (params[@"maxBitrate"] != nil) {
+      [encoding setMaxBitrateBps: (NSNumber *) params[@"maxBitrate"]];
+    }
+    if (params[@"maxFramerate"] != nil) {
+      [encoding setMaxFramerate: (NSNumber *) params[@"maxFramerate"]];
+    }
+    if (params[@"scaleResolutionDownBy"] != nil) {
+      [encoding setScaleResolutionDownBy: (NSNumber *) params[@"scaleResolutionDownBy"]];
+    }
+
+    return encoding;
+}
+
++ (RTCRtpTransceiverInit *) parseTransceiverOptions: (NSDictionary *) params {
+    RTCRtpTransceiverInit *transceiverInit = [RTCRtpTransceiverInit new];
+    
+    NSString *direction = [params objectForKey: @"direction"];
+    if (direction) {
+        [transceiverInit setDirection: [SerializeUtils parseDirection: direction]];
+    }
+    
+    NSArray *streamIds = [params objectForKey: @"streamIds"];
+    if (streamIds) {
+        [transceiverInit setStreamIds: streamIds];
+    }
+
+    NSArray *encodingsArray = [params objectForKey: @"sendEncodings"];
+    if (encodingsArray) {
+        NSMutableArray<RTCRtpEncodingParameters *> *sendEncodings = [NSMutableArray new];
+        for (NSDictionary* encoding in encodingsArray) {
+            [sendEncodings addObject: [self parseEncoding: encoding]];
+        }
+        [transceiverInit setSendEncodings: sendEncodings];
+    }
+
+    return transceiverInit;
+}
 
 + (NSDictionary *)streamToJSONWithPeerConnectionId: (NSNumber *) id
                                                 stream: (RTCMediaStream *) stream
