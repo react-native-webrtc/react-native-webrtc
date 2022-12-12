@@ -234,7 +234,9 @@
     RTCRtpTransceiverInit *transceiverInit = [RTCRtpTransceiverInit new];
     
     NSString *direction = [params objectForKey: @"direction"];
-    [transceiverInit setDirection: [SerializeUtils parseDirection: direction]];
+    if (direction) {
+        [transceiverInit setDirection: [SerializeUtils parseDirection: direction]];
+    }
     
     NSArray *streamIds = [params objectForKey: @"streamIds"];
     if (streamIds) {
