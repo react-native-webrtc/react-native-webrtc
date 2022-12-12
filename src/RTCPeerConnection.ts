@@ -6,6 +6,7 @@ import { addListener, removeListener } from './EventEmitter';
 import Logger from './Logger';
 import MediaStream from './MediaStream';
 import MediaStreamTrack from './MediaStreamTrack';
+import MediaStreamTrackEvent from './MediaStreamTrackEvent';
 import RTCDataChannel from './RTCDataChannel';
 import RTCDataChannelEvent from './RTCDataChannelEvent';
 import RTCEvent from './RTCEvent';
@@ -19,7 +20,6 @@ import RTCRtpTransceiver from './RTCRtpTransceiver';
 import RTCSessionDescription, { RTCSessionDescriptionInit } from './RTCSessionDescription';
 import RTCTrackEvent from './RTCTrackEvent';
 import * as RTCUtil from './RTCUtil';
-import MediaStreamTrackEvent from './MediaStreamTrackEvent';
 
 const log = new Logger('pc');
 const { WebRTCModule } = NativeModules;
@@ -510,7 +510,7 @@ export default class RTCPeerConnection extends defineCustomEventTarget(...PEER_C
 
             log.debug(`${this._pcId} ontrack`);
 
-            let track: MediaStreamTrack;
+            let track;
             let transceiver: RTCRtpTransceiver;
 
             const [ oldTransceiver ] = this
@@ -523,7 +523,7 @@ export default class RTCPeerConnection extends defineCustomEventTarget(...PEER_C
 
             if (oldTransceiver) {
                 transceiver = oldTransceiver;
-                track = transceiver.receiver.track!;
+                track = transceiver.receiver.track;
                 transceiver._mid = ev.transceiver.mid;
                 transceiver._currentDirection = ev.transceiver.currentDirection;
                 transceiver._direction = ev.transceiver.direction;
@@ -573,8 +573,8 @@ export default class RTCPeerConnection extends defineCustomEventTarget(...PEER_C
 
             streams.forEach(stream => {
                 // @ts-ignore
-                stream.dispatchEvent(new MediaStreamTrackEvent('addtrack', {track}))
-            })
+                stream.dispatchEvent(new MediaStreamTrackEvent('addtrack', { track }));
+            });
 
             // Dispatch an unmute event for the track.
             track._setMutedInternal(false);
@@ -601,7 +601,7 @@ export default class RTCPeerConnection extends defineCustomEventTarget(...PEER_C
                     stream._tracks.splice(trackIdx, 1);
 
                     // @ts-ignore
-                    stream.dispatchEvent(new MediaStreamTrackEvent('removetrack', {track}))
+                    stream.dispatchEvent(new MediaStreamTrackEvent('removetrack', { track }));
 
                     // Dispatch a mute event for the track.
                     track._setMutedInternal(true);
