@@ -7,7 +7,7 @@ export interface RTCRtpEncodingParametersInit {
 }
 
 export default class RTCRtpEncodingParameters {
-    readonly active: boolean;
+    active: boolean;
     _rid: string | null;
     _maxFramerate: number | null;
     _maxBitrate: number | null;
