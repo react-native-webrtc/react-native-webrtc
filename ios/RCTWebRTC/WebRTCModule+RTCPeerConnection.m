@@ -862,14 +862,12 @@ RCT_EXPORT_BLOCKING_SYNCHRONOUS_METHOD(peerConnectionRemoveTrack:(nonnull NSNumb
 }
 
 - (void)peerConnection:(RTC_OBJC_TYPE(RTCPeerConnection) *)peerConnection
-     didRemoveReceiver:(RTC_OBJC_TYPE(RTCRtpReceiver) *)rtpReceiver {
+     didRemoveReceiver:(RTC_OBJC_TYPE(RTCRtpReceiver) *)v {
     dispatch_async(self.workerQueue, ^{
-        RTCMediaStreamTrack *track = rtpReceiver.track;
-
         NSMutableDictionary *params = [NSMutableDictionary new];
 
         params[@"pcId"] = peerConnection.reactTag;
-        params[@"trackId"] = track.trackId;
+        params[@"receiverId"] = rtpReceiver.receiverId;
 
         [self sendEventWithName: kEventPeerConnectionOnRemoveTrack body: params];
     });
