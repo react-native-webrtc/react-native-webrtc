@@ -569,10 +569,9 @@ class PeerConnectionObserver implements PeerConnection.Observer {
     @Override
     public void onRemoveTrack(RtpReceiver receiver){
         ThreadUtils.runOnExecutor(() -> {
-            MediaStreamTrack track = receiver.track();
             WritableMap params = Arguments.createMap();
             params.putInt("pcId", this.id);
-            params.putString("trackId", track.id());
+            params.putString("receiverId", receiver.id());
 
             webRTCModule.sendEvent("peerConnectionOnRemoveTrack", params);
         });
