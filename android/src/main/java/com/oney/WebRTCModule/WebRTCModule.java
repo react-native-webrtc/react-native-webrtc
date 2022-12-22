@@ -860,7 +860,6 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
             String directionSerialized = SerializeUtils.serializeDirection(direction);
             WritableMap transceiverUpdate = Arguments.createMap();
             transceiverUpdate.putString("transceiverId", transceiver.getSender().id());
-            transceiverUpdate.putInt("peerConnectionId", id);
             transceiverUpdate.putString("mid", transceiver.getMid());
             transceiverUpdate.putString("currentDirection", directionSerialized);
             transceiverUpdate.putMap("senderRtpParameters",
