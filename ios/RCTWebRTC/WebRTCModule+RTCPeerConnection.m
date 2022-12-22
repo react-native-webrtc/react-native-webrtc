@@ -156,7 +156,7 @@ RCT_EXPORT_METHOD(peerConnectionCreateOffer:(nonnull NSNumber *)objectID
                                  @"sdp": sdp.sdp,
                                  @"type": type
                                },
-                               @"transceiversInfo": [SerializeUtils constructTransceiversInfoArrayWithPeerConnection:peerConnection peerConnectionId: objectID]
+                               @"transceiversInfo": [SerializeUtils constructTransceiversInfoArrayWithPeerConnection:peerConnection]
           }]);
         }
       }];
@@ -191,7 +191,7 @@ RCT_EXPORT_METHOD(peerConnectionCreateAnswer:(nonnull NSNumber *)objectID
            callback(@[@(YES), @{
                                 @"sdpInfo": @{@"sdp": sdp.sdp,
                                               @"type": type},
-                                @"transceiversInfo": [SerializeUtils constructTransceiversInfoArrayWithPeerConnection:peerConnection peerConnectionId: objectID]
+                                @"transceiversInfo": [SerializeUtils constructTransceiversInfoArrayWithPeerConnection:peerConnection]
            }]);
          }
        }];
@@ -223,7 +223,7 @@ RCT_EXPORT_METHOD(peerConnectionSetLocalDescription:(nonnull NSNumber *)objectID
         }
         id data = @{
             @"sdpInfo": sdpInfo,
-            @"transceiversInfo": [SerializeUtils constructTransceiversInfoArrayWithPeerConnection:peerConnection peerConnectionId: objectID]
+            @"transceiversInfo": [SerializeUtils constructTransceiversInfoArrayWithPeerConnection:peerConnection]
         };
         resolve(data);
       }
@@ -274,7 +274,7 @@ RCT_EXPORT_METHOD(peerConnectionSetRemoteDescription:(RTCSessionDescription *)sd
         }
         id data = @{
             @"sdpInfo": sdpInfo,
-            @"transceiversInfo": [SerializeUtils constructTransceiversInfoArrayWithPeerConnection:peerConnection peerConnectionId: objectID],
+            @"transceiversInfo": [SerializeUtils constructTransceiversInfoArrayWithPeerConnection:peerConnection],
             @"newTransceivers": newTransceivers
         };
         callback(@[@(YES), data]);

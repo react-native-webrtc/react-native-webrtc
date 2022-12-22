@@ -22,8 +22,7 @@
     return result;
 }
 
-+ (NSMutableArray *) constructTransceiversInfoArrayWithPeerConnection: (RTCPeerConnection *) peerConnection
-                                                   peerConnectionId: (NSNumber *) peerConnectionId {
++ (NSMutableArray *) constructTransceiversInfoArrayWithPeerConnection: (RTCPeerConnection *) peerConnection {
     NSMutableArray *transceiverUpdates = [NSMutableArray new];
     
     for (RTCRtpTransceiver *transceiver in peerConnection.transceivers) {
@@ -31,7 +30,6 @@
         if ([transceiver currentDirection: &currentDirection]) {
             NSMutableDictionary *transceiverUpdate= [NSMutableDictionary new];
             transceiverUpdate[@"transceiverId"] = transceiver.sender.senderId;
-            transceiverUpdate[@"peerConnectionId"] = peerConnectionId;
             transceiverUpdate[@"mid"] = transceiver.mid;
             NSString *currentDirectionSerialized = [SerializeUtils serializeDirection: currentDirection];
             transceiverUpdate[@"currentDirection"] = currentDirectionSerialized;

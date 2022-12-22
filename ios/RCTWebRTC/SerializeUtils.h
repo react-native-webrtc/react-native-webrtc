@@ -18,8 +18,7 @@
 + (RTCRtpTransceiverDirection)parseDirection: (NSString *_Nonnull) direction;
 + (RTCRtpTransceiverInit *_Nonnull)parseTransceiverOptions: (NSDictionary *_Nonnull) parameters;
 + (NSDictionary *_Nonnull)parametersToJSON: (RTCRtpParameters *_Nonnull) parameters;
-+ (NSMutableArray *_Nonnull)constructTransceiversInfoArrayWithPeerConnection: (RTCPeerConnection *_Nonnull) peerConnection
-                                                             peerConnectionId: (NSNumber *_Nonnull) peerConnectionId;
++ (NSMutableArray *_Nonnull)constructTransceiversInfoArrayWithPeerConnection: (RTCPeerConnection *_Nonnull) peerConnection;
 + (NSDictionary *_Nonnull)streamToJSONWithPeerConnectionId: (NSNumber *_Nonnull) id
                                                 stream: (RTCMediaStream *_Nonnull) stream
                                                 streamReactTag: (NSString *_Nonnull) streamReactTag;
