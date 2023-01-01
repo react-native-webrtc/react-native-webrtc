@@ -738,6 +738,7 @@ RCT_EXPORT_BLOCKING_SYNCHRONOUS_METHOD(peerConnectionRemoveTrack:(nonnull NSNumb
 - (void)peerConnection:(RTCPeerConnection *)peerConnection didChangeIceGatheringState:(RTCIceGatheringState)newState {
   id newSdp = @{};
   if (newState == RTCIceGatheringStateComplete) {
+      // Can happen when doing a rollback.
       if (peerConnection.localDescription) {
           newSdp = @{
               @"type": [RTCSessionDescription stringForType:peerConnection.localDescription.type],
@@ -755,6 +756,7 @@ RCT_EXPORT_BLOCKING_SYNCHRONOUS_METHOD(peerConnectionRemoveTrack:(nonnull NSNumb
 
 - (void)peerConnection:(RTCPeerConnection *)peerConnection didGenerateIceCandidate:(RTCIceCandidate *)candidate {
   id newSdp = @{};
+  // Can happen when doing a rollback.
   if (peerConnection.localDescription) {
       newSdp = @{
           @"type": [RTCSessionDescription stringForType:peerConnection.localDescription.type],
