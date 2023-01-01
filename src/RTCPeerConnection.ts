@@ -624,7 +624,7 @@ export default class RTCPeerConnection extends defineCustomEventTarget(...PEER_C
                 return;
             }
 
-            let sdpInfo = ev.sdp;
+            const sdpInfo = ev.sdp;
 
             // Can happen when doing a rollback.
             if (sdpInfo.type && sdpInfo.sdp) {
@@ -647,7 +647,7 @@ export default class RTCPeerConnection extends defineCustomEventTarget(...PEER_C
             this.iceGatheringState = ev.iceGatheringState;
 
             if (this.iceGatheringState === 'complete') {
-                let sdpInfo = ev.sdp;
+                const sdpInfo = ev.sdp;
 
                 // Can happen when doing a rollback.
                 if (sdpInfo.type && sdpInfo.sdp) {
