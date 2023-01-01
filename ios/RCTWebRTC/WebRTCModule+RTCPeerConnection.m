@@ -738,10 +738,12 @@ RCT_EXPORT_BLOCKING_SYNCHRONOUS_METHOD(peerConnectionRemoveTrack:(nonnull NSNumb
 - (void)peerConnection:(RTCPeerConnection *)peerConnection didChangeIceGatheringState:(RTCIceGatheringState)newState {
   id newSdp = @{};
   if (newState == RTCIceGatheringStateComplete) {
-      newSdp = @{
-          @"type": [RTCSessionDescription stringForType:peerConnection.localDescription.type],
-          @"sdp": peerConnection.localDescription.sdp
-      };
+      if (peerConnection.localDescription) {
+          newSdp = @{
+              @"type": [RTCSessionDescription stringForType:peerConnection.localDescription.type],
+              @"sdp": peerConnection.localDescription.sdp
+          };
+      }
   }
   [self sendEventWithName:kEventPeerConnectionIceGatheringChanged
                      body:@{
@@ -752,6 +754,13 @@ RCT_EXPORT_BLOCKING_SYNCHRONOUS_METHOD(peerConnectionRemoveTrack:(nonnull NSNumb
 }
 
 - (void)peerConnection:(RTCPeerConnection *)peerConnection didGenerateIceCandidate:(RTCIceCandidate *)candidate {
+  id newSdp = @{};
+  if (peerConnection.localDescription) {
+      newSdp = @{
+          @"type": [RTCSessionDescription stringForType:peerConnection.localDescription.type],
+          @"sdp": peerConnection.localDescription.sdp
+      };
+  }
   [self sendEventWithName:kEventPeerConnectionGotICECandidate
                      body:@{
                        @"pcId": peerConnection.reactTag,
@@ -760,10 +769,7 @@ RCT_EXPORT_BLOCKING_SYNCHRONOUS_METHOD(peerConnectionRemoveTrack:(nonnull NSNumb
                            @"sdpMLineIndex": @(candidate.sdpMLineIndex),
                            @"sdpMid": candidate.sdpMid
                        },
-                       @"sdp": @{
-                           @"type": [RTCSessionDescription stringForType:peerConnection.localDescription.type],
-                           @"sdp": peerConnection.localDescription.sdp
-                       }
+                       @"sdp": newSdp
                      }];
 }
 
