@@ -1,9 +1,9 @@
 
 import { defineCustomEventTarget, Event } from 'event-target-shim';
 import { NativeModules } from 'react-native';
+
 import { addListener, removeListener } from './EventEmitter';
 import Logger from './Logger';
-
 import { deepClone } from './RTCUtil';
 
 const log = new Logger('pc');
@@ -142,6 +142,7 @@ class MediaStreamTrack extends defineCustomEventTarget(...MEDIA_STREAM_TRACK_EVE
             if (ev.trackId !== this.id || this._readyState === 'ended') {
                 return;
             }
+
             log.debug(`${this.id} mediaStreamTrackEnded`);
             this._readyState = 'ended';
 
@@ -154,7 +155,6 @@ class MediaStreamTrack extends defineCustomEventTarget(...MEDIA_STREAM_TRACK_EVE
         removeListener(this);
         WebRTCModule.mediaStreamTrackRelease(this.id);
     }
-
 }
 
 export default MediaStreamTrack;
