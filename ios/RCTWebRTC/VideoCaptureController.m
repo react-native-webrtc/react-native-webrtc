@@ -51,6 +51,17 @@
 
             self.usingFrontCamera = position == AVCaptureDevicePositionFront;
         }
+
+        // Listen to capture session notifications.
+        NSNotificationCenter *center = [NSNotificationCenter defaultCenter];
+        [center addObserver:self
+                selector:@selector(handleCaptureSessionDidStartRunning:)
+                    name:AVCaptureSessionDidStartRunningNotification
+                    object:capturer.captureSession];
+        [center addObserver:self
+                selector:@selector(handleCaptureSessionDidStopRunning:)
+                    name:AVCaptureSessionDidStopRunningNotification
+                    object:capturer.captureSession];
     }
 
     return self;
@@ -58,6 +69,7 @@
 
 - (void)dealloc {
     self.device = NULL;
+    [[NSNotificationCenter defaultCenter] removeObserver:self];
 }
 
 - (void)startCapture {
@@ -136,6 +148,17 @@
 
     [self startCapture];
 }
+
+#pragma mark AVCaptureSession Notifications
+
+- (void)handleCaptureSessionDidStartRunning:(NSNotification *)notification {
+    [self.eventsDelegate capturerDidStart:self.capturer];
+}
+
+- (void)handleCaptureSessionDidStopRunning:(NSNotification *)notification {
+    [self.eventsDelegate capturerDidStop:self.capturer];
+}
+
 
 #pragma mark NSKeyValueObserving
 

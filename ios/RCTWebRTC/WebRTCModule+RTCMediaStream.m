@@ -17,6 +17,7 @@
 #import "ScreenCapturer.h"
 #import "ScreenCaptureController.h"
 #import "VideoCaptureController.h"
+#import "TrackCapturerEventsEmitter.h"
 
 @implementation WebRTCModule (RTCMediaStream)
 
@@ -45,10 +46,12 @@
   RTCVideoTrack *videoTrack = [self.peerConnectionFactory videoTrackWithSource:videoSource trackId:trackUUID];
 
 #if !TARGET_IPHONE_SIMULATOR
+  TrackCapturerEventsEmitter *emitter = [[TrackCapturerEventsEmitter alloc] initWith:trackUUID webRTCModule:self];
   RTCCameraVideoCapturer *videoCapturer = [[RTCCameraVideoCapturer alloc] initWithDelegate:videoSource];
   VideoCaptureController *videoCaptureController
         = [[VideoCaptureController alloc] initWithCapturer:videoCapturer
                                             andConstraints:constraints[@"video"]];
+  videoCaptureController.eventsDelegate = emitter;
   videoTrack.captureController = videoCaptureController;
   [videoCaptureController startCapture];
 #endif
@@ -66,8 +69,10 @@
     NSString *trackUUID = [[NSUUID UUID] UUIDString];
     RTCVideoTrack *videoTrack = [self.peerConnectionFactory videoTrackWithSource:videoSource trackId:trackUUID];
 
+    TrackCapturerEventsEmitter *emitter = [[TrackCapturerEventsEmitter alloc] initWith:trackUUID webRTCModule:self];
     ScreenCapturer *screenCapturer = [[ScreenCapturer alloc] initWithDelegate:videoSource];
     ScreenCaptureController *screenCaptureController = [[ScreenCaptureController alloc] initWithCapturer:screenCapturer];
+    screenCaptureController.eventsDelegate = emitter;
     videoTrack.captureController = screenCaptureController;
     [screenCaptureController startCapture];
 

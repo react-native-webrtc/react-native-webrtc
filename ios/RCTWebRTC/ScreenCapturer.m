@@ -149,6 +149,7 @@ const NSUInteger kMaxReadLength = 10 * 1024;
 }
 
 - (void)startCaptureWithConnection:(SocketConnection *)connection {
+    [self.eventsDelegate capturerDidStart:self];
     _startTimeStampNs = -1;
     
     self.connection = connection;
@@ -159,6 +160,8 @@ const NSUInteger kMaxReadLength = 10 * 1024;
 
 - (void)stopCapture {
     self.connection = nil;
+
+    [self.eventsDelegate capturerDidStop:self];
 }
 
 // MARK: Private Methods
