@@ -862,7 +862,7 @@ RCT_EXPORT_BLOCKING_SYNCHRONOUS_METHOD(peerConnectionRemoveTrack:(nonnull NSNumb
 }
 
 - (void)peerConnection:(RTC_OBJC_TYPE(RTCPeerConnection) *)peerConnection
-     didRemoveReceiver:(RTC_OBJC_TYPE(RTCRtpReceiver) *)v {
+     didRemoveReceiver:(RTC_OBJC_TYPE(RTCRtpReceiver) *)rtpReceiver {
     dispatch_async(self.workerQueue, ^{
         NSMutableDictionary *params = [NSMutableDictionary new];
 
