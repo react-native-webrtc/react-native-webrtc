@@ -152,7 +152,7 @@ class GetUserMediaImpl {
             }
             WritableMap params = Arguments.createMap();
             params.putString("facing", isFrontFacing ? "front" : "environment");
-            params.putString("deviceId", "" + i);
+            params.putString("deviceId", deviceName);
             params.putString("groupId", "");
             params.putString("label", deviceName);
             params.putString("kind", "videoinput");
