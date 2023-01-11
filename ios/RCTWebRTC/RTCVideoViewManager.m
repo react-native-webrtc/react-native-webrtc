@@ -321,15 +321,15 @@ typedef NS_ENUM(NSInteger, RTCVideoViewObjectFit) {
     CVReturn err = CVPixelBufferCreate(NULL, 1, 1, kCVPixelFormatType_32BGRA, NULL, &pixelBuffer);
     if (err == kCVReturnSuccess) {
       const int kBytesPerPixel = 4;
-      CVPixelBufferLockBaseAddress( pixelBuffer, 0 );
-      int bufferWidth = (int)CVPixelBufferGetWidth( pixelBuffer );
-      int bufferHeight = (int)CVPixelBufferGetHeight( pixelBuffer );
-      size_t bytesPerRow = CVPixelBufferGetBytesPerRow( pixelBuffer );
-      uint8_t *baseAddress = CVPixelBufferGetBaseAddress( pixelBuffer );
+      CVPixelBufferLockBaseAddress(pixelBuffer, 0);
+      int bufferWidth = (int)CVPixelBufferGetWidth(pixelBuffer);
+      int bufferHeight = (int)CVPixelBufferGetHeight(pixelBuffer);
+      size_t bytesPerRow = CVPixelBufferGetBytesPerRow(pixelBuffer);
+      uint8_t *baseAddress = CVPixelBufferGetBaseAddress(pixelBuffer);
 
-      for ( int row = 0; row < bufferHeight; row++ ) {
+      for (int row = 0; row < bufferHeight; row++) {
         uint8_t *pixel = baseAddress + row * bytesPerRow;
-        for ( int column = 0; column < bufferWidth; column++ ) {
+        for (int column = 0; column < bufferWidth; column++) {
           pixel[0] = 0; // BGRA, Blue value
           pixel[1] = 0; // Green value
           pixel[2] = 0; // Red value
@@ -338,7 +338,7 @@ typedef NS_ENUM(NSInteger, RTCVideoViewObjectFit) {
         }
       }
 
-      CVPixelBufferUnlockBaseAddress( pixelBuffer, 0 );
+      CVPixelBufferUnlockBaseAddress(pixelBuffer, 0);
       int64_t time = (int64_t)(CFAbsoluteTimeGetCurrent() * 1000000000);
       RTCCVPixelBuffer *buffer = [[RTCCVPixelBuffer alloc] initWithPixelBuffer:pixelBuffer];
       RTCVideoFrame *frame = [[[RTCVideoFrame alloc] initWithBuffer:buffer rotation:RTCVideoRotation_0 timeStampNs:time] newI420VideoFrame];
