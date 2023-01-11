@@ -152,8 +152,6 @@ public class CameraCaptureController extends AbstractVideoCaptureController {
             }
         }
 
-
-
         // Otherwise, use facingMode (defaulting to front/user facing).
         final boolean isFrontFacing
             = facingMode == null || !facingMode.equals("environment");
