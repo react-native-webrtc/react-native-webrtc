@@ -128,27 +128,27 @@ public class CameraCaptureController extends AbstractVideoCaptureController {
         String[] deviceNames = cameraEnumerator.getDeviceNames();
         List<String> failedDevices = new ArrayList<>();
 
-        String name;
+        String cameraName = null;
         try {
             int index = Integer.parseInt(deviceId);
-            name = deviceNames[index];
+            cameraName = deviceNames[index];
         } catch (Exception e) {
             Log.d(TAG, "failed to find device with id: " + deviceId);
         }
 
         // If deviceId is specified, then it takes precedence over facingMode.
-        if (name != null) {
+        if (cameraName != null) {
             VideoCapturer videoCapturer
-                = cameraEnumerator.createCapturer(name, cameraEventsHandler);
-            String message = "Create user-specified camera " + name;
+                = cameraEnumerator.createCapturer(cameraName, cameraEventsHandler);
+            String message = "Create user-specified camera " + cameraName;
             if (videoCapturer != null) {
                 Log.d(TAG, message + " succeeded");
-                this.isFrontFacing = cameraEnumerator.isFrontFacing(name);
+                this.isFrontFacing = cameraEnumerator.isFrontFacing(cameraName);
                 return videoCapturer;
             } else {
                 // fallback to facingMode
                 Log.d(TAG, message + " failed");
-                failedDevices.add(name);
+                failedDevices.add(cameraName);
             }
         }
 
