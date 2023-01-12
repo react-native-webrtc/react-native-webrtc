@@ -146,9 +146,9 @@ public class CameraCaptureController extends AbstractVideoCaptureController {
                 this.isFrontFacing = cameraEnumerator.isFrontFacing(name);
                 return videoCapturer;
             } else {
+                // fallback to facingMode
                 Log.d(TAG, message + " failed");
                 failedDevices.add(name);
-                break; // fallback to facingMode
             }
         }
 
