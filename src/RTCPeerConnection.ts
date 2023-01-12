@@ -624,7 +624,15 @@ export default class RTCPeerConnection extends defineCustomEventTarget(...PEER_C
                 return;
             }
 
-            this.localDescription = new RTCSessionDescription(ev.sdp);
+            const sdpInfo = ev.sdp;
+
+            // Can happen when doing a rollback.
+            if (sdpInfo.type && sdpInfo.sdp) {
+                this.localDescription = new RTCSessionDescription(sdpInfo);
+            } else {
+                this.localDescription = null;
+            }
+
             const candidate = new RTCIceCandidate(ev.candidate);
 
             // @ts-ignore
@@ -639,7 +647,15 @@ export default class RTCPeerConnection extends defineCustomEventTarget(...PEER_C
             this.iceGatheringState = ev.iceGatheringState;
 
             if (this.iceGatheringState === 'complete') {
-                this.localDescription = new RTCSessionDescription(ev.sdp);
+                const sdpInfo = ev.sdp;
+
+                // Can happen when doing a rollback.
+                if (sdpInfo.type && sdpInfo.sdp) {
+                    this.localDescription = new RTCSessionDescription(sdpInfo);
+                } else {
+                    this.localDescription = null;
+                }
+
                 // @ts-ignore
                 this.dispatchEvent(new RTCIceCandidateEvent('icecandidate', { candidate: null }));
             }
