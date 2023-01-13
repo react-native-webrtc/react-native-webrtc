@@ -18,6 +18,7 @@ import com.facebook.react.bridge.UiThreadUtil;
 import com.facebook.react.bridge.WritableArray;
 import com.facebook.react.bridge.WritableMap;
 
+import com.jiangdg.ausbc.camera.CameraUvcStrategy;
 import com.oney.WebRTCModule.videoEffects.ProcessorProvider;
 import com.oney.WebRTCModule.videoEffects.VideoEffectProcessor;
 import com.oney.WebRTCModule.videoEffects.VideoFrameProcessor;
@@ -56,9 +57,15 @@ class GetUserMediaImpl {
     private Promise displayMediaPromise;
     private Intent mediaProjectionPermissionResultData;
 
+    private UvcEnumerator uvcEnumerator;
+    private CameraUvcStrategy cameraUvcStrategy;
+
     GetUserMediaImpl(WebRTCModule webRTCModule, ReactApplicationContext reactContext) {
         this.webRTCModule = webRTCModule;
         this.reactContext = reactContext;
+
+        this.cameraUvcStrategy = new CameraUvcStrategy(reactContext);
+        this.uvcEnumerator = new UvcEnumerator(this.cameraUvcStrategy);
 
         boolean camera2supported = false;
 
@@ -138,7 +145,15 @@ class GetUserMediaImpl {
 
     ReadableArray enumerateDevices() {
         WritableArray array = Arguments.createArray();
+
+        ReadableArray uvcDevices = uvcEnumerator.enumerateDevices();
         String[] devices = cameraEnumerator.getDeviceNames();
+
+        if (uvcDevices.size() > 0) {
+            for (int j = 0; j < uvcDevices.size(); j++) {
+                array.pushMap(uvcDevices.getMap(j));
+            }
+        }
 
         for (int i = 0; i < devices.length; ++i) {
             String deviceName = devices[i];
@@ -201,7 +216,9 @@ class GetUserMediaImpl {
 
             CameraCaptureController cameraCaptureController = new CameraCaptureController(
                 cameraEnumerator,
-                videoConstraintsMap);
+                videoConstraintsMap,
+                cameraUvcStrategy
+        );
 
             videoTrack = createVideoTrack(cameraCaptureController);
         }
@@ -487,7 +504,7 @@ class GetUserMediaImpl {
                  * called. This also means that the caller can reuse the SurfaceTextureHelper to initialize a new
                  * VideoCapturer once the previous VideoCapturer has been disposed. */
                 
-                if(surfaceTextureHelper != null) {
+                if (surfaceTextureHelper != null) {
                     surfaceTextureHelper.stopListening();
                     surfaceTextureHelper.dispose();
                 }

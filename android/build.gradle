@@ -28,5 +28,6 @@ android {
 
 dependencies {
     implementation 'com.facebook.react:react-native:+'
+    implementation 'com.github.jiangdongguo.AndroidUSBCamera:libausbc:3.2.10'
     api fileTree(dir: 'libs', include: ['*.jar'])
 }

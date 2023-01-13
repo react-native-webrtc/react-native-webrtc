@@ -1,8 +1,10 @@
 package com.oney.WebRTCModule;
 
+import android.content.Context;
 import android.util.Log;
 
 import com.facebook.react.bridge.ReadableMap;
+import com.jiangdg.ausbc.camera.CameraUvcStrategy;
 
 import org.webrtc.CameraEnumerator;
 import org.webrtc.CameraVideoCapturer;
@@ -22,6 +24,7 @@ public class CameraCaptureController extends AbstractVideoCaptureController {
 
     private final CameraEnumerator cameraEnumerator;
     private final ReadableMap constraints;
+    private final CameraUvcStrategy mUvcStrategy;
 
     /**
      * The {@link CameraEventsHandler} used with
@@ -31,14 +34,16 @@ public class CameraCaptureController extends AbstractVideoCaptureController {
      */
     private final CameraEventsHandler cameraEventsHandler = new CameraEventsHandler();
 
-    public CameraCaptureController(CameraEnumerator cameraEnumerator, ReadableMap constraints) {
+    public CameraCaptureController(CameraEnumerator cameraEnumerator, ReadableMap constraints, CameraUvcStrategy uvcStrategy) {
         super(
              constraints.getInt("width"),
-             constraints.getInt("height"), 
-             constraints.getInt("frameRate"));
+             constraints.getInt("height"),
+             constraints.getInt("frameRate")
+     );
 
         this.cameraEnumerator = cameraEnumerator;
         this.constraints = constraints;
+        this.mUvcStrategy = uvcStrategy;
     }
 
     public void switchCamera() {
@@ -86,7 +91,7 @@ public class CameraCaptureController extends AbstractVideoCaptureController {
      * Helper function which tries to switch cameras until the desired facing mode is found.
      *
      * @param desiredFrontFacing - The desired front facing value.
-     * @param tries - How many times to try switching.
+     * @param tries              - How many times to try switching.
      */
     private void switchCamera(boolean desiredFrontFacing, int tries) {
         CameraVideoCapturer capturer = (CameraVideoCapturer) videoCapturer;
@@ -95,7 +100,7 @@ public class CameraCaptureController extends AbstractVideoCaptureController {
             @Override
             public void onCameraSwitchDone(boolean b) {
                 if (b != desiredFrontFacing) {
-                    int newTries = tries-1;
+                    int newTries = tries - 1;
                     if (newTries > 0) {
                         switchCamera(desiredFrontFacing, newTries);
                     }
@@ -115,18 +120,35 @@ public class CameraCaptureController extends AbstractVideoCaptureController {
      * Constructs a new {@code VideoCapturer} instance attempting to satisfy
      * specific constraints.
      *
-     * @param deviceId the ID of the requested video device. If not
-     * {@code null} and a {@code VideoCapturer} can be created for it, then
-     * {@code facingMode} is ignored.
+     * @param deviceId   the ID of the requested video device. If not
+     *                   {@code null} and a {@code VideoCapturer} can be created for it, then
+     *                   {@code facingMode} is ignored.
      * @param facingMode the facing of the requested video source such as
-     * {@code user} and {@code environment}. If {@code null}, "user" is
-     * presumed.
+     *                   {@code user} and {@code environment}. If {@code null}, "user" is
+     *                   presumed.
      * @return a {@code VideoCapturer} satisfying the {@code facingMode} or
      * {@code deviceId} constraint
      */
     private VideoCapturer createVideoCapturer(String deviceId, String facingMode) {
         String[] deviceNames = cameraEnumerator.getDeviceNames();
         List<String> failedDevices = new ArrayList<>();
+
+        // If deviceId is specified, then it takes precedence over facingMode.
+        if (deviceId != null) {
+            // if has uvc into id, instance uvc capturer
+            if (deviceId.contains("uvc")) {
+                String message = "Create UVC user-specified camera " + deviceId;
+                try {
+                    UvcCapturer videoCapturer = new UvcCapturer(deviceId, mUvcStrategy);
+                    Log.d(TAG, message + " succeeded");
+                    return videoCapturer;
+                } catch (Throwable tr) {
+                    failedDevices.add(deviceId);
+                    Log.d(TAG, message + " failed");
+                }
+            }
+        }
+
 
         String cameraName = null;
         try {
