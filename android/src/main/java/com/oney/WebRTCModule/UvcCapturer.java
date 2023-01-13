@@ -105,7 +105,7 @@ public class UvcCapturer implements VideoCapturer {
         return new CameraRequest
                 .Builder()
                 .setCameraId(this.deviceId)
-                .setFrontCamera(false)
+                // .setFrontCamera(false)
                 .setContinuousAFModel(true)
                 .setContinuousAutoModel(true)
                 .setPreviewWidth(UVC_PREVIEW_WIDTH)
