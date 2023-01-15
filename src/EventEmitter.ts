@@ -26,13 +26,6 @@ const NATIVE_EVENTS = [
 
 const eventEmitter = new EventEmitter();
 
-export function setupNativeEvents() {
-    for (const eventName of NATIVE_EVENTS) {
-        nativeEmitter.addListener(eventName, (...args) => {
-            eventEmitter.emit(eventName, ...args);
-        });
-    }
-}
 
 type EventHandler = (event: unknown) => void;
 type Listener = unknown;
@@ -49,6 +42,8 @@ export function addListener(listener: Listener, eventName: string, eventHandler:
     }
 
     _subscriptions.get(listener)?.push(eventEmitter.addListener(eventName, eventHandler));
+
+    nativeEmitter.addListener(eventName, eventHandler)
 }
 
 export function removeListener(listener: Listener): void {

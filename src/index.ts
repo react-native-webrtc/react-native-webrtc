@@ -1,4 +1,3 @@
-import { setupNativeEvents } from './EventEmitter';
 import Logger from './Logger';
 import mediaDevices from './MediaDevices';
 import MediaStream from './MediaStream';
@@ -17,9 +16,6 @@ import ScreenCapturePickerView from './ScreenCapturePickerView';
 
 Logger.enable('*');
 // Logger.enable(`*,-${Logger.ROOT_PREFIX}:*:DEBUG`);
-
-// Add listeners for the native events early, since they are added asynchronously.
-setupNativeEvents();
 
 export {
     RTCIceCandidate,
