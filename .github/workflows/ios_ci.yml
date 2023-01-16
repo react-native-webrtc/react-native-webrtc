@@ -1,4 +1,4 @@
-name: Test
+name: iOS CI
 on:
   push:
     branches: [ main ]
