@@ -1,0 +1,29 @@
+name: Android CI
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  android-compile:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+
+    - uses: actions/setup-node@v3
+      with:
+        node-version: '16.x'
+        cache: 'npm'
+        cache-dependency-path: '**/package-lock.json'
+
+    - name: Install node modules
+      run: npm install
+    
+    - name: Install example node modules
+      run: npm install
+      working-directory: ./examples/GumTestApp/
+
+    - name: Compile Android Example
+      run: ./gradlew assembleDebug
+      working-directory: ./examples/GumTestApp/android
