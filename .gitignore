@@ -15,3 +15,7 @@ examples/GumTestApp/package-lock.json
 examples/GumTestApp_macOS/package-lock.json
 *.jar
 *.tgz
+*.zip
+lib/
+src/*.js
+

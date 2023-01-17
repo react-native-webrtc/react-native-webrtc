@@ -23,13 +23,12 @@ static const NSTimeInterval MUTE_DELAY = 1.5;
 
 /* Entity responsible for detecting track mute / unmute events. It's implemented
  * as a video renderer, which counts the number of frames, and if it sees them
- * stalled for the default interval it will emit a mute event. If frame keep
+ * stalled for the default interval it will emit a mute event. If frames keep
  * being received, the track unmute event will be emitted.
  */
 @interface TrackMuteDetector : NSObject<RTCVideoRenderer>
 
 @property (copy, nonatomic) NSNumber *peerConnectionId;
-@property (copy, nonatomic) NSString *streamReactTag;
 @property (copy, nonatomic) NSString *trackId;
 @property (weak, nonatomic) WebRTCModule *module;
 
@@ -43,13 +42,11 @@ static const NSTimeInterval MUTE_DELAY = 1.5;
 }
 
 - (instancetype)initWith:(NSNumber*)peerConnectionId
-          streamReactTag:(NSString*)streamReactTag
                  trackId:(NSString*)trackId
             webRTCModule:(WebRTCModule*)module {
     self = [super init];
     if (self) {
         self.peerConnectionId = peerConnectionId;
-        self.streamReactTag = streamReactTag;
         self.trackId = trackId;
         self.module = module;
 
@@ -73,15 +70,13 @@ static const NSTimeInterval MUTE_DELAY = 1.5;
 - (void)emitMuteEvent:(BOOL)muted {
     [self.module sendEventWithName:kEventMediaStreamTrackMuteChanged
                               body:@{
-                                @"peerConnectionId": self.peerConnectionId,
-                                @"streamReactTag": self.streamReactTag,
+                                @"pcId": self.peerConnectionId,
                                 @"trackId": self.trackId,
                                 @"muted": @(muted)
                               }];
-    RCTLog(@"[VideoTrackAdapter] %@ event for %@ %@ %@",
+    RCTLog(@"[VideoTrackAdapter] %@ event for pc %@ track %@",
           muted ? @"Mute" : @"Unmute",
           self.peerConnectionId,
-          self.streamReactTag,
           self.trackId);
 }
 
@@ -144,7 +139,7 @@ static const NSTimeInterval MUTE_DELAY = 1.5;
     objc_setAssociatedObject(self, @selector(videoTrackAdapters), videoTrackAdapters, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
 }
 
-- (void)addVideoTrackAdapter:(NSString*)streamReactId track:(RTCVideoTrack*)track {
+- (void)addVideoTrackAdapter:(RTCVideoTrack*)track {
     NSString* trackId = track.trackId;
     if ([self.videoTrackAdapters objectForKey:trackId] != nil) {
         RCTLogWarn(@"[VideoTrackAdapter] Adapter already exists for track %@", trackId);
@@ -153,7 +148,6 @@ static const NSTimeInterval MUTE_DELAY = 1.5;
 
     TrackMuteDetector* muteDetector
         = [[TrackMuteDetector alloc] initWith:self.reactTag
-                                streamReactTag:streamReactId
                                       trackId:trackId
                                  webRTCModule:self.webRTCModule];
     [self.videoTrackAdapters setObject:muteDetector forKey:trackId];

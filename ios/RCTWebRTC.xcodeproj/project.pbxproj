@@ -3,7 +3,7 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 52;
+	objectVersion = 46;
 	objects = {
 
 /* Begin PBXBuildFile section */
@@ -22,8 +22,8 @@
 		4EE3A8D225B841DD00FAA24A /* CaptureController.m in Sources */ = {isa = PBXBuildFile; fileRef = 4EE3A8C925B841DD00FAA24A /* CaptureController.m */; };
 		4EE3A8D325B841DD00FAA24A /* ScreenCaptureController.m in Sources */ = {isa = PBXBuildFile; fileRef = 4EE3A8CC25B841DD00FAA24A /* ScreenCaptureController.m */; };
 		4EE3A8D425B841DD00FAA24A /* ScreenCapturer.m in Sources */ = {isa = PBXBuildFile; fileRef = 4EE3A8CD25B841DD00FAA24A /* ScreenCapturer.m */; };
+		D3FF699919D2664B25C9D458 /* Pods_RCTWebRTC.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A20F721AD842563B66292D5B /* Pods_RCTWebRTC.framework */; };
 		DEC96577264176C10052DB35 /* DataChannelWrapper.m in Sources */ = {isa = PBXBuildFile; fileRef = DEC96576264176C10052DB35 /* DataChannelWrapper.m */; };
-		DECBD39D256D3A2D00B987E5 /* WebRTC.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = DECBD39C256D3A2D00B987E5 /* WebRTC.xcframework */; platformFilter = ios; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -40,6 +40,8 @@
 
 /* Begin PBXFileReference section */
 		0BDDA6DF20C18B6B00B38B45 /* VideoCaptureController.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = VideoCaptureController.m; path = RCTWebRTC/VideoCaptureController.m; sourceTree = "<group>"; };
+		131131FC732883F1EF6F2CA3 /* Pods-RCTWebRTC.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-RCTWebRTC.release.xcconfig"; path = "Target Support Files/Pods-RCTWebRTC/Pods-RCTWebRTC.release.xcconfig"; sourceTree = "<group>"; };
+		1A7E646283326F2A95C8C1FA /* Pods-RCTWebRTC.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-RCTWebRTC.debug.xcconfig"; path = "Target Support Files/Pods-RCTWebRTC/Pods-RCTWebRTC.debug.xcconfig"; sourceTree = "<group>"; };
 		35A2221F1CB493700015FD5C /* libRCTWebRTC.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libRCTWebRTC.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		4EC498BA25B8777F00E76218 /* ScreenCapturePickerViewManager.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = ScreenCapturePickerViewManager.m; path = RCTWebRTC/ScreenCapturePickerViewManager.m; sourceTree = SOURCE_ROOT; };
 		4EC498BB25B8777F00E76218 /* ScreenCapturePickerViewManager.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = ScreenCapturePickerViewManager.h; path = RCTWebRTC/ScreenCapturePickerViewManager.h; sourceTree = SOURCE_ROOT; };
@@ -68,10 +70,9 @@
 		4EE3A8CC25B841DD00FAA24A /* ScreenCaptureController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = ScreenCaptureController.m; path = RCTWebRTC/ScreenCaptureController.m; sourceTree = SOURCE_ROOT; };
 		4EE3A8CD25B841DD00FAA24A /* ScreenCapturer.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = ScreenCapturer.m; path = RCTWebRTC/ScreenCapturer.m; sourceTree = SOURCE_ROOT; };
 		4EE3A8CE25B841DD00FAA24A /* SocketConnection.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = SocketConnection.h; path = RCTWebRTC/SocketConnection.h; sourceTree = SOURCE_ROOT; };
+		A20F721AD842563B66292D5B /* Pods_RCTWebRTC.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_RCTWebRTC.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		DEC96576264176C10052DB35 /* DataChannelWrapper.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = DataChannelWrapper.m; path = RCTWebRTC/DataChannelWrapper.m; sourceTree = "<group>"; };
 		DEC96579264176DF0052DB35 /* DataChannelWrapper.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = DataChannelWrapper.h; path = RCTWebRTC/DataChannelWrapper.h; sourceTree = "<group>"; };
-		DECBD39C256D3A2D00B987E5 /* WebRTC.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; name = WebRTC.xcframework; path = ../apple/WebRTC.xcframework; sourceTree = "<group>"; };
-		DEFDBC26256574F500344B23 /* WebRTC.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; path = WebRTC.xcframework; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -79,19 +80,30 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				DECBD39D256D3A2D00B987E5 /* WebRTC.xcframework in Frameworks */,
+				D3FF699919D2664B25C9D458 /* Pods_RCTWebRTC.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		22DE4ED9F87C796C5D0480DC /* Pods */ = {
+			isa = PBXGroup;
+			children = (
+				1A7E646283326F2A95C8C1FA /* Pods-RCTWebRTC.debug.xcconfig */,
+				131131FC732883F1EF6F2CA3 /* Pods-RCTWebRTC.release.xcconfig */,
+			);
+			name = Pods;
+			path = Pods;
+			sourceTree = "<group>";
+		};
 		35A222161CB493700015FD5C = {
 			isa = PBXGroup;
 			children = (
 				35A222311CB493C00015FD5C /* RCTWebRTC */,
 				35A222201CB493700015FD5C /* Products */,
 				DEFDBC25256574F500344B23 /* Frameworks */,
+				22DE4ED9F87C796C5D0480DC /* Pods */,
 			);
 			sourceTree = "<group>";
 		};
@@ -144,8 +156,7 @@
 		DEFDBC25256574F500344B23 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
-				DECBD39C256D3A2D00B987E5 /* WebRTC.xcframework */,
-				DEFDBC26256574F500344B23 /* WebRTC.xcframework */,
+				A20F721AD842563B66292D5B /* Pods_RCTWebRTC.framework */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
@@ -157,6 +168,7 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = 35A222281CB493700015FD5C /* Build configuration list for PBXNativeTarget "RCTWebRTC" */;
 			buildPhases = (
+				B1E831D2F95BE8EA21E91593 /* [CP] Check Pods Manifest.lock */,
 				35A2221B1CB493700015FD5C /* Sources */,
 				35A2221C1CB493700015FD5C /* Frameworks */,
 				35A2221D1CB493700015FD5C /* CopyFiles */,
@@ -200,6 +212,31 @@
 			);
 		};
 /* End PBXProject section */
+
+/* Begin PBXShellScriptBuildPhase section */
+		B1E831D2F95BE8EA21E91593 /* [CP] Check Pods Manifest.lock */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+				"${PODS_PODFILE_DIR_PATH}/Podfile.lock",
+				"${PODS_ROOT}/Manifest.lock",
+			);
+			name = "[CP] Check Pods Manifest.lock";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+				"$(DERIVED_FILE_DIR)/Pods-RCTWebRTC-checkManifestLockResult.txt",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
+			showEnvVarsInLog = 0;
+		};
+/* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		35A2221B1CB493700015FD5C /* Sources */ = {
@@ -306,8 +343,8 @@
 		};
 		35A222291CB493700015FD5C /* Debug */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 1A7E646283326F2A95C8C1FA /* Pods-RCTWebRTC.debug.xcconfig */;
 			buildSettings = {
-				FRAMEWORK_SEARCH_PATHS = "$(PROJECT_DIR)/../apple/";
 				LIBRARY_SEARCH_PATHS = "$(inherited)";
 				OTHER_LDFLAGS = "-ObjC";
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -317,8 +354,8 @@
 		};
 		35A2222A1CB493700015FD5C /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 131131FC732883F1EF6F2CA3 /* Pods-RCTWebRTC.release.xcconfig */;
 			buildSettings = {
-				FRAMEWORK_SEARCH_PATHS = "$(PROJECT_DIR)/../apple/";
 				LIBRARY_SEARCH_PATHS = "$(inherited)";
 				OTHER_LDFLAGS = "-ObjC";
 				PRODUCT_NAME = "$(TARGET_NAME)";

@@ -141,6 +141,13 @@ const NSUInteger kMaxReadLength = 10 * 1024;
     return self;
 }
 
+- (void)setConnection:(SocketConnection *)connection {
+    if (_connection != connection) {
+        [_connection close];
+        _connection = connection;
+    }
+}
+
 - (void)startCaptureWithConnection:(SocketConnection *)connection {
     _startTimeStampNs = -1;
     
@@ -151,7 +158,7 @@ const NSUInteger kMaxReadLength = 10 * 1024;
 }
 
 - (void)stopCapture {
-    [self.connection close];
+    self.connection = nil;
 }
 
 // MARK: Private Methods

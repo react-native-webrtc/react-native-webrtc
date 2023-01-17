@@ -9,7 +9,6 @@
 + (RTCSessionDescription *)RTCSessionDescription:(id)json
 {
   if (!json) {
-    RCTLogConvertError(json, @"must not be null");
     return nil;
   }
 
@@ -45,6 +44,16 @@
     RCTLogConvertError(json, @".candidate must not be null");
     return nil;
   }
+  
+  if (json[@"sdpMid"] == nil) {
+    RCTLogConvertError(json, @".sdpMid must not be null");
+    return nil;
+  }
+
+  if (json[@"sdpMLineIndex"] == nil) {
+    RCTLogConvertError(json, @".sdpMLineIndex must not be null");
+    return nil;
+  }
 
   NSString *sdp = json[@"candidate"];
   RCTLogTrace(@"%@ <- candidate", sdp);
@@ -68,10 +77,7 @@
   }
 
   NSArray<NSString *> *urls;
-  if ([json[@"url"] isKindOfClass:[NSString class]]) {
-    // TODO: 'url' is non-standard
-    urls = @[json[@"url"]];
-  } else if ([json[@"urls"] isKindOfClass:[NSString class]]) {
+  if ([json[@"urls"] isKindOfClass:[NSString class]]) {
     urls = @[json[@"urls"]];
   } else {
     urls = [RCTConvert NSArray:json[@"urls"]];
@@ -92,6 +98,8 @@
 
   // Required for perfect negotiation.
   config.enableImplicitRollback = YES;
+
+  config.sdpSemantics = RTCSdpSemanticsUnifiedPlan;
 
   if (!json) {
     return config;
