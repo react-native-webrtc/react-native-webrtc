@@ -115,7 +115,7 @@ RCT_EXPORT_MODULE();
     kEventDataChannelReceiveMessage,
     kEventMediaStreamTrackMuteChanged,
     kEventPeerConnectionOnRemoveTrack,
-    kEventPeerConnectionOnTrack
+    kEventPeerConnectionOnTrack,
     kEventMediaDevicesOnDeviceChange,
   ];
 }
