@@ -5,7 +5,7 @@ import { NativeModules } from 'react-native';
 import getDisplayMedia from './getDisplayMedia';
 import getUserMedia from './getUserMedia';
 
-import EventEmitter from './EventEmitter';
+import { addListener } from './EventEmitter';
 import RTCEvent from './RTCEvent';
 const { WebRTCModule } = NativeModules;
 
@@ -50,8 +50,9 @@ class MediaDevices extends defineCustomEventTarget(...MEDIA_DEVICES_EVENTS) {
     _registerEvents(): void {
         console.log('MediaDevices _registerEvents invoked');
         WebRTCModule.startMediaDevicesEventMonitor();
-        EventEmitter.addListener('mediaDevicesOnDeviceChange', ev => {
+        addListener(this,'mediaDevicesOnDeviceChange', ev => {
             console.log('MediaDevices => mediaDevicesOnDeviceChange');
+            // @ts-ignore
             this.dispatchEvent(new RTCEvent('devicechange'));
         });
     }
