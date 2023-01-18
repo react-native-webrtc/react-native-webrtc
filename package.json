@@ -25,7 +25,9 @@
     "base64-js": "1.5.1",
     "debug": "4.3.4",
     "event-target-shim": "6.0.2",
-    "tar": "6.1.11"
+    "tar": "6.1.11",
+    "@types/react": "17.0.38",
+    "@types/react-native": "0.66.12"
   },
   "peerDependencies": {
     "react-native": ">=0.60.0"
@@ -42,8 +44,6 @@
   },
   "devDependencies": {
     "@types/debug": "4.1.7",
-    "@types/react": "17.0.40",
-    "@types/react-native": "0.67.3",
     "@typescript-eslint/eslint-plugin": "^5.39.0",
     "@typescript-eslint/parser": "^5.39.0",
     "eslint": "^8.24.0",

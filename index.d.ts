@@ -13,10 +13,19 @@ import RTCRtpTransceiver from './lib/typescript/RTCRtpTransceiver';
 import RTCSessionDescription from './lib/typescript/RTCSessionDescription';
 import RTCView from './lib/typescript/RTCView';
 import ScreenCapturePickerView from './lib/typescript/ScreenCapturePickerView';
+import { ViewStyle } from 'react-native';
 export { RTCIceCandidate, RTCPeerConnection, RTCSessionDescription, RTCView, ScreenCapturePickerView, RTCRtpTransceiver, RTCRtpReceiver, RTCRtpSender, RTCErrorEvent, MediaStream, MediaStreamTrack, mediaDevices, permissions, registerGlobals };
 declare function registerGlobals(): void;
 
 // Daily types
+export interface RTCViewProps {
+  streamURL: string;
+  mirror?: boolean | undefined;
+  zOrder?: number | undefined;
+  objectFit?: 'contain' | 'cover' | undefined;
+  style?: ViewStyle | undefined;
+}
+
 export interface MandatoryMedia {
   minWidth: number;
   minHeight: number;
