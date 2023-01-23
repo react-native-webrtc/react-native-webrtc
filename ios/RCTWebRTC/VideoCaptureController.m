@@ -15,10 +15,13 @@
 @property (nonatomic, assign) int width;
 @property (nonatomic, assign) int height;
 @property (nonatomic, assign) int frameRate;
+@property (nonatomic, assign) BOOL userStopped;
 
 @end
 
 @implementation VideoCaptureController
+
+@synthesize userStopped = _userStopped;
 
 - (instancetype)initWithCapturer:(RTCCameraVideoCapturer *)capturer
                   andConstraints:(NSDictionary *)constraints {
@@ -101,6 +104,7 @@
     }
     
     self.selectedFormat = format;
+    self.userStopped = NO;
 
     RCTLog(@"[VideoCaptureController] Capture will start");
 
@@ -124,6 +128,8 @@
 - (void)stopCapture {
     if (!self.running)
         return;
+
+    self.userStopped = YES;
 
     RCTLog(@"[VideoCaptureController] Capture will stop");
     // Stopping the capture happens on another thread. Wait for it.

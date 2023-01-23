@@ -13,40 +13,46 @@ import com.facebook.react.bridge.WritableMap;
  */
 public class TrackCapturerObserver implements CapturerObserver {
 
-  private static final String TAG = TrackCapturerObserver.class.getCanonicalName();
+    private static final String TAG = TrackCapturerObserver.class.getCanonicalName();
 
-  private final WebRTCModule webRTCModule;
-  private final String trackId;
+    private final WebRTCModule webRTCModule;
+    private final String trackId;
+    
+    private final AbstractVideoCaptureController captureController;
 
-  // The capturer observer to delegate to.
-  private final CapturerObserver capturerObserver;
+    // The capturer observer to delegate to.
+    private final CapturerObserver capturerObserver;
 
-  public TrackCapturerObserver(WebRTCModule webRTCModule, String trackId, CapturerObserver capturerObserver) {
-    this.webRTCModule = webRTCModule;
-    this.trackId = trackId;
-    this.capturerObserver = capturerObserver;
-  }
+    public TrackCapturerObserver(WebRTCModule webRTCModule, String trackId, 
+            AbstractVideoCaptureController captureController,
+            CapturerObserver capturerObserver) {
+        this.webRTCModule = webRTCModule;
+        this.trackId = trackId;
+        this.captureController = captureController;
+        this.capturerObserver = capturerObserver;
+    }
+    
+    /** Notify if the capturer have been started successfully or not. */
+    public void onCapturerStarted(boolean success) {
+        this.capturerObserver.onCapturerStarted(success);
+    }
 
-  /** Notify if the capturer have been started successfully or not. */
-  public void onCapturerStarted(boolean success) {
-    this.capturerObserver.onCapturerStarted(success);
-  }
+    /** Notify that the capturer has been stopped. */
+    public void onCapturerStopped() {
+        this.capturerObserver.onCapturerStopped();
 
-  /** Notify that the capturer has been stopped. */
-  public void onCapturerStopped() {
-    this.capturerObserver.onCapturerStopped();
+        if(captureController.isUserStopped()) {
+            WritableMap params = Arguments.createMap();
+            params.putString("trackId", trackId);
+    
+            Log.d(TAG, "ended event trackId: " + trackId);
+    
+            webRTCModule.sendEvent("mediaStreamTrackEnded", params);
+        }
+    }
 
-    WritableMap params = Arguments.createMap();
-    params.putString("trackId", trackId);
-
-    Log.d(TAG, "ended event trackId: " + trackId);
-
-    webRTCModule.sendEvent(
-        "mediaStreamTrackEnded", params);
-  }
-
-  /** Delivers a captured frame. */
-  public void onFrameCaptured(VideoFrame frame) {
-    this.capturerObserver.onFrameCaptured(frame);
-  }
+    /** Delivers a captured frame. */
+    public void onFrameCaptured(VideoFrame frame) {
+        this.capturerObserver.onFrameCaptured(frame);
+    }
 }

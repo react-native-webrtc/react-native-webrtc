@@ -8,6 +8,9 @@ public abstract class AbstractVideoCaptureController {
     private final int height;
     private final int fps;
 
+    // A flag to represent whether the capturer was stopped through stopCapture() or not.
+    private boolean userStopped = false;
+
     /**
      * {@link VideoCapturer} which this controller manages.
      */
@@ -24,6 +27,7 @@ public abstract class AbstractVideoCaptureController {
     }
 
     public void dispose() {
+        userStopped = true;
         if (videoCapturer != null) {
             videoCapturer.dispose();
             videoCapturer = null;
@@ -48,6 +52,7 @@ public abstract class AbstractVideoCaptureController {
 
     public void startCapture() {
         try {
+            userStopped = false;
             videoCapturer.startCapture(width, height, fps);
         } catch (RuntimeException e) {
             // XXX This can only fail if we initialize the capturer incorrectly,
@@ -58,11 +63,16 @@ public abstract class AbstractVideoCaptureController {
 
     public boolean stopCapture() {
         try {
+            userStopped = true;
             videoCapturer.stopCapture();
             return true;
         } catch (InterruptedException e) {
             return false;
         }
+    }
+
+    public boolean isUserStopped() {
+        return userStopped;
     }
 
     protected abstract VideoCapturer createVideoCapturer();

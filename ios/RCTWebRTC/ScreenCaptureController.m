@@ -15,6 +15,7 @@ NSString* const kRTCAppGroupIdentifier = @"RTCAppGroupIdentifier";
 @interface ScreenCaptureController ()
 
 @property (nonatomic, retain) ScreenCapturer *capturer;
+@property (nonatomic, assign) BOOL userStopped;
 
 @end
 
@@ -31,6 +32,8 @@ NSString* const kRTCAppGroupIdentifier = @"RTCAppGroupIdentifier";
 
 @implementation ScreenCaptureController
 
+@synthesize userStopped = _userStopped;
+
 - (instancetype)initWithCapturer:(nonnull ScreenCapturer *)capturer {
     self = [super init];
     if (self) {
@@ -45,6 +48,7 @@ NSString* const kRTCAppGroupIdentifier = @"RTCAppGroupIdentifier";
 }
 
 - (void)startCapture {
+    self.userStopped = NO;
     if (!self.appGroupIdentifier) {
         return;
     }
@@ -56,6 +60,7 @@ NSString* const kRTCAppGroupIdentifier = @"RTCAppGroupIdentifier";
 }
 
 - (void)stopCapture {
+    self.userStopped = YES;
     [self.capturer stopCapture];
 }
 

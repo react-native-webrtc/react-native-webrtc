@@ -4,8 +4,8 @@ NS_ASSUME_NONNULL_BEGIN
 
 @protocol CapturerEventsDelegate
 
-- (void)capturerDidStart:(RTCVideoCapturer *) capturer;
-- (void)capturerDidStop:(RTCVideoCapturer *) capturer;
+- (void)capturerDidStart:(RTCVideoCapturer *)capturer;
+- (void)capturerDidStop:(RTCVideoCapturer *)capturer;
 
 @end
 
