@@ -56,7 +56,9 @@ function registerGlobals(): void {
     global.navigator.mediaDevices.addEventListener = mediaDevices.addEventListener.bind(mediaDevices);
     global.navigator.mediaDevices.removeEventListener = mediaDevices.removeEventListener.bind(mediaDevices);
     mediaDevices.addEventListener('devicechange', () => {
-        if (global.navigator.mediaDevices.ondevicechange) global.navigator.mediaDevices.ondevicechange();
+        if (global.navigator.mediaDevices.ondevicechange) {
+            global.navigator.mediaDevices.ondevicechange();
+        }
     });
 
     global.RTCIceCandidate = RTCIceCandidate;

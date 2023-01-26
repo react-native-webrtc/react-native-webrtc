@@ -80,6 +80,7 @@ class MediaStreamTrack extends defineCustomEventTarget(...MEDIA_STREAM_TRACK_EVE
         if (this.kind !== 'video') {
             throw new Error('Only implemented for video tracks');
         }
+
         return WebRTCModule.mediaStreamTrackSwitchCamera(this.id);
     }
 
@@ -91,9 +92,11 @@ class MediaStreamTrack extends defineCustomEventTarget(...MEDIA_STREAM_TRACK_EVE
         if (this.remote) {
             throw new Error('Not implemented for remote tracks');
         }
+
         if (this.kind !== 'video') {
             throw new Error('Only implemented for video tracks');
         }
+
         return WebRTCModule.mediaStreamTrackGetCameraFacingMode(this.id);
     }
 
