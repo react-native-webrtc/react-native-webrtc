@@ -9,7 +9,6 @@
 + (RTCSessionDescription *)RTCSessionDescription:(id)json
 {
   if (!json) {
-    RCTLogConvertError(json, @"must not be null");
     return nil;
   }
 

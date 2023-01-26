@@ -1,0 +1,50 @@
+name: iOS CI
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  ios-compile:
+    runs-on: macos-latest
+    steps:
+    - uses: actions/checkout@v3
+
+    - uses: actions/setup-node@v3
+      with:
+        node-version: '16.x'
+        cache: 'npm'
+        cache-dependency-path: '**/package-lock.json'
+
+    - name: Cache cocoapods
+      uses: actions/cache@v3
+      with:
+        path: ./examples/GumTestApp/ios/Pods
+        key: ${{ runner.os }}-pods-${{ hashFiles('**/Podfile.lock') }}
+        restore-keys: |
+          ${{ runner.os }}-pods-
+
+    - name: Install node modules
+      run: npm install
+
+    - name: Install example node modules
+      working-directory: ./examples/GumTestApp/
+      run: npm install
+
+    - name: Pod install
+      working-directory: ./examples/GumTestApp/ios
+      run: pod install
+
+    - name: Compile iOS Example
+      working-directory: ./examples/GumTestApp/ios
+      run: |
+        set -o pipefail && \
+        xcodebuild -workspace GumTestApp.xcworkspace/ \
+          -scheme GumTestApp \
+          -destination generic/platform=iOS \
+          CODE_SIGN_IDENTITY="" \
+          CODE_SIGNING_REQUIRED=NO \
+          CODE_SIGN_ENTITLEMENTS="" \
+          CODE_SIGNING_ALLOWED="NO" clean build \
+        | xcpretty

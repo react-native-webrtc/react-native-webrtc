@@ -59,7 +59,7 @@ function extractNumber(constraints, prop) {
     if (type === 'number') {
         return Number.parseInt(value);
     } else if (type === 'object') {
-        for (const v of [ 'exact', 'ideal', 'min', 'max' ]) {
+        for (const v of [ 'exact', 'ideal', 'max', 'min' ]) {
             if (value[v]) {
                 return Number.parseInt(value[v]);
             }

@@ -19,6 +19,8 @@
 #import <WebRTC/RTCMTLNSVideoView.h>
 #endif
 #import <WebRTC/RTCVideoTrack.h>
+#import <WebRTC/RTCCVPixelBuffer.h>
+#import <WebRTC/RTCVideoFrame.h>
 
 #import "RTCVideoViewManager.h"
 #import "WebRTCModule.h"
@@ -313,6 +315,38 @@ typedef NS_ENUM(NSInteger, RTCVideoViewObjectFit) {
     }
 
     _videoTrack = videoTrack;
+
+    // Clear the videoView by rendering a 1x1 blank frame.
+    CVPixelBufferRef pixelBuffer;
+    CVReturn err = CVPixelBufferCreate(NULL, 1, 1, kCVPixelFormatType_32BGRA, NULL, &pixelBuffer);
+    if (err == kCVReturnSuccess) {
+      const int kBytesPerPixel = 4;
+      CVPixelBufferLockBaseAddress(pixelBuffer, 0);
+      int bufferWidth = (int)CVPixelBufferGetWidth(pixelBuffer);
+      int bufferHeight = (int)CVPixelBufferGetHeight(pixelBuffer);
+      size_t bytesPerRow = CVPixelBufferGetBytesPerRow(pixelBuffer);
+      uint8_t *baseAddress = CVPixelBufferGetBaseAddress(pixelBuffer);
+
+      for (int row = 0; row < bufferHeight; row++) {
+        uint8_t *pixel = baseAddress + row * bytesPerRow;
+        for (int column = 0; column < bufferWidth; column++) {
+          pixel[0] = 0; // BGRA, Blue value
+          pixel[1] = 0; // Green value
+          pixel[2] = 0; // Red value
+          pixel[3] = 0; // Alpha value
+          pixel += kBytesPerPixel;
+        }
+      }
+
+      CVPixelBufferUnlockBaseAddress(pixelBuffer, 0);
+      int64_t time = (int64_t)(CFAbsoluteTimeGetCurrent() * 1000000000);
+      RTCCVPixelBuffer *buffer = [[RTCCVPixelBuffer alloc] initWithPixelBuffer:pixelBuffer];
+      RTCVideoFrame *frame = [[[RTCVideoFrame alloc] initWithBuffer:buffer rotation:RTCVideoRotation_0 timeStampNs:time] newI420VideoFrame];
+      
+      [self.videoView renderFrame: frame];
+      
+      CVPixelBufferRelease(pixelBuffer);
+    }
 
     // XXX This RTCVideoView strongly retains its videoTrack. The latter
     // strongly retains the former as well though because RTCVideoTrack strongly

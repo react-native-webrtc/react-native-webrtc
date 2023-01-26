@@ -396,8 +396,11 @@ class PeerConnectionObserver implements PeerConnection.Observer {
         params.putMap("candidate", candidateParams);
         SessionDescription newSdp = peerConnection.getLocalDescription();
         WritableMap newSdpMap = Arguments.createMap();
-        newSdpMap.putString("type", newSdp.type.canonicalForm());
-        newSdpMap.putString("sdp", newSdp.description);
+        // Can happen when doing a rollback.
+        if (newSdp != null) {
+            newSdpMap.putString("type", newSdp.type.canonicalForm());
+            newSdpMap.putString("sdp", newSdp.description);
+        }
         params.putMap("sdp", newSdpMap);
 
         webRTCModule.sendEvent("peerConnectionGotICECandidate", params);
@@ -438,8 +441,11 @@ class PeerConnectionObserver implements PeerConnection.Observer {
         if (iceGatheringState == PeerConnection.IceGatheringState.COMPLETE) {
             SessionDescription newSdp = peerConnection.getLocalDescription();
             WritableMap newSdpMap = Arguments.createMap();
-            newSdpMap.putString("type", newSdp.type.canonicalForm());
-            newSdpMap.putString("sdp", newSdp.description);
+            // Can happen when doing a rollback.
+            if (newSdp != null) {
+                newSdpMap.putString("type", newSdp.type.canonicalForm());
+                newSdpMap.putString("sdp", newSdp.description);
+            }
             params.putMap("sdp", newSdpMap);
         }
         webRTCModule.sendEvent("peerConnectionIceGatheringChanged", params);
@@ -569,10 +575,9 @@ class PeerConnectionObserver implements PeerConnection.Observer {
     @Override
     public void onRemoveTrack(RtpReceiver receiver){
         ThreadUtils.runOnExecutor(() -> {
-            MediaStreamTrack track = receiver.track();
             WritableMap params = Arguments.createMap();
             params.putInt("pcId", this.id);
-            params.putString("trackId", track.id());
+            params.putString("receiverId", receiver.id());
 
             webRTCModule.sendEvent("peerConnectionOnRemoveTrack", params);
         });
