@@ -381,13 +381,12 @@ class GetUserMediaImpl {
         }
 
         String id = UUID.randomUUID().toString();
+
+        TrackCapturerEventsEmitter eventsEmitter = new TrackCapturerEventsEmitter(webRTCModule, id);
+        videoCaptureController.setCapturerEventsListener(eventsEmitter);
+
         VideoSource videoSource = pcFactory.createVideoSource(videoCapturer.isScreencast());
-        TrackCapturerObserver capturerObserver = new TrackCapturerObserver(
-            webRTCModule, 
-            id,
-            videoCaptureController,
-            videoSource.getCapturerObserver());
-        videoCapturer.initialize(surfaceTextureHelper, reactContext, capturerObserver);
+        videoCapturer.initialize(surfaceTextureHelper, reactContext, videoSource.getCapturerObserver());
 
         VideoTrack track = pcFactory.createVideoTrack(id, videoSource);
 

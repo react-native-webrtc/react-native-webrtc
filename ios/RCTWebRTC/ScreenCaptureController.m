@@ -15,13 +15,11 @@ NSString* const kRTCAppGroupIdentifier = @"RTCAppGroupIdentifier";
 @interface ScreenCaptureController ()
 
 @property (nonatomic, retain) ScreenCapturer *capturer;
-@property (nonatomic, assign) BOOL userStopped;
 
 @end
 
 @interface ScreenCaptureController (CapturerEventsDelegate) <CapturerEventsDelegate>
-- (void)capturerDidStart:(RTCVideoCapturer *) capturer;
-- (void)capturerDidStop:(RTCVideoCapturer *) capturer;
+- (void)capturerDidEnd:(RTCVideoCapturer *)capturer;
 @end
 
 @interface ScreenCaptureController (Private)
@@ -31,8 +29,6 @@ NSString* const kRTCAppGroupIdentifier = @"RTCAppGroupIdentifier";
 @end
 
 @implementation ScreenCaptureController
-
-@synthesize userStopped = _userStopped;
 
 - (instancetype)initWithCapturer:(nonnull ScreenCapturer *)capturer {
     self = [super init];
@@ -48,7 +44,6 @@ NSString* const kRTCAppGroupIdentifier = @"RTCAppGroupIdentifier";
 }
 
 - (void)startCapture {
-    self.userStopped = NO;
     if (!self.appGroupIdentifier) {
         return;
     }
@@ -60,18 +55,13 @@ NSString* const kRTCAppGroupIdentifier = @"RTCAppGroupIdentifier";
 }
 
 - (void)stopCapture {
-    self.userStopped = YES;
     [self.capturer stopCapture];
 }
 
 // MARK: CapturerEventsDelegate Methods
 
-- (void)capturerDidStart:(RTCVideoCapturer *) capturer {
-    [self.eventsDelegate capturerDidStart:capturer];
-}
-
-- (void)capturerDidStop:(RTCVideoCapturer *) capturer {
-    [self.eventsDelegate capturerDidStop:capturer];
+- (void)capturerDidEnd:(RTCVideoCapturer *)capturer {
+    [self.eventsDelegate capturerDidEnd:capturer];
 }
 
 // MARK: Private Methods

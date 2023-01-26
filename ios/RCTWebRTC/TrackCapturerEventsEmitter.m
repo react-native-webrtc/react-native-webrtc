@@ -8,38 +8,29 @@ NS_ASSUME_NONNULL_BEGIN
 
 @property (copy, nonatomic) NSString *trackId;
 @property (weak, nonatomic) WebRTCModule *module;
-@property (weak, nonatomic) CaptureController *captureController;
 
 @end
 
 @implementation TrackCapturerEventsEmitter
 
 - (instancetype)initWith:(NSString *)trackId
-            webRTCModule:(WebRTCModule *)module
-       captureController:(CaptureController *)captureController{
+            webRTCModule:(WebRTCModule *)module {
     self = [super init];
     if (self) {
         self.trackId = trackId;
         self.module = module;
-        self.captureController = captureController;
     }
 
     return self;
 }
 
-- (void)capturerDidStart:(RTCVideoCapturer *)capturer {
-    // Do nothing.
-}
+- (void)capturerDidEnd:(RTCVideoCapturer *)capturer {
+    [self.module sendEventWithName:kEventMediaStreamTrackEnded
+                              body:@{
+                                @"trackId": self.trackId,
+                              }];
 
-- (void)capturerDidStop:(RTCVideoCapturer *)capturer {
-    if (!self.captureController.userStopped) {
-        [self.module sendEventWithName:kEventMediaStreamTrackEnded
-                                  body:@{
-                                    @"trackId": self.trackId,
-                                  }];
-
-        RCTLog(@"[TrackCapturerEventsEmitter] ended event for track %@", self.trackId);
-    }
+    RCTLog(@"[TrackCapturerEventsEmitter] ended event for track %@", self.trackId);
 }
 
 @end

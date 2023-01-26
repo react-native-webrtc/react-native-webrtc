@@ -149,7 +149,6 @@ const NSUInteger kMaxReadLength = 10 * 1024;
 }
 
 - (void)startCaptureWithConnection:(SocketConnection *)connection {
-    [self.eventsDelegate capturerDidStart:self];
     _startTimeStampNs = -1;
     
     self.connection = connection;
@@ -160,8 +159,6 @@ const NSUInteger kMaxReadLength = 10 * 1024;
 
 - (void)stopCapture {
     self.connection = nil;
-
-    [self.eventsDelegate capturerDidStop:self];
 }
 
 // MARK: Private Methods
@@ -248,6 +245,7 @@ const NSUInteger kMaxReadLength = 10 * 1024;
         case NSStreamEventEndEncountered:
             NSLog(@"server stream end encountered");
             [self stopCapture];
+            [self.eventsDelegate capturerDidEnd:self];
             break;
         case NSStreamEventErrorOccurred:
             NSLog(@"server stream error encountered: %@", aStream.streamError.localizedDescription);

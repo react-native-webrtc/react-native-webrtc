@@ -15,13 +15,10 @@
 @property (nonatomic, assign) int width;
 @property (nonatomic, assign) int height;
 @property (nonatomic, assign) int frameRate;
-@property (nonatomic, assign) BOOL userStopped;
 
 @end
 
 @implementation VideoCaptureController
-
-@synthesize userStopped = _userStopped;
 
 - (instancetype)initWithCapturer:(RTCCameraVideoCapturer *)capturer
                   andConstraints:(NSDictionary *)constraints {
@@ -54,17 +51,6 @@
 
             self.usingFrontCamera = position == AVCaptureDevicePositionFront;
         }
-
-        // Listen to capture session notifications.
-        NSNotificationCenter *center = [NSNotificationCenter defaultCenter];
-        [center addObserver:self
-                selector:@selector(handleCaptureSessionDidStartRunning:)
-                    name:AVCaptureSessionDidStartRunningNotification
-                    object:capturer.captureSession];
-        [center addObserver:self
-                selector:@selector(handleCaptureSessionDidStopRunning:)
-                    name:AVCaptureSessionDidStopRunningNotification
-                    object:capturer.captureSession];
     }
 
     return self;
@@ -72,7 +58,6 @@
 
 - (void)dealloc {
     self.device = NULL;
-    [[NSNotificationCenter defaultCenter] removeObserver:self];
 }
 
 - (void)startCapture {
@@ -104,8 +89,7 @@
     }
     
     self.selectedFormat = format;
-    self.userStopped = NO;
-
+    
     RCTLog(@"[VideoCaptureController] Capture will start");
 
     // Starting the capture happens on another thread. Wait for it.
@@ -128,8 +112,6 @@
 - (void)stopCapture {
     if (!self.running)
         return;
-
-    self.userStopped = YES;
 
     RCTLog(@"[VideoCaptureController] Capture will stop");
     // Stopping the capture happens on another thread. Wait for it.
@@ -154,17 +136,6 @@
 
     [self startCapture];
 }
-
-#pragma mark AVCaptureSession Notifications
-
-- (void)handleCaptureSessionDidStartRunning:(NSNotification *)notification {
-    [self.eventsDelegate capturerDidStart:self.capturer];
-}
-
-- (void)handleCaptureSessionDidStopRunning:(NSNotification *)notification {
-    [self.eventsDelegate capturerDidStop:self.capturer];
-}
-
 
 #pragma mark NSKeyValueObserving
 

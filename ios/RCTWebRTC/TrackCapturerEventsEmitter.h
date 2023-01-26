@@ -6,11 +6,9 @@ NS_ASSUME_NONNULL_BEGIN
 @interface TrackCapturerEventsEmitter : NSObject<CapturerEventsDelegate>
 
 - (instancetype)initWith:(NSString *)trackId
-            webRTCModule:(WebRTCModule *)module
-       captureController:(CaptureController *)captureController;
+            webRTCModule:(WebRTCModule *)module;
 
-- (void)capturerDidStart:(RTCVideoCapturer *) capturer;
-- (void)capturerDidStop:(RTCVideoCapturer *) capturer;
+- (void)capturerDidEnd:(RTCVideoCapturer *) capturer;
 @end
 
 NS_ASSUME_NONNULL_END

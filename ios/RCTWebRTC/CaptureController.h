@@ -13,7 +13,6 @@ NS_ASSUME_NONNULL_BEGIN
 @interface CaptureController: NSObject
 
 @property (nonatomic, strong) id<CapturerEventsDelegate> eventsDelegate;
-@property (nonatomic, readonly) BOOL userStopped;
 
 - (void)startCapture;
 - (void)stopCapture;
