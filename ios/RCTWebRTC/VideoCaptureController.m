@@ -89,7 +89,7 @@
     }
     
     self.selectedFormat = format;
-    
+
     RCTLog(@"[VideoCaptureController] Capture will start");
 
     // Starting the capture happens on another thread. Wait for it.
