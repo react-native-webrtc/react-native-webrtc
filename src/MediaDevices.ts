@@ -50,7 +50,7 @@ class MediaDevices extends defineCustomEventTarget(...MEDIA_DEVICES_EVENTS) {
     _registerEvents(): void {
         console.log('MediaDevices _registerEvents invoked');
         WebRTCModule.startMediaDevicesEventMonitor();
-        addListener(this,'mediaDevicesOnDeviceChange', ev => {
+        addListener(this,'mediaDevicesOnDeviceChange', () => {
             console.log('MediaDevices => mediaDevicesOnDeviceChange');
             // @ts-ignore
             this.dispatchEvent(new RTCEvent('devicechange'));
