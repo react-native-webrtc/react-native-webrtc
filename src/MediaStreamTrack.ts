@@ -40,7 +40,9 @@ class MediaStreamTrack extends defineCustomEventTarget(...MEDIA_STREAM_TRACK_EVE
         this.kind = info.kind;
         this.remote = info.remote;
 
-        this._registerEvents();
+        if (!this.remote) {
+            this._registerEvents();
+        }
     }
 
     get enabled(): boolean {
