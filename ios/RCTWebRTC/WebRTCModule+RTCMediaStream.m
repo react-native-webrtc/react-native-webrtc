@@ -17,6 +17,7 @@
 #import "ScreenCapturer.h"
 #import "ScreenCaptureController.h"
 #import "VideoCaptureController.h"
+#import "TrackCapturerEventsEmitter.h"
 
 @implementation WebRTCModule (RTCMediaStream)
 
@@ -68,6 +69,9 @@
 
     ScreenCapturer *screenCapturer = [[ScreenCapturer alloc] initWithDelegate:videoSource];
     ScreenCaptureController *screenCaptureController = [[ScreenCaptureController alloc] initWithCapturer:screenCapturer];
+
+    TrackCapturerEventsEmitter *emitter = [[TrackCapturerEventsEmitter alloc] initWith:trackUUID webRTCModule:self];
+    screenCaptureController.eventsDelegate = emitter;
     videoTrack.captureController = screenCaptureController;
     [screenCaptureController startCapture];
 

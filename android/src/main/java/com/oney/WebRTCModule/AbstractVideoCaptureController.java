@@ -13,6 +13,8 @@ public abstract class AbstractVideoCaptureController {
      */
     protected VideoCapturer videoCapturer;
 
+    protected CapturerEventsListener capturerEventsListener;
+
     public AbstractVideoCaptureController(int width, int height, int fps) {
         this.width = width;
         this.height = height;
@@ -65,5 +67,14 @@ public abstract class AbstractVideoCaptureController {
         }
     }
 
+    public void setCapturerEventsListener(CapturerEventsListener listener) {
+        this.capturerEventsListener = listener;
+    }
+
     protected abstract VideoCapturer createVideoCapturer();
+
+    public interface CapturerEventsListener {
+        /** Called when the capturer is ended and in an irrecoverable state. */
+        public void onCapturerEnded();
+    }
 }
