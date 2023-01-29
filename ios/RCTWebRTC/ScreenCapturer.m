@@ -245,6 +245,7 @@ const NSUInteger kMaxReadLength = 10 * 1024;
         case NSStreamEventEndEncountered:
             NSLog(@"server stream end encountered");
             [self stopCapture];
+            [self.eventsDelegate capturerDidEnd:self];
             break;
         case NSStreamEventErrorOccurred:
             NSLog(@"server stream error encountered: %@", aStream.streamError.localizedDescription);

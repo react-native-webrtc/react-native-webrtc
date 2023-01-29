@@ -6,6 +6,7 @@ import { addListener, removeListener } from './EventEmitter';
 import Logger from './Logger';
 import MediaStream from './MediaStream';
 import MediaStreamTrack from './MediaStreamTrack';
+import MediaStreamTrackEvent from './MediaStreamTrackEvent';
 import RTCDataChannel from './RTCDataChannel';
 import RTCDataChannelEvent from './RTCDataChannelEvent';
 import RTCEvent from './RTCEvent';
@@ -71,13 +72,18 @@ export default class RTCPeerConnection extends defineCustomEventTarget(...PEER_C
     iceConnectionState: RTCIceConnectionState = 'new';
 
     _pcId: number;
-    _transceivers: { order: number, transceiver: RTCRtpTransceiver }[] = [];
-    _remoteStreams: Map<string, MediaStream> = new Map<string, MediaStream>();
+    _transceivers: { order: number, transceiver: RTCRtpTransceiver }[];
+    _remoteStreams: Map<string, MediaStream>;
 
     constructor(configuration) {
         super();
+
         this._pcId = nextPeerConnectionId++;
         WebRTCModule.peerConnectionInit(configuration, this._pcId);
+
+        this._transceivers = [];
+        this._remoteStreams = new Map();
+
         this._registerEvents();
 
         log.debug(`${this._pcId} ctor`);
@@ -510,7 +516,7 @@ export default class RTCPeerConnection extends defineCustomEventTarget(...PEER_C
             log.debug(`${this._pcId} ontrack`);
 
             let track;
-            let transceiver;
+            let transceiver: RTCRtpTransceiver;
 
             const [ oldTransceiver ] = this
                 .getTransceivers()
@@ -538,7 +544,7 @@ export default class RTCPeerConnection extends defineCustomEventTarget(...PEER_C
             }
 
             // Get the stream object from the event. Create if necessary.
-            const streams = ev.streams.map(streamInfo => {
+            const streams: MediaStream[] = ev.streams.map(streamInfo => {
                 // Here we are making sure that we don't create stream objects that already exist
                 // So that event listeners do get the same object if it has been created before.
                 if (!this._remoteStreams.has(streamInfo.streamId)) {
@@ -570,6 +576,11 @@ export default class RTCPeerConnection extends defineCustomEventTarget(...PEER_C
             // @ts-ignore
             this.dispatchEvent(new RTCTrackEvent('track', eventData));
 
+            streams.forEach(stream => {
+                // @ts-ignore
+                stream.dispatchEvent(new MediaStreamTrackEvent('addtrack', { track }));
+            });
+
             // Dispatch an unmute event for the track.
             track._setMutedInternal(false);
         });
@@ -579,23 +590,31 @@ export default class RTCPeerConnection extends defineCustomEventTarget(...PEER_C
                 return;
             }
 
-            log.debug(`${this._pcId} onremovetrack`);
+            log.debug(`${this._pcId} onremovetrack ${ev.receiverId}`);
 
-            // As per the spec:
-            // - Remove the track from any media streams that were previously passed to the `track` event.
-            // https://w3c.github.io/webrtc-pc/#dom-rtcpeerconnection-removetrack,
-            // - Mark the track as muted:
-            // https://w3c.github.io/webrtc-pc/#process-remote-track-removal
-            for (const stream of this._remoteStreams.values()) {
-                const [ track ] = stream._tracks.filter(t => t.id === ev.trackId);
+            const receiver = this.getReceivers().find(r => r.id === ev.receiverId);
+            const track = receiver?.track;
 
-                if (track) {
-                    const trackIdx = stream._tracks.indexOf(track);
+            if (receiver && track) {
+                // As per the spec:
+                // - Remove the track from any media streams that were previously passed to the `track` event.
+                // https://w3c.github.io/webrtc-pc/#dom-rtcpeerconnection-removetrack,
+                // - Mark the track as muted:
+                // https://w3c.github.io/webrtc-pc/#process-remote-track-removal
+                for (const stream of this._remoteStreams.values()) {
+                    if (stream._tracks.includes(track)) {
+                        const trackIdx = stream._tracks.indexOf(track);
 
-                    stream._tracks.splice(trackIdx, 1);
+                        log.debug(`${this._pcId} removetrack ${track.id}`);
 
-                    // Dispatch a mute event for the track.
-                    track._setMutedInternal(true);
+                        stream._tracks.splice(trackIdx, 1);
+
+                        // @ts-ignore
+                        stream.dispatchEvent(new MediaStreamTrackEvent('removetrack', { track }));
+
+                        // Dispatch a mute event for the track.
+                        track._setMutedInternal(true);
+                    }
                 }
             }
         });
@@ -605,7 +624,15 @@ export default class RTCPeerConnection extends defineCustomEventTarget(...PEER_C
                 return;
             }
 
-            this.localDescription = new RTCSessionDescription(ev.sdp);
+            const sdpInfo = ev.sdp;
+
+            // Can happen when doing a rollback.
+            if (sdpInfo.type && sdpInfo.sdp) {
+                this.localDescription = new RTCSessionDescription(sdpInfo);
+            } else {
+                this.localDescription = null;
+            }
+
             const candidate = new RTCIceCandidate(ev.candidate);
 
             // @ts-ignore
@@ -620,7 +647,15 @@ export default class RTCPeerConnection extends defineCustomEventTarget(...PEER_C
             this.iceGatheringState = ev.iceGatheringState;
 
             if (this.iceGatheringState === 'complete') {
-                this.localDescription = new RTCSessionDescription(ev.sdp);
+                const sdpInfo = ev.sdp;
+
+                // Can happen when doing a rollback.
+                if (sdpInfo.type && sdpInfo.sdp) {
+                    this.localDescription = new RTCSessionDescription(sdpInfo);
+                } else {
+                    this.localDescription = null;
+                }
+
                 // @ts-ignore
                 this.dispatchEvent(new RTCIceCandidateEvent('icecandidate', { candidate: null }));
             }

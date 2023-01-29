@@ -156,7 +156,7 @@ RCT_EXPORT_METHOD(peerConnectionCreateOffer:(nonnull NSNumber *)objectID
                                  @"sdp": sdp.sdp,
                                  @"type": type
                                },
-                               @"transceiversInfo": [SerializeUtils constructTransceiversInfoArrayWithPeerConnection:peerConnection peerConnectionId: objectID]
+                               @"transceiversInfo": [SerializeUtils constructTransceiversInfoArrayWithPeerConnection:peerConnection]
           }]);
         }
       }];
@@ -191,7 +191,7 @@ RCT_EXPORT_METHOD(peerConnectionCreateAnswer:(nonnull NSNumber *)objectID
            callback(@[@(YES), @{
                                 @"sdpInfo": @{@"sdp": sdp.sdp,
                                               @"type": type},
-                                @"transceiversInfo": [SerializeUtils constructTransceiversInfoArrayWithPeerConnection:peerConnection peerConnectionId: objectID]
+                                @"transceiversInfo": [SerializeUtils constructTransceiversInfoArrayWithPeerConnection:peerConnection]
            }]);
          }
        }];
@@ -223,7 +223,7 @@ RCT_EXPORT_METHOD(peerConnectionSetLocalDescription:(nonnull NSNumber *)objectID
         }
         id data = @{
             @"sdpInfo": sdpInfo,
-            @"transceiversInfo": [SerializeUtils constructTransceiversInfoArrayWithPeerConnection:peerConnection peerConnectionId: objectID]
+            @"transceiversInfo": [SerializeUtils constructTransceiversInfoArrayWithPeerConnection:peerConnection]
         };
         resolve(data);
       }
@@ -274,7 +274,7 @@ RCT_EXPORT_METHOD(peerConnectionSetRemoteDescription:(RTCSessionDescription *)sd
         }
         id data = @{
             @"sdpInfo": sdpInfo,
-            @"transceiversInfo": [SerializeUtils constructTransceiversInfoArrayWithPeerConnection:peerConnection peerConnectionId: objectID],
+            @"transceiversInfo": [SerializeUtils constructTransceiversInfoArrayWithPeerConnection:peerConnection],
             @"newTransceivers": newTransceivers
         };
         callback(@[@(YES), data]);
@@ -738,10 +738,13 @@ RCT_EXPORT_BLOCKING_SYNCHRONOUS_METHOD(peerConnectionRemoveTrack:(nonnull NSNumb
 - (void)peerConnection:(RTCPeerConnection *)peerConnection didChangeIceGatheringState:(RTCIceGatheringState)newState {
   id newSdp = @{};
   if (newState == RTCIceGatheringStateComplete) {
-      newSdp = @{
-          @"type": [RTCSessionDescription stringForType:peerConnection.localDescription.type],
-          @"sdp": peerConnection.localDescription.sdp
-      };
+      // Can happen when doing a rollback.
+      if (peerConnection.localDescription) {
+          newSdp = @{
+              @"type": [RTCSessionDescription stringForType:peerConnection.localDescription.type],
+              @"sdp": peerConnection.localDescription.sdp
+          };
+      }
   }
   [self sendEventWithName:kEventPeerConnectionIceGatheringChanged
                      body:@{
@@ -752,6 +755,14 @@ RCT_EXPORT_BLOCKING_SYNCHRONOUS_METHOD(peerConnectionRemoveTrack:(nonnull NSNumb
 }
 
 - (void)peerConnection:(RTCPeerConnection *)peerConnection didGenerateIceCandidate:(RTCIceCandidate *)candidate {
+  id newSdp = @{};
+  // Can happen when doing a rollback.
+  if (peerConnection.localDescription) {
+      newSdp = @{
+          @"type": [RTCSessionDescription stringForType:peerConnection.localDescription.type],
+          @"sdp": peerConnection.localDescription.sdp
+      };
+  }
   [self sendEventWithName:kEventPeerConnectionGotICECandidate
                      body:@{
                        @"pcId": peerConnection.reactTag,
@@ -760,10 +771,7 @@ RCT_EXPORT_BLOCKING_SYNCHRONOUS_METHOD(peerConnectionRemoveTrack:(nonnull NSNumb
                            @"sdpMLineIndex": @(candidate.sdpMLineIndex),
                            @"sdpMid": candidate.sdpMid
                        },
-                       @"sdp": @{
-                           @"type": [RTCSessionDescription stringForType:peerConnection.localDescription.type],
-                           @"sdp": peerConnection.localDescription.sdp
-                       }
+                       @"sdp": newSdp
                      }];
 }
 
@@ -864,12 +872,10 @@ RCT_EXPORT_BLOCKING_SYNCHRONOUS_METHOD(peerConnectionRemoveTrack:(nonnull NSNumb
 - (void)peerConnection:(RTC_OBJC_TYPE(RTCPeerConnection) *)peerConnection
      didRemoveReceiver:(RTC_OBJC_TYPE(RTCRtpReceiver) *)rtpReceiver {
     dispatch_async(self.workerQueue, ^{
-        RTCMediaStreamTrack *track = rtpReceiver.track;
-
         NSMutableDictionary *params = [NSMutableDictionary new];
 
         params[@"pcId"] = peerConnection.reactTag;
-        params[@"trackId"] = track.trackId;
+        params[@"receiverId"] = rtpReceiver.receiverId;
 
         [self sendEventWithName: kEventPeerConnectionOnRemoveTrack body: params];
     });
