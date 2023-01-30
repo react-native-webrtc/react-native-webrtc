@@ -1010,6 +1010,7 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
 
                     params.putMap("sdpInfo", newSdpMap);
                     params.putArray("transceiversInfo", getTransceiversInfo(peerConnection));
+
                     promise.resolve(params);
                 }
 
@@ -1037,29 +1038,30 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
     }
 
     @ReactMethod
-    public void peerConnectionSetRemoteDescription(ReadableMap sdpMap,
-                                                   int id,
-                                                   Callback callback) {
+    public void peerConnectionSetRemoteDescription(int id,
+                                                   ReadableMap desc,
+                                                   Promise promise) {
         ThreadUtils.runOnExecutor(() -> {
             PeerConnectionObserver pco = mPeerConnectionObservers.get(id);
             PeerConnection peerConnection = pco.getPeerConnection();
             
             if (peerConnection == null) {
                 Log.d(TAG, "peerConnectionSetRemoteDescription() peerConnection is null");
-                callback.invoke(false, "peerConnection is null");
+                promise.reject(new Exception("PeerConnection not found"));
                 return;
             }
 
             SessionDescription sdp = new SessionDescription(
-                SessionDescription.Type.fromCanonicalForm(sdpMap.getString("type")),
-                sdpMap.getString("sdp")
+                SessionDescription.Type.fromCanonicalForm(desc.getString("type")),
+                desc.getString("sdp")
             );
 
             List<String> receiversIds = new ArrayList<>();
             for(RtpTransceiver transceiver: peerConnection.getTransceivers()) {
                 receiversIds.add(transceiver.getReceiver().id());
             }
-            peerConnection.setRemoteDescription(new SdpObserver() {
+
+            final SdpObserver observer = new SdpObserver() {
                 @Override
                 public void onCreateSuccess(final SessionDescription sdp) {
                 }
@@ -1091,7 +1093,7 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
 
                     params.putArray("newTransceivers", newTransceivers);
 
-                    callback.invoke(true, params);
+                    promise.resolve(params);
                 }
 
                 @Override
@@ -1100,9 +1102,11 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
 
                 @Override
                 public void onSetFailure(String s) {
-                    callback.invoke(false, s);
+                    promise.reject("E_OPERATION_ERROR", s);
                 }
-            }, sdp);
+            };
+
+            peerConnection.setRemoteDescription(observer, sdp);
         });
     }
 

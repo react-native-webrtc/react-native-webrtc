@@ -173,7 +173,7 @@ export default class RTCPeerConnection extends defineCustomEventTarget(...PEER_C
         log.debug(`${this._pcId} setLocalDescription OK`);
     }
 
-    setRemoteDescription(sessionDescription: RTCSessionDescription | RTCSessionDescriptionInit): Promise<void> {
+    async setRemoteDescription(sessionDescription: RTCSessionDescription | RTCSessionDescriptionInit): Promise<void> {
         log.debug(`${this._pcId} setRemoteDescription`);
 
         if (!sessionDescription) {
@@ -189,50 +189,36 @@ export default class RTCPeerConnection extends defineCustomEventTarget(...PEER_C
             throw new Error(`Invalid session description: invalid type: ${desc.type}`);
         }
 
-        return new Promise((resolve, reject) => {
-            WebRTCModule.peerConnectionSetRemoteDescription(
-                desc,
-                this._pcId,
-                (successful, data) => {
-                    if (successful) {
-                        log.debug(`${this._pcId} setRemoteDescription OK`);
+        const {
+            sdpInfo,
+            newTransceivers,
+            transceiversInfo
+        } = await WebRTCModule.peerConnectionSetRemoteDescription(this._pcId, desc);
 
-                        const {
-                            sdpInfo,
-                            newTransceivers,
-                            transceiversInfo
-                        } = data;
+        if (sdpInfo.type && sdpInfo.sdp) {
+            this.remoteDescription = new RTCSessionDescription(sdpInfo);
+        } else {
+            this.remoteDescription = null;
+        }
 
-                        if (sdpInfo.type && sdpInfo.sdp) {
-                            this.remoteDescription = new RTCSessionDescription(sdpInfo);
-                        } else {
-                            this.remoteDescription = null;
-                        }
+        newTransceivers?.forEach( t => {
+            const { transceiverOrder, transceiver } = t;
+            const newSender = new RTCRtpSender({ ...transceiver.sender, track: null });
+            const remoteTrack
+                = transceiver.receiver.track ? new MediaStreamTrack(transceiver.receiver.track) : null;
+            const newReceiver = new RTCRtpReceiver({ ...transceiver.receiver, track: remoteTrack });
+            const newTransceiver = new RTCRtpTransceiver({
+                ...transceiver,
+                sender: newSender,
+                receiver: newReceiver,
+            });
 
-                        newTransceivers?.forEach( t => {
-                            const { transceiverOrder, transceiver } = t;
-                            const newSender = new RTCRtpSender({ ...transceiver.sender, track: null });
-                            const remoteTrack
-                                = transceiver.receiver.track ? new MediaStreamTrack(transceiver.receiver.track) : null;
-                            const newReceiver = new RTCRtpReceiver({ ...transceiver.receiver, track: remoteTrack });
-                            const newTransceiver = new RTCRtpTransceiver({
-                                ...transceiver,
-                                sender: newSender,
-                                receiver: newReceiver,
-                            });
-
-                            this._insertTransceiverSorted(transceiverOrder, newTransceiver);
-                        });
-
-                        this._updateTransceivers(transceiversInfo);
-
-                        resolve();
-                    } else {
-                        reject(data);
-                    }
-                }
-            );
+            this._insertTransceiverSorted(transceiverOrder, newTransceiver);
         });
+
+        this._updateTransceivers(transceiversInfo);
+
+        log.debug(`${this._pcId} setRemoteDescription OK`);
     }
 
     async addIceCandidate(candidate): Promise<void> {
