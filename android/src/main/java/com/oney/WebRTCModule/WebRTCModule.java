@@ -470,6 +470,14 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
         return getUserMediaImpl.getTrack(trackId);
     }
 
+    public VideoTrack createVideoTrack(AbstractVideoCaptureController videoCaptureController) {
+        return getUserMediaImpl.createVideoTrack(videoCaptureController);
+    }
+
+    public void createStream(MediaStreamTrack[] tracks, GetUserMediaImpl.BiConsumer<String, ArrayList<WritableMap>> successCallback) {
+        getUserMediaImpl.createStream(tracks, successCallback);
+    }
+
     /**
      * Turns an "options" <tt>ReadableMap</tt> into a <tt>MediaConstraints</tt> object.
      *

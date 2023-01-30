@@ -10,9 +10,11 @@
 #import <WebRTC/RTCCameraVideoCapturer.h>
 #import <WebRTC/RTCVideoTrack.h>
 #import <WebRTC/RTCMediaConstraints.h>
+#import <WebRTC/RTCMediaStreamTrack.h>
 
 #import "RTCMediaStreamTrack+React.h"
 #import "WebRTCModule+RTCPeerConnection.h"
+#import "WebRTCModule+RTCMediaStream.h"
 
 #import "ScreenCapturer.h"
 #import "ScreenCaptureController.h"
@@ -34,6 +36,75 @@
   RTCAudioTrack *audioTrack
     = [self.peerConnectionFactory audioTrackWithTrackId:trackId];
   return audioTrack;
+}
+
+/**
+ * Initializes a new {@link RTCVideoTrack} with the given capture controller
+ */
+- (RTCVideoTrack *)createVideoTrackWithCaptureController:(CaptureController * (^) (RTCVideoSource *)) captureControllerCreator {
+  RTCVideoSource *videoSource = [self.peerConnectionFactory videoSource];
+
+  NSString *trackUUID = [[NSUUID UUID] UUIDString];
+  RTCVideoTrack *videoTrack = [self.peerConnectionFactory videoTrackWithSource:videoSource trackId:trackUUID];
+  
+  CaptureController * captureController = captureControllerCreator(videoSource);
+  videoTrack.captureController = captureController;
+  [captureController startCapture];
+
+  return videoTrack;
+}
+
+/**
+ * Initializes a new {@link RTCMediaTrack} with the given tracks.
+ *
+ * @return An array with the mediaStreamId in index 0, and track infos in index 1.
+ */
+- (NSArray *)createMediaStream:(NSArray<RTCMediaStreamTrack *> *)tracks {
+  
+  NSString *mediaStreamId = [[NSUUID UUID] UUIDString];
+  RTCMediaStream *mediaStream
+    = [self.peerConnectionFactory mediaStreamWithStreamId:mediaStreamId];
+  NSMutableArray<NSDictionary *> *trackInfos = [NSMutableArray array];
+  
+  for (RTCMediaStreamTrack *track in tracks) {
+    if ([track.kind isEqualToString:@"audio"]) {
+      [mediaStream addAudioTrack:(RTCAudioTrack *)track];
+    } else if([track.kind isEqualToString:@"video"]) {
+      [mediaStream addVideoTrack:(RTCVideoTrack *)track];
+    }
+
+    NSString *trackId = track.trackId;
+
+    self.localTracks[trackId] = track;
+    
+    NSDictionary *settings = @{};
+    if ([track.kind isEqualToString:@"video"]) {
+      RTCVideoTrack *videoTrack = (RTCVideoTrack *)track;
+      if ([videoTrack.captureController isKindOfClass:[VideoCaptureController class]]){
+        VideoCaptureController *vcc = (VideoCaptureController *)videoTrack.captureController;
+        AVCaptureDeviceFormat *format = vcc.selectedFormat;
+        CMVideoDimensions dimensions = CMVideoFormatDescriptionGetDimensions(format.formatDescription);
+        settings = @{
+          @"height": @(dimensions.height),
+          @"width": @(dimensions.width),
+          @"frameRate": @(3)
+        };
+      }
+    }
+
+    [trackInfos addObject:@{
+                        @"enabled": @(track.isEnabled),
+                        @"id": trackId,
+                        @"kind": track.kind,
+                        @"label": trackId,
+                        @"readyState": @"live",
+                        @"remote": @(NO),
+                        @"settings": settings
+                        }];
+  }
+
+  self.localStreams[mediaStreamId] = mediaStream;
+  return @[ mediaStreamId, trackInfos ];
 }
 
 /**
