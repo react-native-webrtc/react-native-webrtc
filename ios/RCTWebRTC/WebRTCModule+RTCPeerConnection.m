@@ -211,6 +211,7 @@ RCT_EXPORT_METHOD(peerConnectionSetLocalDescription:(nonnull NSNumber *)objectID
   __weak RTCPeerConnection *weakPc = peerConnection;
 
   RTCSetSessionDescriptionCompletionHandler handler = ^(NSError *error) {
+    dispatch_async(self.workerQueue, ^{
       if (error) {
           reject(@"E_OPERATION_ERROR", error.localizedDescription, nil);
       } else {
@@ -227,6 +228,7 @@ RCT_EXPORT_METHOD(peerConnectionSetLocalDescription:(nonnull NSNumber *)objectID
         };
         resolve(data);
       }
+    });
   };
 
   if (desc == nil) {
@@ -255,6 +257,7 @@ RCT_EXPORT_METHOD(peerConnectionSetRemoteDescription:(nonnull NSNumber *)objectI
   __weak RTCPeerConnection *weakPc = peerConnection;
 
   RTCSetSessionDescriptionCompletionHandler handler = ^(NSError *error) {
+    dispatch_async(self.workerQueue, ^{
       if (error) {
           reject(@"E_OPERATION_ERROR", error.localizedDescription, nil);
       } else {
@@ -281,6 +284,7 @@ RCT_EXPORT_METHOD(peerConnectionSetRemoteDescription:(nonnull NSNumber *)objectI
         };
         resolve(data);
       }
+    });
   };
 
   [peerConnection setRemoteDescription:desc completionHandler:handler];

@@ -74,6 +74,7 @@ export default class RTCPeerConnection extends defineCustomEventTarget(...PEER_C
     _pcId: number;
     _transceivers: { order: number, transceiver: RTCRtpTransceiver }[];
     _remoteStreams: Map<string, MediaStream>;
+    _pendingTrackEvents: any[];
 
     constructor(configuration) {
         super();
@@ -83,6 +84,7 @@ export default class RTCPeerConnection extends defineCustomEventTarget(...PEER_C
 
         this._transceivers = [];
         this._remoteStreams = new Map();
+        this._pendingTrackEvents = [];
 
         this._registerEvents();
 
@@ -201,7 +203,7 @@ export default class RTCPeerConnection extends defineCustomEventTarget(...PEER_C
             this.remoteDescription = null;
         }
 
-        newTransceivers?.forEach( t => {
+        newTransceivers?.forEach(t => {
             const { transceiverOrder, transceiver } = t;
             const newSender = new RTCRtpSender({ ...transceiver.sender, track: null });
             const remoteTrack
@@ -217,6 +219,69 @@ export default class RTCPeerConnection extends defineCustomEventTarget(...PEER_C
         });
 
         this._updateTransceivers(transceiversInfo);
+
+        // Fire track events. They must fire before sRD resolves.
+        const pendingTrackEvents = this._pendingTrackEvents;
+
+        this._pendingTrackEvents = [];
+
+        for (const ev of pendingTrackEvents) {
+            const [ transceiver ] = this
+                .getTransceivers()
+                .filter(t => t.receiver.id ===  ev.receiver.id);
+
+            // We need to fire this event for an existing track sometimes, like
+            // when the transceiver direction (on the sending side) switches from
+            // sendrecv to recvonly and then back.
+
+            // @ts-ignore
+            const track: MediaStreamTrack = transceiver.receiver.track;
+
+            transceiver._mid = ev.transceiver.mid;
+            transceiver._currentDirection = ev.transceiver.currentDirection;
+            transceiver._direction = ev.transceiver.direction;
+
+            // Get the stream object from the event. Create if necessary.
+            const streams: MediaStream[] = ev.streams.map(streamInfo => {
+                // Here we are making sure that we don't create stream objects that already exist
+                // So that event listeners do get the same object if it has been created before.
+                if (!this._remoteStreams.has(streamInfo.streamId)) {
+                    const stream = new MediaStream({
+                        streamId: streamInfo.streamId,
+                        streamReactTag: streamInfo.streamReactTag,
+                        tracks: []
+                    });
+
+                    this._remoteStreams.set(streamInfo.streamId, stream);
+                }
+
+                const stream = this._remoteStreams.get(streamInfo.streamId);
+
+                if (!stream?._tracks.includes(track)) {
+                    stream?._tracks.push(track);
+                }
+
+                return stream;
+            });
+
+            const eventData = {
+                streams,
+                transceiver,
+                track,
+                receiver: transceiver.receiver
+            };
+
+            // @ts-ignore
+            this.dispatchEvent(new RTCTrackEvent('track', eventData));
+
+            streams.forEach(stream => {
+                // @ts-ignore
+                stream.dispatchEvent(new MediaStreamTrackEvent('addtrack', { track }));
+            });
+
+            // Dispatch an unmute event for the track.
+            track._setMutedInternal(false);
+        }
 
         log.debug(`${this._pcId} setRemoteDescription OK`);
     }
@@ -501,74 +566,10 @@ export default class RTCPeerConnection extends defineCustomEventTarget(...PEER_C
 
             log.debug(`${this._pcId} ontrack`);
 
-            let track;
-            let transceiver: RTCRtpTransceiver;
-
-            const [ oldTransceiver ] = this
-                .getTransceivers()
-                .filter(t => t.receiver.id ===  ev.receiver.id);
-
-            // We need to fire this event for an existing track sometimes, like
-            // when the transceiver direction (on the sending side) switches from
-            // sendrecv to recvonly and then back.
-
-            if (oldTransceiver) {
-                transceiver = oldTransceiver;
-                track = transceiver.receiver.track;
-                transceiver._mid = ev.transceiver.mid;
-                transceiver._currentDirection = ev.transceiver.currentDirection;
-                transceiver._direction = ev.transceiver.direction;
-            } else {
-                // TODO: re-evaluate if we need this branch at all. Since we now add new transceivers
-                // in sRD, we should always find them when this handler runs.
-                track = new MediaStreamTrack(ev.receiver.track);
-                const sender = new RTCRtpSender({ ...ev.transceiver.sender, track: null });
-                const receiver = new RTCRtpReceiver({ ...ev.receiver, track });
-
-                transceiver = new RTCRtpTransceiver({ ...ev.transceiver, receiver, sender });
-                this._insertTransceiverSorted(ev.transceiverOrder, transceiver);
-            }
-
-            // Get the stream object from the event. Create if necessary.
-            const streams: MediaStream[] = ev.streams.map(streamInfo => {
-                // Here we are making sure that we don't create stream objects that already exist
-                // So that event listeners do get the same object if it has been created before.
-                if (!this._remoteStreams.has(streamInfo.streamId)) {
-                    const stream = new MediaStream({
-                        streamId: streamInfo.streamId,
-                        streamReactTag: streamInfo.streamReactTag,
-                        tracks: []
-                    });
-
-                    this._remoteStreams.set(streamInfo.streamId, stream);
-                }
-
-                const stream = this._remoteStreams.get(streamInfo.streamId);
-
-                if (!stream?._tracks.includes(track)) {
-                    stream?._tracks.push(track);
-                }
-
-                return stream;
-            });
-
-            const eventData = {
-                streams,
-                transceiver,
-                track,
-                receiver: transceiver.receiver
-            };
-
-            // @ts-ignore
-            this.dispatchEvent(new RTCTrackEvent('track', eventData));
-
-            streams.forEach(stream => {
-                // @ts-ignore
-                stream.dispatchEvent(new MediaStreamTrackEvent('addtrack', { track }));
-            });
-
-            // Dispatch an unmute event for the track.
-            track._setMutedInternal(false);
+            // NOTE: We need to make sure the track event fires right before sRD completes,
+            // so we queue them up here and dispatch the events when sRD fires, but before completing it.
+            // In the future we should probably implement out own logic and drop this event altogether.
+            this._pendingTrackEvents.push(ev);
         });
 
         addListener(this, 'peerConnectionOnRemoveTrack', (ev: any) => {
