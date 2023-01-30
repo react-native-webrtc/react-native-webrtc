@@ -536,7 +536,7 @@ export default class RTCPeerConnection extends defineCustomEventTarget(...PEER_C
                 // TODO: re-evaluate if we need this branch at all. Since we now add new transceivers
                 // in sRD, we should always find them when this handler runs.
                 track = new MediaStreamTrack(ev.receiver.track);
-                const sender = new RTCRtpSender({ ...ev.transceiver, track: null });
+                const sender = new RTCRtpSender({ ...ev.transceiver.sender, track: null });
                 const receiver = new RTCRtpReceiver({ ...ev.receiver, track });
 
                 transceiver = new RTCRtpTransceiver({ ...ev.transceiver, receiver, sender });
