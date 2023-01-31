@@ -293,9 +293,9 @@ typedef NS_ENUM(NSInteger, RTCVideoViewObjectFit) {
 
     _videoTrack = videoTrack;
 
-    // Clear the videoView by rendering a 1x1 blank frame.
+    // Clear the videoView by rendering a 2x2 blank frame.
     CVPixelBufferRef pixelBuffer;
-    CVReturn err = CVPixelBufferCreate(NULL, 1, 1, kCVPixelFormatType_32BGRA, NULL, &pixelBuffer);
+    CVReturn err = CVPixelBufferCreate(NULL, 2, 2, kCVPixelFormatType_32BGRA, NULL, &pixelBuffer);
     if (err == kCVReturnSuccess) {
       const int kBytesPerPixel = 4;
       CVPixelBufferLockBaseAddress(pixelBuffer, 0);
