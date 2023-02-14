@@ -115,6 +115,7 @@ class MediaStreamTrack extends defineCustomEventTarget(...MEDIA_STREAM_TRACK_EVE
         }
 
         this._muted = muted;
+        // @ts-ignore
         this.dispatchEvent(new Event(muted ? 'mute' : 'unmute'));
     }
 
