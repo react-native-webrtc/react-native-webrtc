@@ -53,7 +53,12 @@ class DataChannelWrapper implements DataChannel.Observer {
 
     @Override
     public void onBufferedAmountChange(long amount) {
-        // TODO.
+        WritableMap params = Arguments.createMap();
+        params.putString("reactTag", reactTag);
+        params.putInt("peerConnectionId", peerConnectionId);
+        params.putDouble("bufferedAmount", Long.valueOf(amount).doubleValue());
+
+        webRTCModule.sendEvent("dataChannelDidChangeBufferedAmount", params);
     }
 
     @Override
@@ -92,6 +97,7 @@ class DataChannelWrapper implements DataChannel.Observer {
         params.putInt("peerConnectionId", peerConnectionId);
         params.putInt("id", mDataChannel.id());
         params.putString("state", dataChannelStateString(mDataChannel.state()));
+
         webRTCModule.sendEvent("dataChannelStateChanged", params);
     }
 }

@@ -35,31 +35,31 @@ public class VideoTrackAdapter {
         this.webRTCModule = webRTCModule;
     }
 
-    public void addAdapter(String streamReactTag, VideoTrack videoTrack) {
+    public void addAdapter(VideoTrack videoTrack) {
         String trackId = videoTrack.id();
-        if (!muteImplMap.containsKey(trackId)) {
-            TrackMuteUnmuteImpl onMuteImpl
-                = new TrackMuteUnmuteImpl(streamReactTag, trackId);
-            Log.d(TAG, "Created adapter for " + trackId);
-            muteImplMap.put(trackId, onMuteImpl);
-            videoTrack.addSink(onMuteImpl);
-            onMuteImpl.start();
-        } else {
-            Log.w(
-                TAG, "Attempted to add adapter twice for track ID: " + trackId);
+        if (muteImplMap.containsKey(trackId)) {
+            Log.w(TAG, "Attempted to add adapter twice for track ID: " + trackId);
+            return;
         }
+
+        TrackMuteUnmuteImpl onMuteImpl = new TrackMuteUnmuteImpl(trackId);
+        Log.d(TAG, "Created adapter for " + trackId);
+        muteImplMap.put(trackId, onMuteImpl);
+        videoTrack.addSink(onMuteImpl);
+        onMuteImpl.start();
     }
 
     public void removeAdapter(VideoTrack videoTrack) {
         String trackId = videoTrack.id();
         TrackMuteUnmuteImpl onMuteImpl = muteImplMap.remove(trackId);
-        if (onMuteImpl != null) {
-            videoTrack.removeSink(onMuteImpl);
-            onMuteImpl.dispose();
-            Log.d(TAG, "Deleted adapter for " + trackId);
-        } else {
+        if (onMuteImpl == null) {
             Log.w(TAG, "removeAdapter - no adapter for " + trackId);
+            return;
         }
+
+        videoTrack.removeSink(onMuteImpl);
+        onMuteImpl.dispose();
+        Log.d(TAG, "Deleted adapter for " + trackId);
     }
 
     /**
@@ -71,11 +71,9 @@ public class VideoTrackAdapter {
         private volatile boolean disposed;
         private AtomicInteger frameCounter;
         private boolean mutedState;
-        private final String streamReactTag;
         private final String trackId;
 
-        TrackMuteUnmuteImpl(String streamReactTag, String trackId) {
-            this.streamReactTag = streamReactTag;
+        TrackMuteUnmuteImpl(String trackId) {
             this.trackId = trackId;
             this.frameCounter = new AtomicInteger();
         }
@@ -117,15 +115,13 @@ public class VideoTrackAdapter {
 
         private void emitMuteEvent(boolean muted) {
             WritableMap params = Arguments.createMap();
-            params.putInt("peerConnectionId", peerConnectionId);
-            params.putString("streamReactTag", streamReactTag);
+            params.putInt("pcId", peerConnectionId);
             params.putString("trackId", trackId);
             params.putBoolean("muted", muted);
 
             Log.d(TAG,
                 (muted ? "Mute" : "Unmute" )
                     + " event pcId: " + peerConnectionId
-                    + " streamTag: " + streamReactTag
                     + " trackId: " + trackId);
 
             VideoTrackAdapter.this.webRTCModule.sendEvent(

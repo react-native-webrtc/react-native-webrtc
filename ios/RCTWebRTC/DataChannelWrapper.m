@@ -34,4 +34,10 @@
     }
 }
 
+- (void)dataChannel:(nonnull RTCDataChannel *)dataChannel didChangeBufferedAmount:(uint64_t)amount {
+    if (_delegate) {
+        [_delegate dataChannel:self didChangeBufferedAmount:amount];
+    }
+}
+
 @end

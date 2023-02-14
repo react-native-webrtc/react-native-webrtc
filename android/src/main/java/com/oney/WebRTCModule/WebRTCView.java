@@ -188,6 +188,10 @@ public class WebRTCView extends ViewGroup {
                     videoTrack = videoTracks.get(0);
                 }
             }
+
+            if (videoTrack == null) {
+                Log.w(TAG, "No video stream for react tag: " + streamURL);
+            }
         }
 
         return videoTrack;
@@ -336,14 +340,14 @@ public class WebRTCView extends ViewGroup {
     private void removeRendererFromVideoTrack() {
         if (rendererAttached) {
             if (videoTrack != null) {
-                // XXX If WebRTCModule#mediaStreamTrackRelease has already been
-                // invoked on videoTrack, then it is no longer safe to call removeSink
-                // on the instance, it will throw IllegalStateException.
                 try {
-                    videoTrack.removeSink(surfaceViewRenderer);
+                    ThreadUtils.submitToExecutor(() -> {
+                        videoTrack.removeSink(surfaceViewRenderer);
+                    }).get();
                 } catch (Throwable tr) {
-                    // Releasing streams happens in the WebRTC thread, thus we might (briefly) hold
-                    // a reference to a released stream. Just ignore the error and move on.
+                    // XXX If WebRTCModule#mediaStreamTrackRelease has already been
+                    // invoked on videoTrack, then it is no longer safe to call removeSink
+                    // on the instance, it will throw IllegalStateException.
                 }
             }
 
@@ -571,14 +575,15 @@ public class WebRTCView extends ViewGroup {
                 surfaceViewRendererInstances--;
             }
 
-            // XXX If WebRTCModule#mediaStreamTrackRelease has already been
-            // invoked on videoTrack, then it is no longer safe to call addSink
-            // on the instance, it will throw IllegalStateException.
             try {
-                videoTrack.addSink(surfaceViewRenderer);
+                ThreadUtils.submitToExecutor(() -> {
+                    videoTrack.addSink(surfaceViewRenderer);
+                }).get();
             } catch (Throwable tr) {
-                // Releasing streams happens in the WebRTC thread, thus we might (briefly) hold
-                // a reference to a released stream.
+                // XXX If WebRTCModule#mediaStreamTrackRelease has already been
+                // invoked on videoTrack, then it is no longer safe to call addSink
+                // on the instance, it will throw IllegalStateException.
+
                 Log.e(TAG, "Failed to add renderer", tr);
 
                 surfaceViewRenderer.release();

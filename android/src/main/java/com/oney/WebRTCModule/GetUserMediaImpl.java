@@ -18,6 +18,10 @@ import com.facebook.react.bridge.UiThreadUtil;
 import com.facebook.react.bridge.WritableArray;
 import com.facebook.react.bridge.WritableMap;
 
+import com.oney.WebRTCModule.videoEffects.ProcessorProvider;
+import com.oney.WebRTCModule.videoEffects.VideoEffectProcessor;
+import com.oney.WebRTCModule.videoEffects.VideoFrameProcessor;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
@@ -303,7 +307,7 @@ class GetUserMediaImpl {
         displayMediaPromise = null;
     }
 
-    private void createStream(MediaStreamTrack[] tracks, BiConsumer<String, ArrayList<WritableMap>> successCallback) {
+    void createStream(MediaStreamTrack[] tracks, BiConsumer<String, ArrayList<WritableMap>> successCallback) {
         String streamId = UUID.randomUUID().toString();
         MediaStream mediaStream = webRTCModule.mFactory.createLocalMediaStream(streamId);
 
@@ -327,7 +331,7 @@ class GetUserMediaImpl {
             trackInfo.putString("id", trackId);
             trackInfo.putString("kind", track.kind());
             trackInfo.putString("label", trackId);
-            trackInfo.putString("readyState", track.state().toString());
+            trackInfo.putString("readyState", track.state().toString().toLowerCase());
             trackInfo.putBoolean("remote", false);
 
             if (track instanceof VideoTrack) {
@@ -358,7 +362,7 @@ class GetUserMediaImpl {
         return createVideoTrack(screenCaptureController);
     }
 
-    private VideoTrack createVideoTrack(AbstractVideoCaptureController videoCaptureController) {
+    VideoTrack createVideoTrack(AbstractVideoCaptureController videoCaptureController) {
         videoCaptureController.initializeVideoCapturer();
 
         VideoCapturer videoCapturer = videoCaptureController.videoCapturer;
@@ -376,10 +380,14 @@ class GetUserMediaImpl {
             return null;
         }
 
+        String id = UUID.randomUUID().toString();
+
+        TrackCapturerEventsEmitter eventsEmitter = new TrackCapturerEventsEmitter(webRTCModule, id);
+        videoCaptureController.setCapturerEventsListener(eventsEmitter);
+
         VideoSource videoSource = pcFactory.createVideoSource(videoCapturer.isScreencast());
         videoCapturer.initialize(surfaceTextureHelper, reactContext, videoSource.getCapturerObserver());
 
-        String id = UUID.randomUUID().toString();
         VideoTrack track = pcFactory.createVideoTrack(id, videoSource);
 
         track.setEnabled(true);
@@ -388,6 +396,38 @@ class GetUserMediaImpl {
         videoCaptureController.startCapture();
 
         return track;
+    }
+
+    /**
+     * Set video effect to the TrackPrivate corresponding to the trackId with the help of VideoEffectProcessor
+     * corresponding to the name.
+     * @param trackId TrackPrivate id
+     * @param name VideoEffectProcessor name
+     */
+    void setVideoEffect(String trackId, String name) {
+        TrackPrivate track = tracks.get(trackId);
+
+        if (track != null && track.videoCaptureController instanceof CameraCaptureController) {
+            VideoSource videoSource = (VideoSource) track.mediaSource;
+            SurfaceTextureHelper surfaceTextureHelper = track.surfaceTextureHelper;
+
+            if (name != null) {
+                VideoFrameProcessor videoFrameProcessor = ProcessorProvider.getProcessor(name);
+
+                if (videoFrameProcessor == null) {
+                    Log.e(TAG, "no videoFrameProcessor associated with this name");
+                    return;
+                }
+
+                VideoEffectProcessor videoEffectProcessor = new VideoEffectProcessor(videoFrameProcessor,
+                        surfaceTextureHelper);
+                videoSource.setVideoProcessor(videoEffectProcessor);
+
+            } else {
+                videoSource.setVideoProcessor(null);
+            }
+
+        }
     }
 
     /**
@@ -463,7 +503,7 @@ class GetUserMediaImpl {
         }
     }
 
-    private interface BiConsumer<T, U> {
+    public interface BiConsumer<T, U> {
         void accept(T t, U u);
     }
 }

@@ -18,6 +18,10 @@ NSString* const kRTCAppGroupIdentifier = @"RTCAppGroupIdentifier";
 
 @end
 
+@interface ScreenCaptureController (CapturerEventsDelegate) <CapturerEventsDelegate>
+- (void)capturerDidEnd:(RTCVideoCapturer *)capturer;
+@end
+
 @interface ScreenCaptureController (Private)
 
 @property (nonatomic, readonly) NSString *appGroupIdentifier;
@@ -35,11 +39,16 @@ NSString* const kRTCAppGroupIdentifier = @"RTCAppGroupIdentifier";
     return self;
 }
 
+- (void)dealloc {
+    [self.capturer stopCapture];
+}
+
 - (void)startCapture {
     if (!self.appGroupIdentifier) {
         return;
     }
     
+    self.capturer.eventsDelegate = self;
     NSString *socketFilePath = [self filePathForApplicationGroupIdentifier:self.appGroupIdentifier];
     SocketConnection *connection = [[SocketConnection alloc] initWithFilePath:socketFilePath];
     [self.capturer startCaptureWithConnection:connection];
@@ -47,6 +56,12 @@ NSString* const kRTCAppGroupIdentifier = @"RTCAppGroupIdentifier";
 
 - (void)stopCapture {
     [self.capturer stopCapture];
+}
+
+// MARK: CapturerEventsDelegate Methods
+
+- (void)capturerDidEnd:(RTCVideoCapturer *)capturer {
+    [self.eventsDelegate capturerDidEnd:capturer];
 }
 
 // MARK: Private Methods
