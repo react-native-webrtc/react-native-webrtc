@@ -879,7 +879,12 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
             // MediaStream.dispose() may be called without an exception only if
             // it's no longer added to any PeerConnection.
             for (int i = 0, size = mPeerConnectionObservers.size(); i < size; i++) {
-                mPeerConnectionObservers.valueAt(i).removeStream(stream);
+                for (String streamKey : mPeerConnectionObservers.valueAt(i).remoteStreams.keySet()) {
+                    MediaStream foundStream = mPeerConnectionObservers.valueAt(i).remoteStreams.get(streamKey);
+
+                    if (foundStream != null && Objects.equals(stream.getId(), foundStream.getId()))
+                        mPeerConnectionObservers.valueAt(i).remoteStreams.remove(streamKey);
+                }
             }
 
             safe(() -> {
