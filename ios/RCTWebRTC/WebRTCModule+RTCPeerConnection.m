@@ -127,10 +127,12 @@ RCT_EXPORT_METHOD(peerConnectionSetConfiguration:(RTCConfiguration*)configuratio
 
 RCT_EXPORT_METHOD(peerConnectionCreateOffer:(nonnull NSNumber *)objectID
                                     options:(NSDictionary *)options
-                                   callback:(RCTResponseSenderBlock)callback)
+                                   resolver:(RCTPromiseResolveBlock)resolve
+                                   rejecter:(RCTPromiseRejectBlock)reject)
 {
   RTCPeerConnection *peerConnection = self.peerConnections[objectID];
   if (!peerConnection) {
+    reject(@"E_INVALID", @"PeerConnection not found", nil);
     return;
   }
 
@@ -138,36 +140,34 @@ RCT_EXPORT_METHOD(peerConnectionCreateOffer:(nonnull NSNumber *)objectID
     [[RTCMediaConstraints alloc] initWithMandatoryConstraints:options
                                           optionalConstraints:nil];
 
-  [peerConnection
-    offerForConstraints:constraints
-      completionHandler:^(RTCSessionDescription *sdp, NSError *error) {
-        if (error) {
-          callback(@[
-            @(NO),
-            @{
-              @"type": @"CreateOfferFailed",
-              @"message": error.localizedDescription ?: [NSNull null]
-            }
-          ]);
-        } else {
-          NSString *type = [RTCSessionDescription stringForType:sdp.type];
-          callback(@[@(YES), @{
-                               @"sdpInfo": @{
-                                 @"sdp": sdp.sdp,
-                                 @"type": type
-                               },
-                               @"transceiversInfo": [SerializeUtils constructTransceiversInfoArrayWithPeerConnection:peerConnection]
-          }]);
-        }
-      }];
+  RTCCreateSessionDescriptionCompletionHandler handler = ^(RTCSessionDescription *desc, NSError *error) {
+      dispatch_async(self.workerQueue, ^{
+          if (error) {
+            reject(@"E_OPERATION_ERROR", error.localizedDescription, nil);
+          } else {
+            NSMutableDictionary *sdpInfo = [NSMutableDictionary new];
+            sdpInfo[@"type"] = [RTCSessionDescription stringForType:desc.type];
+            sdpInfo[@"sdp"] = desc.sdp;
+            id data = @{
+                @"sdpInfo": sdpInfo,
+                @"transceiversInfo": [SerializeUtils constructTransceiversInfoArrayWithPeerConnection:peerConnection]
+            };
+            resolve(data);
+          }
+      });
+  };
+
+  [peerConnection offerForConstraints:constraints completionHandler:handler];
 }
 
 RCT_EXPORT_METHOD(peerConnectionCreateAnswer:(nonnull NSNumber *)objectID
                                      options:(NSDictionary *)options
-                                    callback:(RCTResponseSenderBlock)callback)
+                                    resolver:(RCTPromiseResolveBlock)resolve
+                                    rejecter:(RCTPromiseRejectBlock)reject)
 {
   RTCPeerConnection *peerConnection = self.peerConnections[objectID];
   if (!peerConnection) {
+    reject(@"E_INVALID", @"PeerConnection not found", nil);
     return;
   }
 
@@ -175,26 +175,24 @@ RCT_EXPORT_METHOD(peerConnectionCreateAnswer:(nonnull NSNumber *)objectID
     [[RTCMediaConstraints alloc] initWithMandatoryConstraints:options
                                           optionalConstraints:nil];
 
-  [peerConnection
-    answerForConstraints:constraints
-       completionHandler:^(RTCSessionDescription *sdp, NSError *error) {
-         if (error) {
-           callback(@[
-             @(NO),
-             @{
-               @"type": @"CreateAnswerFailed",
-               @"message": error.localizedDescription ?: [NSNull null]
-             }
-           ]);
-         } else {
-           NSString *type = [RTCSessionDescription stringForType:sdp.type];
-           callback(@[@(YES), @{
-                                @"sdpInfo": @{@"sdp": sdp.sdp,
-                                              @"type": type},
-                                @"transceiversInfo": [SerializeUtils constructTransceiversInfoArrayWithPeerConnection:peerConnection]
-           }]);
-         }
-       }];
+  RTCCreateSessionDescriptionCompletionHandler handler = ^(RTCSessionDescription *desc, NSError *error) {
+      dispatch_async(self.workerQueue, ^{
+          if (error) {
+            reject(@"E_OPERATION_ERROR", error.localizedDescription, nil);
+          } else {
+            NSMutableDictionary *sdpInfo = [NSMutableDictionary new];
+            sdpInfo[@"type"] = [RTCSessionDescription stringForType:desc.type];
+            sdpInfo[@"sdp"] = desc.sdp;
+            id data = @{
+                @"sdpInfo": sdpInfo,
+                @"transceiversInfo": [SerializeUtils constructTransceiversInfoArrayWithPeerConnection:peerConnection]
+            };
+            resolve(data);
+          }
+      });
+  };
+
+  [peerConnection answerForConstraints:constraints completionHandler:handler];
 }
 
 RCT_EXPORT_METHOD(peerConnectionSetLocalDescription:(nonnull NSNumber *)objectID
@@ -208,16 +206,13 @@ RCT_EXPORT_METHOD(peerConnectionSetLocalDescription:(nonnull NSNumber *)objectID
     return;
   }
 
-  __weak RTCPeerConnection *weakPc = peerConnection;
-
   RTCSetSessionDescriptionCompletionHandler handler = ^(NSError *error) {
     dispatch_async(self.workerQueue, ^{
       if (error) {
           reject(@"E_OPERATION_ERROR", error.localizedDescription, nil);
       } else {
-        RTCPeerConnection *strongPc = weakPc;
         NSMutableDictionary *sdpInfo = [NSMutableDictionary new];
-        RTCSessionDescription *localDesc = strongPc.localDescription;
+        RTCSessionDescription *localDesc = peerConnection.localDescription;
         if (localDesc) {
             sdpInfo[@"type"] = [RTCSessionDescription stringForType:localDesc.type];
             sdpInfo[@"sdp"] = localDesc.sdp;
@@ -253,8 +248,6 @@ RCT_EXPORT_METHOD(peerConnectionSetRemoteDescription:(nonnull NSNumber *)objectI
   for (RTCRtpTransceiver *transceiver in peerConnection.transceivers) {
       [receiversIds addObject:transceiver.receiver.receiverId];
   }
-
-  __weak RTCPeerConnection *weakPc = peerConnection;
 
   RTCSetSessionDescriptionCompletionHandler handler = ^(NSError *error) {
     dispatch_async(self.workerQueue, ^{
