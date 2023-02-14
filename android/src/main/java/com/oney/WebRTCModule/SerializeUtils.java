@@ -133,56 +133,59 @@ public class SerializeUtils {
       rtcp.putBoolean("reducedSize", params.getRtcp().getReducedSize());
 
       // Preparing header extensions
-      params.getHeaderExtensions().forEach(extension -> {
-        WritableMap extensionMap = Arguments.createMap();
-        extensionMap.putInt("id", extension.getId());
-        extensionMap.putString("uri", extension.getUri());
-        extensionMap.putBoolean("encrypted", extension.getEncrypted());
-        headerExtensions.pushMap(extensionMap);
-      });
-
-      // Preparing encodings
-      params.encodings.forEach(encoding -> {
-        WritableMap encodingMap = Arguments.createMap();
-        encodingMap.putBoolean("active", encoding.active);
-        if (encoding.rid != null) {
-            encodingMap.putString("rid", encoding.rid);
-        }
-        // Since they return integer objects that are nullable,
-        // while the map does not accept nullable integer values.
-        if (encoding.maxBitrateBps != null) {
-          encodingMap.putInt("maxBitrate", encoding.maxBitrateBps);
-        }
-        if (encoding.maxFramerate != null) {
-          encodingMap.putInt("maxFramerate", encoding.maxFramerate);
-        }
-        if (encoding.scaleResolutionDownBy != null) {
-          encodingMap.putDouble("scaleResolutionDownBy", encoding.scaleResolutionDownBy);
-        }
-        encodings.pushMap(encodingMap);
-      });
-
-      // Preparing codecs
-      params.codecs.forEach(codec -> {
-        WritableMap codecMap = Arguments.createMap();
-        codecMap.putInt("payloadType", codec.payloadType);
-        codecMap.putString("mimeType", codec.name);
-        codecMap.putInt("clockRate", codec.clockRate);
-        if (codec.numChannels != null) {
-          codecMap.putInt("channels", codec.numChannels);
-        }
-        // Serializing sdpFmptLine. 
-        if (!codec.parameters.isEmpty()) {
-            final String sdpFmptLineParams = codec.parameters.keySet().stream()
-                .map(key -> key + "=" + codec.parameters.get(key))
-                .collect(Collectors.joining(";"));
-            codecMap.putString("sdpFmtpLine", sdpFmptLineParams);
+        for (RtpParameters.HeaderExtension extension : params.getHeaderExtensions()) {
+            WritableMap extensionMap = Arguments.createMap();
+            extensionMap.putInt("id", extension.getId());
+            extensionMap.putString("uri", extension.getUri());
+            extensionMap.putBoolean("encrypted", extension.getEncrypted());
+            headerExtensions.pushMap(extensionMap);
         }
 
-        codecs.pushMap(codecMap);
-      });
+        // Preparing encodings
+        for (RtpParameters.Encoding encoding : params.encodings) {
+            WritableMap encodingMap = Arguments.createMap();
+            encodingMap.putBoolean("active", encoding.active);
+            if (encoding.rid != null) {
+                encodingMap.putString("rid", encoding.rid);
+            }
+            // Since they return integer objects that are nullable,
+            // while the map does not accept nullable integer values.
+            if (encoding.maxBitrateBps != null) {
+                encodingMap.putInt("maxBitrate", encoding.maxBitrateBps);
+            }
+            if (encoding.maxFramerate != null) {
+                encodingMap.putInt("maxFramerate", encoding.maxFramerate);
+            }
+            if (encoding.scaleResolutionDownBy != null) {
+                encodingMap.putDouble("scaleResolutionDownBy", encoding.scaleResolutionDownBy);
+            }
+            encodings.pushMap(encodingMap);
+        }
 
-      result.putString("transactionId", params.transactionId);
+        // Preparing codecs
+        for (RtpParameters.Codec codec : params.codecs) {
+            WritableMap codecMap = Arguments.createMap();
+            codecMap.putInt("payloadType", codec.payloadType);
+            codecMap.putString("mimeType", codec.name);
+            codecMap.putInt("clockRate", codec.clockRate);
+            if (codec.numChannels != null) {
+                codecMap.putInt("channels", codec.numChannels);
+            }
+            // Serializing sdpFmptLine.
+            if (!codec.parameters.isEmpty()) {
+                StringBuilder joiner = new StringBuilder();
+                for (String key : codec.parameters.keySet()) {
+                    String s = key + "=" + codec.parameters.get(key);
+                    joiner.append(s).append(";");
+                }
+                final String sdpFmptLineParams = joiner.toString();
+                codecMap.putString("sdpFmtpLine", sdpFmptLineParams);
+            }
+
+            codecs.pushMap(codecMap);
+        }
+
+        result.putString("transactionId", params.transactionId);
       result.putMap("rtcp", rtcp);
       result.putArray("encodings", encodings);
       result.putArray("codecs", codecs);
