@@ -91,50 +91,32 @@ export default class RTCPeerConnection extends defineCustomEventTarget(...PEER_C
         log.debug(`${this._pcId} ctor`);
     }
 
-    createOffer(options) {
+    async createOffer(options) {
         log.debug(`${this._pcId} createOffer`);
 
-        return new Promise((resolve, reject) => {
-            WebRTCModule.peerConnectionCreateOffer(
-                this._pcId,
-                RTCUtil.normalizeOfferOptions(options),
-                (successful, data) => {
-                    if (successful) {
-                        log.debug(`${this._pcId} createOffer OK`);
+        const {
+            sdpInfo,
+            transceiversInfo
+        } = await WebRTCModule.peerConnectionCreateOffer(this._pcId, RTCUtil.normalizeOfferOptions(options));
 
-                        this._updateTransceivers(data.transceiversInfo);
-                        resolve(data.sdpInfo);
-                    } else {
-                        log.debug(`${this._pcId} createOffer ERROR`);
+        log.debug(`${this._pcId} createOffer OK`);
 
-                        reject(data);
-                    }
-                }
-            );
-        });
+        this._updateTransceivers(transceiversInfo);
+
+        return sdpInfo;
     }
 
-    createAnswer() {
+    async createAnswer() {
         log.debug(`${this._pcId} createAnswer`);
 
-        return new Promise((resolve, reject) => {
-            WebRTCModule.peerConnectionCreateAnswer(
-                this._pcId,
-                {},
-                (successful, data) => {
-                    if (successful) {
-                        log.debug(`${this._pcId} createAnswer OK`);
+        const {
+            sdpInfo,
+            transceiversInfo
+        } = await WebRTCModule.peerConnectionCreateAnswer(this._pcId, {});
 
-                        this._updateTransceivers(data.transceiversInfo);
-                        resolve(data.sdpInfo);
-                    } else {
-                        log.debug(`${this._pcId} createAnswer ERROR`);
+        this._updateTransceivers(transceiversInfo);
 
-                        reject(data);
-                    }
-                }
-            );
-        });
+        return sdpInfo;
     }
 
     setConfiguration(configuration): void {
