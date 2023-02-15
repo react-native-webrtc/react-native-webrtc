@@ -1,17 +1,7 @@
-//
-//  RTCVideoViewManager.m
-//  TestReact
-//
-//  Created by one on 2015/9/25.
-//  Copyright © 2015年 Facebook. All rights reserved.
-//
 #import <AVFoundation/AVFoundation.h>
 #import <objc/runtime.h>
 
 #import <React/RCTLog.h>
-#if !TARGET_OS_OSX
-#import <WebRTC/RTCEAGLVideoView.h>
-#endif
 #import <WebRTC/RTCMediaStream.h>
 #if !TARGET_OS_OSX
 #import <WebRTC/RTCMTLVideoView.h>
@@ -130,9 +120,9 @@ typedef NS_ENUM(NSInteger, RTCVideoViewObjectFit) {
       _videoSize.height = 0;
       _videoSize.width = 0;
 #if !TARGET_OS_OSX
-      [self setNeedsLayout];
+    [self setNeedsLayout];
 #else
-        self.needsLayout = YES;
+    self.needsLayout = YES;
 #endif
     }
   }
@@ -146,37 +136,24 @@ typedef NS_ENUM(NSInteger, RTCVideoViewObjectFit) {
  */
 - (instancetype)initWithFrame:(CGRect)frame {
   if (self = [super initWithFrame:frame]) {
-#if defined(RTC_SUPPORTS_METAL)
 #if !TARGET_OS_OSX
     RTCMTLVideoView *subview = [[RTCMTLVideoView alloc] initWithFrame:CGRectZero];
     subview.delegate = self;
     _videoView = subview;
 #else
-      RTCMTLNSVideoView *subview = [[RTCMTLNSVideoView alloc] initWithFrame:CGRectZero];
-      subview.wantsLayer = true;
-      subview.delegate = self;
-      _videoView = subview;
-#endif
-#else
-#if !TARGET_OS_OSX
-    RTCEAGLVideoView *subview = [[RTCEAGLVideoView alloc] initWithFrame:CGRectZero];
+    RTCMTLNSVideoView *subview = [[RTCMTLNSVideoView alloc] initWithFrame:CGRectZero];
+    subview.wantsLayer = true;
     subview.delegate = self;
     _videoView = subview;
-#else
-            RTCMTLNSVideoView *subview = [[RTCMTLNSVideoView alloc] initWithFrame:CGRectZero];
-      subview.wantsLayer = true;
-            subview.delegate = self;
-            _videoView = subview;
-      #endif
 #endif
 
     _videoSize.height = 0;
     _videoSize.width = 0;
 
+#if !TARGET_OS_OSX
+    self.opaque = NO;
+#endif
 
-    #if !TARGET_OS_OSX
-            self.opaque = NO;
-    #endif
     [self addSubview:self.videoView];
   }
   return self;
@@ -316,9 +293,9 @@ typedef NS_ENUM(NSInteger, RTCVideoViewObjectFit) {
 
     _videoTrack = videoTrack;
 
-    // Clear the videoView by rendering a 1x1 blank frame.
+    // Clear the videoView by rendering a 2x2 blank frame.
     CVPixelBufferRef pixelBuffer;
-    CVReturn err = CVPixelBufferCreate(NULL, 1, 1, kCVPixelFormatType_32BGRA, NULL, &pixelBuffer);
+    CVReturn err = CVPixelBufferCreate(NULL, 2, 2, kCVPixelFormatType_32BGRA, NULL, &pixelBuffer);
     if (err == kCVReturnSuccess) {
       const int kBytesPerPixel = 4;
       CVPixelBufferLockBaseAddress(pixelBuffer, 0);

@@ -470,6 +470,14 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
         return getUserMediaImpl.getTrack(trackId);
     }
 
+    public VideoTrack createVideoTrack(AbstractVideoCaptureController videoCaptureController) {
+        return getUserMediaImpl.createVideoTrack(videoCaptureController);
+    }
+
+    public void createStream(MediaStreamTrack[] tracks, GetUserMediaImpl.BiConsumer<String, ArrayList<WritableMap>> successCallback) {
+        getUserMediaImpl.createStream(tracks, successCallback);
+    }
+
     /**
      * Turns an "options" <tt>ReadableMap</tt> into a <tt>MediaConstraints</tt> object.
      *
@@ -990,19 +998,22 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
 
                 @Override
                 public void onSetSuccess() {
-                    WritableMap newSdpMap = Arguments.createMap();
-                    WritableMap params = Arguments.createMap();
+                    ThreadUtils.runOnExecutor(() -> {
+                        WritableMap newSdpMap = Arguments.createMap();
+                        WritableMap params = Arguments.createMap();
 
-                    SessionDescription newSdp = peerConnection.getLocalDescription();
-                    // Can happen when doing a rollback.
-                    if (newSdp != null) {
-                        newSdpMap.putString("type", newSdp.type.canonicalForm());
-                        newSdpMap.putString("sdp", newSdp.description);
-                    }
+                        SessionDescription newSdp = peerConnection.getLocalDescription();
+                        // Can happen when doing a rollback.
+                        if (newSdp != null) {
+                            newSdpMap.putString("type", newSdp.type.canonicalForm());
+                            newSdpMap.putString("sdp", newSdp.description);
+                        }
 
-                    params.putMap("sdpInfo", newSdpMap);
-                    params.putArray("transceiversInfo", getTransceiversInfo(peerConnection));
-                    promise.resolve(params);
+                        params.putMap("sdpInfo", newSdpMap);
+                        params.putArray("transceiversInfo", getTransceiversInfo(peerConnection));
+
+                        promise.resolve(params);
+                    });
                 }
 
                 @Override
@@ -1011,7 +1022,9 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
 
                 @Override
                 public void onSetFailure(String s) {
-                    promise.reject("E_OPERATION_ERROR", s);
+                    ThreadUtils.runOnExecutor(() -> {
+                        promise.reject("E_OPERATION_ERROR", s);
+                    });
                 }
             };
 
@@ -1029,61 +1042,64 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
     }
 
     @ReactMethod
-    public void peerConnectionSetRemoteDescription(ReadableMap sdpMap,
-                                                   int id,
-                                                   Callback callback) {
+    public void peerConnectionSetRemoteDescription(int id,
+                                                   ReadableMap desc,
+                                                   Promise promise) {
         ThreadUtils.runOnExecutor(() -> {
             PeerConnectionObserver pco = mPeerConnectionObservers.get(id);
             PeerConnection peerConnection = pco.getPeerConnection();
             
             if (peerConnection == null) {
                 Log.d(TAG, "peerConnectionSetRemoteDescription() peerConnection is null");
-                callback.invoke(false, "peerConnection is null");
+                promise.reject(new Exception("PeerConnection not found"));
                 return;
             }
 
             SessionDescription sdp = new SessionDescription(
-                SessionDescription.Type.fromCanonicalForm(sdpMap.getString("type")),
-                sdpMap.getString("sdp")
+                SessionDescription.Type.fromCanonicalForm(desc.getString("type")),
+                desc.getString("sdp")
             );
 
             List<String> receiversIds = new ArrayList<>();
             for(RtpTransceiver transceiver: peerConnection.getTransceivers()) {
                 receiversIds.add(transceiver.getReceiver().id());
             }
-            peerConnection.setRemoteDescription(new SdpObserver() {
+
+            final SdpObserver observer = new SdpObserver() {
                 @Override
                 public void onCreateSuccess(final SessionDescription sdp) {
                 }
 
                 @Override
                 public void onSetSuccess() {
-                    WritableMap newSdpMap = Arguments.createMap();
-                    WritableMap params = Arguments.createMap();
+                    ThreadUtils.runOnExecutor(() -> {
+                        WritableMap newSdpMap = Arguments.createMap();
+                        WritableMap params = Arguments.createMap();
 
-                    SessionDescription newSdp = peerConnection.getRemoteDescription();
-                    // Be defensive for the rollback cases.
-                    if (newSdp != null) {
-                        newSdpMap.putString("type", newSdp.type.canonicalForm());
-                        newSdpMap.putString("sdp", newSdp.description);
-                    }
-
-                    params.putArray("transceiversInfo", getTransceiversInfo(peerConnection));
-                    params.putMap("sdpInfo", newSdpMap);
-
-                    WritableArray newTransceivers = Arguments.createArray();
-                    for(RtpTransceiver transceiver: peerConnection.getTransceivers()) {
-                        if(!receiversIds.contains(transceiver.getReceiver().id())) {
-                            WritableMap newTransceiver = Arguments.createMap();
-                            newTransceiver.putInt("transceiverOrder", pco.getNextTransceiverId());
-                            newTransceiver.putMap("transceiver", SerializeUtils.serializeTransceiver(id, transceiver));
-                            newTransceivers.pushMap(newTransceiver);
+                        SessionDescription newSdp = peerConnection.getRemoteDescription();
+                        // Be defensive for the rollback cases.
+                        if (newSdp != null) {
+                            newSdpMap.putString("type", newSdp.type.canonicalForm());
+                            newSdpMap.putString("sdp", newSdp.description);
                         }
-                    }
 
-                    params.putArray("newTransceivers", newTransceivers);
+                        params.putArray("transceiversInfo", getTransceiversInfo(peerConnection));
+                        params.putMap("sdpInfo", newSdpMap);
 
-                    callback.invoke(true, params);
+                        WritableArray newTransceivers = Arguments.createArray();
+                        for(RtpTransceiver transceiver: peerConnection.getTransceivers()) {
+                            if(!receiversIds.contains(transceiver.getReceiver().id())) {
+                                WritableMap newTransceiver = Arguments.createMap();
+                                newTransceiver.putInt("transceiverOrder", pco.getNextTransceiverId());
+                                newTransceiver.putMap("transceiver", SerializeUtils.serializeTransceiver(id, transceiver));
+                                newTransceivers.pushMap(newTransceiver);
+                            }
+                        }
+
+                        params.putArray("newTransceivers", newTransceivers);
+
+                        promise.resolve(params);
+                    });
                 }
 
                 @Override
@@ -1092,9 +1108,13 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
 
                 @Override
                 public void onSetFailure(String s) {
-                    callback.invoke(false, s);
+                    ThreadUtils.runOnExecutor(() -> {
+                        promise.reject("E_OPERATION_ERROR", s);
+                    });
                 }
-            }, sdp);
+            };
+
+            peerConnection.setRemoteDescription(observer, sdp);
         });
     }
 

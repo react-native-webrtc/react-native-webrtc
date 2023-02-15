@@ -122,8 +122,6 @@ public class SerializeUtils {
     }
 
     public static ReadableMap serializeRtpParameters(RtpParameters params) {
-      if (params == null) return null;
-
       WritableMap result = Arguments.createMap();
       WritableArray encodings = Arguments.createArray();
       WritableArray codecs = Arguments.createArray();

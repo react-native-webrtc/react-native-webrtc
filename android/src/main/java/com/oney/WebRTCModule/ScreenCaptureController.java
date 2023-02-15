@@ -57,6 +57,11 @@ public class ScreenCaptureController extends AbstractVideoCaptureController {
                 public void onStop() {
                     Log.w(TAG, "Media projection stopped.");
                     orientatationListener.disable();
+                    stopCapture();
+
+                    if(capturerEventsListener != null) {
+                        capturerEventsListener.onCapturerEnded();
+                    }
                 }
             });
 

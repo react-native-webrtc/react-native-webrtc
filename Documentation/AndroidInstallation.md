@@ -6,7 +6,7 @@ See a sample app in the `examples/GumTestApp` directory.
 
 ## Declaring Permissions
 
-In `android/app/main/AndroidManifest.xml` add the following permissions before the `<application>` section.  
+In `android/app/src/main/AndroidManifest.xml` add the following permissions before the `<application>` section.  
 
 ```xml
 <uses-feature android:name="android.hardware.camera" />
