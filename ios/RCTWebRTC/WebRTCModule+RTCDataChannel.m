@@ -149,4 +149,12 @@ RCT_EXPORT_METHOD(dataChannelSend:(nonnull NSNumber *)peerConnectionId
   [self sendEventWithName:kEventDataChannelReceiveMessage body:event];
 }
 
+- (void)dataChannel:(DataChannelWrapper *)dcw didChangeBufferedAmount:(uint64_t)amount
+{
+    NSDictionary *event = @{@"reactTag": dcw.reactTag,
+                            @"peerConnectionId": dcw.pcId,
+                            @"bufferedAmount": [NSNumber numberWithUnsignedLongLong:amount]};
+    [self sendEventWithName:kEventDataChannelDidChangeBufferedAmount body:event];
+}
+
 @end

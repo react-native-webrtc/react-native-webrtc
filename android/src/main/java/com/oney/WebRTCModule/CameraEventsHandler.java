@@ -13,7 +13,7 @@ class CameraEventsHandler implements CameraVideoCapturer.CameraEventsHandler {
     // Callback invoked when camera closed.
     @Override
     public void onCameraClosed() {
-        Log.d(TAG, "CameraEventsHandler.onFirstFrameAvailable");
+        Log.d(TAG, "CameraEventsHandler.onCameraClosed");
     }
 
     // Called when camera is disconnected.

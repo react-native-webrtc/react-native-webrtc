@@ -7,6 +7,7 @@
 
 #import <Foundation/Foundation.h>
 #import "CaptureController.h"
+#import "CapturerEventsDelegate.h"
 
 NS_ASSUME_NONNULL_BEGIN
 

@@ -1,0 +1,17 @@
+name: Simple CI
+
+on: [pull_request]
+
+jobs:
+  run-ci:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - uses: actions/setup-node@v3
+      with:
+        node-version: 16
+    - run: npm install
+    - name: Check if the git repository is clean
+      run: $(exit $(git status --porcelain --untracked-files=no | head -255 | wc -l)) || (echo "Dirty git tree"; git diff; exit 1)
+    - run: npm run lint
