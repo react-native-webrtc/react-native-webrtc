@@ -31,13 +31,11 @@ public class UvcCapturer implements VideoCapturer {
     private int UVC_PREVIEW_HEIGHT = 720;
     private int UVC_PREVIEW_FPS = 30;
 
-    CameraUvcStrategy mUvcStrategy; // From Jiang Dongguo's AUSBC library
+    CameraUvcStrategy mUvcStrategy;
 
     public UvcCapturer(String deviceId, CameraUvcStrategy uvcStrategy) {
-        this.deviceId = deviceId.replaceAll("\\D", "");
-
+        this.deviceId = deviceId.replace("uvc:", "");
         Log.d(TAG, "UvcCapturer.UvcCapturer->DeviceID " + this.deviceId);
-
         mUvcStrategy = uvcStrategy;
     }
 
