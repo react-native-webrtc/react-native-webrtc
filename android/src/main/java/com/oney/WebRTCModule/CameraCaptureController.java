@@ -136,14 +136,13 @@ public class CameraCaptureController extends AbstractVideoCaptureController {
         // If deviceId is specified, then it takes precedence over facingMode.
         if (deviceId != null) {
             // if has uvc into id, instance uvc capturer
-            if (deviceId.contains("uvc")) {
+            if (deviceId.contains("uvc:")) {
                 String message = "Create UVC user-specified camera " + deviceId;
                 try {
                     UvcCapturer videoCapturer = new UvcCapturer(deviceId, mUvcStrategy);
                     Log.d(TAG, message + " succeeded");
                     return videoCapturer;
                 } catch (Throwable tr) {
-                    failedDevices.add(deviceId);
                     Log.d(TAG, message + " failed");
                 }
             }

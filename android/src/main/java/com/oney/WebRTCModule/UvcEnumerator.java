@@ -20,14 +20,10 @@ public class UvcEnumerator {
 
     private static final String TAG = WebRTCModule.TAG;
 
-    CameraUvcStrategy mUvcStrategy; // From Jiang Dongguo's AUSBC library
+    CameraUvcStrategy mUvcStrategy;
 
     public UvcEnumerator(CameraUvcStrategy cameraUvcStrategy) {
-        try {
-            mUvcStrategy = cameraUvcStrategy;
-        } catch (Throwable tr) {
-            Log.e(TAG, "Error on UvcEnumerator.UvcEnumerator", tr);
-        }
+        mUvcStrategy = cameraUvcStrategy;
     }
 
     ReadableArray enumerateDevices() {
@@ -45,8 +41,8 @@ public class UvcEnumerator {
 
                         WritableMap params = Arguments.createMap();
 
-                        params.putString("facing", "uvc");
-                        params.putString("deviceId", "uvc-" + dev.getDeviceId());
+                        params.putString("facing", "environment");
+                        params.putString("deviceId", "uvc:" + dev.getDeviceId());
                         params.putString("groupId", "");
                         params.putString("label", dev.getProductName() != null ? dev.getProductName() : dev.getDeviceName());
                         params.putString("kind", "videoinput");
@@ -56,12 +52,8 @@ public class UvcEnumerator {
                         array.pushMap(params);
                     }
 
-                } else {
-                    Log.d(TAG, "UvcEnumerator.enumerateDevices: usbDevices is empty");
                 }
 
-            } else {
-                Log.d(TAG, "UvcEnumerator.enumerateDevices: usbDevices is null");
             }
 
         } catch (Throwable tr) {
