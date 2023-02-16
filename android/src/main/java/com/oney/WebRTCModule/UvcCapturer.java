@@ -27,8 +27,8 @@ public class UvcCapturer implements VideoCapturer {
     private SurfaceTextureHelper surfaceTextureHelper;
     private CapturerObserver capturerObserver;
 
-    private int UVC_PREVIEW_WIDTH = 1280;
-    private int UVC_PREVIEW_HEIGHT = 720;
+    private int UVC_PREVIEW_WIDTH = 1024;
+    private int UVC_PREVIEW_HEIGHT = 768;
     private int UVC_PREVIEW_FPS = 30;
 
     CameraUvcStrategy mUvcStrategy;
