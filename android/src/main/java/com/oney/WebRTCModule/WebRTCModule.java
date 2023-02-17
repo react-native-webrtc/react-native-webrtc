@@ -1227,16 +1227,20 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
             peerConnection.addIceCandidate(candidate, new AddIceObserver() {
                 @Override
                 public void onAddSuccess() {
-                    WritableMap newSdpMap = Arguments.createMap();
-                    SessionDescription newSdp = peerConnection.getRemoteDescription();
-                    newSdpMap.putString("type", newSdp.type.canonicalForm());
-                    newSdpMap.putString("sdp", newSdp.description);
-                    promise.resolve(newSdpMap);
+                    ThreadUtils.runOnExecutor(() -> {
+                        WritableMap newSdpMap = Arguments.createMap();
+                        SessionDescription newSdp = peerConnection.getRemoteDescription();
+                        newSdpMap.putString("type", newSdp.type.canonicalForm());
+                        newSdpMap.putString("sdp", newSdp.description);
+                        promise.resolve(newSdpMap);
+                    });
                 }
 
                 @Override
                 public void onAddFailure(String s) {
-                    promise.reject("E_OPERATION_ERROR", s);
+                    ThreadUtils.runOnExecutor(() -> {
+                        promise.reject("E_OPERATION_ERROR", s);
+                    });
                 }
             });
         });
