@@ -387,112 +387,131 @@ class PeerConnectionObserver implements PeerConnection.Observer {
     @Override
     public void onIceCandidate(final IceCandidate candidate) {
         Log.d(TAG, "onIceCandidate");
-        WritableMap params = Arguments.createMap();
-        params.putInt("pcId", id);
-        WritableMap candidateParams = Arguments.createMap();
-        candidateParams.putInt("sdpMLineIndex", candidate.sdpMLineIndex);
-        candidateParams.putString("sdpMid", candidate.sdpMid);
-        candidateParams.putString("candidate", candidate.sdp);
-        params.putMap("candidate", candidateParams);
-        SessionDescription newSdp = peerConnection.getLocalDescription();
-        WritableMap newSdpMap = Arguments.createMap();
-        // Can happen when doing a rollback.
-        if (newSdp != null) {
-            newSdpMap.putString("type", newSdp.type.canonicalForm());
-            newSdpMap.putString("sdp", newSdp.description);
-        }
-        params.putMap("sdp", newSdpMap);
 
-        webRTCModule.sendEvent("peerConnectionGotICECandidate", params);
-    }
+        ThreadUtils.runOnExecutor(() -> {
+            WritableMap params = Arguments.createMap();
+            params.putInt("pcId", id);
 
-    @Override
-    public void onIceCandidatesRemoved(final IceCandidate[] candidates) {
-        Log.d(TAG, "onIceCandidatesRemoved");
-    }
+            WritableMap candidateParams = Arguments.createMap();
+            candidateParams.putInt("sdpMLineIndex", candidate.sdpMLineIndex);
+            candidateParams.putString("sdpMid", candidate.sdpMid);
+            candidateParams.putString("candidate", candidate.sdp);
 
-    @Override
-    public void onIceConnectionChange(PeerConnection.IceConnectionState iceConnectionState) {
-        WritableMap params = Arguments.createMap();
-        params.putInt("pcId", id);
-        params.putString("iceConnectionState", iceConnectionStateString(iceConnectionState));
-        webRTCModule.sendEvent("peerConnectionIceConnectionChanged", params);
-    }
+            params.putMap("candidate", candidateParams);
 
-    @Override
-    public void onConnectionChange(PeerConnection.PeerConnectionState peerConnectionState) {
-        WritableMap params = Arguments.createMap();
-        params.putInt("pcId", id);
-        params.putString("connectionState", peerConnectionStateString(peerConnectionState));
-
-        webRTCModule.sendEvent("peerConnectionStateChanged", params);
-    }
-
-    @Override
-    public void onIceConnectionReceivingChange(boolean var1) {
-    }
-
-    @Override
-    public void onIceGatheringChange(PeerConnection.IceGatheringState iceGatheringState) {
-        Log.d(TAG, "onIceGatheringChange" + iceGatheringState.name());
-        WritableMap params = Arguments.createMap();
-        params.putInt("pcId", id);
-        params.putString("iceGatheringState", iceGatheringStateString(iceGatheringState));
-        if (iceGatheringState == PeerConnection.IceGatheringState.COMPLETE) {
             SessionDescription newSdp = peerConnection.getLocalDescription();
             WritableMap newSdpMap = Arguments.createMap();
+
             // Can happen when doing a rollback.
             if (newSdp != null) {
                 newSdpMap.putString("type", newSdp.type.canonicalForm());
                 newSdpMap.putString("sdp", newSdp.description);
             }
             params.putMap("sdp", newSdpMap);
-        }
-        webRTCModule.sendEvent("peerConnectionIceGatheringChanged", params);
+
+            webRTCModule.sendEvent("peerConnectionGotICECandidate", params);
+        });
+    }
+
+    @Override
+    public void onIceCandidatesRemoved(final IceCandidate[] candidates) {}
+
+    @Override
+    public void onIceConnectionChange(PeerConnection.IceConnectionState iceConnectionState) {
+        ThreadUtils.runOnExecutor(() -> {
+            WritableMap params = Arguments.createMap();
+            params.putInt("pcId", id);
+            params.putString("iceConnectionState", iceConnectionStateString(iceConnectionState));
+            webRTCModule.sendEvent("peerConnectionIceConnectionChanged", params);
+        });
+    }
+
+    @Override
+    public void onConnectionChange(PeerConnection.PeerConnectionState peerConnectionState) {
+        ThreadUtils.runOnExecutor(() -> {
+            WritableMap params = Arguments.createMap();
+            params.putInt("pcId", id);
+            params.putString("connectionState", peerConnectionStateString(peerConnectionState));
+
+            webRTCModule.sendEvent("peerConnectionStateChanged", params);
+        });
+    }
+
+    @Override
+    public void onIceConnectionReceivingChange(boolean receiving) {}
+
+    @Override
+    public void onIceGatheringChange(PeerConnection.IceGatheringState iceGatheringState) {
+        Log.d(TAG, "onIceGatheringChange" + iceGatheringState.name());
+
+        ThreadUtils.runOnExecutor(() -> {
+            WritableMap params = Arguments.createMap();
+            params.putInt("pcId", id);
+            params.putString("iceGatheringState", iceGatheringStateString(iceGatheringState));
+
+            if (iceGatheringState == PeerConnection.IceGatheringState.COMPLETE) {
+                SessionDescription newSdp = peerConnection.getLocalDescription();
+                WritableMap newSdpMap = Arguments.createMap();
+
+                // Can happen when doing a rollback.
+                if (newSdp != null) {
+                    newSdpMap.putString("type", newSdp.type.canonicalForm());
+                    newSdpMap.putString("sdp", newSdp.description);
+                }
+                params.putMap("sdp", newSdpMap);
+            }
+            webRTCModule.sendEvent("peerConnectionIceGatheringChanged", params);
+        });
     }
 
     @Override
     public void onDataChannel(DataChannel dataChannel) {
-        final String reactTag  = UUID.randomUUID().toString();
-        DataChannelWrapper dcw = new DataChannelWrapper(webRTCModule, id, reactTag, dataChannel);
-        dataChannels.put(reactTag, dcw);
-        dataChannel.registerObserver(dcw);
+        ThreadUtils.runOnExecutor(() -> {
+            final String reactTag  = UUID.randomUUID().toString();
+            DataChannelWrapper dcw = new DataChannelWrapper(webRTCModule, id, reactTag, dataChannel);
+            dataChannels.put(reactTag, dcw);
+            dataChannel.registerObserver(dcw);
 
-        WritableMap info = Arguments.createMap();
-        info.putInt("peerConnectionId", id);
-        info.putString("reactTag", reactTag);
-        info.putString("label", dataChannel.label());
-        info.putInt("id", dataChannel.id());
+            WritableMap info = Arguments.createMap();
+            info.putInt("peerConnectionId", id);
+            info.putString("reactTag", reactTag);
+            info.putString("label", dataChannel.label());
+            info.putInt("id", dataChannel.id());
 
-        // TODO: These values are not gettable from a DataChannel instance.
-        info.putBoolean("ordered", true);
-        info.putInt("maxPacketLifeTime", -1);
-        info.putInt("maxRetransmits", -1);
-        info.putString("protocol", "");
+            // TODO: These values are not gettable from a DataChannel instance.
+            info.putBoolean("ordered", true);
+            info.putInt("maxPacketLifeTime", -1);
+            info.putInt("maxRetransmits", -1);
+            info.putString("protocol", "");
 
-        info.putBoolean("negotiated", false);
-        info.putString("readyState", dcw.dataChannelStateString(dataChannel.state()));
+            info.putBoolean("negotiated", false);
+            info.putString("readyState", dcw.dataChannelStateString(dataChannel.state()));
 
-        WritableMap params = Arguments.createMap();
-        params.putInt("pcId", id);
-        params.putMap("dataChannel", info);
+            WritableMap params = Arguments.createMap();
+            params.putInt("pcId", id);
+            params.putMap("dataChannel", info);
 
-        webRTCModule.sendEvent("peerConnectionDidOpenDataChannel", params);
+            webRTCModule.sendEvent("peerConnectionDidOpenDataChannel", params);
+        });
     }
 
     @Override
     public void onRenegotiationNeeded() {
-        WritableMap params = Arguments.createMap();
-        params.putInt("pcId", id);
-        webRTCModule.sendEvent("peerConnectionOnRenegotiationNeeded", params);
+        ThreadUtils.runOnExecutor(() -> {
+            WritableMap params = Arguments.createMap();
+            params.putInt("pcId", id);
+            webRTCModule.sendEvent("peerConnectionOnRenegotiationNeeded", params);
+        });
     }
 
     @Override
     public void onSignalingChange(PeerConnection.SignalingState signalingState) {
-        WritableMap params = Arguments.createMap();
-        params.putInt("pcId", id);
-        params.putString("signalingState", signalingStateString(signalingState));
-        webRTCModule.sendEvent("peerConnectionSignalingStateChanged", params);
+        ThreadUtils.runOnExecutor(() -> {
+            WritableMap params = Arguments.createMap();
+            params.putInt("pcId", id);
+            params.putString("signalingState", signalingStateString(signalingState));
+            webRTCModule.sendEvent("peerConnectionSignalingStateChanged", params);
+        });
     }
 
     /**
@@ -565,8 +584,7 @@ class PeerConnectionObserver implements PeerConnection.Observer {
      * semantics are specified. The transceiver will be disposed automatically.
      */
     @Override
-    public void onTrack(final RtpTransceiver transceiver) {
-    }
+    public void onTrack(final RtpTransceiver transceiver) {}
 
     /*
      * Triggered when a previously added remote track is removed by the remote
@@ -585,15 +603,11 @@ class PeerConnectionObserver implements PeerConnection.Observer {
 
     // This is only added to compile. Plan B is not supported anymore.
     @Override
-    public void onRemoveStream(MediaStream stream) {
-
-    }
+    public void onRemoveStream(MediaStream stream) {}
 
     // This is only added to compile. Plan B is not supported anymore.
     @Override
-    public void onAddStream(MediaStream stream) {
-
-    }
+    public void onAddStream(MediaStream stream) {}
 
     @Nullable
     private String peerConnectionStateString(PeerConnection.PeerConnectionState peerConnectionState) {

@@ -294,20 +294,22 @@ RCT_EXPORT_METHOD(peerConnectionAddICECandidate:(nonnull NSNumber *)objectID
     return;
   }
 
-  __weak RTCPeerConnection *weakPc = peerConnection;
-  [peerConnection addIceCandidate:candidate
-                completionHandler:^(NSError *error) {
-                  if (error) {
-                      reject(@"E_OPERATION_ERROR", @"addIceCandidate failed", error);
-                  } else {
-                      RTCPeerConnection *strongPc = weakPc;
-                      id newSdp = @{
-                          @"type": [RTCSessionDescription stringForType:strongPc.remoteDescription.type],
-                          @"sdp": strongPc.remoteDescription.sdp
-                      };
-                      resolve(newSdp);
-                  }
-                }];
+  id handler = ^(NSError *error) {
+    dispatch_async(self.workerQueue, ^{
+        if (error) {
+            reject(@"E_OPERATION_ERROR", @"addIceCandidate failed", error);
+        } else {
+            RTCSessionDescription *remoteDesc = peerConnection.remoteDescription;
+            id newSdp = @{
+                @"type": [RTCSessionDescription stringForType:remoteDesc.type],
+                @"sdp": remoteDesc.sdp
+            };
+            resolve(newSdp);
+        }
+    });
+  };
+
+  [peerConnection addIceCandidate:candidate completionHandler:handler];
 }
 
 RCT_EXPORT_METHOD(peerConnectionClose:(nonnull NSNumber *)objectID)
@@ -711,95 +713,115 @@ RCT_EXPORT_BLOCKING_SYNCHRONOUS_METHOD(peerConnectionRemoveTrack:(nonnull NSNumb
 #pragma mark - RTCPeerConnectionDelegate methods
 
 - (void)peerConnection:(RTCPeerConnection *)peerConnection didChangeSignalingState:(RTCSignalingState)newState {
-  [self sendEventWithName:kEventPeerConnectionSignalingStateChanged
-                     body:@{
-                       @"pcId": peerConnection.reactTag,
-                       @"signalingState": [self stringForSignalingState:newState]
-                     }];
+    dispatch_async(self.workerQueue, ^{
+        [self sendEventWithName:kEventPeerConnectionSignalingStateChanged
+                           body:@{
+                              @"pcId": peerConnection.reactTag,
+                              @"signalingState": [self stringForSignalingState:newState]
+                           }];
+    });
 }
 
 - (void)peerConnectionShouldNegotiate:(RTCPeerConnection *)peerConnection {
-  [self sendEventWithName:kEventPeerConnectionOnRenegotiationNeeded
-                     body:@{ @"pcId": peerConnection.reactTag }];
+    dispatch_async(self.workerQueue, ^{
+        [self sendEventWithName:kEventPeerConnectionOnRenegotiationNeeded
+                           body:@{ @"pcId": peerConnection.reactTag }];
+    });
 }
 
 - (void)peerConnection:(RTCPeerConnection *)peerConnection didChangeConnectionState:(RTCPeerConnectionState)newState {
-  [self sendEventWithName:kEventPeerConnectionStateChanged
-                     body:@{@"pcId": peerConnection.reactTag, @"connectionState": [self stringForPeerConnectionState:newState]}];
+    dispatch_async(self.workerQueue, ^{
+        [self sendEventWithName:kEventPeerConnectionStateChanged
+                           body:@{
+                              @"pcId": peerConnection.reactTag,
+                              @"connectionState": [self stringForPeerConnectionState:newState]
+                           }];
+    });
 }
 
 - (void)peerConnection:(RTCPeerConnection *)peerConnection didChangeIceConnectionState:(RTCIceConnectionState)newState {
-  [self sendEventWithName:kEventPeerConnectionIceConnectionChanged
-                     body:@{
-                       @"pcId": peerConnection.reactTag,
-                       @"iceConnectionState": [self stringForICEConnectionState:newState]
-                     }];
+    dispatch_async(self.workerQueue, ^{
+        [self sendEventWithName:kEventPeerConnectionIceConnectionChanged
+                           body:@{
+                              @"pcId": peerConnection.reactTag,
+                              @"iceConnectionState": [self stringForICEConnectionState:newState]
+                           }];
+    });
 }
 
 - (void)peerConnection:(RTCPeerConnection *)peerConnection didChangeIceGatheringState:(RTCIceGatheringState)newState {
-  id newSdp = @{};
-  if (newState == RTCIceGatheringStateComplete) {
-      // Can happen when doing a rollback.
-      if (peerConnection.localDescription) {
-          newSdp = @{
-              @"type": [RTCSessionDescription stringForType:peerConnection.localDescription.type],
-              @"sdp": peerConnection.localDescription.sdp
-          };
-      }
-  }
-  [self sendEventWithName:kEventPeerConnectionIceGatheringChanged
-                     body:@{
-                       @"pcId": peerConnection.reactTag,
-                       @"iceGatheringState": [self stringForICEGatheringState:newState],
-                       @"sdp": newSdp
-                     }];
+    dispatch_async(self.workerQueue, ^{
+        id newSdp = @{};
+        if (newState == RTCIceGatheringStateComplete) {
+            // Can happen when doing a rollback.
+            if (peerConnection.localDescription) {
+                newSdp = @{
+                    @"type": [RTCSessionDescription stringForType:peerConnection.localDescription.type],
+                    @"sdp": peerConnection.localDescription.sdp
+                };
+            }
+        }
+
+        [self sendEventWithName:kEventPeerConnectionIceGatheringChanged
+                           body:@{
+                              @"pcId": peerConnection.reactTag,
+                              @"iceGatheringState": [self stringForICEGatheringState:newState],
+                              @"sdp": newSdp
+                           }];
+    });
 }
 
 - (void)peerConnection:(RTCPeerConnection *)peerConnection didGenerateIceCandidate:(RTCIceCandidate *)candidate {
-  id newSdp = @{};
-  // Can happen when doing a rollback.
-  if (peerConnection.localDescription) {
-      newSdp = @{
-          @"type": [RTCSessionDescription stringForType:peerConnection.localDescription.type],
-          @"sdp": peerConnection.localDescription.sdp
-      };
-  }
-  [self sendEventWithName:kEventPeerConnectionGotICECandidate
-                     body:@{
-                       @"pcId": peerConnection.reactTag,
-                       @"candidate": @{
-                           @"candidate": candidate.sdp,
-                           @"sdpMLineIndex": @(candidate.sdpMLineIndex),
-                           @"sdpMid": candidate.sdpMid
-                       },
-                       @"sdp": newSdp
-                     }];
+    dispatch_async(self.workerQueue, ^{
+        id newSdp = @{};
+        // Can happen when doing a rollback.
+        if (peerConnection.localDescription) {
+            newSdp = @{
+                @"type": [RTCSessionDescription stringForType:peerConnection.localDescription.type],
+                @"sdp": peerConnection.localDescription.sdp
+            };
+        }
+
+        [self sendEventWithName:kEventPeerConnectionGotICECandidate
+                           body:@{
+                              @"pcId": peerConnection.reactTag,
+                              @"candidate": @{
+                                 @"candidate": candidate.sdp,
+                                 @"sdpMLineIndex": @(candidate.sdpMLineIndex),
+                                 @"sdpMid": candidate.sdpMid
+                              },
+                              @"sdp": newSdp
+                           }];
+    });
 }
 
 - (void)peerConnection:(RTCPeerConnection*)peerConnection didOpenDataChannel:(RTCDataChannel*)dataChannel {
-    NSString *reactTag = [[NSUUID UUID] UUIDString];
-    DataChannelWrapper *dcw = [[DataChannelWrapper alloc] initWithChannel:dataChannel reactTag:reactTag];
-    dcw.pcId = peerConnection.reactTag;
-    peerConnection.dataChannels[reactTag] = dcw;
-    dcw.delegate = self;
+    dispatch_async(self.workerQueue, ^{
+        NSString *reactTag = [[NSUUID UUID] UUIDString];
+        DataChannelWrapper *dcw = [[DataChannelWrapper alloc] initWithChannel:dataChannel reactTag:reactTag];
+        dcw.pcId = peerConnection.reactTag;
+        peerConnection.dataChannels[reactTag] = dcw;
+        dcw.delegate = self;
 
-    NSDictionary *dataChannelInfo = @{
-        @"peerConnectionId": peerConnection.reactTag,
-        @"reactTag": reactTag,
-        @"label": dataChannel.label,
-        @"id": @(dataChannel.channelId),
-        @"ordered": @(dataChannel.isOrdered),
-        @"maxPacketLifeTime": @(dataChannel.maxPacketLifeTime),
-        @"maxRetransmits": @(dataChannel.maxRetransmits),
-        @"protocol": dataChannel.protocol,
-        @"negotiated": @(dataChannel.isNegotiated),
-        @"readyState": [self stringForDataChannelState:dataChannel.readyState]
-      };
-    NSDictionary *body = @{
-        @"pcId": peerConnection.reactTag,
-        @"dataChannel": dataChannelInfo
-    };
-    [self sendEventWithName:kEventPeerConnectionDidOpenDataChannel body:body];
+        NSDictionary *dataChannelInfo = @{
+            @"peerConnectionId": peerConnection.reactTag,
+            @"reactTag": reactTag,
+            @"label": dataChannel.label,
+            @"id": @(dataChannel.channelId),
+            @"ordered": @(dataChannel.isOrdered),
+            @"maxPacketLifeTime": @(dataChannel.maxPacketLifeTime),
+            @"maxRetransmits": @(dataChannel.maxRetransmits),
+            @"protocol": dataChannel.protocol,
+            @"negotiated": @(dataChannel.isNegotiated),
+            @"readyState": [self stringForDataChannelState:dataChannel.readyState]
+        };
+        NSDictionary *body = @{
+            @"pcId": peerConnection.reactTag,
+            @"dataChannel": dataChannelInfo
+        };
+
+        [self sendEventWithName:kEventPeerConnectionDidOpenDataChannel body:body];
+    });
 }
 
 - (void)peerConnection:(RTC_OBJC_TYPE(RTCPeerConnection) *)peerConnection didAddReceiver:(RTC_OBJC_TYPE(RTCRtpReceiver) *)rtpReceiver
