@@ -32,7 +32,8 @@
   "scripts": {
     "lint": "eslint --max-warnings 0 . && tsc --noEmit",
     "postinstall": "node tools/downloadWebRTC.js",
-    "prepare": "husky install && bob build"
+    "prepare": "husky install && bob build",
+    "format": "clang-format -i ios/RCTWebRTC/* android/src/main/java/com/oney/WebRTCModule/*.java android/src/main/java/com/oney/WebRTCModule/videoEffects/*.java"
   },
   "bugs": {
     "url": "https://github.com/react-native-webrtc/react-native-webrtc/issues"
