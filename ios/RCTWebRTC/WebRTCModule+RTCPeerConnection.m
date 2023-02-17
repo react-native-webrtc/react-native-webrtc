@@ -312,6 +312,16 @@ RCT_EXPORT_METHOD(peerConnectionClose:(nonnull NSNumber *)objectID)
     return;
   }
 
+  [peerConnection close];
+}
+
+RCT_EXPORT_METHOD(peerConnectionDispose:(nonnull NSNumber *)objectID)
+{
+  RTCPeerConnection *peerConnection = self.peerConnections[objectID];
+  if (!peerConnection) {
+    return;
+  }
+
   // Remove video track adapters
   for (NSString *key in peerConnection.remoteTracks.allKeys) {
       RTCMediaStreamTrack *track = peerConnection.remoteTracks[key];
@@ -319,8 +329,6 @@ RCT_EXPORT_METHOD(peerConnectionClose:(nonnull NSNumber *)objectID)
         [peerConnection removeVideoTrackAdapter: (RTCVideoTrack*) track];
       }
   }
-
-  [peerConnection close];
 
   // Clean up peerConnection's streams and tracks
   [peerConnection.remoteStreams removeAllObjects];

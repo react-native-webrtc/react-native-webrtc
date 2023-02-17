@@ -74,8 +74,11 @@ class PeerConnectionObserver implements PeerConnection.Observer {
     void close() {
         Log.d(TAG, "PeerConnection.close() for " + id);
 
-        // Close the PeerConnection first to stop any events.
         peerConnection.close();
+    }
+
+    void dispose() {
+        Log.d(TAG, "PeerConnection.dispose() for " + id);
 
         // Remove video track adapters
         for (MediaStreamTrack track : this.remoteTracks.values()) {
@@ -87,7 +90,6 @@ class PeerConnectionObserver implements PeerConnection.Observer {
         // Remove DataChannel observers
         for (DataChannelWrapper dcw : dataChannels.values()) {
             DataChannel dataChannel = dcw.getDataChannel();
-            dataChannel.close();
             dataChannel.unregisterObserver();
         }
 
@@ -100,7 +102,6 @@ class PeerConnectionObserver implements PeerConnection.Observer {
         remoteTracks.clear();
         dataChannels.clear();
     }
-
 
     public synchronized int getNextTransceiverId() {
         return transceiverNextId++;

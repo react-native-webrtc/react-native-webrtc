@@ -1265,10 +1265,21 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
             PeerConnectionObserver pco = mPeerConnectionObservers.get(id);
             if (pco == null || pco.getPeerConnection() == null) {
                 Log.d(TAG, "peerConnectionClose() peerConnection is null");
-            } else {
-                pco.close();
-                mPeerConnectionObservers.remove(id);
+                return;
             }
+            pco.close();
+        });
+    }
+
+    @ReactMethod
+    public void peerConnectionDispose(int id) {
+        ThreadUtils.runOnExecutor(() -> {
+            PeerConnectionObserver pco = mPeerConnectionObservers.get(id);
+            if (pco == null || pco.getPeerConnection() == null) {
+                Log.d(TAG, "peerConnectionDispose() peerConnection is null");
+            }
+            pco.dispose();
+            mPeerConnectionObservers.remove(id);
         });
     }
 

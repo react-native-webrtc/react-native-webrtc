@@ -476,6 +476,10 @@ export default class RTCPeerConnection extends defineCustomEventTarget(...PEER_C
     close(): void {
         log.debug(`${this._pcId} close`);
 
+        if (this.connectionState === 'closed') {
+            return;
+        }
+
         WebRTCModule.peerConnectionClose(this._pcId);
 
         // Mark transceivers as stopped.
@@ -505,11 +509,6 @@ export default class RTCPeerConnection extends defineCustomEventTarget(...PEER_C
 
             this.iceConnectionState = ev.iceConnectionState;
 
-            if (ev.iceConnectionState === 'closed') {
-                // This PeerConnection is done, clean up event handlers.
-                removeListener(this);
-            }
-
             // @ts-ignore
             this.dispatchEvent(new RTCEvent('iceconnectionstatechange'));
         });
@@ -521,13 +520,15 @@ export default class RTCPeerConnection extends defineCustomEventTarget(...PEER_C
 
             this.connectionState = ev.connectionState;
 
-            if (ev.connectionState === 'closed') {
-                // This PeerConnection is done, clean up event handlers.
-                removeListener(this);
-            }
-
             // @ts-ignore
             this.dispatchEvent(new RTCEvent('connectionstatechange'));
+
+            if (ev.connectionState === 'closed') {
+                // This PeerConnection is done, clean up.
+                removeListener(this);
+
+                WebRTCModule.peerConnectionDispose(this._pcId);
+            }
         });
 
         addListener(this, 'peerConnectionSignalingStateChanged', (ev: any) => {
