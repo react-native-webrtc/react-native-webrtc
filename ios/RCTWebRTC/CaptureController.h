@@ -1,10 +1,3 @@
-//
-//  CaptureController.h
-//  RCTWebRTC
-//
-//  Created by Alex-Dan Bumbu on 11/01/2021.
-//
-
 #import <Foundation/Foundation.h>
 #import "CapturerEventsDelegate.h"
 

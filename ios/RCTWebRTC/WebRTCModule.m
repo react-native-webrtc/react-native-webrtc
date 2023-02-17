@@ -1,10 +1,3 @@
-//
-//  WebRTCModule.m
-//
-//  Created by one on 2015/9/24.
-//  Copyright © 2015 One. All rights reserved.
-//
-
 #if !TARGET_OS_OSX
 #import <UIKit/UIKit.h>
 #endif

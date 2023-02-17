@@ -1,10 +1,3 @@
-//
-//  ScreenCapturer.h
-//  RCTWebRTC
-//
-//  Created by Alex-Dan Bumbu on 06/01/2021.
-//
-
 #import <AVFoundation/AVFoundation.h>
 #import <WebRTC/RTCVideoCapturer.h>
 #import "CapturerEventsDelegate.h"

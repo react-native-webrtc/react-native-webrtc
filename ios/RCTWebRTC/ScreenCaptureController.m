@@ -1,10 +1,3 @@
-//
-//  ScreenCaptureController.m
-//  RCTWebRTC
-//
-//  Created by Alex-Dan Bumbu on 06/01/2021.
-//
-
 #import "ScreenCaptureController.h"
 #import "ScreenCapturer.h"
 #import "SocketConnection.h"

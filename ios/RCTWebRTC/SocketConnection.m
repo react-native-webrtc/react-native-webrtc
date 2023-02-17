@@ -1,10 +1,3 @@
-//
-//  SocketConnection.m
-//  RCTWebRTC
-//
-//  Created by Alex-Dan Bumbu on 08/01/2021.
-//
-
 #include <sys/socket.h>
 #include <sys/un.h>
 

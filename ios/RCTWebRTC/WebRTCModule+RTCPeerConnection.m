@@ -1,10 +1,3 @@
-//
-//  WebRTCModule+RTCPeerConnection.m
-//
-//  Created by one on 2015/9/24.
-//  Copyright © 2015 One. All rights reserved.
-//
-
 #import <objc/runtime.h>
 
 #import <React/RCTBridge.h>

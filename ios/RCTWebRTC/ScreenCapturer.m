@@ -1,10 +1,3 @@
-//
-//  ScreenCapturer.m
-//  RCTWebRTC
-//
-//  Created by Alex-Dan Bumbu on 06/01/2021.
-//
-
 #include <mach/mach_time.h>
 
 #import <WebRTC/RTCCVPixelBuffer.h>
