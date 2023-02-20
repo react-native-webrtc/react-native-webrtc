@@ -864,22 +864,19 @@ RCT_EXPORT_BLOCKING_SYNCHRONOUS_METHOD(peerConnectionRemoveTrack:(nonnull NSNumb
             NSString *streamReactTag = nil;
 
             for (NSString * key in [peerConnection.remoteStreams allKeys]) {
-                if ([[peerConnection.remoteStreams objectForKey:key] isEqual:stream]) {
+                if ([[peerConnection.remoteStreams objectForKey:key].streamId isEqual:stream.streamId]) {
                     streamReactTag = key;
                     break;
                 }
             }
-            
-            if (!peerConnection.remoteStreams[stream.streamId]) {
-                peerConnection.remoteStreams[stream.streamId] = stream;
-            }
-            
+
             if (!streamReactTag) {
-                NSUUID *uuid = [NSUUID UUID];
-                streamReactTag = [uuid UUIDString];
-                peerConnection.remoteStreams[streamReactTag] = stream;
+                streamReactTag = [[NSUUID UUID] UUIDString];
             }
-            
+
+            // Make sure the stored stream is updated in case we get a new reference.
+            peerConnection.remoteStreams[streamReactTag] = stream;
+
             [streams addObject:[SerializeUtils streamToJSONWithPeerConnectionId:peerConnection.reactTag stream:stream streamReactTag:streamReactTag]];
         }
         

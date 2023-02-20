@@ -49,7 +49,8 @@ class PeerConnectionObserver implements PeerConnection.Observer {
     private int transceiverNextId = 0;
 
     private PeerConnection peerConnection;
-    final Map<String, MediaStream> remoteStreams;
+    final Map<String, String> remoteStreamIds; // Stream ID -> React tag
+    final Map<String, MediaStream> remoteStreams; // React tag -> MediaStream
     final Map<String, MediaStreamTrack> remoteTracks;
     private final VideoTrackAdapter videoTrackAdapters;
     private final WebRTCModule webRTCModule;
@@ -58,6 +59,7 @@ class PeerConnectionObserver implements PeerConnection.Observer {
         this.webRTCModule = webRTCModule;
         this.id = id;
         this.dataChannels = new HashMap<>();
+        this.remoteStreamIds = new HashMap<>();
         this.remoteStreams = new HashMap<>();
         this.remoteTracks = new HashMap<>();
         this.videoTrackAdapters = new VideoTrackAdapter(webRTCModule, id);
@@ -98,6 +100,7 @@ class PeerConnectionObserver implements PeerConnection.Observer {
         // by the PeerConnection instance (RtpReceivers, RtpSenders, etc.)
         peerConnection.dispose();
 
+        remoteStreamIds.clear();
         remoteStreams.clear();
         remoteTracks.clear();
         dataChannels.clear();
@@ -555,17 +558,16 @@ class PeerConnectionObserver implements PeerConnection.Observer {
 
             for (MediaStream stream : mediaStreams) {
                 // Getting the streamReactTag
-                String streamReactTag = null;
-                for (Map.Entry<String, MediaStream> e : remoteStreams.entrySet()) {
-                    if (e.getValue().equals(stream)) {
-                        streamReactTag = e.getKey();
-                        break;
-                    }
-                }
+                String streamReactTag = remoteStreamIds.get(stream.getId());
+
                 if (streamReactTag == null) {
                     streamReactTag = UUID.randomUUID().toString();
-                    remoteStreams.put(streamReactTag, stream);
+                    remoteStreamIds.put(stream.getId(), streamReactTag);
                 }
+
+                // Make sure the stored stream is updated in case we get a new reference.
+                remoteStreams.put(streamReactTag, stream);
+
                 streams.pushMap(SerializeUtils.serializeStream(id, streamReactTag, stream));
             }
 
