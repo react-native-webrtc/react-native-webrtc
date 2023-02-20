@@ -1,10 +1,9 @@
-import { NativeModules } from 'react-native';
+import { NativeModules } from "react-native";
 
-import RTCRtpReceiver from './RTCRtpReceiver';
-import RTCRtpSender from './RTCRtpSender';
+import RTCRtpReceiver from "./RTCRtpReceiver";
+import RTCRtpSender from "./RTCRtpSender";
 
 const { WebRTCModule } = NativeModules;
-
 
 export default class RTCRtpTransceiver {
     _peerConnectionId: number;
@@ -17,13 +16,13 @@ export default class RTCRtpTransceiver {
     _stopped: boolean;
 
     constructor(args: {
-        peerConnectionId: number,
-        isStopped: boolean,
-        direction: string,
-        currentDirection: string,
-        mid?: string,
-        sender: RTCRtpSender,
-        receiver: RTCRtpReceiver,
+        peerConnectionId: number;
+        isStopped: boolean;
+        direction: string;
+        currentDirection: string;
+        mid?: string;
+        sender: RTCRtpSender;
+        receiver: RTCRtpReceiver;
     }) {
         this._peerConnectionId = args.peerConnectionId;
         this._mid = args.mid ? args.mid : null;
@@ -47,12 +46,12 @@ export default class RTCRtpTransceiver {
     }
 
     set direction(val) {
-        if (![ 'sendonly', 'recvonly', 'sendrecv', 'inactive' ].includes(val)) {
-            throw new TypeError('Invalid direction provided');
+        if (!["sendonly", "recvonly", "sendrecv", "inactive"].includes(val)) {
+            throw new TypeError("Invalid direction provided");
         }
 
         if (this._stopped) {
-            throw Error('Transceiver Stopped');
+            throw Error("Transceiver Stopped");
         }
 
         if (this._direction === val) {
@@ -61,10 +60,13 @@ export default class RTCRtpTransceiver {
 
         const oldDirection = this._direction;
 
-        WebRTCModule.transceiverSetDirection(this._peerConnectionId, this.sender.id, val)
-            .catch(() => {
-                this._direction = oldDirection;
-            });
+        WebRTCModule.transceiverSetDirection(
+            this._peerConnectionId,
+            this.sender.id,
+            val
+        ).catch(() => {
+            this._direction = oldDirection;
+        });
 
         this._direction = val;
     }
@@ -86,14 +88,16 @@ export default class RTCRtpTransceiver {
             return;
         }
 
-        WebRTCModule.transceiverStop(this._peerConnectionId, this.sender.id)
-            .then(() => this._setStopped());
+        WebRTCModule.transceiverStop(
+            this._peerConnectionId,
+            this.sender.id
+        ).then(() => this._setStopped());
     }
 
     _setStopped() {
         this._stopped = true;
-        this._direction = 'stopped';
-        this._currentDirection = 'stopped';
+        this._direction = "stopped";
+        this._currentDirection = "stopped";
         this._mid = null;
     }
 }
