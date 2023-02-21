@@ -3,22 +3,21 @@
 
 #import <WebRTC/RTCDataChannel.h>
 
-@interface DataChannelWrapper () <RTCDataChannelDelegate>
+@interface DataChannelWrapper ()<RTCDataChannelDelegate>
 @end
 
 @implementation DataChannelWrapper
 
-- (instancetype)initWithChannel:(RTCDataChannel *) channel
-                       reactTag:(NSString *)tag {
+- (instancetype)initWithChannel:(RTCDataChannel *)channel reactTag:(NSString *)tag {
     self = [super init];
     if (self) {
         _channel = channel;
         _reactTag = tag;
-        
+
         // Set ourselves as the deletagate.
         _channel.delegate = self;
     }
-    
+
     return self;
 }
 

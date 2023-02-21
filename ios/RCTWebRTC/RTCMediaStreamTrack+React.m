@@ -1,7 +1,7 @@
 #import <objc/runtime.h>
 
-#import "RTCMediaStreamTrack+React.h"
 #import "CaptureController.h"
+#import "RTCMediaStreamTrack+React.h"
 
 @implementation RTCMediaStreamTrack (React)
 

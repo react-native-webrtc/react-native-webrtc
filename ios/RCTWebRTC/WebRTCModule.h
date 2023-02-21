@@ -1,17 +1,17 @@
-#import <Foundation/Foundation.h>
 #import <AVFoundation/AVFoundation.h>
+#import <Foundation/Foundation.h>
 
 #import <React/RCTBridgeModule.h>
 #import <React/RCTConvert.h>
 #import <React/RCTEventEmitter.h>
 
-#import <WebRTC/RTCMediaStream.h>
-#import <WebRTC/RTCPeerConnectionFactory.h>
-#import <WebRTC/RTCPeerConnection.h>
 #import <WebRTC/RTCAudioTrack.h>
-#import <WebRTC/RTCVideoTrack.h>
 #import <WebRTC/RTCDefaultVideoDecoderFactory.h>
 #import <WebRTC/RTCDefaultVideoEncoderFactory.h>
+#import <WebRTC/RTCMediaStream.h>
+#import <WebRTC/RTCPeerConnection.h>
+#import <WebRTC/RTCPeerConnectionFactory.h>
+#import <WebRTC/RTCVideoTrack.h>
 
 static NSString *const kEventPeerConnectionSignalingStateChanged = @"peerConnectionSignalingStateChanged";
 static NSString *const kEventPeerConnectionStateChanged = @"peerConnectionStateChanged";
@@ -28,21 +28,21 @@ static NSString *const kEventMediaStreamTrackEnded = @"mediaStreamTrackEnded";
 static NSString *const kEventPeerConnectionOnRemoveTrack = @"peerConnectionOnRemoveTrack";
 static NSString *const kEventPeerConnectionOnTrack = @"peerConnectionOnTrack";
 
-@interface WebRTCModule : RCTEventEmitter <RCTBridgeModule>
+@interface WebRTCModule : RCTEventEmitter<RCTBridgeModule>
 
 @property(nonatomic, strong) dispatch_queue_t workerQueue;
 
-@property (nonatomic, strong) RTCPeerConnectionFactory *peerConnectionFactory;
-@property (nonatomic, strong) id<RTCVideoDecoderFactory> decoderFactory;
-@property (nonatomic, strong) id<RTCVideoEncoderFactory> encoderFactory;
+@property(nonatomic, strong) RTCPeerConnectionFactory *peerConnectionFactory;
+@property(nonatomic, strong) id<RTCVideoDecoderFactory> decoderFactory;
+@property(nonatomic, strong) id<RTCVideoEncoderFactory> encoderFactory;
 
-@property (nonatomic, strong) NSMutableDictionary<NSNumber *, RTCPeerConnection *> *peerConnections;
-@property (nonatomic, strong) NSMutableDictionary<NSString *, RTCMediaStream *> *localStreams;
-@property (nonatomic, strong) NSMutableDictionary<NSString *, RTCMediaStreamTrack *> *localTracks;
+@property(nonatomic, strong) NSMutableDictionary<NSNumber *, RTCPeerConnection *> *peerConnections;
+@property(nonatomic, strong) NSMutableDictionary<NSString *, RTCMediaStream *> *localStreams;
+@property(nonatomic, strong) NSMutableDictionary<NSString *, RTCMediaStreamTrack *> *localTracks;
 
 - (instancetype)initWithEncoderFactory:(id<RTCVideoEncoderFactory>)encoderFactory
                         decoderFactory:(id<RTCVideoDecoderFactory>)decoderFactory;
 
-- (RTCMediaStream*)streamForReactTag:(NSString*)reactTag;
+- (RTCMediaStream *)streamForReactTag:(NSString *)reactTag;
 
 @end

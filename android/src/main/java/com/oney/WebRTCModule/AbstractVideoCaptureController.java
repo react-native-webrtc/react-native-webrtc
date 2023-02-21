@@ -3,7 +3,6 @@ package com.oney.WebRTCModule;
 import org.webrtc.VideoCapturer;
 
 public abstract class AbstractVideoCaptureController {
-
     private final int width;
     private final int height;
     private final int fps;

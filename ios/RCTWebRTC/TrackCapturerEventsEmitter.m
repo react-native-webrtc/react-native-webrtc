@@ -1,20 +1,19 @@
-#import "WebRTCModule.h"
 #import "TrackCapturerEventsEmitter.h"
 #import "CapturerEventsDelegate.h"
+#import "WebRTCModule.h"
 
 NS_ASSUME_NONNULL_BEGIN
 
 @interface TrackCapturerEventsEmitter ()
 
-@property (copy, nonatomic) NSString *trackId;
-@property (weak, nonatomic) WebRTCModule *module;
+@property(copy, nonatomic) NSString *trackId;
+@property(weak, nonatomic) WebRTCModule *module;
 
 @end
 
 @implementation TrackCapturerEventsEmitter
 
-- (instancetype)initWith:(NSString *)trackId
-            webRTCModule:(WebRTCModule *)module {
+- (instancetype)initWith:(NSString *)trackId webRTCModule:(WebRTCModule *)module {
     self = [super init];
     if (self) {
         self.trackId = trackId;
@@ -27,7 +26,7 @@ NS_ASSUME_NONNULL_BEGIN
 - (void)capturerDidEnd:(RTCVideoCapturer *)capturer {
     [self.module sendEventWithName:kEventMediaStreamTrackEnded
                               body:@{
-                                @"trackId": self.trackId,
+                                  @"trackId" : self.trackId,
                               }];
 
     RCTLog(@"[TrackCapturerEventsEmitter] ended event for track %@", self.trackId);
