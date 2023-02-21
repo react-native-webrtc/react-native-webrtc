@@ -732,6 +732,7 @@ export default class RTCPeerConnection extends defineCustomEventTarget(...PEER_C
 
             transceiver._currentDirection = update.currentDirection;
             transceiver._mid = update.mid;
+            transceiver._stopped = Boolean(update.isStopped);
             transceiver._sender._rtpParameters = new RTCRtpSendParameters(update.senderRtpParameters);
             transceiver._receiver._rtpParameters = new RTCRtpReceiveParameters(update.receiverRtpParameters);
         }

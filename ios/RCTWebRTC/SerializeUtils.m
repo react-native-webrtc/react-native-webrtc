@@ -33,6 +33,7 @@
             transceiverUpdate[@"mid"] = transceiver.mid;
             NSString *currentDirectionSerialized = [SerializeUtils serializeDirection:currentDirection];
             transceiverUpdate[@"currentDirection"] = currentDirectionSerialized;
+            transceiverUpdate[@"isStopped"] = [NSNumber numberWithBool:transceiver.isStopped];
             transceiverUpdate[@"senderRtpParameters"] = [SerializeUtils parametersToJSON:transceiver.sender.parameters];
             transceiverUpdate[@"receiverRtpParameters"] =
                 [SerializeUtils parametersToJSON:transceiver.receiver.parameters];

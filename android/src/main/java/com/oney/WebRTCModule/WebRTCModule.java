@@ -852,6 +852,7 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
             transceiverUpdate.putString("transceiverId", transceiver.getSender().id());
             transceiverUpdate.putString("mid", transceiver.getMid());
             transceiverUpdate.putString("currentDirection", directionSerialized);
+            transceiverUpdate.putBoolean("isStopped", transceiver.isStopped());
             transceiverUpdate.putMap("senderRtpParameters",
                     SerializeUtils.serializeRtpParameters(transceiver.getSender().getParameters()));
             transceiverUpdate.putMap("receiverRtpParameters",
