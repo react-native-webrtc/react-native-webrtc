@@ -152,7 +152,7 @@ export default class RTCPeerConnection extends defineCustomEventTarget(...PEER_C
             this.localDescription = null;
         }
 
-        this._updateTransceivers(transceiversInfo);
+        this._updateTransceivers(transceiversInfo, /* removeStopped */ desc?.type === 'answer');
 
         log.debug(`${this._pcId} setLocalDescription OK`);
     }
@@ -200,7 +200,7 @@ export default class RTCPeerConnection extends defineCustomEventTarget(...PEER_C
             this._insertTransceiverSorted(transceiverOrder, newTransceiver);
         });
 
-        this._updateTransceivers(transceiversInfo);
+        this._updateTransceivers(transceiversInfo, /* removeStopped */ desc.type === 'answer');
 
         // Fire track events. They must fire before sRD resolves.
         const pendingTrackEvents = this._pendingTrackEvents;
@@ -480,11 +480,13 @@ export default class RTCPeerConnection extends defineCustomEventTarget(...PEER_C
     }
 
     getSenders(): RTCRtpSender[] {
-        return this._transceivers.map(e => e.transceiver.sender);
+        // @ts-ignore
+        return this._transceivers.map(e => !e.transceiver.stopped && e.transceiver.sender).filter(Boolean);
     }
 
     getReceivers(): RTCRtpReceiver[] {
-        return this._transceivers.map(e => e.transceiver.receiver);
+        // @ts-ignore
+        return this._transceivers.map(e => !e.transceiver.stopped && e.transceiver.receiver).filter(Boolean);
     }
 
     close(): void {
@@ -720,7 +722,7 @@ export default class RTCPeerConnection extends defineCustomEventTarget(...PEER_C
     /**
      * Updates transceivers after offer/answer updates if necessary.
      */
-    _updateTransceivers(transceiverUpdates) {
+    _updateTransceivers(transceiverUpdates, removeStopped = false) {
         for (const update of transceiverUpdates) {
             const [ transceiver ] = this
                 .getTransceivers()
@@ -735,6 +737,13 @@ export default class RTCPeerConnection extends defineCustomEventTarget(...PEER_C
             transceiver._stopped = Boolean(update.isStopped);
             transceiver._sender._rtpParameters = new RTCRtpSendParameters(update.senderRtpParameters);
             transceiver._receiver._rtpParameters = new RTCRtpReceiveParameters(update.receiverRtpParameters);
+        }
+
+        if (removeStopped) {
+            const stopped = this.getTransceivers().filter(t => t.stopped);
+            const newTransceivers = this._transceivers.filter(t => !stopped.includes(t.transceiver));
+
+            this._transceivers = newTransceivers;
         }
     }
 
