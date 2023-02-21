@@ -442,23 +442,37 @@ export default class RTCPeerConnection extends defineCustomEventTarget(...PEER_C
         existingTransceiver._direction = existingTransceiver.direction === 'sendrecv' ? 'recvonly' : 'inactive';
     }
 
-    getStats() {
+    async getStats(selector?: MediaStreamTrack) {
         log.debug(`${this._pcId} getStats`);
 
-        return WebRTCModule.peerConnectionGetStats(this._pcId).then(data =>
-            /* On both Android and iOS it is faster to construct a single
-            JSON string representing the Map of StatsReports and have it
-            pass through the React Native bridge rather than the Map of
-            StatsReports. While the implementations do try to be faster in
-            general, the stress is on being faster to pass through the React
-            Native bridge which is a bottleneck that tends to be visible in
-            the UI when there is congestion involving UI-related passing.
+        if (!selector) {
+            const data = await WebRTCModule.peerConnectionGetStats(this._pcId);
 
-            TODO Implement the logic for filtering the stats based on
-            the sender/receiver
-            */
-            new Map(JSON.parse(data))
-        );
+            /**
+             * On both Android and iOS it is faster to construct a single
+             * JSON string representing the Map of StatsReports and have it
+             * pass through the React Native bridge rather than the Map of
+             * StatsReports. While the implementations do try to be faster in
+             * general, the stress is on being faster to pass through the React
+             * Native bridge which is a bottleneck that tends to be visible in
+             * the UI when there is congestion involving UI-related passing.
+             */
+            return new Map(JSON.parse(data));
+        } else {
+            const senders = this.getSenders().filter(s => s.track === selector);
+            const receivers = this.getReceivers().filter(r => r.track === selector);
+            const matches = senders.length + receivers.length;
+
+            if (matches === 0) {
+                throw new Error('Invalid selector: could not find matching sender / receiver');
+            } else if (matches > 1) {
+                throw new Error('Invalid selector: multiple matching senders / receivers');
+            } else {
+                const sr = senders[0] || receivers[0];
+
+                return sr.getStats();
+            }
+        }
     }
 
     getTransceivers(): RTCRtpTransceiver[] {
