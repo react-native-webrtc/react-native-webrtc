@@ -2,12 +2,12 @@ package com.oney.WebRTCModule;
 
 import android.util.*;
 
+import com.facebook.react.bridge.Arguments;
+import com.facebook.react.bridge.WritableMap;
+
 import org.webrtc.VideoFrame;
 import org.webrtc.VideoSink;
 import org.webrtc.VideoTrack;
-
-import com.facebook.react.bridge.Arguments;
-import com.facebook.react.bridge.WritableMap;
 
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -119,13 +119,9 @@ public class VideoTrackAdapter {
             params.putString("trackId", trackId);
             params.putBoolean("muted", muted);
 
-            Log.d(TAG,
-                (muted ? "Mute" : "Unmute" )
-                    + " event pcId: " + peerConnectionId
-                    + " trackId: " + trackId);
+            Log.d(TAG, (muted ? "Mute" : "Unmute") + " event pcId: " + peerConnectionId + " trackId: " + trackId);
 
-            VideoTrackAdapter.this.webRTCModule.sendEvent(
-                "mediaStreamTrackMuteChanged", params);
+            VideoTrackAdapter.this.webRTCModule.sendEvent("mediaStreamTrackMuteChanged", params);
         }
 
         void dispose() {

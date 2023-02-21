@@ -15,8 +15,7 @@ public class CameraCaptureController extends AbstractVideoCaptureController {
     /**
      * The {@link Log} tag with which {@code CameraCaptureController} is to log.
      */
-    private static final String TAG
-        = CameraCaptureController.class.getSimpleName();
+    private static final String TAG = CameraCaptureController.class.getSimpleName();
 
     private boolean isFrontFacing;
 
@@ -32,10 +31,7 @@ public class CameraCaptureController extends AbstractVideoCaptureController {
     private final CameraEventsHandler cameraEventsHandler = new CameraEventsHandler();
 
     public CameraCaptureController(CameraEnumerator cameraEnumerator, ReadableMap constraints) {
-        super(
-             constraints.getInt("width"),
-             constraints.getInt("height"), 
-             constraints.getInt("frameRate"));
+        super(constraints.getInt("width"), constraints.getInt("height"), constraints.getInt("frameRate"));
 
         this.cameraEnumerator = cameraEnumerator;
         this.constraints = constraints;
@@ -95,7 +91,7 @@ public class CameraCaptureController extends AbstractVideoCaptureController {
             @Override
             public void onCameraSwitchDone(boolean b) {
                 if (b != desiredFrontFacing) {
-                    int newTries = tries-1;
+                    int newTries = tries - 1;
                     if (newTries > 0) {
                         switchCamera(desiredFrontFacing, newTries);
                     }
@@ -138,8 +134,7 @@ public class CameraCaptureController extends AbstractVideoCaptureController {
 
         // If deviceId is specified, then it takes precedence over facingMode.
         if (cameraName != null) {
-            VideoCapturer videoCapturer
-                = cameraEnumerator.createCapturer(cameraName, cameraEventsHandler);
+            VideoCapturer videoCapturer = cameraEnumerator.createCapturer(cameraName, cameraEventsHandler);
             String message = "Create user-specified camera " + cameraName;
             if (videoCapturer != null) {
                 Log.d(TAG, message + " succeeded");
@@ -153,8 +148,7 @@ public class CameraCaptureController extends AbstractVideoCaptureController {
         }
 
         // Otherwise, use facingMode (defaulting to front/user facing).
-        final boolean isFrontFacing
-            = facingMode == null || !facingMode.equals("environment");
+        final boolean isFrontFacing = facingMode == null || !facingMode.equals("environment");
         for (String name : deviceNames) {
             if (failedDevices.contains(name)) {
                 continue;
@@ -162,8 +156,7 @@ public class CameraCaptureController extends AbstractVideoCaptureController {
             if (cameraEnumerator.isFrontFacing(name) != isFrontFacing) {
                 continue;
             }
-            VideoCapturer videoCapturer
-                = cameraEnumerator.createCapturer(name, cameraEventsHandler);
+            VideoCapturer videoCapturer = cameraEnumerator.createCapturer(name, cameraEventsHandler);
             String message = "Create camera " + name;
             if (videoCapturer != null) {
                 Log.d(TAG, message + " succeeded");
@@ -178,8 +171,7 @@ public class CameraCaptureController extends AbstractVideoCaptureController {
         // Fallback to any available camera.
         for (String name : deviceNames) {
             if (!failedDevices.contains(name)) {
-                VideoCapturer videoCapturer
-                    = cameraEnumerator.createCapturer(name, cameraEventsHandler);
+                VideoCapturer videoCapturer = cameraEnumerator.createCapturer(name, cameraEventsHandler);
                 String message = "Create fallback camera " + name;
                 if (videoCapturer != null) {
                     Log.d(TAG, message + " succeeded");

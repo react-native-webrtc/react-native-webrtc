@@ -11,9 +11,9 @@
 #import <WebRTC/RTCVideoRenderer.h>
 #import <WebRTC/RTCVideoTrack.h>
 
-#import "WebRTCModule.h"
 #import "WebRTCModule+RTCPeerConnection.h"
 #import "WebRTCModule+VideoTrackAdapter.h"
+#import "WebRTCModule.h"
 
 /* Mute detection timer intervals. The initial timeout will be longer to
  * accommodate for source startup.
@@ -28,9 +28,9 @@ static const NSTimeInterval MUTE_DELAY = 1.5;
  */
 @interface TrackMuteDetector : NSObject<RTCVideoRenderer>
 
-@property (copy, nonatomic) NSNumber *peerConnectionId;
-@property (copy, nonatomic) NSString *trackId;
-@property (weak, nonatomic) WebRTCModule *module;
+@property(copy, nonatomic) NSNumber *peerConnectionId;
+@property(copy, nonatomic) NSString *trackId;
+@property(weak, nonatomic) WebRTCModule *module;
 
 @end
 
@@ -41,9 +41,7 @@ static const NSTimeInterval MUTE_DELAY = 1.5;
     dispatch_source_t _timer;
 }
 
-- (instancetype)initWith:(NSNumber*)peerConnectionId
-                 trackId:(NSString*)trackId
-            webRTCModule:(WebRTCModule*)module {
+- (instancetype)initWith:(NSNumber *)peerConnectionId trackId:(NSString *)trackId webRTCModule:(WebRTCModule *)module {
     self = [super init];
     if (self) {
         self.peerConnectionId = peerConnectionId;
@@ -69,15 +67,11 @@ static const NSTimeInterval MUTE_DELAY = 1.5;
 
 - (void)emitMuteEvent:(BOOL)muted {
     [self.module sendEventWithName:kEventMediaStreamTrackMuteChanged
-                              body:@{
-                                @"pcId": self.peerConnectionId,
-                                @"trackId": self.trackId,
-                                @"muted": @(muted)
-                              }];
+                              body:@{@"pcId" : self.peerConnectionId, @"trackId" : self.trackId, @"muted" : @(muted)}];
     RCTLog(@"[VideoTrackAdapter] %@ event for pc %@ track %@",
-          muted ? @"Mute" : @"Unmute",
-          self.peerConnectionId,
-          self.trackId);
+           muted ? @"Mute" : @"Unmute",
+           self.peerConnectionId,
+           self.trackId);
 }
 
 - (void)start {
@@ -91,13 +85,13 @@ static const NSTimeInterval MUTE_DELAY = 1.5;
 
     // Create a timer using GCD, since NSTimer requires a runloop to be present
     // on the calling thread.
-    _timer = dispatch_source_create(DISPATCH_SOURCE_TYPE_TIMER,
-                                    0, 0, dispatch_get_main_queue());
+    _timer = dispatch_source_create(DISPATCH_SOURCE_TYPE_TIMER, 0, 0, dispatch_get_main_queue());
 
     // Schedule the timer with a larger initial delay than the interval.
-    dispatch_source_set_timer(
-        _timer, dispatch_time(DISPATCH_TIME_NOW, INITIAL_MUTE_DELAY * NSEC_PER_SEC),
-        MUTE_DELAY * NSEC_PER_SEC, (1ull * NSEC_PER_SEC) / 10);
+    dispatch_source_set_timer(_timer,
+                              dispatch_time(DISPATCH_TIME_NOW, INITIAL_MUTE_DELAY * NSEC_PER_SEC),
+                              MUTE_DELAY * NSEC_PER_SEC,
+                              (1ull * NSEC_PER_SEC) / 10);
 
     __block unsigned long long lastFrameCount = _frameCount;
     dispatch_source_set_event_handler(_timer, ^() {
@@ -129,27 +123,25 @@ static const NSTimeInterval MUTE_DELAY = 1.5;
 
 @implementation RTCPeerConnection (VideoTrackAdapter)
 
-- (NSMutableDictionary<NSString *, id> *)videoTrackAdapters
-{
+- (NSMutableDictionary<NSString *, id> *)videoTrackAdapters {
     return objc_getAssociatedObject(self, _cmd);
 }
 
-- (void)setVideoTrackAdapters:(NSMutableDictionary<NSString *, id> *)videoTrackAdapters
-{
-    objc_setAssociatedObject(self, @selector(videoTrackAdapters), videoTrackAdapters, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+- (void)setVideoTrackAdapters:(NSMutableDictionary<NSString *, id> *)videoTrackAdapters {
+    objc_setAssociatedObject(
+        self, @selector(videoTrackAdapters), videoTrackAdapters, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
 }
 
-- (void)addVideoTrackAdapter:(RTCVideoTrack*)track {
-    NSString* trackId = track.trackId;
+- (void)addVideoTrackAdapter:(RTCVideoTrack *)track {
+    NSString *trackId = track.trackId;
     if ([self.videoTrackAdapters objectForKey:trackId] != nil) {
         RCTLogWarn(@"[VideoTrackAdapter] Adapter already exists for track %@", trackId);
         return;
     }
 
-    TrackMuteDetector* muteDetector
-        = [[TrackMuteDetector alloc] initWith:self.reactTag
-                                      trackId:trackId
-                                 webRTCModule:self.webRTCModule];
+    TrackMuteDetector *muteDetector = [[TrackMuteDetector alloc] initWith:self.reactTag
+                                                                  trackId:trackId
+                                                             webRTCModule:self.webRTCModule];
     [self.videoTrackAdapters setObject:muteDetector forKey:trackId];
     [track addRenderer:muteDetector];
     [muteDetector start];
@@ -157,10 +149,9 @@ static const NSTimeInterval MUTE_DELAY = 1.5;
     RCTLogTrace(@"[VideoTrackAdapter] Adapter created for track %@", trackId);
 }
 
-- (void)removeVideoTrackAdapter:(RTCVideoTrack*)track {
-    NSString* trackId = track.trackId;
-    TrackMuteDetector* muteDetector
-        = [self.videoTrackAdapters objectForKey:trackId];
+- (void)removeVideoTrackAdapter:(RTCVideoTrack *)track {
+    NSString *trackId = track.trackId;
+    TrackMuteDetector *muteDetector = [self.videoTrackAdapters objectForKey:trackId];
     if (muteDetector == nil) {
         RCTLogWarn(@"[VideoTrackAdapter] Adapter doesn't exist for track %@", trackId);
         return;

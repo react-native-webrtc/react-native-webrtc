@@ -6,7 +6,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 @class SocketConnection;
 
-@interface ScreenCapturer: RTCVideoCapturer
+@interface ScreenCapturer : RTCVideoCapturer
 
 @property(nonatomic, weak) id<CapturerEventsDelegate> eventsDelegate;
 

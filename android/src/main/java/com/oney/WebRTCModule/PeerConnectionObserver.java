@@ -8,8 +8,8 @@ import androidx.annotation.Nullable;
 
 import com.facebook.react.bridge.Arguments;
 import com.facebook.react.bridge.Promise;
-import com.facebook.react.bridge.ReadableMap;
 import com.facebook.react.bridge.ReadableArray;
+import com.facebook.react.bridge.ReadableMap;
 import com.facebook.react.bridge.WritableArray;
 import com.facebook.react.bridge.WritableMap;
 
@@ -131,7 +131,7 @@ class PeerConnectionObserver implements PeerConnection.Observer {
             return null;
         }
 
-        for (RtpSender sender: this.peerConnection.getSenders()) {
+        for (RtpSender sender : this.peerConnection.getSenders()) {
             if (sender.id().equals(id)) {
                 return sender;
             }
@@ -145,7 +145,7 @@ class PeerConnectionObserver implements PeerConnection.Observer {
             return null;
         }
 
-        for (RtpTransceiver transceiver: this.peerConnection.getTransceivers()) {
+        for (RtpTransceiver transceiver : this.peerConnection.getTransceivers()) {
             if (transceiver.getSender().id().equals(id)) {
                 return transceiver;
             }
@@ -179,7 +179,7 @@ class PeerConnectionObserver implements PeerConnection.Observer {
         if (dataChannel == null) {
             return null;
         }
-        final String reactTag  = UUID.randomUUID().toString();
+        final String reactTag = UUID.randomUUID().toString();
         DataChannelWrapper dcw = new DataChannelWrapper(webRTCModule, id, reactTag, dataChannel);
         dataChannels.put(reactTag, dcw);
         dataChannel.registerObserver(dcw);
@@ -243,18 +243,14 @@ class PeerConnectionObserver implements PeerConnection.Observer {
     }
 
     void getStats(Promise promise) {
-        peerConnection.getStats(rtcStatsReport -> {
-            promise.resolve(StringUtils.statsToJSON(rtcStatsReport));
-        });
+        peerConnection.getStats(rtcStatsReport -> { promise.resolve(StringUtils.statsToJSON(rtcStatsReport)); });
     }
-
 
     /**
      * @param trackIdentifier sender or receiver id
      * @param streamType "outbound-rtp" for sender or "inbound-rtp" for receiver
      */
     void getFilteredStats(String trackIdentifier, boolean isReceiver, Promise promise) {
-        
         peerConnection.getStats(rtcStatsReport -> {
             Map<String, RTCStats> statsMap = rtcStatsReport.getStatsMap();
             Set<RTCStats> filteredStats = new HashSet<>();
@@ -295,7 +291,6 @@ class PeerConnectionObserver implements PeerConnection.Observer {
                 }
             }
 
-
             // Get candidate information
             RTCStats candidatePairStats = null;
             for (RTCStats stats : statsMap.values()) {
@@ -314,13 +309,15 @@ class PeerConnectionObserver implements PeerConnection.Observer {
             }
 
             // Sweep for any remaining stats we want.
-            filteredStats.addAll(getExtraStats(trackIdentifier, ssrcs, codecIds, localCandidateId, remoteCandidateId, statsMap));
+            filteredStats.addAll(
+                    getExtraStats(trackIdentifier, ssrcs, codecIds, localCandidateId, remoteCandidateId, statsMap));
 
             Map<String, RTCStats> filteredStatsMap = new HashMap<>();
             for (RTCStats stats : filteredStats) {
                 filteredStatsMap.put(stats.getId(), stats);
             }
-            RTCStatsReport filteredStatsReport = new RTCStatsReport((long) rtcStatsReport.getTimestampUs(), filteredStatsMap);
+            RTCStatsReport filteredStatsReport =
+                    new RTCStatsReport((long) rtcStatsReport.getTimestampUs(), filteredStatsMap);
             promise.resolve(StringUtils.statsToJSON(filteredStatsReport));
         });
     }
@@ -337,7 +334,6 @@ class PeerConnectionObserver implements PeerConnection.Observer {
         return null;
     }
 
-
     @Nullable
     private RTCStats getStreamStats(String trackId, Map<String, RTCStats> statsMap) {
         for (RTCStats stats : statsMap.values()) {
@@ -351,13 +347,8 @@ class PeerConnectionObserver implements PeerConnection.Observer {
 
     // Note: trackIdentifier can differ from the internal stats trackId
     // trackIdentifier refers to the sender or receiver id
-    public Set<RTCStats> getExtraStats(
-            String trackIdentifier,
-            Set<Long> ssrcs,
-            Set<String> codecIds,
-            @Nullable String localCandidateId,
-            @Nullable String remoteCandidateId,
-            Map<String, RTCStats> statsMap) {
+    public Set<RTCStats> getExtraStats(String trackIdentifier, Set<Long> ssrcs, Set<String> codecIds,
+            @Nullable String localCandidateId, @Nullable String remoteCandidateId, Map<String, RTCStats> statsMap) {
         Set<RTCStats> extraStats = new HashSet<>();
         for (RTCStats stats : statsMap.values()) {
             switch (stats.getType()) {
@@ -471,7 +462,7 @@ class PeerConnectionObserver implements PeerConnection.Observer {
     @Override
     public void onDataChannel(DataChannel dataChannel) {
         ThreadUtils.runOnExecutor(() -> {
-            final String reactTag  = UUID.randomUUID().toString();
+            final String reactTag = UUID.randomUUID().toString();
             DataChannelWrapper dcw = new DataChannelWrapper(webRTCModule, id, reactTag, dataChannel);
             dataChannels.put(reactTag, dcw);
             dataChannel.registerObserver(dcw);
@@ -528,7 +519,7 @@ class PeerConnectionObserver implements PeerConnection.Observer {
 
         ThreadUtils.runOnExecutor(() -> {
             RtpTransceiver transceiver = null;
-            for(RtpTransceiver t: this.peerConnection.getTransceivers()) {
+            for (RtpTransceiver t : this.peerConnection.getTransceivers()) {
                 if (Objects.equals(t.getReceiver().id(), receiver.id())) {
                     transceiver = t;
                     break;
@@ -547,7 +538,7 @@ class PeerConnectionObserver implements PeerConnection.Observer {
             final boolean existingTrack = remoteTracks.containsKey(track.id());
 
             if (!existingTrack) {
-                if (track.kind().equals(MediaStreamTrack.VIDEO_TRACK_KIND)){
+                if (track.kind().equals(MediaStreamTrack.VIDEO_TRACK_KIND)) {
                     videoTrackAdapters.addAdapter((VideoTrack) track);
                 }
                 remoteTracks.put(track.id(), track);
@@ -594,7 +585,7 @@ class PeerConnectionObserver implements PeerConnection.Observer {
      * peer, as a result of setRemoteDescription.
      */
     @Override
-    public void onRemoveTrack(RtpReceiver receiver){
+    public void onRemoveTrack(RtpReceiver receiver) {
         ThreadUtils.runOnExecutor(() -> {
             WritableMap params = Arguments.createMap();
             params.putInt("pcId", this.id);
@@ -683,5 +674,4 @@ class PeerConnectionObserver implements PeerConnection.Observer {
         }
         return null;
     }
-
 }

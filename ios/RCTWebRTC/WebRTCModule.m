@@ -6,111 +6,103 @@
 #import <React/RCTEventDispatcher.h>
 #import <React/RCTUtils.h>
 
-#import "WebRTCModule.h"
 #import "WebRTCModule+RTCPeerConnection.h"
+#import "WebRTCModule.h"
 
 @interface WebRTCModule ()
 @end
 
 @implementation WebRTCModule
 
-+ (BOOL)requiresMainQueueSetup
-{
++ (BOOL)requiresMainQueueSetup {
     return NO;
 }
 
-- (void)dealloc
-{
-  [_localTracks removeAllObjects];
-  _localTracks = nil;
-  [_localStreams removeAllObjects];
-  _localStreams = nil;
+- (void)dealloc {
+    [_localTracks removeAllObjects];
+    _localTracks = nil;
+    [_localStreams removeAllObjects];
+    _localStreams = nil;
 
-  for (NSNumber *peerConnectionId in _peerConnections) {
-    RTCPeerConnection *peerConnection = _peerConnections[peerConnectionId];
-    peerConnection.delegate = nil;
-    [peerConnection close];
-  }
-  [_peerConnections removeAllObjects];
+    for (NSNumber *peerConnectionId in _peerConnections) {
+        RTCPeerConnection *peerConnection = _peerConnections[peerConnectionId];
+        peerConnection.delegate = nil;
+        [peerConnection close];
+    }
+    [_peerConnections removeAllObjects];
 
-  _peerConnectionFactory = nil;
+    _peerConnectionFactory = nil;
 }
 
-- (instancetype)init
-{
+- (instancetype)init {
     return [self initWithEncoderFactory:nil decoderFactory:nil];
 }
 
 - (instancetype)initWithEncoderFactory:(nullable id<RTCVideoEncoderFactory>)encoderFactory
-                        decoderFactory:(nullable id<RTCVideoDecoderFactory>)decoderFactory
-{
-  self = [super init];
-  if (self) {
-    if (encoderFactory == nil) {
-      encoderFactory = [[RTCDefaultVideoEncoderFactory alloc] init];
+                        decoderFactory:(nullable id<RTCVideoDecoderFactory>)decoderFactory {
+    self = [super init];
+    if (self) {
+        if (encoderFactory == nil) {
+            encoderFactory = [[RTCDefaultVideoEncoderFactory alloc] init];
+        }
+        if (decoderFactory == nil) {
+            decoderFactory = [[RTCDefaultVideoDecoderFactory alloc] init];
+        }
+        _encoderFactory = encoderFactory;
+        _decoderFactory = decoderFactory;
+
+        _peerConnectionFactory = [[RTCPeerConnectionFactory alloc] initWithEncoderFactory:encoderFactory
+                                                                           decoderFactory:decoderFactory];
+
+        _peerConnections = [NSMutableDictionary new];
+        _localStreams = [NSMutableDictionary new];
+        _localTracks = [NSMutableDictionary new];
+
+        dispatch_queue_attr_t attributes =
+            dispatch_queue_attr_make_with_qos_class(DISPATCH_QUEUE_SERIAL, QOS_CLASS_USER_INITIATED, -1);
+        _workerQueue = dispatch_queue_create("WebRTCModule.queue", attributes);
     }
-    if (decoderFactory == nil) {
-      decoderFactory = [[RTCDefaultVideoDecoderFactory alloc] init];
-    }
-    _encoderFactory = encoderFactory;
-    _decoderFactory = decoderFactory;
 
-    _peerConnectionFactory
-      = [[RTCPeerConnectionFactory alloc] initWithEncoderFactory:encoderFactory
-                                                  decoderFactory:decoderFactory];
-
-    _peerConnections = [NSMutableDictionary new];
-    _localStreams = [NSMutableDictionary new];
-    _localTracks = [NSMutableDictionary new];
-
-    dispatch_queue_attr_t attributes =
-    dispatch_queue_attr_make_with_qos_class(DISPATCH_QUEUE_SERIAL,
-                                            QOS_CLASS_USER_INITIATED, -1);
-    _workerQueue = dispatch_queue_create("WebRTCModule.queue", attributes);
-  }
-
-  return self;
+    return self;
 }
 
-- (RTCMediaStream*)streamForReactTag:(NSString*)reactTag
-{
-  RTCMediaStream *stream = _localStreams[reactTag];
-  if (!stream) {
-    for (NSNumber *peerConnectionId in _peerConnections) {
-      RTCPeerConnection *peerConnection = _peerConnections[peerConnectionId];
-      stream = peerConnection.remoteStreams[reactTag];
-      if (stream) {
-        break;
-      }
+- (RTCMediaStream *)streamForReactTag:(NSString *)reactTag {
+    RTCMediaStream *stream = _localStreams[reactTag];
+    if (!stream) {
+        for (NSNumber *peerConnectionId in _peerConnections) {
+            RTCPeerConnection *peerConnection = _peerConnections[peerConnectionId];
+            stream = peerConnection.remoteStreams[reactTag];
+            if (stream) {
+                break;
+            }
+        }
     }
-  }
-  return stream;
+    return stream;
 }
 
 RCT_EXPORT_MODULE();
 
-- (dispatch_queue_t)methodQueue
-{
-  return _workerQueue;
+- (dispatch_queue_t)methodQueue {
+    return _workerQueue;
 }
 
 - (NSArray<NSString *> *)supportedEvents {
-  return @[
-    kEventPeerConnectionSignalingStateChanged,
-    kEventPeerConnectionStateChanged,
-    kEventPeerConnectionOnRenegotiationNeeded,
-    kEventPeerConnectionIceConnectionChanged,
-    kEventPeerConnectionIceGatheringChanged,
-    kEventPeerConnectionGotICECandidate,
-    kEventPeerConnectionDidOpenDataChannel,
-    kEventDataChannelDidChangeBufferedAmount,
-    kEventDataChannelStateChanged,
-    kEventDataChannelReceiveMessage,
-    kEventMediaStreamTrackMuteChanged,
-    kEventMediaStreamTrackEnded,
-    kEventPeerConnectionOnRemoveTrack,
-    kEventPeerConnectionOnTrack
-  ];
+    return @[
+        kEventPeerConnectionSignalingStateChanged,
+        kEventPeerConnectionStateChanged,
+        kEventPeerConnectionOnRenegotiationNeeded,
+        kEventPeerConnectionIceConnectionChanged,
+        kEventPeerConnectionIceGatheringChanged,
+        kEventPeerConnectionGotICECandidate,
+        kEventPeerConnectionDidOpenDataChannel,
+        kEventDataChannelDidChangeBufferedAmount,
+        kEventDataChannelStateChanged,
+        kEventDataChannelReceiveMessage,
+        kEventMediaStreamTrackMuteChanged,
+        kEventMediaStreamTrackEnded,
+        kEventPeerConnectionOnRemoveTrack,
+        kEventPeerConnectionOnTrack
+    ];
 }
 
 @end
