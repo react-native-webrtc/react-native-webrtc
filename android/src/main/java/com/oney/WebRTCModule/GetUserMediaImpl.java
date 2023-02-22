@@ -25,8 +25,11 @@ import org.webrtc.*;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 /**
  * The implementation of {@code getUserMedia} extracted into a separate file in
@@ -388,28 +391,33 @@ class GetUserMediaImpl {
     }
 
     /**
-     * Set video effect to the TrackPrivate corresponding to the trackId with the help of VideoEffectProcessor
-     * corresponding to the name.
+     * Set video effects to the TrackPrivate corresponding to the trackId with the help of VideoEffectProcessor
+     * corresponding to the names.
      * @param trackId TrackPrivate id
-     * @param name VideoEffectProcessor name
+     * @param names VideoEffectProcessor names
      */
-    void setVideoEffect(String trackId, String name) {
+    void setVideoEffects(String trackId, ReadableArray names) {
         TrackPrivate track = tracks.get(trackId);
 
         if (track != null && track.videoCaptureController instanceof CameraCaptureController) {
             VideoSource videoSource = (VideoSource) track.mediaSource;
             SurfaceTextureHelper surfaceTextureHelper = track.surfaceTextureHelper;
 
-            if (name != null) {
-                VideoFrameProcessor videoFrameProcessor = ProcessorProvider.getProcessor(name);
-
-                if (videoFrameProcessor == null) {
-                    Log.e(TAG, "no videoFrameProcessor associated with this name");
-                    return;
-                }
+            if (names != null) {
+                List<VideoFrameProcessor> processors = names.toArrayList().stream()
+                    .filter(name -> name instanceof String)
+                    .map(name -> {
+                        VideoFrameProcessor videoFrameProcessor = ProcessorProvider.getProcessor((String) name);
+                        if (videoFrameProcessor == null) {
+                            Log.e(TAG, "no videoFrameProcessor associated with this name: " + name);
+                        }
+                        return videoFrameProcessor;
+                    })
+                    .filter(Objects::nonNull)
+                    .collect(Collectors.toList());
 
                 VideoEffectProcessor videoEffectProcessor =
-                        new VideoEffectProcessor(videoFrameProcessor, surfaceTextureHelper);
+                        new VideoEffectProcessor(processors, surfaceTextureHelper);
                 videoSource.setVideoProcessor(videoEffectProcessor);
 
             } else {
