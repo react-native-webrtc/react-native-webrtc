@@ -18,6 +18,10 @@ import com.facebook.react.bridge.UiThreadUtil;
 import com.facebook.react.bridge.WritableArray;
 import com.facebook.react.bridge.WritableMap;
 
+import com.oney.WebRTCModule.videoEffects.ProcessorProvider;
+import com.oney.WebRTCModule.videoEffects.VideoEffectProcessor;
+import com.oney.WebRTCModule.videoEffects.VideoFrameProcessor;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
@@ -107,9 +111,11 @@ class GetUserMediaImpl {
 
         AudioSource audioSource = pcFactory.createAudioSource(peerConstraints);
         AudioTrack track = pcFactory.createAudioTrack(id, audioSource);
+        
+        // surfaceTextureHelper is initialized for videoTrack only, so its null here.
         tracks.put(
             id,
-            new TrackPrivate(track, audioSource, /* videoCapturer */ null));
+            new TrackPrivate(track, audioSource, /* videoCapturer */ null, /* surfaceTextureHelper */ null));
 
         return track;
     }
@@ -336,7 +342,7 @@ class GetUserMediaImpl {
             trackInfo.putString("id", trackId);
             trackInfo.putString("kind", track.kind());
             trackInfo.putString("label", trackId);
-            trackInfo.putString("readyState", track.state().toString());
+            trackInfo.putString("readyState", track.state().toString().toLowerCase());
             trackInfo.putBoolean("remote", false);
 
             if (track instanceof VideoTrack) {
@@ -392,11 +398,43 @@ class GetUserMediaImpl {
         VideoTrack track = pcFactory.createVideoTrack(id, videoSource);
 
         track.setEnabled(true);
-        tracks.put(id, new TrackPrivate(track, videoSource, videoCaptureController));
+        tracks.put(id, new TrackPrivate(track, videoSource, videoCaptureController, surfaceTextureHelper));
 
         videoCaptureController.startCapture();
 
         return track;
+    }
+
+    /**
+     * Set video effect to the TrackPrivate corresponding to the trackId with the help of VideoEffectProcessor
+     * corresponding to the name.
+     * @param trackId TrackPrivate id
+     * @param name VideoEffectProcessor name
+     */
+    void setVideoEffect(String trackId, String name) {
+        TrackPrivate track = tracks.get(trackId);
+
+        if (track != null && track.videoCaptureController instanceof CameraCaptureController) {
+            VideoSource videoSource = (VideoSource) track.mediaSource;
+            SurfaceTextureHelper surfaceTextureHelper = track.surfaceTextureHelper;
+
+            if (name != null) {
+                VideoFrameProcessor videoFrameProcessor = ProcessorProvider.getProcessor(name);
+
+                if (videoFrameProcessor == null) {
+                    Log.e(TAG, "no videoFrameProcessor associated with this name");
+                    return;
+                }
+
+                VideoEffectProcessor videoEffectProcessor = new VideoEffectProcessor(videoFrameProcessor,
+                        surfaceTextureHelper);
+                videoSource.setVideoProcessor(videoEffectProcessor);
+
+            } else {
+                videoSource.setVideoProcessor(null);
+            }
+
+        }
     }
 
     /**
@@ -416,6 +454,8 @@ class GetUserMediaImpl {
          * if {@link #track} is a {@link VideoTrack}.
          */
         public final AbstractVideoCaptureController videoCaptureController;
+        
+        private final SurfaceTextureHelper surfaceTextureHelper;
 
         /**
          * Whether this object has been disposed or not.
@@ -435,10 +475,12 @@ class GetUserMediaImpl {
         public TrackPrivate(
             MediaStreamTrack track,
             MediaSource mediaSource,
-            AbstractVideoCaptureController videoCaptureController) {
+            AbstractVideoCaptureController videoCaptureController,
+            SurfaceTextureHelper surfaceTextureHelper) {
             this.track = track;
             this.mediaSource = mediaSource;
             this.videoCaptureController = videoCaptureController;
+            this.surfaceTextureHelper = surfaceTextureHelper;
             this.disposed = false;
         }
 
@@ -449,6 +491,18 @@ class GetUserMediaImpl {
                         videoCaptureController.dispose();
                     }
                 }
+                
+                /*
+                 * As per webrtc library documentation - The caller still has ownership of {@code
+                 * surfaceTextureHelper} and is responsible for making sure surfaceTextureHelper.dispose() is
+                 * called. This also means that the caller can reuse the SurfaceTextureHelper to initialize a new
+                 * VideoCapturer once the previous VideoCapturer has been disposed. */
+                
+                if(surfaceTextureHelper != null) {
+                    surfaceTextureHelper.stopListening();
+                    surfaceTextureHelper.dispose();
+                }
+                
                 mediaSource.dispose();
                 track.dispose();
                 disposed = true;

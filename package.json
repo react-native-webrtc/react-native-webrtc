@@ -1,6 +1,6 @@
 {
   "name": "@daily-co/react-native-webrtc",
-  "version": "1.94.1-daily.8",
+  "version": "106.0.4-daily.1",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/daily-co/react-native-webrtc.git"
@@ -9,7 +9,6 @@
   "description": "Daily fork of WebRTC for React Native",
   "license": "MIT",
   "homepage": "https://github.com/daily-co/react-native-webrtc",
-  "types": "index.d.ts",
   "keywords": [
     "react-component",
     "react-native",
@@ -17,14 +16,18 @@
     "android",
     "webrtc"
   ],
-  "main": "src/index.js",
+  "react-native": "src/index.ts",
+  "types": "./index.d.ts",
+  "main": "lib/commonjs/index.js",
+  "module": "lib/module/index.js",
   "dependencies": {
+    "adm-zip": "0.5.9",
     "base64-js": "1.5.1",
+    "debug": "4.3.4",
     "event-target-shim": "6.0.2",
     "tar": "6.1.11",
-    "uuid": "3.4.0",
-    "@types/react": "*",
-    "@types/react-native": "*"
+    "@types/react": "17.0.38",
+    "@types/react-native": "0.66.12"
   },
   "peerDependencies": {
     "react-native": ">=0.60.0"
@@ -32,23 +35,38 @@
   "scripts": {
     "tag": "scripts/tag",
     "prepublishOnly": "npm run tag",
+    "lint": "eslint --max-warnings 0 . && tsc --noEmit",
     "postinstall": "node tools/downloadWebRTC.js",
-    "prepare": "husky install"
+    "prepare": "husky install && bob build"
   },
   "bugs": {
     "url": "https://github.com/daily-co/react-native-webrtc/issues"
   },
   "devDependencies": {
+    "@types/debug": "4.1.7",
+    "@typescript-eslint/eslint-plugin": "^5.39.0",
+    "@typescript-eslint/parser": "^5.39.0",
+    "eslint": "^8.24.0",
+    "eslint-plugin-import": "^2.26.0",
     "husky": "7.0.2",
     "lint-staged": "11.2.3",
-    "prettier": "2.4.1"
+    "prettier": "2.4.1",
+    "react-native-builder-bob": "0.18.2",
+    "typescript": "4.6.2"
   },
   "lint-staged": {
     "**/*": "prettier --write --ignore-unknown"
   },
+  "react-native-builder-bob": {
+    "source": "src",
+    "output": "lib",
+    "targets": [
+      "commonjs",
+      "module",
+      "typescript"
+    ]
+  },
   "webrtc-builds": {
-    "android": "https://github.com/jitsi/webrtc/releases/download/v94.0.0/android-webrtc.tgz",
-    "ios": "https://github.com/jitsi/webrtc/releases/download/v94.0.0/WebRTC.xcframework.tgz",
-    "ios-bitcode": "https://github.com/jitsi/webrtc/releases/download/v94.0.0/WebRTC.xcframework-bitcode.tgz"
+    "android": "https://github.com/jitsi/webrtc/releases/download/v106.0.1/android-webrtc.zip"
   }
 }

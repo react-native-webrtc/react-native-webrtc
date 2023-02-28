@@ -17,21 +17,22 @@
 #import <WebRTC/RTCPeerConnection.h>
 #import <WebRTC/RTCAudioTrack.h>
 #import <WebRTC/RTCVideoTrack.h>
-#import <WebRTC/RTCVideoDecoderFactory.h>
-#import <WebRTC/RTCVideoEncoderFactory.h>
+#import <WebRTC/RTCDefaultVideoDecoderFactory.h>
+#import <WebRTC/RTCDefaultVideoEncoderFactory.h>
 
 static NSString *const kEventPeerConnectionSignalingStateChanged = @"peerConnectionSignalingStateChanged";
 static NSString *const kEventPeerConnectionStateChanged = @"peerConnectionStateChanged";
-static NSString *const kEventPeerConnectionAddedStream = @"peerConnectionAddedStream";
-static NSString *const kEventPeerConnectionRemovedStream = @"peerConnectionRemovedStream";
 static NSString *const kEventPeerConnectionOnRenegotiationNeeded = @"peerConnectionOnRenegotiationNeeded";
 static NSString *const kEventPeerConnectionIceConnectionChanged = @"peerConnectionIceConnectionChanged";
 static NSString *const kEventPeerConnectionIceGatheringChanged = @"peerConnectionIceGatheringChanged";
 static NSString *const kEventPeerConnectionGotICECandidate = @"peerConnectionGotICECandidate";
 static NSString *const kEventPeerConnectionDidOpenDataChannel = @"peerConnectionDidOpenDataChannel";
+static NSString *const kEventDataChannelDidChangeBufferedAmount = @"dataChannelDidChangeBufferedAmount";
 static NSString *const kEventDataChannelStateChanged = @"dataChannelStateChanged";
 static NSString *const kEventDataChannelReceiveMessage = @"dataChannelReceiveMessage";
 static NSString *const kEventMediaStreamTrackMuteChanged = @"mediaStreamTrackMuteChanged";
+static NSString *const kEventPeerConnectionOnRemoveTrack = @"peerConnectionOnRemoveTrack";
+static NSString *const kEventPeerConnectionOnTrack = @"peerConnectionOnTrack";
 static NSString *const kEventMediaDevicesOnDeviceChange = @"mediaDevicesOnDeviceChange";
 
 @interface WebRTCModule : RCTEventEmitter <RCTBridgeModule>
@@ -39,6 +40,8 @@ static NSString *const kEventMediaDevicesOnDeviceChange = @"mediaDevicesOnDevice
 @property(nonatomic, strong) dispatch_queue_t workerQueue;
 
 @property (nonatomic, strong) RTCPeerConnectionFactory *peerConnectionFactory;
+@property (nonatomic, strong) id<RTCVideoDecoderFactory> decoderFactory;
+@property (nonatomic, strong) id<RTCVideoEncoderFactory> encoderFactory;
 
 @property (nonatomic, strong) NSMutableDictionary<NSNumber *, RTCPeerConnection *> *peerConnections;
 @property (nonatomic, strong) NSMutableDictionary<NSString *, RTCMediaStream *> *localStreams;

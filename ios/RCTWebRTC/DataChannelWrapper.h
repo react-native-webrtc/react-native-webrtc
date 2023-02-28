@@ -11,6 +11,8 @@ NS_ASSUME_NONNULL_BEGIN
 - (void)dataChannelDidChangeState:(DataChannelWrapper *)dataChannelWrapper;
 - (void)dataChannel:(DataChannelWrapper *)dataChannelWrapper
     didReceiveMessageWithBuffer:(RTCDataBuffer *)buffer;
+- (void)dataChannel:(DataChannelWrapper *)dataChannelWrapper
+    didChangeBufferedAmount:(uint64_t)amount;
 
 @end
 

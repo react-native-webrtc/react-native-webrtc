@@ -1,21 +1,25 @@
 <!--
-If you have a question, please ask it in our community: https://react-native-webrtc.discourse.group/
+If you have a question then please ask it on our community Discourse: https://react-native-webrtc.discourse.group/  
+otherwise if you wanted to report a bug then you are in the right place!  
 
-If you want to report a bug, you are in the right place!
-
-Please include as much information as possible and make the issue title
-as descriptive as you can.
+Please include as much information as possible and make the issue title as descriptive as you can.
 -->
 
-#### Expected behavior
+#### Expected Behavior
 
-#### Observerd behavior
 
-#### Steps to reproduce the problem
 
-#### Platform information
+#### Observed Behavior
 
-* **React Native version**:
-* **Plugin version**:
-* **OS**: <!-- Android / iOS -->
-* **OS version**:
+
+
+#### Steps to reproduce the issue
+
+
+
+#### Platform Information
+
+* **React Native Version**: 
+* **Plugin Version**: 
+* **OS**: <!-- Android / iOS / macOS / Web / Expo -->
+* **OS Version**: 
