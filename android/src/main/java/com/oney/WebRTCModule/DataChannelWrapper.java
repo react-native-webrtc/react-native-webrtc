@@ -1,27 +1,23 @@
 package com.oney.WebRTCModule;
 
-import java.nio.charset.StandardCharsets;
+import android.util.Base64;
 
 import androidx.annotation.Nullable;
-import android.util.Base64;
 
 import com.facebook.react.bridge.Arguments;
 import com.facebook.react.bridge.WritableMap;
 
 import org.webrtc.DataChannel;
 
-class DataChannelWrapper implements DataChannel.Observer {
+import java.nio.charset.StandardCharsets;
 
+class DataChannelWrapper implements DataChannel.Observer {
     private final String reactTag;
     private final DataChannel mDataChannel;
     private final int peerConnectionId;
     private final WebRTCModule webRTCModule;
 
-    DataChannelWrapper(
-            WebRTCModule webRTCModule,
-            int peerConnectionId,
-            String reactTag,
-            DataChannel dataChannel) {
+    DataChannelWrapper(WebRTCModule webRTCModule, int peerConnectionId, String reactTag, DataChannel dataChannel) {
         this.webRTCModule = webRTCModule;
         this.peerConnectionId = peerConnectionId;
         this.reactTag = reactTag;
@@ -39,14 +35,14 @@ class DataChannelWrapper implements DataChannel.Observer {
     @Nullable
     public String dataChannelStateString(DataChannel.State dataChannelState) {
         switch (dataChannelState) {
-        case CONNECTING:
-            return "connecting";
-        case OPEN:
-            return "open";
-        case CLOSING:
-            return "closing";
-        case CLOSED:
-            return "closed";
+            case CONNECTING:
+                return "connecting";
+            case OPEN:
+                return "open";
+            case CLOSING:
+                return "closing";
+            case CLOSED:
+                return "closed";
         }
         return null;
     }

@@ -13,7 +13,7 @@ class CameraEventsHandler implements CameraVideoCapturer.CameraEventsHandler {
     // Callback invoked when camera closed.
     @Override
     public void onCameraClosed() {
-        Log.d(TAG, "CameraEventsHandler.onFirstFrameAvailable");
+        Log.d(TAG, "CameraEventsHandler.onCameraClosed");
     }
 
     // Called when camera is disconnected.
@@ -26,28 +26,19 @@ class CameraEventsHandler implements CameraVideoCapturer.CameraEventsHandler {
     // camera exception happens on camera thread.
     @Override
     public void onCameraError(String errorDescription) {
-        Log.d(
-            TAG,
-            "CameraEventsHandler.onCameraError: errorDescription="
-                + errorDescription);
+        Log.d(TAG, "CameraEventsHandler.onCameraError: errorDescription=" + errorDescription);
     }
 
     // Invoked when camera stops receiving frames
     @Override
     public void onCameraFreezed(String errorDescription) {
-        Log.d(
-            TAG,
-            "CameraEventsHandler.onCameraFreezed: errorDescription="
-                + errorDescription);
+        Log.d(TAG, "CameraEventsHandler.onCameraFreezed: errorDescription=" + errorDescription);
     }
 
     // Callback invoked when camera is opening.
     @Override
     public void onCameraOpening(String cameraName) {
-        Log.d(
-            TAG,
-            "CameraEventsHandler.onCameraOpening: cameraName="
-                + cameraName);
+        Log.d(TAG, "CameraEventsHandler.onCameraOpening: cameraName=" + cameraName);
     }
 
     // Callback invoked when first camera frame is available after camera is opened.

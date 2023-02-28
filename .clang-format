@@ -1,0 +1,11 @@
+﻿---
+BasedOnStyle: Chromium
+BinPackArguments: 'false'
+ColumnLimit: '120'
+IndentWidth: '4'
+ObjCBlockIndentWidth: '4'
+ObjCSpaceBeforeProtocolList: 'false'
+PointerAlignment: Right
+UseTab: Never
+
+...

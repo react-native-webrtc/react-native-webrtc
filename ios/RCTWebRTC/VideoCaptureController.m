@@ -3,25 +3,23 @@
 
 #import <React/RCTLog.h>
 
-
 @interface VideoCaptureController ()
 
-@property (nonatomic, strong) RTCCameraVideoCapturer *capturer;
-@property (nonatomic, strong) AVCaptureDeviceFormat *selectedFormat;
-@property (nonatomic, strong) AVCaptureDevice *device;
-@property (nonatomic, copy) NSString *deviceId;
-@property (nonatomic, assign) BOOL running;
-@property (nonatomic, assign) BOOL usingFrontCamera;
-@property (nonatomic, assign) int width;
-@property (nonatomic, assign) int height;
-@property (nonatomic, assign) int frameRate;
+@property(nonatomic, strong) RTCCameraVideoCapturer *capturer;
+@property(nonatomic, strong) AVCaptureDeviceFormat *selectedFormat;
+@property(nonatomic, strong) AVCaptureDevice *device;
+@property(nonatomic, copy) NSString *deviceId;
+@property(nonatomic, assign) BOOL running;
+@property(nonatomic, assign) BOOL usingFrontCamera;
+@property(nonatomic, assign) int width;
+@property(nonatomic, assign) int height;
+@property(nonatomic, assign) int frameRate;
 
 @end
 
 @implementation VideoCaptureController
 
-- (instancetype)initWithCapturer:(RTCCameraVideoCapturer *)capturer
-                  andConstraints:(NSDictionary *)constraints {
+- (instancetype)initWithCapturer:(RTCCameraVideoCapturer *)capturer andConstraints:(NSDictionary *)constraints {
     self = [super init];
     if (self) {
         self.capturer = capturer;
@@ -65,10 +63,8 @@
         self.device = [AVCaptureDevice deviceWithUniqueID:self.deviceId];
     }
     if (!self.device) {
-        AVCaptureDevicePosition position
-            = self.usingFrontCamera
-                ? AVCaptureDevicePositionFront
-                : AVCaptureDevicePositionBack;
+        AVCaptureDevicePosition position =
+            self.usingFrontCamera ? AVCaptureDevicePositionFront : AVCaptureDevicePositionBack;
         self.device = [self findDeviceForPosition:position];
     }
 
@@ -78,10 +74,9 @@
         return;
     }
 
-    AVCaptureDeviceFormat *format
-        = [self selectFormatForDevice:self.device
-                      withTargetWidth:self.width
-                     withTargetHeight:self.height];
+    AVCaptureDeviceFormat *format = [self selectFormatForDevice:self.device
+                                                withTargetWidth:self.width
+                                               withTargetHeight:self.height];
     if (!format) {
         RCTLogWarn(@"[VideoCaptureController] No valid formats for device %@", self.device);
 
@@ -96,15 +91,18 @@
     dispatch_semaphore_t semaphore = dispatch_semaphore_create(0);
 
     __weak VideoCaptureController *weakSelf = self;
-    [self.capturer startCaptureWithDevice:self.device format:format fps:self.frameRate completionHandler:^(NSError *err) {
-        if (err) {
-            RCTLogError(@"[VideoCaptureController] Error starting capture: %@", err);
-        } else {
-            RCTLog(@"[VideoCaptureController] Capture started");
-            weakSelf.running = YES;
-        }
-        dispatch_semaphore_signal(semaphore);
-    }];
+    [self.capturer startCaptureWithDevice:self.device
+                                   format:format
+                                      fps:self.frameRate
+                        completionHandler:^(NSError *err) {
+                            if (err) {
+                                RCTLogError(@"[VideoCaptureController] Error starting capture: %@", err);
+                            } else {
+                                RCTLog(@"[VideoCaptureController] Capture started");
+                                weakSelf.running = YES;
+                            }
+                            dispatch_semaphore_signal(semaphore);
+                        }];
 
     dispatch_semaphore_wait(semaphore, DISPATCH_TIME_FOREVER);
 }
@@ -144,17 +142,24 @@
 
 #pragma mark NSKeyValueObserving
 
-- (void)observeValueForKeyPath:(NSString *)keyPath ofObject:(id)object change:(NSDictionary<NSKeyValueChangeKey,id> *)change context:(void *)context {
+- (void)observeValueForKeyPath:(NSString *)keyPath
+                      ofObject:(id)object
+                        change:(NSDictionary<NSKeyValueChangeKey, id> *)change
+                       context:(void *)context {
     if (@available(iOS 11.1, *)) {
         if ([object isKindOfClass:[AVCaptureDevice class]] && [keyPath isEqualToString:@"systemPressureState"]) {
             AVCaptureDevice *device = (AVCaptureDevice *)object;
-            AVCaptureSystemPressureLevel pressureLevel = ((AVCaptureSystemPressureState *)change[NSKeyValueChangeNewKey]).level;
-            if (pressureLevel == AVCaptureSystemPressureLevelSerious || pressureLevel == AVCaptureSystemPressureLevelCritical) {
-                RCTLogWarn(@"[VideoCaptureController] Reached elevated system pressure level: %@. Throttling frame rate.", pressureLevel);
+            AVCaptureSystemPressureLevel pressureLevel =
+                ((AVCaptureSystemPressureState *)change[NSKeyValueChangeNewKey]).level;
+            if (pressureLevel == AVCaptureSystemPressureLevelSerious ||
+                pressureLevel == AVCaptureSystemPressureLevelCritical) {
+                RCTLogWarn(
+                    @"[VideoCaptureController] Reached elevated system pressure level: %@. Throttling frame rate.",
+                    pressureLevel);
                 [self throttleFrameRateForDevice:device];
-            }
-            else if (pressureLevel == AVCaptureSystemPressureLevelNominal) {
-                RCTLogWarn(@"[VideoCaptureController] Restored normal system pressure level. Resetting frame rate to default.");
+            } else if (pressureLevel == AVCaptureSystemPressureLevelNominal) {
+                RCTLogWarn(@"[VideoCaptureController] Restored normal system pressure level. Resetting frame rate to "
+                           @"default.");
                 [self resetFrameRateForDevice:device];
             }
         }
@@ -163,10 +168,7 @@
 
 - (void)registerSystemPressureStateObserverForDevice:(AVCaptureDevice *)device {
     if (@available(iOS 11.1, *)) {
-        [device addObserver:self
-                 forKeyPath:@"systemPressureState"
-                    options:NSKeyValueObservingOptionNew
-                    context:nil];
+        [device addObserver:self forKeyPath:@"systemPressureState" options:NSKeyValueObservingOptionNew context:nil];
     }
 }
 
@@ -203,8 +205,7 @@
 - (AVCaptureDeviceFormat *)selectFormatForDevice:(AVCaptureDevice *)device
                                  withTargetWidth:(int)targetWidth
                                 withTargetHeight:(int)targetHeight {
-    NSArray<AVCaptureDeviceFormat *> *formats =
-    [RTCCameraVideoCapturer supportedFormatsForDevice:device];
+    NSArray<AVCaptureDeviceFormat *> *formats = [RTCCameraVideoCapturer supportedFormatsForDevice:device];
     AVCaptureDeviceFormat *selectedFormat = nil;
     int currentDiff = INT_MAX;
 

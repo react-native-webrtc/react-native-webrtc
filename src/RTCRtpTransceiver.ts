@@ -29,7 +29,7 @@ export default class RTCRtpTransceiver {
         this._mid = args.mid ? args.mid : null;
         this._direction = args.direction;
         this._currentDirection = args.currentDirection;
-        this._stopped = args.isStopped;
+        this._stopped = Boolean(args.isStopped);
         this._sender = args.sender;
         this._receiver = args.receiver;
     }

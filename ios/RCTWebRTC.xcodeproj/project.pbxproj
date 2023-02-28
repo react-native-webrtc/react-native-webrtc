@@ -23,6 +23,7 @@
 		4EE3A8D325B841DD00FAA24A /* ScreenCaptureController.m in Sources */ = {isa = PBXBuildFile; fileRef = 4EE3A8CC25B841DD00FAA24A /* ScreenCaptureController.m */; };
 		4EE3A8D425B841DD00FAA24A /* ScreenCapturer.m in Sources */ = {isa = PBXBuildFile; fileRef = 4EE3A8CD25B841DD00FAA24A /* ScreenCapturer.m */; };
 		D3FF699919D2664B25C9D458 /* Pods_RCTWebRTC.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A20F721AD842563B66292D5B /* Pods_RCTWebRTC.framework */; };
+		D74EF94829652169000742E1 /* TrackCapturerEventsEmitter.m in Sources */ = {isa = PBXBuildFile; fileRef = D74EF94629652169000742E1 /* TrackCapturerEventsEmitter.m */; };
 		DEC96577264176C10052DB35 /* DataChannelWrapper.m in Sources */ = {isa = PBXBuildFile; fileRef = DEC96576264176C10052DB35 /* DataChannelWrapper.m */; };
 /* End PBXBuildFile section */
 
@@ -71,6 +72,10 @@
 		4EE3A8CD25B841DD00FAA24A /* ScreenCapturer.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = ScreenCapturer.m; path = RCTWebRTC/ScreenCapturer.m; sourceTree = SOURCE_ROOT; };
 		4EE3A8CE25B841DD00FAA24A /* SocketConnection.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = SocketConnection.h; path = RCTWebRTC/SocketConnection.h; sourceTree = SOURCE_ROOT; };
 		A20F721AD842563B66292D5B /* Pods_RCTWebRTC.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_RCTWebRTC.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		D74EF94529652148000742E1 /* CapturerEventsDelegate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = CapturerEventsDelegate.h; path = RCTWebRTC/CapturerEventsDelegate.h; sourceTree = SOURCE_ROOT; };
+		D74EF94629652169000742E1 /* TrackCapturerEventsEmitter.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = TrackCapturerEventsEmitter.m; path = RCTWebRTC/TrackCapturerEventsEmitter.m; sourceTree = SOURCE_ROOT; };
+		D74EF94729652169000742E1 /* TrackCapturerEventsEmitter.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = TrackCapturerEventsEmitter.h; path = RCTWebRTC/TrackCapturerEventsEmitter.h; sourceTree = SOURCE_ROOT; };
+		D7F99C122938F4E0000A2450 /* WebRTCModule+RTCMediaStream.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = "WebRTCModule+RTCMediaStream.h"; path = "RCTWebRTC/WebRTCModule+RTCMediaStream.h"; sourceTree = SOURCE_ROOT; };
 		DEC96576264176C10052DB35 /* DataChannelWrapper.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = DataChannelWrapper.m; path = RCTWebRTC/DataChannelWrapper.m; sourceTree = "<group>"; };
 		DEC96579264176DF0052DB35 /* DataChannelWrapper.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = DataChannelWrapper.h; path = RCTWebRTC/DataChannelWrapper.h; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -93,7 +98,6 @@
 				1A7E646283326F2A95C8C1FA /* Pods-RCTWebRTC.debug.xcconfig */,
 				131131FC732883F1EF6F2CA3 /* Pods-RCTWebRTC.release.xcconfig */,
 			);
-			name = Pods;
 			path = Pods;
 			sourceTree = "<group>";
 		};
@@ -129,6 +133,7 @@
 				4EE3A8B525B8414A00FAA24A /* WebRTCModule+Permissions.m */,
 				4EE3A8B825B8415900FAA24A /* WebRTCModule+RTCDataChannel.h */,
 				4EE3A8B925B8415900FAA24A /* WebRTCModule+RTCDataChannel.m */,
+				D7F99C122938F4E0000A2450 /* WebRTCModule+RTCMediaStream.h */,
 				4EE3A8BC25B8416500FAA24A /* WebRTCModule+RTCMediaStream.m */,
 				4EE3A8C025B8416F00FAA24A /* WebRTCModule+RTCPeerConnection.h */,
 				4EE3A8BF25B8416F00FAA24A /* WebRTCModule+RTCPeerConnection.m */,
@@ -138,6 +143,9 @@
 				4EE3A8B025B8414000FAA24A /* WebRTCModule.m */,
 				4EE3A8CB25B841DD00FAA24A /* CaptureController.h */,
 				4EE3A8C925B841DD00FAA24A /* CaptureController.m */,
+				D74EF94529652148000742E1 /* CapturerEventsDelegate.h */,
+				D74EF94729652169000742E1 /* TrackCapturerEventsEmitter.h */,
+				D74EF94629652169000742E1 /* TrackCapturerEventsEmitter.m */,
 				4EE3A8CA25B841DD00FAA24A /* ScreenCaptureController.h */,
 				4EE3A8CC25B841DD00FAA24A /* ScreenCaptureController.m */,
 				4EC498BB25B8777F00E76218 /* ScreenCapturePickerViewManager.h */,
@@ -253,6 +261,7 @@
 				4EC498BC25B8777F00E76218 /* ScreenCapturePickerViewManager.m in Sources */,
 				4EE3A8B225B8414000FAA24A /* WebRTCModule.m in Sources */,
 				4EE3A8D225B841DD00FAA24A /* CaptureController.m in Sources */,
+				D74EF94829652169000742E1 /* TrackCapturerEventsEmitter.m in Sources */,
 				4EE3A8D125B841DD00FAA24A /* SocketConnection.m in Sources */,
 				4EE3A8BD25B8416500FAA24A /* WebRTCModule+RTCMediaStream.m in Sources */,
 				4EE3A8D325B841DD00FAA24A /* ScreenCaptureController.m in Sources */,
