@@ -17,17 +17,16 @@ import com.facebook.react.bridge.ReadableMap;
 import com.facebook.react.bridge.UiThreadUtil;
 import com.facebook.react.bridge.WritableArray;
 import com.facebook.react.bridge.WritableMap;
-
 import com.oney.WebRTCModule.videoEffects.ProcessorProvider;
 import com.oney.WebRTCModule.videoEffects.VideoEffectProcessor;
 import com.oney.WebRTCModule.videoEffects.VideoFrameProcessor;
+
+import org.webrtc.*;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
-
-import org.webrtc.*;
 
 /**
  * The implementation of {@code getUserMedia} extracted into a separate file in
@@ -65,8 +64,8 @@ class GetUserMediaImpl {
         try {
             camera2supported = Camera2Enumerator.isSupported(reactContext);
         } catch (Throwable tr) {
-            // Some devices will crash here with: Fatal Exception: java.lang.AssertionError: Supported FPS ranges cannot be null.
-            // Make sure we don't.
+            // Some devices will crash here with: Fatal Exception: java.lang.AssertionError: Supported FPS ranges cannot
+            // be null. Make sure we don't.
             Log.w(TAG, "Error checking for Camera2 API support.", tr);
         }
 
@@ -105,17 +104,15 @@ class GetUserMediaImpl {
         PeerConnectionFactory pcFactory = webRTCModule.mFactory;
         MediaConstraints peerConstraints = webRTCModule.constraintsForOptions(audioConstraintsMap);
 
-        //PeerConnectionFactory.createAudioSource will throw an error when mandatory constraints contain nulls.
-        //so, let's check for nulls
+        // PeerConnectionFactory.createAudioSource will throw an error when mandatory constraints contain nulls.
+        // so, let's check for nulls
         checkMandatoryConstraints(peerConstraints);
 
         AudioSource audioSource = pcFactory.createAudioSource(peerConstraints);
         AudioTrack track = pcFactory.createAudioTrack(id, audioSource);
-        
+
         // surfaceTextureHelper is initialized for videoTrack only, so its null here.
-        tracks.put(
-            id,
-            new TrackPrivate(track, audioSource, /* videoCapturer */ null, /* surfaceTextureHelper */ null));
+        tracks.put(id, new TrackPrivate(track, audioSource, /* videoCapturer */ null, /* surfaceTextureHelper */ null));
 
         return track;
     }
@@ -127,8 +124,7 @@ class GetUserMediaImpl {
             if (constraint.getValue() != null) {
                 valid.add(constraint);
             } else {
-                Log.d(TAG, String.format("constraint %s is null, ignoring it",
-                        constraint.getKey()));
+                Log.d(TAG, String.format("constraint %s is null, ignoring it", constraint.getKey()));
             }
         }
 
@@ -182,11 +178,7 @@ class GetUserMediaImpl {
      * if audio permission was not granted, there will be no "audio" key in
      * the constraints map.
      */
-    void getUserMedia(
-        final ReadableMap constraints,
-        final Callback successCallback,
-        final Callback errorCallback) {
-
+    void getUserMedia(final ReadableMap constraints, final Callback successCallback, final Callback errorCallback) {
         AudioTrack audioTrack = null;
         VideoTrack videoTrack = null;
 
@@ -199,9 +191,8 @@ class GetUserMediaImpl {
 
             Log.d(TAG, "getUserMedia(video): " + videoConstraintsMap);
 
-            CameraCaptureController cameraCaptureController = new CameraCaptureController(
-                cameraEnumerator,
-                videoConstraintsMap);
+            CameraCaptureController cameraCaptureController =
+                    new CameraCaptureController(cameraEnumerator, videoConstraintsMap);
 
             videoTrack = createVideoTrack(cameraCaptureController);
         }
@@ -213,7 +204,7 @@ class GetUserMediaImpl {
             return;
         }
 
-        createStream(new MediaStreamTrack[]{audioTrack, videoTrack}, (streamId, tracksInfo) -> {
+        createStream(new MediaStreamTrack[] {audioTrack, videoTrack}, (streamId, tracksInfo) -> {
             WritableArray tracksInfoWritableArray = Arguments.createArray();
 
             for (WritableMap trackInfo : tracksInfo) {
@@ -276,15 +267,15 @@ class GetUserMediaImpl {
         this.displayMediaPromise = promise;
 
         MediaProjectionManager mediaProjectionManager =
-            (MediaProjectionManager) currentActivity.getApplication().getSystemService(
-                Context.MEDIA_PROJECTION_SERVICE);
+                (MediaProjectionManager) currentActivity.getApplication().getSystemService(
+                        Context.MEDIA_PROJECTION_SERVICE);
 
         if (mediaProjectionManager != null) {
             UiThreadUtil.runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
                     currentActivity.startActivityForResult(
-                        mediaProjectionManager.createScreenCaptureIntent(), PERMISSION_REQUEST_CODE);
+                            mediaProjectionManager.createScreenCaptureIntent(), PERMISSION_REQUEST_CODE);
                 }
             });
 
@@ -299,7 +290,7 @@ class GetUserMediaImpl {
         if (track == null) {
             displayMediaPromise.reject(new RuntimeException("ScreenTrack is null."));
         } else {
-            createStream(new MediaStreamTrack[]{track}, (streamId, tracksInfo) -> {
+            createStream(new MediaStreamTrack[] {track}, (streamId, tracksInfo) -> {
                 WritableMap data = Arguments.createMap();
 
                 data.putString("streamId", streamId);
@@ -318,7 +309,7 @@ class GetUserMediaImpl {
         displayMediaPromise = null;
     }
 
-    private void createStream(MediaStreamTrack[] tracks, BiConsumer<String, ArrayList<WritableMap>> successCallback) {
+    void createStream(MediaStreamTrack[] tracks, BiConsumer<String, ArrayList<WritableMap>> successCallback) {
         String streamId = UUID.randomUUID().toString();
         MediaStream mediaStream = webRTCModule.mFactory.createLocalMediaStream(streamId);
 
@@ -368,12 +359,12 @@ class GetUserMediaImpl {
         DisplayMetrics displayMetrics = DisplayUtils.getDisplayMetrics(reactContext.getCurrentActivity());
         int width = displayMetrics.widthPixels;
         int height = displayMetrics.heightPixels;
-        ScreenCaptureController screenCaptureController
-            = new ScreenCaptureController(reactContext.getCurrentActivity(), width, height, mediaProjectionPermissionResultData);
+        ScreenCaptureController screenCaptureController = new ScreenCaptureController(
+                reactContext.getCurrentActivity(), width, height, mediaProjectionPermissionResultData);
         return createVideoTrack(screenCaptureController);
     }
 
-    private VideoTrack createVideoTrack(AbstractVideoCaptureController videoCaptureController) {
+    VideoTrack createVideoTrack(AbstractVideoCaptureController videoCaptureController) {
         videoCaptureController.initializeVideoCapturer();
 
         VideoCapturer videoCapturer = videoCaptureController.videoCapturer;
@@ -383,18 +374,21 @@ class GetUserMediaImpl {
 
         PeerConnectionFactory pcFactory = webRTCModule.mFactory;
         EglBase.Context eglContext = EglUtils.getRootEglBaseContext();
-        SurfaceTextureHelper surfaceTextureHelper =
-            SurfaceTextureHelper.create("CaptureThread", eglContext);
+        SurfaceTextureHelper surfaceTextureHelper = SurfaceTextureHelper.create("CaptureThread", eglContext);
 
         if (surfaceTextureHelper == null) {
             Log.d(TAG, "Error creating SurfaceTextureHelper");
             return null;
         }
 
+        String id = UUID.randomUUID().toString();
+
+        TrackCapturerEventsEmitter eventsEmitter = new TrackCapturerEventsEmitter(webRTCModule, id);
+        videoCaptureController.setCapturerEventsListener(eventsEmitter);
+
         VideoSource videoSource = pcFactory.createVideoSource(videoCapturer.isScreencast());
         videoCapturer.initialize(surfaceTextureHelper, reactContext, videoSource.getCapturerObserver());
 
-        String id = UUID.randomUUID().toString();
         VideoTrack track = pcFactory.createVideoTrack(id, videoSource);
 
         track.setEnabled(true);
@@ -426,14 +420,13 @@ class GetUserMediaImpl {
                     return;
                 }
 
-                VideoEffectProcessor videoEffectProcessor = new VideoEffectProcessor(videoFrameProcessor,
-                        surfaceTextureHelper);
+                VideoEffectProcessor videoEffectProcessor =
+                        new VideoEffectProcessor(videoFrameProcessor, surfaceTextureHelper);
                 videoSource.setVideoProcessor(videoEffectProcessor);
 
             } else {
                 videoSource.setVideoProcessor(null);
             }
-
         }
     }
 
@@ -454,7 +447,7 @@ class GetUserMediaImpl {
          * if {@link #track} is a {@link VideoTrack}.
          */
         public final AbstractVideoCaptureController videoCaptureController;
-        
+
         private final SurfaceTextureHelper surfaceTextureHelper;
 
         /**
@@ -472,11 +465,8 @@ class GetUserMediaImpl {
          *                               specified {@code mediaSource} was created if the specified
          *                               {@code track} is a {@link VideoTrack}
          */
-        public TrackPrivate(
-            MediaStreamTrack track,
-            MediaSource mediaSource,
-            AbstractVideoCaptureController videoCaptureController,
-            SurfaceTextureHelper surfaceTextureHelper) {
+        public TrackPrivate(MediaStreamTrack track, MediaSource mediaSource,
+                AbstractVideoCaptureController videoCaptureController, SurfaceTextureHelper surfaceTextureHelper) {
             this.track = track;
             this.mediaSource = mediaSource;
             this.videoCaptureController = videoCaptureController;
@@ -491,18 +481,18 @@ class GetUserMediaImpl {
                         videoCaptureController.dispose();
                     }
                 }
-                
+
                 /*
                  * As per webrtc library documentation - The caller still has ownership of {@code
                  * surfaceTextureHelper} and is responsible for making sure surfaceTextureHelper.dispose() is
                  * called. This also means that the caller can reuse the SurfaceTextureHelper to initialize a new
                  * VideoCapturer once the previous VideoCapturer has been disposed. */
-                
-                if(surfaceTextureHelper != null) {
+
+                if (surfaceTextureHelper != null) {
                     surfaceTextureHelper.stopListening();
                     surfaceTextureHelper.dispose();
                 }
-                
+
                 mediaSource.dispose();
                 track.dispose();
                 disposed = true;
@@ -510,7 +500,7 @@ class GetUserMediaImpl {
         }
     }
 
-    private interface BiConsumer<T, U> {
+    public interface BiConsumer<T, U> {
         void accept(T t, U u);
     }
 }

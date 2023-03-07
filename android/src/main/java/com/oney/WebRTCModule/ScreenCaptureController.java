@@ -50,16 +50,19 @@ public class ScreenCaptureController extends AbstractVideoCaptureController {
 
     @Override
     protected VideoCapturer createVideoCapturer() {
-        VideoCapturer videoCapturer = new ScreenCapturerAndroid(
-            mediaProjectionPermissionResultData,
-            new MediaProjection.Callback() {
-                @Override
-                public void onStop() {
-                    Log.w(TAG, "Media projection stopped.");
-                    orientatationListener.disable();
-                }
-            });
+        VideoCapturer videoCapturer =
+                new ScreenCapturerAndroid(mediaProjectionPermissionResultData, new MediaProjection.Callback() {
+                    @Override
+                    public void onStop() {
+                        Log.w(TAG, "Media projection stopped.");
+                        orientatationListener.disable();
+                        stopCapture();
 
+                        if (capturerEventsListener != null) {
+                            capturerEventsListener.onCapturerEnded();
+                        }
+                    }
+                });
 
         return videoCapturer;
     }

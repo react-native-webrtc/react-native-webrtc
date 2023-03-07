@@ -10,18 +10,12 @@ import java.util.List;
 
 public class WebRTCModulePackage implements ReactPackage {
     @Override
-    public List<NativeModule> createNativeModules(
-            ReactApplicationContext reactContext) {
-        return Arrays.<NativeModule>asList(
-            new WebRTCModule(reactContext)
-        );
+    public List<NativeModule> createNativeModules(ReactApplicationContext reactContext) {
+        return Arrays.<NativeModule>asList(new WebRTCModule(reactContext));
     }
 
     @Override
-    public List<ViewManager> createViewManagers(
-            ReactApplicationContext reactContext) {
-        return Arrays.<ViewManager>asList(
-            new RTCVideoViewManager()
-        );
+    public List<ViewManager> createViewManagers(ReactApplicationContext reactContext) {
+        return Arrays.<ViewManager>asList(new RTCVideoViewManager());
     }
 }

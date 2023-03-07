@@ -4,7 +4,6 @@ import com.facebook.react.bridge.ReadableMap;
 import com.facebook.react.bridge.ReadableType;
 
 public class ReactBridgeUtil {
-
     /**
      * Reads a value from given <tt>ReadableMap</tt> and returns it as
      * a <tt>String</tt>. Note that integer value is converted to double, before
@@ -15,7 +14,7 @@ public class ReactBridgeUtil {
      * <tt>null</tt> if there is no value mapped for given <tt>key</tt>.
      */
     public static String getMapStrValue(ReadableMap map, String key) {
-        if(!map.hasKey(key)){
+        if (!map.hasKey(key)) {
             return null;
         }
         ReadableType type = map.getType(key);

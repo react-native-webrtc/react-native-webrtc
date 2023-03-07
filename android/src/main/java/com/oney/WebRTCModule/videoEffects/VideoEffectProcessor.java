@@ -20,14 +20,10 @@ public class VideoEffectProcessor implements VideoProcessor {
     }
 
     @Override
-    public void onCapturerStarted(boolean success) {
-
-    }
+    public void onCapturerStarted(boolean success) {}
 
     @Override
-    public void onCapturerStopped() {
-
-    }
+    public void onCapturerStopped() {}
 
     @Override
     public void setSink(VideoSink sink) {
