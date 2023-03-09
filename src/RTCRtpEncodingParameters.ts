@@ -30,8 +30,11 @@ export default class RTCRtpEncodingParameters {
     }
 
     set maxFramerate(framerate) {
-        if (framerate && framerate > 0) {
+        // eslint-disable-next-line eqeqeq
+        if (framerate != null && framerate > 0) {
             this._maxFramerate = framerate;
+        } else {
+            this._maxFramerate = null;
         }
     }
 
@@ -40,8 +43,11 @@ export default class RTCRtpEncodingParameters {
     }
 
     set maxBitrate(bitrate) {
-        if (bitrate && bitrate > 0) {
+        // eslint-disable-next-line eqeqeq
+        if (bitrate != null && bitrate >= 0) {
             this._maxBitrate = bitrate;
+        } else {
+            this._maxBitrate = null;
         }
     }
 
@@ -50,8 +56,11 @@ export default class RTCRtpEncodingParameters {
     }
 
     set scaleResolutionDownBy(resolutionScale) {
-        if (resolutionScale && resolutionScale >= 1) {
+        // eslint-disable-next-line eqeqeq
+        if (resolutionScale != null && resolutionScale >= 1) {
             this._scaleResolutionDownBy = resolutionScale;
+        } else {
+            this._scaleResolutionDownBy = null;
         }
     }
 
