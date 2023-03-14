@@ -5,6 +5,7 @@
 #import <React/RCTBridge.h>
 #import <React/RCTEventDispatcher.h>
 #import <React/RCTUtils.h>
+#import <WebRTC/RTCFieldTrials.h>
 
 #import "WebRTCModule+RTCPeerConnection.h"
 #import "WebRTCModule.h"
@@ -42,6 +43,12 @@
                         decoderFactory:(nullable id<RTCVideoDecoderFactory>)decoderFactory {
     self = [super init];
     if (self) {
+
+        // Fix for dual-sim connectivity
+        // https://bugs.chromium.org/p/webrtc/issues/detail?id=10966
+        NSDictionary *fieldTrials = @{kRTCFieldTrialUseNWPathMonitor : kRTCFieldTrialEnabledValue};
+        RTCInitFieldTrialDictionary(fieldTrials);
+
         if (encoderFactory == nil) {
             encoderFactory = [[RTCDefaultVideoEncoderFactory alloc] init];
         }
