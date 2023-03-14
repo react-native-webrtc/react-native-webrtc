@@ -28,6 +28,7 @@ public class StringUtils {
         Map<String, RTCStats> statsMap = report.getStatsMap();
 
         for (String key : report.getStatsMap().keySet()) {
+
             if (firstKey) {
                 firstKey = false;
             } else {
@@ -37,16 +38,21 @@ public class StringUtils {
             builder.append("[\"").append(key).append("\",{");
 
             RTCStats stats = statsMap.get(key);
-            builder.append("\"timestamp\":")
-                    .append(stats.getTimestampUs() / 1000.0)
-                    .append(",\"type\":\"")
-                    .append(stats.getType())
-                    .append("\",\"id\":\"")
-                    .append(stats.getId())
-                    .append("\"");
+            builder
+                .append("\"timestamp\":")
+                .append(stats.getTimestampUs() / 1000.0)
+                .append(",\"type\":\"")
+                .append(stats.getType())
+                .append("\",\"id\":\"")
+                .append(stats.getId())
+                .append("\"");
 
             for (Map.Entry<String, Object> entry : stats.getMembers().entrySet()) {
-                builder.append(",").append("\"").append(entry.getKey()).append("\":");
+                builder
+                    .append(",")
+                    .append("\"")
+                    .append(entry.getKey())
+                    .append("\":");
                 appendValue(builder, entry.getValue());
             }
 

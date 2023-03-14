@@ -1,7 +1,7 @@
 package com.oney.WebRTCModule;
 
-import android.os.Build.VERSION;
 import android.util.Log;
+import android.os.Build.VERSION;
 
 import org.webrtc.EglBase;
 

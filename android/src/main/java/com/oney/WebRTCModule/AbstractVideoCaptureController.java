@@ -3,6 +3,7 @@ package com.oney.WebRTCModule;
 import org.webrtc.VideoCapturer;
 
 public abstract class AbstractVideoCaptureController {
+
     private final int width;
     private final int height;
     private final int fps;
@@ -11,8 +12,6 @@ public abstract class AbstractVideoCaptureController {
      * {@link VideoCapturer} which this controller manages.
      */
     protected VideoCapturer videoCapturer;
-
-    protected CapturerEventsListener capturerEventsListener;
 
     public AbstractVideoCaptureController(int width, int height, int fps) {
         this.width = width;
@@ -66,14 +65,5 @@ public abstract class AbstractVideoCaptureController {
         }
     }
 
-    public void setCapturerEventsListener(CapturerEventsListener listener) {
-        this.capturerEventsListener = listener;
-    }
-
     protected abstract VideoCapturer createVideoCapturer();
-
-    public interface CapturerEventsListener {
-        /** Called when the capturer is ended and in an irrecoverable state. */
-        public void onCapturerEnded();
-    }
 }

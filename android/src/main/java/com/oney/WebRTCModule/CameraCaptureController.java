@@ -15,7 +15,8 @@ public class CameraCaptureController extends AbstractVideoCaptureController {
     /**
      * The {@link Log} tag with which {@code CameraCaptureController} is to log.
      */
-    private static final String TAG = CameraCaptureController.class.getSimpleName();
+    private static final String TAG
+        = CameraCaptureController.class.getSimpleName();
 
     private boolean isFrontFacing;
 
@@ -31,7 +32,10 @@ public class CameraCaptureController extends AbstractVideoCaptureController {
     private final CameraEventsHandler cameraEventsHandler = new CameraEventsHandler();
 
     public CameraCaptureController(CameraEnumerator cameraEnumerator, ReadableMap constraints) {
-        super(constraints.getInt("width"), constraints.getInt("height"), constraints.getInt("frameRate"));
+        super(
+             constraints.getInt("width"),
+             constraints.getInt("height"), 
+             constraints.getInt("frameRate"));
 
         this.cameraEnumerator = cameraEnumerator;
         this.constraints = constraints;
@@ -91,7 +95,7 @@ public class CameraCaptureController extends AbstractVideoCaptureController {
             @Override
             public void onCameraSwitchDone(boolean b) {
                 if (b != desiredFrontFacing) {
-                    int newTries = tries - 1;
+                    int newTries = tries-1;
                     if (newTries > 0) {
                         switchCamera(desiredFrontFacing, newTries);
                     }
@@ -124,39 +128,48 @@ public class CameraCaptureController extends AbstractVideoCaptureController {
         String[] deviceNames = cameraEnumerator.getDeviceNames();
         List<String> failedDevices = new ArrayList<>();
 
-        String cameraName = null;
-        try {
-            int index = Integer.parseInt(deviceId);
-            cameraName = deviceNames[index];
-        } catch (Exception e) {
-            Log.d(TAG, "failed to find device with id: " + deviceId);
-        }
-
         // If deviceId is specified, then it takes precedence over facingMode.
-        if (cameraName != null) {
-            VideoCapturer videoCapturer = cameraEnumerator.createCapturer(cameraName, cameraEventsHandler);
-            String message = "Create user-specified camera " + cameraName;
-            if (videoCapturer != null) {
-                Log.d(TAG, message + " succeeded");
-                this.isFrontFacing = cameraEnumerator.isFrontFacing(cameraName);
-                return videoCapturer;
-            } else {
-                // fallback to facingMode
-                Log.d(TAG, message + " failed");
-                failedDevices.add(cameraName);
+        if (deviceId != null) {
+            for (String name : deviceNames) {
+                if (name.equals(deviceId)) {
+                    VideoCapturer videoCapturer
+                        = cameraEnumerator.createCapturer(name, cameraEventsHandler);
+                    String message = "Create user-specified camera " + name;
+                    if (videoCapturer != null) {
+                        Log.d(TAG, message + " succeeded");
+                        this.isFrontFacing = cameraEnumerator.isFrontFacing(name);
+                        return videoCapturer;
+                    } else {
+                        Log.d(TAG, message + " failed");
+                        failedDevices.add(name);
+                        break; // fallback to facingMode
+                    }
+                }
             }
         }
 
         // Otherwise, use facingMode (defaulting to front/user facing).
-        final boolean isFrontFacing = facingMode == null || !facingMode.equals("environment");
+        final boolean isFrontFacing
+            = facingMode == null || !facingMode.equals("environment");
         for (String name : deviceNames) {
             if (failedDevices.contains(name)) {
                 continue;
             }
-            if (cameraEnumerator.isFrontFacing(name) != isFrontFacing) {
+            try {
+                // This can throw an exception when using the Camera 1 API.
+                if (cameraEnumerator.isFrontFacing(name) != isFrontFacing) {
+                    continue;
+                }
+            } catch (Exception e) {
+                Log.e(
+                    TAG,
+                    "Failed to check the facing mode of camera " + name,
+                    e);
+                failedDevices.add(name);
                 continue;
             }
-            VideoCapturer videoCapturer = cameraEnumerator.createCapturer(name, cameraEventsHandler);
+            VideoCapturer videoCapturer
+                = cameraEnumerator.createCapturer(name, cameraEventsHandler);
             String message = "Create camera " + name;
             if (videoCapturer != null) {
                 Log.d(TAG, message + " succeeded");
@@ -171,7 +184,8 @@ public class CameraCaptureController extends AbstractVideoCaptureController {
         // Fallback to any available camera.
         for (String name : deviceNames) {
             if (!failedDevices.contains(name)) {
-                VideoCapturer videoCapturer = cameraEnumerator.createCapturer(name, cameraEventsHandler);
+                VideoCapturer videoCapturer
+                    = cameraEnumerator.createCapturer(name, cameraEventsHandler);
                 String message = "Create fallback camera " + name;
                 if (videoCapturer != null) {
                     Log.d(TAG, message + " succeeded");
@@ -180,6 +194,7 @@ public class CameraCaptureController extends AbstractVideoCaptureController {
                 } else {
                     Log.d(TAG, message + " failed");
                     failedDevices.add(name);
+                    // fallback to the next device.
                 }
             }
         }
