@@ -113,13 +113,18 @@ peerConnection.addEventListener( 'signalingstatechange', event => {
 	};
 } );
 
-peerConnection.addEventListener( 'addstream', event => {
+peerConnection.addEventListener( 'track', event => {
 	// Grab the remote stream from the connected participant.
-	remoteMediaStream = event.stream;
+	const connection = event.target;
+	const stream = connection?._remoteStreams.values().next().value;
+    remoteMediaStream = new MediaStream(stream);
+);
 } );
 
 // Add our stream to the peer connection.
-peerConnection.addStream( localMediaStream );
+localMediaStream.getTracks().forEach( 
+	track => peerConnection.addTrack( track, localMediaStream );
+);
 ```
 
 ## Step 3 - Signal that you're starting a call
