@@ -114,10 +114,9 @@ peerConnection.addEventListener( 'signalingstatechange', event => {
 } );
 
 peerConnection.addEventListener( 'track', event => {
-	// Grab the remote stream from the connected participant.
-	const connection = event.target;
-	const stream = connection._remoteStreams.values().next().value;
-	remoteMediaStream = new MediaStream( stream );
+	// Grab the remote track from the connected participant.
+	remoteMediaStream = remoteMediaStream || new MediaStream();
+	remoteMediaStream.addTrack( event.track, remoteMediaStream );
 } );
 
 // Add our stream to the peer connection.
