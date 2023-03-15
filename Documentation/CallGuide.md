@@ -205,7 +205,7 @@ try {
 	const offerDescription = new RTCSessionDescription( offerDescription );
 	await peerConnection.setRemoteDescription( offerDescription );
 
-	const answerDescription = await peerConnection.createAnswer( sessionConstraints );
+	const answerDescription = await peerConnection.createAnswer();
 	await peerConnection.setLocalDescription( answerDescription );
 
 	// Here is a good place to process candidates.

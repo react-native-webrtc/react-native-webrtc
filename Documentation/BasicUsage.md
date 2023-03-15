@@ -268,7 +268,7 @@ try {
 	const offerDescription = new RTCSessionDescription( offerDescription );
 	await peerConnection.setRemoteDescription( offerDescription );
 
-	const answerDescription = await peerConnection.createAnswer( sessionConstraints );
+	const answerDescription = await peerConnection.createAnswer();
 	await peerConnection.setLocalDescription( answerDescription );
 
 	// Send the answerDescription back as a response to the offerDescription.
