@@ -13,9 +13,6 @@ android {
         targetSdkVersion safeExtGet('targetSdkVersion', 23)
         versionCode 1
         versionName "1.0"
-        ndk {
-            abiFilters "armeabi-v7a", "x86"
-        }
     }
 
     // WebRTC requires Java 8 features
@@ -28,5 +25,5 @@ android {
 
 dependencies {
     implementation 'com.facebook.react:react-native:+'
-    api fileTree(dir: 'libs', include: ['*.jar'])
+    api 'org.jitsi:webrtc:111.+'
 }
