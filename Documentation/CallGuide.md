@@ -30,6 +30,7 @@ let mediaConstraints = {
 };
 
 let localMediaStream;
+let remoteMediaStream;
 let isVoiceOnly = false;
 
 try {

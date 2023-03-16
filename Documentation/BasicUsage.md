@@ -156,7 +156,6 @@ peerConnection.addEventListener( 'icegatheringstatechange', event => {} );
 peerConnection.addEventListener( 'negotiationneeded', event => {} );
 peerConnection.addEventListener( 'signalingstatechange', event => {} );
 peerConnection.addEventListener( 'track', event => {} );
-peerConnection.addEventListener( 'removetrack', event => {} );
 ```
 
 ## Destroying the Peer Connection
