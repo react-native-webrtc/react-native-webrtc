@@ -47,61 +47,23 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
 
     private final GetUserMediaImpl getUserMediaImpl;
 
-    public static class Options {
-        private VideoEncoderFactory videoEncoderFactory = null;
-        private VideoDecoderFactory videoDecoderFactory = null;
-        private AudioDeviceModule audioDeviceModule = null;
-        private Loggable injectableLogger = null;
-        private Logging.Severity loggingSeverity = null;
-
-        public Options() {}
-
-        public void setAudioDeviceModule(AudioDeviceModule audioDeviceModule) {
-            this.audioDeviceModule = audioDeviceModule;
-        }
-
-        public void setVideoDecoderFactory(VideoDecoderFactory videoDecoderFactory) {
-            this.videoDecoderFactory = videoDecoderFactory;
-        }
-
-        public void setVideoEncoderFactory(VideoEncoderFactory videoEncoderFactory) {
-            this.videoEncoderFactory = videoEncoderFactory;
-        }
-
-        public void setInjectableLogger(Loggable logger) {
-            this.injectableLogger = logger;
-        }
-
-        public void setLoggingSeverity(Logging.Severity severity) {
-            this.loggingSeverity = severity;
-        }
-    }
-
     public WebRTCModule(ReactApplicationContext reactContext) {
-        this(reactContext, null);
-    }
-
-    public WebRTCModule(ReactApplicationContext reactContext, Options options) {
         super(reactContext);
 
         mPeerConnectionObservers = new SparseArray<>();
         localStreams = new HashMap<>();
 
-        AudioDeviceModule adm = null;
-        VideoEncoderFactory encoderFactory = null;
-        VideoDecoderFactory decoderFactory = null;
-        Loggable injectableLogger = null;
-        Logging.Severity loggingSeverity = null;
+        WebRTCModuleOptions options = WebRTCModuleOptions.getInstance();
 
-        if (options != null) {
-            adm = options.audioDeviceModule;
-            encoderFactory = options.videoEncoderFactory;
-            decoderFactory = options.videoDecoderFactory;
-            injectableLogger = options.injectableLogger;
-            loggingSeverity = options.loggingSeverity;
-        }
+        AudioDeviceModule adm = options.audioDeviceModule;
+        VideoEncoderFactory encoderFactory = options.videoEncoderFactory;
+        VideoDecoderFactory decoderFactory = options.videoDecoderFactory;
+        Loggable injectableLogger = options.injectableLogger;
+        Logging.Severity loggingSeverity = options.loggingSeverity;
+        String fieldTrials = options.fieldTrials;
 
         PeerConnectionFactory.initialize(PeerConnectionFactory.InitializationOptions.builder(reactContext)
+                                                 .setFieldTrials(fieldTrials)
                                                  .setNativeLibraryLoader(new LibraryLoader())
                                                  .setInjectableLogger(injectableLogger, loggingSeverity)
                                                  .createInitializationOptions());
@@ -117,7 +79,7 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
             if (eglContext != null) {
                 encoderFactory = new DefaultVideoEncoderFactory(eglContext,
                         /* enableIntelVp8Encoder */ true,
-                        /* enableH264HighProfile */ false);
+                        /* enableH264HighProfile */ true);
                 decoderFactory = new DefaultVideoDecoderFactory(eglContext);
             } else {
                 encoderFactory = new SoftwareVideoEncoderFactory();
@@ -129,13 +91,16 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
             adm = JavaAudioDeviceModule.builder(reactContext).setEnableVolumeLogger(false).createAudioDeviceModule();
         }
 
+        Log.d(TAG, "Using video encoder factory: " + encoderFactory.getClass().getCanonicalName());
+        Log.d(TAG, "Using video decoder factory: " + decoderFactory.getClass().getCanonicalName());
+
         mFactory = PeerConnectionFactory.builder()
                            .setAudioDeviceModule(adm)
                            .setVideoEncoderFactory(encoderFactory)
                            .setVideoDecoderFactory(decoderFactory)
                            .createPeerConnectionFactory();
 
-        // Saving the encoder and decoder factories to get codec info later when needed
+        // Saving the encoder and decoder factories to get codec info later when needed.
         mVideoEncoderFactory = encoderFactory;
         mVideoDecoderFactory = decoderFactory;
 
