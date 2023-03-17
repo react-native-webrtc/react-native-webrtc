@@ -802,6 +802,20 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
         });
     }
 
+    @ReactMethod
+    public void mediaStreamTrackSetVolume(String id, double volume) {
+        ThreadUtils.runOnExecutor(() -> {
+            MediaStreamTrack track = getTrack(id);
+            if (track == null) {
+                Log.d(TAG, "mediaStreamTrackSetVolume() track is null");
+            } else if (!(track instanceof AudioTrack)) {
+                Log.d(TAG, "mediaStreamTrackSetVolume() track is not an AudioTrack!");
+            } else {
+                ((AudioTrack) track).setVolume(volume);
+            }
+        });
+    }
+
     /**
      * This serializes the transceivers current direction and mid and returns them
      * for update when an sdp negotiation/renegotiation happens
