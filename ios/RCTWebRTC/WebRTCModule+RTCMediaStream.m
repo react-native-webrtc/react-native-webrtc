@@ -351,6 +351,14 @@ RCT_EXPORT_METHOD(mediaStreamTrackSwitchCamera : (nonnull NSString *)trackID) {
     }
 }
 
+RCT_EXPORT_METHOD(mediaStreamTrackSetVolume : (nonnull NSString *)trackID : (double)volume) {
+    RTCMediaStreamTrack *track = [self trackForId:trackID];
+    if (track && [track.kind isEqualToString:@"audio"]) {
+        RTCAudioTrack *audioTrack = (RTCAudioTrack *)track;
+        audioTrack.source.volume = volume;
+    }
+}
+
 #pragma mark - Helpers
 
 - (RTCMediaStreamTrack *)trackForId:(NSString *)trackId {
