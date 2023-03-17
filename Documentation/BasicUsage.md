@@ -335,3 +335,14 @@ Don't forget, the user facing camera is usually mirrored.
 | objectFit | string | 'contain' | Can be `'contain'` or `'cover'` nothing more or less. | 
 | streamURL | string | 'streamURL' | Required to have an actual video stream rendering. |
 | zOrder | number | 0 | Similar to zIndex. |
+
+## Controlling remote audio tracks
+
+Remote audio tracks are automatically handled and played through your audio output.
+The volume of individual tracks can be set with the `_setVolume` function. 
+It takes in a number between 0 to 10, defaults to 1.
+
+```javascript
+const audioTrack = remoteMediaStream.getAudioTracks()[0];
+audioTrack._setVolume(0.5);
+```
