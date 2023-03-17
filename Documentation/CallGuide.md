@@ -30,6 +30,7 @@ let mediaConstraints = {
 };
 
 let localMediaStream;
+let remoteMediaStream;
 let isVoiceOnly = false;
 
 try {
@@ -113,13 +114,16 @@ peerConnection.addEventListener( 'signalingstatechange', event => {
 	};
 } );
 
-peerConnection.addEventListener( 'addstream', event => {
-	// Grab the remote stream from the connected participant.
-	remoteMediaStream = event.stream;
+peerConnection.addEventListener( 'track', event => {
+	// Grab the remote track from the connected participant.
+	remoteMediaStream = remoteMediaStream || new MediaStream();
+	remoteMediaStream.addTrack( event.track, remoteMediaStream );
 } );
 
 // Add our stream to the peer connection.
-peerConnection.addStream( localMediaStream );
+localMediaStream.getTracks().forEach( 
+	track => peerConnection.addTrack( track, localMediaStream );
+);
 ```
 
 ## Step 3 - Signal that you're starting a call
@@ -201,7 +205,7 @@ try {
 	const offerDescription = new RTCSessionDescription( offerDescription );
 	await peerConnection.setRemoteDescription( offerDescription );
 
-	const answerDescription = await peerConnection.createAnswer( sessionConstraints );
+	const answerDescription = await peerConnection.createAnswer();
 	await peerConnection.setLocalDescription( answerDescription );
 
 	// Here is a good place to process candidates.

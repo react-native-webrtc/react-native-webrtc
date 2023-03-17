@@ -118,7 +118,7 @@ Cycling all of the tracks and stopping them is more than enough to clean up afte
 You won't usually need to do this for remote tracks, only local.  
 
 ```javascript
-localMediaStream.getTracks().map(
+localMediaStream.getTracks().forEach(
 	track => track.stop()
 );
 
@@ -155,8 +155,7 @@ peerConnection.addEventListener( 'iceconnectionstatechange', event => {} );
 peerConnection.addEventListener( 'icegatheringstatechange', event => {} );
 peerConnection.addEventListener( 'negotiationneeded', event => {} );
 peerConnection.addEventListener( 'signalingstatechange', event => {} );
-peerConnection.addEventListener( 'addstream', event => {} );
-peerConnection.addEventListener( 'removestream', event => {} );
+peerConnection.addEventListener( 'track', event => {} );
 ```
 
 ## Destroying the Peer Connection
@@ -165,7 +164,6 @@ When ending a call you should always make sure to dispose of everything ready fo
 The following should dispose of everything related to the peer connection.  
 
 ```javascript
-peerConnection._unregisterEvents();
 peerConnection.close();
 peerConnection = null;
 ```
@@ -176,7 +174,9 @@ After using one of the media functions above you can then add the media stream t
 The negotiation needed event will be triggered on the peer connection afterwords.  
 
 ```javascript
-peerConnection.addStream( localMediaStream );
+localMediaStream.getTracks().forEach( 
+	track => peerConnection.addTrack( track, localMediaStream );
+);
 ```
 
 ## Creating a Data Channel
@@ -267,7 +267,7 @@ try {
 	const offerDescription = new RTCSessionDescription( offerDescription );
 	await peerConnection.setRemoteDescription( offerDescription );
 
-	const answerDescription = await peerConnection.createAnswer( sessionConstraints );
+	const answerDescription = await peerConnection.createAnswer();
 	await peerConnection.setLocalDescription( answerDescription );
 
 	// Send the answerDescription back as a response to the offerDescription.
