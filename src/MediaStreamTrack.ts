@@ -119,14 +119,12 @@ class MediaStreamTrack extends defineCustomEventTarget(...MEDIA_STREAM_TRACK_EVE
     }
 
     /**
-     * Private API for setting the volume on an individual audio track.
-     * 
+     * Custom API for setting the volume on an individual audio track.
+     *
      * @param volume a gain value in the range of 0-10. defaults to 1.0
      */
     _setVolume(volume: number) {
-        console.log("_setVolume")
-        console.log(volume)
-        if (this.kind !== 'audio'){
+        if (this.kind !== 'audio') {
             throw new Error('Only implemented for audio tracks');
         }
 
