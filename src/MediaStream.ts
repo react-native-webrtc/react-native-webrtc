@@ -83,7 +83,7 @@ export default class MediaStream extends defineCustomEventTarget(...MEDIA_STREAM
         }
 
         this._tracks.push(track);
-        WebRTCModule.mediaStreamAddTrack(this._reactTag, track.id);
+        WebRTCModule.mediaStreamAddTrack(this._reactTag, track.remote ? track._peerConnectionId : -1, track.id);
     }
 
     removeTrack(track: MediaStreamTrack): void {
@@ -94,7 +94,7 @@ export default class MediaStream extends defineCustomEventTarget(...MEDIA_STREAM
         }
 
         this._tracks.splice(index, 1);
-        WebRTCModule.mediaStreamRemoveTrack(this._reactTag, track.id);
+        WebRTCModule.mediaStreamRemoveTrack(this._reactTag, track.remote ? track._peerConnectionId : -1, track.id);
     }
 
     getTracks(): MediaStreamTrack[] {
