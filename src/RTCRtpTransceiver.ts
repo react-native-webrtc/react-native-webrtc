@@ -5,7 +5,6 @@ import RTCRtpSender from './RTCRtpSender';
 
 const { WebRTCModule } = NativeModules;
 
-
 export default class RTCRtpTransceiver {
     _peerConnectionId: number;
     _sender: RTCRtpSender;
@@ -52,7 +51,7 @@ export default class RTCRtpTransceiver {
         }
 
         if (this._stopped) {
-            throw Error('Transceiver Stopped');
+            throw new Error('Transceiver Stopped');
         }
 
         if (this._direction === val) {
