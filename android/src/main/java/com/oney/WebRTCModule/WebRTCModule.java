@@ -20,6 +20,8 @@ import com.facebook.react.bridge.WritableArray;
 import com.facebook.react.bridge.WritableMap;
 import com.facebook.react.module.annotations.ReactModule;
 import com.facebook.react.modules.core.DeviceEventManagerModule;
+import com.oney.WebRTCModule.webrtcutils.H264AndSoftwareVideoDecoderFactory;
+import com.oney.WebRTCModule.webrtcutils.H264AndSoftwareVideoEncoderFactory;
 
 import org.webrtc.*;
 import org.webrtc.audio.AudioDeviceModule;
@@ -77,10 +79,8 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
             EglBase.Context eglContext = EglUtils.getRootEglBaseContext();
 
             if (eglContext != null) {
-                encoderFactory = new DefaultVideoEncoderFactory(eglContext,
-                        /* enableIntelVp8Encoder */ true,
-                        /* enableH264HighProfile */ true);
-                decoderFactory = new DefaultVideoDecoderFactory(eglContext);
+                encoderFactory = new H264AndSoftwareVideoEncoderFactory(eglContext);
+                decoderFactory = new H264AndSoftwareVideoDecoderFactory(eglContext);
             } else {
                 encoderFactory = new SoftwareVideoEncoderFactory();
                 decoderFactory = new SoftwareVideoDecoderFactory();
