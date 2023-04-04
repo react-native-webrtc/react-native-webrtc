@@ -30,7 +30,7 @@ Which will allow you to use [(almost)](https://github.com/react-native-webrtc/r
 
 ## WebRTC Revision
 
-* Currently used revision: [M106](https://github.com/jitsi/webrtc/tree/M106)
+* Currently used revision: [M106](https://github.com/jitsi/webrtc/tree/M111)
 * Supported architectures
   * Android: armeabi-v7a, arm64-v8a, x86, x86_64
   * iOS: arm64, x86_64
