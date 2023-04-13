@@ -75,7 +75,7 @@
                 VideoCaptureController *vcc = (VideoCaptureController *)videoTrack.captureController;
                 AVCaptureDeviceFormat *format = vcc.selectedFormat;
                 CMVideoDimensions dimensions = CMVideoFormatDescriptionGetDimensions(format.formatDescription);
-                settings = @{@"height" : @(dimensions.height), @"width" : @(dimensions.width), @"frameRate" : @(3)};
+                settings = @{@"height" : @(dimensions.height), @"width" : @(dimensions.width), @"frameRate" : @(30)};
             }
         }
 
@@ -218,7 +218,7 @@ RCT_EXPORT_METHOD(getUserMedia
             VideoCaptureController *vcc = (VideoCaptureController *)videoTrack.captureController;
             AVCaptureDeviceFormat *format = vcc.selectedFormat;
             CMVideoDimensions dimensions = CMVideoFormatDescriptionGetDimensions(format.formatDescription);
-            settings = @{@"height" : @(dimensions.height), @"width" : @(dimensions.width), @"frameRate" : @(3)};
+            settings = @{@"height" : @(dimensions.height), @"width" : @(dimensions.width), @"frameRate" : @(30)};
         }
 
         [tracks addObject:@{
