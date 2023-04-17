@@ -32,7 +32,7 @@
   "scripts": {
     "lint": "eslint --max-warnings 0 . && tsc --noEmit",
     "prepare": "husky install && bob build",
-    "format": "clang-format -i ios/RCTWebRTC/* android/src/main/java/com/oney/WebRTCModule/*.java android/src/main/java/com/oney/WebRTCModule/videoEffects/*.java android/src/main/java/com/oney/WebRTCModule/webrtcutils/*.java"
+    "format": "tools/format.sh"
   },
   "bugs": {
     "url": "https://github.com/react-native-webrtc/react-native-webrtc/issues"
