@@ -49,8 +49,7 @@ _GN_APPLE_COMMON = [
     'enable_dsyms=true',
     'enable_stripping=true',
     'rtc_enable_symbol_export=false',
-    'rtc_enable_objc_symbol_export=true',
-    'rtc_include_tests=false'
+    'rtc_enable_objc_symbol_export=true'
 ]
 
 _GN_IOS_ARGS = [

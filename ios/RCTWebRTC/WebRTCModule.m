@@ -4,10 +4,12 @@
 
 #import <React/RCTBridge.h>
 #import <React/RCTEventDispatcher.h>
+#import <React/RCTLog.h>
 #import <React/RCTUtils.h>
 
 #import "WebRTCModule+RTCPeerConnection.h"
 #import "WebRTCModule.h"
+#import "WebRTCModuleOptions.h"
 
 @interface WebRTCModule ()
 @end
@@ -35,13 +37,25 @@
 }
 
 - (instancetype)init {
-    return [self initWithEncoderFactory:nil decoderFactory:nil];
-}
-
-- (instancetype)initWithEncoderFactory:(nullable id<RTCVideoEncoderFactory>)encoderFactory
-                        decoderFactory:(nullable id<RTCVideoDecoderFactory>)decoderFactory {
     self = [super init];
     if (self) {
+        WebRTCModuleOptions *options = [WebRTCModuleOptions sharedInstance];
+        id<RTCVideoDecoderFactory> decoderFactory = options.videoDecoderFactory;
+        id<RTCVideoEncoderFactory> encoderFactory = options.videoEncoderFactory;
+        NSDictionary *fieldTrials = options.fieldTrials;
+        RTCLoggingSeverity loggingSeverity = options.loggingSeverity;
+
+        // Initialize field trials.
+        if (fieldTrials == nil) {
+            // Fix for dual-sim connectivity:
+            // https://bugs.chromium.org/p/webrtc/issues/detail?id=10966
+            fieldTrials = @{kRTCFieldTrialUseNWPathMonitor : kRTCFieldTrialEnabledValue};
+        }
+        RTCInitFieldTrialDictionary(fieldTrials);
+
+        // Initialize logging.
+        RTCSetMinDebugLogLevel(loggingSeverity);
+
         if (encoderFactory == nil) {
             encoderFactory = [[RTCDefaultVideoEncoderFactory alloc] init];
         }
@@ -50,6 +64,9 @@
         }
         _encoderFactory = encoderFactory;
         _decoderFactory = decoderFactory;
+
+        RCTLogInfo(@"Using video encoder factory: %@", NSStringFromClass([encoderFactory class]));
+        RCTLogInfo(@"Using video decoder factory: %@", NSStringFromClass([decoderFactory class]));
 
         _peerConnectionFactory = [[RTCPeerConnectionFactory alloc] initWithEncoderFactory:encoderFactory
                                                                            decoderFactory:decoderFactory];

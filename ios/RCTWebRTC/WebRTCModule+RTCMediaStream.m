@@ -75,7 +75,7 @@
                 VideoCaptureController *vcc = (VideoCaptureController *)videoTrack.captureController;
                 AVCaptureDeviceFormat *format = vcc.selectedFormat;
                 CMVideoDimensions dimensions = CMVideoFormatDescriptionGetDimensions(format.formatDescription);
-                settings = @{@"height" : @(dimensions.height), @"width" : @(dimensions.width), @"frameRate" : @(3)};
+                settings = @{@"height" : @(dimensions.height), @"width" : @(dimensions.width), @"frameRate" : @(30)};
             }
         }
 
@@ -218,7 +218,7 @@ RCT_EXPORT_METHOD(getUserMedia
             VideoCaptureController *vcc = (VideoCaptureController *)videoTrack.captureController;
             AVCaptureDeviceFormat *format = vcc.selectedFormat;
             CMVideoDimensions dimensions = CMVideoFormatDescriptionGetDimensions(format.formatDescription);
-            settings = @{@"height" : @(dimensions.height), @"width" : @(dimensions.width), @"frameRate" : @(3)};
+            settings = @{@"height" : @(dimensions.height), @"width" : @(dimensions.width), @"frameRate" : @(30)};
         }
 
         [tracks addObject:@{
@@ -290,29 +290,45 @@ RCT_EXPORT_METHOD(mediaStreamCreate : (nonnull NSString *)streamID) {
     self.localStreams[streamID] = mediaStream;
 }
 
-RCT_EXPORT_METHOD(mediaStreamAddTrack : (nonnull NSString *)streamID : (nonnull NSString *)trackID) {
+RCT_EXPORT_METHOD(mediaStreamAddTrack
+                  : (nonnull NSString *)streamID
+                  : (nonnull NSNumber *)pcId
+                  : (nonnull NSString *)trackID) {
     RTCMediaStream *mediaStream = self.localStreams[streamID];
-    RTCMediaStreamTrack *track = [self trackForId:trackID];
+    if (mediaStream == nil) {
+        return;
+    }
 
-    if (mediaStream && track) {
-        if ([track.kind isEqualToString:@"audio"]) {
-            [mediaStream addAudioTrack:(RTCAudioTrack *)track];
-        } else if ([track.kind isEqualToString:@"video"]) {
-            [mediaStream addVideoTrack:(RTCVideoTrack *)track];
-        }
+    RTCMediaStreamTrack *track = [self trackForId:trackID pcId:pcId];
+    if (track == nil) {
+        return;
+    }
+
+    if ([track.kind isEqualToString:@"audio"]) {
+        [mediaStream addAudioTrack:(RTCAudioTrack *)track];
+    } else if ([track.kind isEqualToString:@"video"]) {
+        [mediaStream addVideoTrack:(RTCVideoTrack *)track];
     }
 }
 
-RCT_EXPORT_METHOD(mediaStreamRemoveTrack : (nonnull NSString *)streamID : (nonnull NSString *)trackID) {
+RCT_EXPORT_METHOD(mediaStreamRemoveTrack
+                  : (nonnull NSString *)streamID
+                  : (nonnull NSNumber *)pcId
+                  : (nonnull NSString *)trackID) {
     RTCMediaStream *mediaStream = self.localStreams[streamID];
-    RTCMediaStreamTrack *track = [self trackForId:trackID];
+    if (mediaStream == nil) {
+        return;
+    }
 
-    if (mediaStream && track) {
-        if ([track.kind isEqualToString:@"audio"]) {
-            [mediaStream removeAudioTrack:(RTCAudioTrack *)track];
-        } else if ([track.kind isEqualToString:@"video"]) {
-            [mediaStream removeVideoTrack:(RTCVideoTrack *)track];
-        }
+    RTCMediaStreamTrack *track = [self trackForId:trackID pcId:pcId];
+    if (track == nil) {
+        return;
+    }
+
+    if ([track.kind isEqualToString:@"audio"]) {
+        [mediaStream removeAudioTrack:(RTCAudioTrack *)track];
+    } else if ([track.kind isEqualToString:@"video"]) {
+        [mediaStream removeVideoTrack:(RTCVideoTrack *)track];
     }
 }
 
@@ -332,16 +348,18 @@ RCT_EXPORT_METHOD(mediaStreamTrackRelease : (nonnull NSString *)trackID) {
     }
 }
 
-RCT_EXPORT_METHOD(mediaStreamTrackSetEnabled : (nonnull NSString *)trackID : (BOOL)enabled) {
-    RTCMediaStreamTrack *track = [self trackForId:trackID];
-    if (track) {
-        track.isEnabled = enabled;
-        if (track.captureController) {  // It could be a remote track!
-            if (enabled) {
-                [track.captureController startCapture];
-            } else {
-                [track.captureController stopCapture];
-            }
+RCT_EXPORT_METHOD(mediaStreamTrackSetEnabled : (nonnull NSNumber *)pcId : (nonnull NSString *)trackID : (BOOL)enabled) {
+    RTCMediaStreamTrack *track = [self trackForId:trackID pcId:pcId];
+    if (track == nil) {
+        return;
+    }
+
+    track.isEnabled = enabled;
+    if (track.captureController) {  // It could be a remote track!
+        if (enabled) {
+            [track.captureController startCapture];
+        } else {
+            [track.captureController stopCapture];
         }
     }
 }
@@ -377,20 +395,27 @@ RCT_EXPORT_METHOD(mediaStreamTrackGetCameraFacingMode:(nonnull NSString *)trackI
          nil);
 }
 
+RCT_EXPORT_METHOD(mediaStreamTrackSetVolume : (nonnull NSNumber *)pcId : (nonnull NSString *)trackID : (double)volume) {
+    RTCMediaStreamTrack *track = [self trackForId:trackID pcId:pcId];
+    if (track && [track.kind isEqualToString:@"audio"]) {
+        RTCAudioTrack *audioTrack = (RTCAudioTrack *)track;
+        audioTrack.source.volume = volume;
+    }
+}
+
 #pragma mark - Helpers
 
-- (RTCMediaStreamTrack *)trackForId:(NSString *)trackId {
-    RTCMediaStreamTrack *track = self.localTracks[trackId];
-    if (!track) {
-        for (NSNumber *peerConnectionId in self.peerConnections) {
-            RTCPeerConnection *peerConnection = self.peerConnections[peerConnectionId];
-            track = peerConnection.remoteTracks[trackId];
-            if (track) {
-                break;
-            }
-        }
+- (RTCMediaStreamTrack *)trackForId:(nonnull NSString *)trackId pcId:(nonnull NSNumber *)pcId {
+    if ([pcId isEqualToNumber:[NSNumber numberWithInt:-1]]) {
+        return self.localTracks[trackId];
     }
-    return track;
+
+    RTCPeerConnection *peerConnection = self.peerConnections[pcId];
+    if (peerConnection == nil) {
+        return nil;
+    }
+
+    return peerConnection.remoteTracks[trackId];
 }
 
 @end

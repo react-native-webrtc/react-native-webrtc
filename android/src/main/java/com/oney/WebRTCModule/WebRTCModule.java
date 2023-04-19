@@ -20,6 +20,8 @@ import com.facebook.react.bridge.WritableArray;
 import com.facebook.react.bridge.WritableMap;
 import com.facebook.react.module.annotations.ReactModule;
 import com.facebook.react.modules.core.DeviceEventManagerModule;
+import com.oney.WebRTCModule.webrtcutils.H264AndSoftwareVideoDecoderFactory;
+import com.oney.WebRTCModule.webrtcutils.H264AndSoftwareVideoEncoderFactory;
 
 import org.webrtc.*;
 import org.webrtc.audio.AudioDeviceModule;
@@ -48,61 +50,23 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
     private final GetUserMediaImpl getUserMediaImpl;
     private final DailyWebRTCDevicesManager dailyWebRTCDevicesManager;
 
-    public static class Options {
-        private VideoEncoderFactory videoEncoderFactory = null;
-        private VideoDecoderFactory videoDecoderFactory = null;
-        private AudioDeviceModule audioDeviceModule = null;
-        private Loggable injectableLogger = null;
-        private Logging.Severity loggingSeverity = null;
-
-        public Options() {}
-
-        public void setAudioDeviceModule(AudioDeviceModule audioDeviceModule) {
-            this.audioDeviceModule = audioDeviceModule;
-        }
-
-        public void setVideoDecoderFactory(VideoDecoderFactory videoDecoderFactory) {
-            this.videoDecoderFactory = videoDecoderFactory;
-        }
-
-        public void setVideoEncoderFactory(VideoEncoderFactory videoEncoderFactory) {
-            this.videoEncoderFactory = videoEncoderFactory;
-        }
-
-        public void setInjectableLogger(Loggable logger) {
-            this.injectableLogger = logger;
-        }
-
-        public void setLoggingSeverity(Logging.Severity severity) {
-            this.loggingSeverity = severity;
-        }
-    }
-
     public WebRTCModule(ReactApplicationContext reactContext) {
-        this(reactContext, null);
-    }
-
-    public WebRTCModule(ReactApplicationContext reactContext, Options options) {
         super(reactContext);
 
         mPeerConnectionObservers = new SparseArray<>();
         localStreams = new HashMap<>();
 
-        AudioDeviceModule adm = null;
-        VideoEncoderFactory encoderFactory = null;
-        VideoDecoderFactory decoderFactory = null;
-        Loggable injectableLogger = null;
-        Logging.Severity loggingSeverity = null;
+        WebRTCModuleOptions options = WebRTCModuleOptions.getInstance();
 
-        if (options != null) {
-            adm = options.audioDeviceModule;
-            encoderFactory = options.videoEncoderFactory;
-            decoderFactory = options.videoDecoderFactory;
-            injectableLogger = options.injectableLogger;
-            loggingSeverity = options.loggingSeverity;
-        }
+        AudioDeviceModule adm = options.audioDeviceModule;
+        VideoEncoderFactory encoderFactory = options.videoEncoderFactory;
+        VideoDecoderFactory decoderFactory = options.videoDecoderFactory;
+        Loggable injectableLogger = options.injectableLogger;
+        Logging.Severity loggingSeverity = options.loggingSeverity;
+        String fieldTrials = options.fieldTrials;
 
         PeerConnectionFactory.initialize(PeerConnectionFactory.InitializationOptions.builder(reactContext)
+                                                 .setFieldTrials(fieldTrials)
                                                  .setNativeLibraryLoader(new LibraryLoader())
                                                  .setInjectableLogger(injectableLogger, loggingSeverity)
                                                  .createInitializationOptions());
@@ -116,10 +80,8 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
             EglBase.Context eglContext = EglUtils.getRootEglBaseContext();
 
             if (eglContext != null) {
-                encoderFactory = new DefaultVideoEncoderFactory(eglContext,
-                        /* enableIntelVp8Encoder */ true,
-                        /* enableH264HighProfile */ false);
-                decoderFactory = new DefaultVideoDecoderFactory(eglContext);
+                encoderFactory = new H264AndSoftwareVideoEncoderFactory(eglContext);
+                decoderFactory = new H264AndSoftwareVideoDecoderFactory(eglContext);
             } else {
                 encoderFactory = new SoftwareVideoEncoderFactory();
                 decoderFactory = new SoftwareVideoDecoderFactory();
@@ -130,13 +92,16 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
             adm = JavaAudioDeviceModule.builder(reactContext).setEnableVolumeLogger(false).createAudioDeviceModule();
         }
 
+        Log.d(TAG, "Using video encoder factory: " + encoderFactory.getClass().getCanonicalName());
+        Log.d(TAG, "Using video decoder factory: " + decoderFactory.getClass().getCanonicalName());
+
         mFactory = PeerConnectionFactory.builder()
                            .setAudioDeviceModule(adm)
                            .setVideoEncoderFactory(encoderFactory)
                            .setVideoDecoderFactory(decoderFactory)
                            .createPeerConnectionFactory();
 
-        // Saving the encoder and decoder factories to get codec info later when needed
+        // Saving the encoder and decoder factories to get codec info later when needed.
         mVideoEncoderFactory = encoderFactory;
         mVideoDecoderFactory = decoderFactory;
 
@@ -442,20 +407,18 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
         }
     }
 
-    public MediaStreamTrack getTrack(String trackId) {
-        MediaStreamTrack track = getLocalTrack(trackId);
-
-        if (track == null) {
-            for (int i = 0, size = mPeerConnectionObservers.size(); i < size; i++) {
-                PeerConnectionObserver pco = mPeerConnectionObservers.valueAt(i);
-                track = pco.remoteTracks.get(trackId);
-                if (track != null) {
-                    break;
-                }
-            }
+    public MediaStreamTrack getTrack(int pcId, String trackId) {
+        if (pcId == -1) {
+            return getLocalTrack(trackId);
         }
 
-        return track;
+        PeerConnectionObserver pco = mPeerConnectionObservers.get(pcId);
+        if (pco == null) {
+            Log.d(TAG, "getTrack(): could not find PeerConnection");
+            return null;
+        }
+
+        return pco.remoteTracks.get(trackId);
     }
 
     MediaStreamTrack getLocalTrack(String trackId) {
@@ -512,7 +475,7 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
                                     SerializeUtils.parseTransceiverOptions(options.getMap("init")));
                         } else if (options.hasKey("trackId")) {
                             String trackId = options.getString("trackId");
-                            MediaStreamTrack track = getTrack(trackId);
+                            MediaStreamTrack track = getLocalTrack(trackId);
                             transceiver = pco.addTransceiver(
                                     track, SerializeUtils.parseTransceiverOptions(options.getMap("init")));
 
@@ -752,13 +715,17 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
     }
 
     @ReactMethod
-    public void mediaStreamAddTrack(String streamId, String trackId) {
+    public void mediaStreamAddTrack(String streamId, int pcId, String trackId) {
         ThreadUtils.runOnExecutor(() -> {
             MediaStream stream = localStreams.get(streamId);
-            MediaStreamTrack track = getTrack(trackId);
+            if (stream == null) {
+                Log.d(TAG, "mediaStreamAddTrack() could not find stream " + streamId);
+                return;
+            }
 
-            if (stream == null || track == null) {
-                Log.d(TAG, "mediaStreamAddTrack() stream || track is null");
+            MediaStreamTrack track = getTrack(pcId, trackId);
+            if (track == null) {
+                Log.d(TAG, "mediaStreamAddTrack() could not find track " + trackId);
                 return;
             }
 
@@ -772,13 +739,17 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
     }
 
     @ReactMethod
-    public void mediaStreamRemoveTrack(String streamId, String trackId) {
+    public void mediaStreamRemoveTrack(String streamId, int pcId, String trackId) {
         ThreadUtils.runOnExecutor(() -> {
             MediaStream stream = localStreams.get(streamId);
-            MediaStreamTrack track = getTrack(trackId);
+            if (stream == null) {
+                Log.d(TAG, "mediaStreamRemoveTrack() could not find stream " + streamId);
+                return;
+            }
 
-            if (stream == null || track == null) {
-                Log.d(TAG, "mediaStreamRemoveTrack() stream || track is null");
+            MediaStreamTrack track = getTrack(pcId, trackId);
+            if (track == null) {
+                Log.d(TAG, "mediaStreamRemoveTrack() could not find track " + trackId);
                 return;
             }
 
@@ -818,13 +789,15 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
     }
 
     @ReactMethod
-    public void mediaStreamTrackSetEnabled(String id, boolean enabled) {
+    public void mediaStreamTrackSetEnabled(int pcId, String id, boolean enabled) {
         ThreadUtils.runOnExecutor(() -> {
-            MediaStreamTrack track = getTrack(id);
+            MediaStreamTrack track = getTrack(pcId, id);
             if (track == null) {
-                Log.d(TAG, "mediaStreamTrackSetEnabled() track is null");
+                Log.d(TAG, "mediaStreamTrackSetEnabled() could not find track " + id);
                 return;
-            } else if (track.enabled() == enabled) {
+            }
+
+            if (track.enabled() == enabled) {
                 return;
             }
             track.setEnabled(enabled);
@@ -874,6 +847,24 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
             else {
                 promise.reject(GET_CAMERA_FACING_MODE_ERROR, "Local track not found when attempting to get camera facing mode");
             }
+        });
+    }
+
+    @ReactMethod
+    public void mediaStreamTrackSetVolume(int pcId, String id, double volume) {
+        ThreadUtils.runOnExecutor(() -> {
+            MediaStreamTrack track = getTrack(pcId, id);
+            if (track == null) {
+                Log.d(TAG, "mediaStreamTrackSetVolume() could not find track " + id);
+                return;
+            }
+
+            if (!(track instanceof AudioTrack)) {
+                Log.d(TAG, "mediaStreamTrackSetVolume() track is not an AudioTrack!");
+                return;
+            }
+
+            ((AudioTrack) track).setVolume(volume);
         });
     }
 

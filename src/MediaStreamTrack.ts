@@ -54,8 +54,13 @@ class MediaStreamTrack extends defineCustomEventTarget(...MEDIA_STREAM_TRACK_EVE
             return;
         }
 
-        WebRTCModule.mediaStreamTrackSetEnabled(this.id, !this._enabled);
-        this._enabled = !this._enabled;
+        this._enabled = Boolean(enabled);
+
+        if (this._readyState === 'ended') {
+            return;
+        }
+
+        WebRTCModule.mediaStreamTrackSetEnabled(this.remote ? this._peerConnectionId : -1, this.id, this._enabled);
     }
 
     get muted(): boolean {
@@ -67,9 +72,8 @@ class MediaStreamTrack extends defineCustomEventTarget(...MEDIA_STREAM_TRACK_EVE
     }
 
     stop(): void {
-        WebRTCModule.mediaStreamTrackSetEnabled(this.id, false);
+        this.enabled = false;
         this._readyState = 'ended';
-        // TODO: save some stopped flag?
     }
 
     /**
@@ -134,6 +138,19 @@ class MediaStreamTrack extends defineCustomEventTarget(...MEDIA_STREAM_TRACK_EVE
         this.dispatchEvent(new Event(muted ? 'mute' : 'unmute'));
     }
 
+    /**
+     * Custom API for setting the volume on an individual audio track.
+     *
+     * @param volume a gain value in the range of 0-10. defaults to 1.0
+     */
+    _setVolume(volume: number) {
+        if (this.kind !== 'audio') {
+            throw new Error('Only implemented for audio tracks');
+        }
+
+        WebRTCModule.mediaStreamTrackSetVolume(this.remote ? this._peerConnectionId : -1, this.id, volume);
+    }
+
     applyConstraints(): never {
         throw new Error('Not implemented.');
     }
@@ -154,7 +171,6 @@ class MediaStreamTrack extends defineCustomEventTarget(...MEDIA_STREAM_TRACK_EVE
         return deepClone(this._settings);
     }
 
-
     _registerEvents(): void {
         addListener(this, 'mediaStreamTrackEnded', (ev: any) => {
             if (ev.trackId !== this.id || this._readyState === 'ended') {
@@ -170,6 +186,10 @@ class MediaStreamTrack extends defineCustomEventTarget(...MEDIA_STREAM_TRACK_EVE
     }
 
     release(): void {
+        if (this.remote) {
+            return;
+        }
+
         removeListener(this);
         WebRTCModule.mediaStreamTrackRelease(this.id);
     }

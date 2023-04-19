@@ -5,13 +5,7 @@
 #import <React/RCTConvert.h>
 #import <React/RCTEventEmitter.h>
 
-#import <WebRTC/RTCAudioTrack.h>
-#import <WebRTC/RTCDefaultVideoDecoderFactory.h>
-#import <WebRTC/RTCDefaultVideoEncoderFactory.h>
-#import <WebRTC/RTCMediaStream.h>
-#import <WebRTC/RTCPeerConnection.h>
-#import <WebRTC/RTCPeerConnectionFactory.h>
-#import <WebRTC/RTCVideoTrack.h>
+#import <WebRTC/WebRTC.h>
 
 static NSString *const kEventPeerConnectionSignalingStateChanged = @"peerConnectionSignalingStateChanged";
 static NSString *const kEventPeerConnectionStateChanged = @"peerConnectionStateChanged";
@@ -40,9 +34,6 @@ static NSString *const kEventMediaDevicesOnDeviceChange = @"mediaDevicesOnDevice
 @property(nonatomic, strong) NSMutableDictionary<NSNumber *, RTCPeerConnection *> *peerConnections;
 @property(nonatomic, strong) NSMutableDictionary<NSString *, RTCMediaStream *> *localStreams;
 @property(nonatomic, strong) NSMutableDictionary<NSString *, RTCMediaStreamTrack *> *localTracks;
-
-- (instancetype)initWithEncoderFactory:(id<RTCVideoEncoderFactory>)encoderFactory
-                        decoderFactory:(id<RTCVideoDecoderFactory>)decoderFactory;
 
 - (RTCMediaStream *)streamForReactTag:(NSString *)reactTag;
 
