@@ -4,6 +4,8 @@ Starting with React Native 0.60 due to a new auto linking feature you no longer 
 
 See a sample app in the `examples/GumTestApp` directory.  
 
+**IMPORTANT:** Android API level >= 24 are supported.
+
 ## Declaring Permissions
 
 In `android/app/src/main/AndroidManifest.xml` add the following permissions before the `<application>` section.  
