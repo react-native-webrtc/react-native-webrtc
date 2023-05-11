@@ -107,8 +107,7 @@ RCT_EXPORT_METHOD(peerConnectionSetConfiguration
 }
 
 RCT_EXPORT_METHOD(peerConnectionCreateOffer
-                  : (nonnull NSNumber *)objectID options
-                  : (NSDictionary *)options resolver
+                  : (nonnull NSNumber *)objectID resolver
                   : (RCTPromiseResolveBlock)resolve rejecter
                   : (RCTPromiseRejectBlock)reject) {
     RTCPeerConnection *peerConnection = self.peerConnections[objectID];
@@ -117,7 +116,7 @@ RCT_EXPORT_METHOD(peerConnectionCreateOffer
         return;
     }
 
-    RTCMediaConstraints *constraints = [[RTCMediaConstraints alloc] initWithMandatoryConstraints:options
+    RTCMediaConstraints *constraints = [[RTCMediaConstraints alloc] initWithMandatoryConstraints:nil
                                                                              optionalConstraints:nil];
 
     RTCCreateSessionDescriptionCompletionHandler handler = ^(RTCSessionDescription *desc, NSError *error) {
@@ -142,8 +141,7 @@ RCT_EXPORT_METHOD(peerConnectionCreateOffer
 }
 
 RCT_EXPORT_METHOD(peerConnectionCreateAnswer
-                  : (nonnull NSNumber *)objectID options
-                  : (NSDictionary *)options resolver
+                  : (nonnull NSNumber *)objectID resolver
                   : (RCTPromiseResolveBlock)resolve rejecter
                   : (RCTPromiseRejectBlock)reject) {
     RTCPeerConnection *peerConnection = self.peerConnections[objectID];
@@ -152,7 +150,7 @@ RCT_EXPORT_METHOD(peerConnectionCreateAnswer
         return;
     }
 
-    RTCMediaConstraints *constraints = [[RTCMediaConstraints alloc] initWithMandatoryConstraints:options
+    RTCMediaConstraints *constraints = [[RTCMediaConstraints alloc] initWithMandatoryConstraints:nil
                                                                              optionalConstraints:nil];
 
     RTCCreateSessionDescriptionCompletionHandler handler = ^(RTCSessionDescription *desc, NSError *error) {

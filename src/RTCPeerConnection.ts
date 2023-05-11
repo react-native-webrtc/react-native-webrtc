@@ -47,6 +47,14 @@ type RTCDataChannelInit = {
     id?: number
 };
 
+interface IlegacyCreateOfferOptions {
+    offerToReceiveAudio?: boolean;
+    offerToReceiveVideo?: boolean;
+    // Even more legacy.
+    OfferToReceiveAudio?: boolean;
+    OfferToReceiveVideo?: boolean;
+}
+
 const PEER_CONNECTION_EVENTS = [
     'connectionstatechange',
     'icecandidate',
@@ -91,13 +99,24 @@ export default class RTCPeerConnection extends defineCustomEventTarget(...PEER_C
         log.debug(`${this._pcId} ctor`);
     }
 
-    async createOffer(options) {
+    async createOffer(options: IlegacyCreateOfferOptions) {
         log.debug(`${this._pcId} createOffer`);
+
+        // Process legacy configuration extensions (webrtc-pc: 4.4.3.2).
+        //
+
+        if (options.offerToReceiveAudio || options.OfferToReceiveAudio) {
+            this._maybeAddRecvonlyTransceiver(this._getTransceiversForKind('audio'), 'audio');
+        }
+
+        if (options.offerToReceiveVideo || options.OfferToReceiveVideo) {
+            this._maybeAddRecvonlyTransceiver(this._getTransceiversForKind('video'), 'video');
+        }
 
         const {
             sdpInfo,
             transceiversInfo
-        } = await WebRTCModule.peerConnectionCreateOffer(this._pcId, RTCUtil.normalizeOfferOptions(options));
+        } = await WebRTCModule.peerConnectionCreateOffer(this._pcId);
 
         log.debug(`${this._pcId} createOffer OK`);
 
@@ -112,7 +131,7 @@ export default class RTCPeerConnection extends defineCustomEventTarget(...PEER_C
         const {
             sdpInfo,
             transceiversInfo
-        } = await WebRTCModule.peerConnectionCreateAnswer(this._pcId, {});
+        } = await WebRTCModule.peerConnectionCreateAnswer(this._pcId);
 
         this._updateTransceivers(transceiversInfo);
 
@@ -755,5 +774,22 @@ export default class RTCPeerConnection extends defineCustomEventTarget(...PEER_C
     _insertTransceiverSorted(order: number, transceiver: RTCRtpTransceiver) {
         this._transceivers.push({ order, transceiver });
         this._transceivers.sort((a, b) => a.order - b.order);
+    }
+
+    /**
+     * Get the transceivers of the given kind.
+     * See webrtc-pc 5.4.
+     */
+    _getTransceiversForKind(kind: string) {
+        return this.getTransceivers().filter(t => t.receiver.track?.kind === kind);
+    }
+
+    /**
+     * For createOffer. It will add a recvonly transceiver if necessary.
+     */
+    _maybeAddRecvonlyTransceiver(transceivers, kind) {
+        if (!transceivers.some(t => !t.stopped && [ 'sendrecv', 'recvonly' ].includes(t.direction))) {
+            this.addTransceiver(kind, { direction: 'recvonly' });
+        }
     }
 }

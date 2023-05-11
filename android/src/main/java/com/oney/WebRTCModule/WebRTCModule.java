@@ -871,7 +871,7 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
     }
 
     @ReactMethod
-    public void peerConnectionCreateOffer(int id, ReadableMap options, Promise promise) {
+    public void peerConnectionCreateOffer(int id, Promise promise) {
         ThreadUtils.runOnExecutor(() -> {
             PeerConnection peerConnection = getPeerConnection(id);
 
@@ -910,7 +910,7 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
                 public void onSetSuccess() {}
             };
 
-            peerConnection.createOffer(observer, constraintsForOptions(options));
+            peerConnection.createOffer(observer, new MediaConstraints());
         });
     }
 
@@ -954,7 +954,7 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
                 public void onSetSuccess() {}
             };
 
-            peerConnection.createAnswer(observer, constraintsForOptions(options));
+            peerConnection.createAnswer(observer, new MediaConstraints());
         });
     }
 
