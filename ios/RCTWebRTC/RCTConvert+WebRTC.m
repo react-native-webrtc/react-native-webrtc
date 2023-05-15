@@ -88,11 +88,17 @@
 
 + (nonnull RTCConfiguration *)RTCConfiguration:(id)json {
     RTCConfiguration *config = [[RTCConfiguration alloc] init];
+    config.sdpSemantics = RTCSdpSemanticsUnifiedPlan;
 
     // Required for perfect negotiation.
     config.enableImplicitRollback = YES;
 
-    config.sdpSemantics = RTCSdpSemanticsUnifiedPlan;
+    // Enable GCM ciphers.
+    RTCCryptoOptions *cryptoOptions = [[RTCCryptoOptions alloc] initWithSrtpEnableGcmCryptoSuites:YES
+                                                              srtpEnableAes128Sha1_32CryptoCipher:NO
+                                                           srtpEnableEncryptedRtpHeaderExtensions:NO
+                                                                     sframeRequireFrameEncryption:NO];
+    config.cryptoOptions = cryptoOptions;
 
     if (!json) {
         return config;
