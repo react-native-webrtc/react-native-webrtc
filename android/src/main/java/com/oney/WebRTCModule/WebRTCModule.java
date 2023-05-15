@@ -173,12 +173,21 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
             iceServersArray = map.getArray("iceServers");
         }
         List<PeerConnection.IceServer> iceServers = createIceServers(iceServersArray);
+
         PeerConnection.RTCConfiguration conf = new PeerConnection.RTCConfiguration(iceServers);
+        conf.sdpSemantics = PeerConnection.SdpSemantics.UNIFIED_PLAN;
 
         // Required for perfect negotiation.
         conf.enableImplicitRollback = true;
 
-        conf.sdpSemantics = PeerConnection.SdpSemantics.UNIFIED_PLAN;
+        // Enable GCM ciphers.
+        CryptoOptions cryptoOptions = CryptoOptions.builder()
+                                              .setEnableGcmCryptoSuites(true)
+                                              .setEnableAes128Sha1_32CryptoCipher(false)
+                                              .setEnableEncryptedRtpHeaderExtensions(false)
+                                              .setRequireFrameEncryption(false)
+                                              .createCryptoOptions();
+        conf.cryptoOptions = cryptoOptions;
 
         if (map == null) {
             return conf;
