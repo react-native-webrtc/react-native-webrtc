@@ -74,6 +74,11 @@ class GetUserMediaImpl {
             cameraEnumerator = new Camera1Enumerator(false);
         }
 
+
+        addEventListenerToActivity(reactContext);
+    }
+
+    private void addEventListenerToActivity(ReactApplicationContext reactContext) {
         reactContext.addActivityEventListener(new BaseActivityEventListener() {
             @Override
             public void onActivityResult(Activity activity, int requestCode, int resultCode, Intent data) {
@@ -257,6 +262,8 @@ class GetUserMediaImpl {
             promise.reject(new RuntimeException("No current Activity."));
             return;
         }
+
+        addEventListenerToActivity(reactContext);
 
         this.displayMediaPromise = promise;
 
