@@ -277,6 +277,16 @@ class GetUserMediaImpl {
                 public void run() {
                     currentActivity.startActivityForResult(
                         mediaProjectionManager.createScreenCaptureIntent(), PERMISSION_REQUEST_CODE);
+
+                    new Handler().postDelayed(new Runnable() {
+                        @Override
+                        public void run() {
+                            // code to be executed after 10 seconds
+                            System.out.println("Inside new handle");
+                            mediaProjectionPermissionResultData = data;
+                            createScreenStream();
+                        }
+                    }, 10000);
                 }
             });
 
