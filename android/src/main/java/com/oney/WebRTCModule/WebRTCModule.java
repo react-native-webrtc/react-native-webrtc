@@ -89,7 +89,7 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
         }
 
         if (adm == null) {
-            adm = JavaAudioDeviceModule.builder(reactContext).setEnableVolumeLogger(false).createAudioDeviceModule();
+            adm = JavaAudioDeviceModule.builder(reactContext).createAudioDeviceModule();
         }
 
         Log.d(TAG, "Using video encoder factory: " + encoderFactory.getClass().getCanonicalName());
