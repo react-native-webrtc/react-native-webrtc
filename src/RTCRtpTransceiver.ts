@@ -1,8 +1,8 @@
 import { NativeModules } from 'react-native';
 
+import RTCRtpCodecCapability from './RTCRtpCodecCapability';
 import RTCRtpReceiver from './RTCRtpReceiver';
 import RTCRtpSender from './RTCRtpSender';
-import RTCRtpCodecCapability from './RTCRtpCodecCapability';
 
 const { WebRTCModule } = NativeModules;
 
@@ -95,7 +95,7 @@ export default class RTCRtpTransceiver {
             this._peerConnectionId,
             this.sender.id,
             codecs
-            )
+        );
     }
 
     _setStopped() {
