@@ -130,13 +130,7 @@
         }
 
         if (codec.parameters.count) {
-            NSMutableArray *parts = [NSMutableArray arrayWithCapacity:codec.parameters.count];
-            [codec.parameters
-                enumerateKeysAndObjectsUsingBlock:^(id _Nonnull key, id _Nonnull value, BOOL *_Nonnull stop) {
-                    [parts addObject:[NSString stringWithFormat:@"%@=%@", key, value]];
-                }];
-
-            codecDictionary[@"sdpFmtpLine"] = [parts componentsJoinedByString:@";"];
+            codecDictionary[@"sdpFmtpLine"] = [self serializeSdpParameters:codec.parameters];
         }
 
         [codecs addObject:codecDictionary];
@@ -174,6 +168,47 @@
         @"readyState" : readyState,
         @"remote" : [NSNumber numberWithBool:YES],
     };
+}
+
++ (NSDictionary *)capabilitiesToJSON:(RTCRtpCapabilities *)capabilities {
+    NSMutableArray *codecs = [NSMutableArray new];
+
+    for (RTCRtpCodecCapability *codec in capabilities.codecs) {
+        [codecs addObject:[self codecCapabilityToJSON:codec]];
+    }
+
+    return @{@"codecs" : codecs};
+}
+
++ (NSDictionary *)codecCapabilityToJSON:(RTCRtpCodecCapability *)codec {
+    NSMutableDictionary *codecDictionary = [NSMutableDictionary new];
+
+    codecDictionary[@"payloadType"] = codec.preferredPayloadType;
+    codecDictionary[@"mimeType"] = codec.mimeType;
+    codecDictionary[@"clockRate"] = codec.clockRate;
+
+    if (codec.numChannels) {
+        codecDictionary[@"channels"] = codec.numChannels;
+    }
+
+    if (codec.parameters.count) {
+        codecDictionary[@"sdpFmtpLine"] = [self serializeSdpParameters:codec.parameters];
+    }
+
+    return codecDictionary;
+}
+
++ (NSString *)serializeSdpParameters:(NSDictionary *)parameters {
+    if (parameters == nil || parameters.count == 0) {
+        return nil;
+    }
+
+    NSMutableArray *parts = [NSMutableArray arrayWithCapacity:parameters.count];
+    [parameters enumerateKeysAndObjectsUsingBlock:^(id _Nonnull key, id _Nonnull value, BOOL *_Nonnull stop) {
+        [parts addObject:[NSString stringWithFormat:@"%@=%@", key, value]];
+    }];
+
+    return [parts componentsJoinedByString:@";"];
 }
 
 + (NSString *)serializeDirection:(RTCRtpTransceiverDirection)direction {
