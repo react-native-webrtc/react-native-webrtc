@@ -1,4 +1,5 @@
 #import <WebRTC/RTCMediaStreamTrack.h>
+#import <WebRTC/RTCPeerConnectionFactory.h>
 #import <WebRTC/RTCRtpReceiver.h>
 #import <WebRTC/RTCRtpTransceiver.h>
 #import <WebRTC/RTCVideoCodecInfo.h>
@@ -13,6 +14,8 @@
                                                     receiver:(RTCRtpReceiver *_Nonnull)receiver;
 + (NSDictionary *_Nonnull)trackToJSONWithPeerConnectionId:(nonnull NSNumber *)id
                                                     track:(RTCMediaStreamTrack *_Nonnull)track;
++ (NSDictionary *_Nonnull)capabilitiesToJSON:(RTCRtpCapabilities *_Nonnull)capabilities;
++ (NSDictionary *_Nonnull)codecCapabilityToJSON:(RTCRtpCodecCapability *_Nonnull)codec;
 + (NSString *_Nonnull)serializeDirection:(RTCRtpTransceiverDirection)direction;
 + (RTCRtpTransceiverDirection)parseDirection:(NSString *_Nonnull)direction;
 + (RTCRtpTransceiverInit *_Nonnull)parseTransceiverOptions:(NSDictionary *_Nonnull)parameters;

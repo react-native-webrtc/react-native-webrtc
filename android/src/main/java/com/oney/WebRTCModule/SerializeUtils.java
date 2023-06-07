@@ -170,11 +170,7 @@ public class SerializeUtils {
             }
             // Serializing sdpFmptLine.
             if (!codec.parameters.isEmpty()) {
-                final String sdpFmptLineParams = codec.parameters.keySet()
-                                                         .stream()
-                                                         .map(key -> key + "=" + codec.parameters.get(key))
-                                                         .collect(Collectors.joining(";"));
-                codecMap.putString("sdpFmtpLine", sdpFmptLineParams);
+                codecMap.putString("sdpFmtpLine", serializeSdpParameters(codec.parameters));
             }
 
             codecs.pushMap(codecMap);
@@ -190,6 +186,39 @@ public class SerializeUtils {
         }
 
         return result;
+    }
+
+    public static ReadableMap serializeRtpCapabilities(RtpCapabilities capabilities) {
+        WritableMap result = Arguments.createMap();
+        WritableArray codecs = Arguments.createArray();
+
+        capabilities.codecs.forEach(codec -> codecs.pushMap(serializeRtpCapabilitiesCodec(codec)));
+
+        result.putArray("codecs", codecs);
+        return result;
+    }
+
+    public static ReadableMap serializeRtpCapabilitiesCodec(RtpCapabilities.CodecCapability codec) {
+        WritableMap codecMap = Arguments.createMap();
+        codecMap.putInt("payloadType", codec.preferredPayloadType);
+        codecMap.putString("mimeType", codec.mimeType);
+        codecMap.putInt("clockRate", codec.clockRate);
+        if (codec.numChannels != null) {
+            codecMap.putInt("channels", codec.numChannels);
+        }
+        if (!codec.parameters.isEmpty()) {
+            codecMap.putString("sdpFmtpLine", serializeSdpParameters(codec.parameters));
+        }
+
+        return codecMap;
+    }
+
+    // For serializing sdpFmptLine.
+    public static String serializeSdpParameters(Map<String, String> parameters) {
+        return parameters.keySet()
+                .stream()
+                .map(key -> key + "=" + parameters.get(key))
+                .collect(Collectors.joining(";"));
     }
 
     /**
