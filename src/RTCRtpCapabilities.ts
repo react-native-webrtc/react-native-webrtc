@@ -47,19 +47,3 @@ function getCapabilities(endpoint: 'sender' | 'receiver'): RTCRtpCapabilities | 
             throw new TypeError('Invalid endpoint: ' + endpoint);
     }
 }
-
-
-/**
- * Hardcoded audio capabilities based on the WebRTC native documentation:
- * https://webrtc.github.io/webrtc-org/faq/. The mime type is specified in
- * https://www.iana.org/assignments/rtp-parameters/rtp-parameters.xhtml#rtp-parameters-2.
- */
-export const DEFAULT_AUDIO_CAPABILITIES = new RTCRtpCapabilities([
-    new RTCRtpCodecCapability({ mimeType: 'audio/G722' }),
-    new RTCRtpCodecCapability({ mimeType: 'audio/iLBC' }),
-]);
-
-// Initialize capabilities on module import
-export const senderCapabilities = getCapabilities('sender');
-export const receiverCapabilities = getCapabilities('receiver');
-

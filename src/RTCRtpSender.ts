@@ -1,7 +1,7 @@
 import { NativeModules } from 'react-native';
 
 import MediaStreamTrack from './MediaStreamTrack';
-import RTCRtpCapabilities, { senderCapabilities, DEFAULT_AUDIO_CAPABILITIES } from './RTCRtpCapabilities';
+import RTCRtpCapabilities from './RTCRtpCapabilities';
 import RTCRtpSendParameters, { RTCRtpSendParametersInit } from './RTCRtpSendParameters';
 
 const { WebRTCModule } = NativeModules;
@@ -39,15 +39,7 @@ export default class RTCRtpSender {
     }
 
     static getCapabilities(kind: 'audio' | 'video'): RTCRtpCapabilities {
-        if (kind === 'audio') {
-            return DEFAULT_AUDIO_CAPABILITIES;
-        }
-
-        if (!senderCapabilities) {
-            throw new Error('sender Capabilities are null');
-        }
-
-        return senderCapabilities;
+        return WebRTCModule.senderGetCapabilities(kind);
     }
 
     getParameters(): RTCRtpSendParameters {
