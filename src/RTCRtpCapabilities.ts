@@ -1,7 +1,4 @@
-import { NativeModules } from 'react-native';
-
 import RTCRtpCodecCapability from './RTCRtpCodecCapability';
-const { WebRTCModule } = NativeModules;
 
 /**
  * @brief represents codec capabilities for senders and receivers.
