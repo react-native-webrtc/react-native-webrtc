@@ -1,6 +1,7 @@
 package com.oney.WebRTCModule;
 
 import android.util.Log;
+import android.util.Pair;
 import android.util.SparseArray;
 
 import androidx.annotation.NonNull;
@@ -695,6 +696,68 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
         });
     }
 
+    @ReactMethod(isBlockingSynchronousMethod = true)
+    public void transceiverSetCodecPreferences(int id, String senderId, ReadableArray codecPreferences) {
+        ThreadUtils.runOnExecutor(() -> {
+            WritableMap identifier = Arguments.createMap();
+            WritableMap params = Arguments.createMap();
+            identifier.putInt("peerConnectionId", id);
+            identifier.putString("transceiverId", senderId);
+            try {
+                PeerConnectionObserver pco = mPeerConnectionObservers.get(id);
+                if (pco == null) {
+                    Log.d(TAG, "transceiverSetDirection() peerConnectionObserver is null");
+                    return;
+                }
+                RtpTransceiver transceiver = pco.getTransceiver(senderId);
+                if (transceiver == null) {
+                    Log.d(TAG, "transceiverSetDirection() transceiver is null");
+                    return;
+                }
+
+                // Convert JSON codec capabilities to the actual objects.
+                RtpTransceiver.RtpTransceiverDirection direction = transceiver.getDirection();
+                List<Pair<Map<String, Object>, RtpCapabilities.CodecCapability>> availableCodecs = new ArrayList<>();
+
+                if (direction.equals(RtpTransceiver.RtpTransceiverDirection.SEND_RECV)
+                        || direction.equals(RtpTransceiver.RtpTransceiverDirection.SEND_ONLY)) {
+                    RtpCapabilities capabilities = mFactory.getRtpSenderCapabilities(transceiver.getMediaType());
+                    for (RtpCapabilities.CodecCapability codec : capabilities.codecs) {
+                        Map<String, Object> codecDict = SerializeUtils.serializeRtpCapabilitiesCodec(codec).toHashMap();
+                        availableCodecs.add(new Pair<>(codecDict, codec));
+                    }
+                }
+
+                if (direction.equals(RtpTransceiver.RtpTransceiverDirection.SEND_RECV)
+                        || direction.equals(RtpTransceiver.RtpTransceiverDirection.RECV_ONLY)) {
+                    RtpCapabilities capabilities = mFactory.getRtpReceiverCapabilities(transceiver.getMediaType());
+                    for (RtpCapabilities.CodecCapability codec : capabilities.codecs) {
+                        Map<String, Object> codecDict = SerializeUtils.serializeRtpCapabilitiesCodec(codec).toHashMap();
+                        availableCodecs.add(new Pair<>(codecDict, codec));
+                    }
+                }
+
+                // Codec preferences is order sensitive.
+                List<RtpCapabilities.CodecCapability> codecsToSet = new ArrayList<>();
+
+                for (int i = 0; i < codecPreferences.size(); i++) {
+                    Map<String, Object> codecPref = codecPreferences.getMap(i).toHashMap();
+                    for (Pair<Map<String, Object>, RtpCapabilities.CodecCapability> pair : availableCodecs) {
+                        Map<String, Object> availableCodecDict = pair.first;
+                        if (codecPref.equals(availableCodecDict)) {
+                            codecsToSet.add(pair.second);
+                            break;
+                        }
+                    }
+                }
+
+                transceiver.setCodecPreferences(codecsToSet);
+            } catch (Exception e) {
+                Log.d(TAG, "transceiverSetCodecPreferences(): " + e.getMessage());
+            }
+        });
+    }
+
     @ReactMethod
     public void getDisplayMedia(Promise promise) {
         ThreadUtils.runOnExecutor(() -> getUserMediaImpl.getDisplayMedia(promise));
@@ -1093,18 +1156,21 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
     }
 
     @ReactMethod(isBlockingSynchronousMethod = true)
-    public WritableMap receiverGetCapabilities() {
+    public WritableMap receiverGetCapabilities(String kind) {
         try {
             return (WritableMap) ThreadUtils
                     .submitToExecutor((Callable<Object>) () -> {
-                        VideoCodecInfo[] videoCodecInfos = mVideoDecoderFactory.getSupportedCodecs();
-                        WritableMap params = Arguments.createMap();
-                        WritableArray codecs = Arguments.createArray();
-                        for (VideoCodecInfo codecInfo : videoCodecInfos) {
-                            codecs.pushMap(SerializeUtils.serializeVideoCodecInfo(codecInfo));
+                        MediaStreamTrack.MediaType mediaType;
+                        if (kind.equals("audio")) {
+                            mediaType = MediaStreamTrack.MediaType.MEDIA_TYPE_AUDIO;
+                        } else if (kind.equals("video")) {
+                            mediaType = MediaStreamTrack.MediaType.MEDIA_TYPE_VIDEO;
+                        } else {
+                            return Arguments.createMap();
                         }
-                        params.putArray("codecs", codecs);
-                        return params;
+
+                        RtpCapabilities capabilities = mFactory.getRtpReceiverCapabilities(mediaType);
+                        return SerializeUtils.serializeRtpCapabilities(capabilities);
                     })
                     .get();
         } catch (ExecutionException | InterruptedException e) {
@@ -1114,18 +1180,21 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
     }
 
     @ReactMethod(isBlockingSynchronousMethod = true)
-    public WritableMap senderGetCapabilities() {
+    public WritableMap senderGetCapabilities(String kind) {
         try {
             return (WritableMap) ThreadUtils
                     .submitToExecutor((Callable<Object>) () -> {
-                        VideoCodecInfo[] videoCodecInfos = mVideoEncoderFactory.getSupportedCodecs();
-                        WritableMap params = Arguments.createMap();
-                        WritableArray codecs = Arguments.createArray();
-                        for (VideoCodecInfo codecInfo : videoCodecInfos) {
-                            codecs.pushMap(SerializeUtils.serializeVideoCodecInfo(codecInfo));
+                        MediaStreamTrack.MediaType mediaType;
+                        if (kind.equals("audio")) {
+                            mediaType = MediaStreamTrack.MediaType.MEDIA_TYPE_AUDIO;
+                        } else if (kind.equals("video")) {
+                            mediaType = MediaStreamTrack.MediaType.MEDIA_TYPE_VIDEO;
+                        } else {
+                            return Arguments.createMap();
                         }
-                        params.putArray("codecs", codecs);
-                        return params;
+
+                        RtpCapabilities capabilities = mFactory.getRtpSenderCapabilities(mediaType);
+                        return SerializeUtils.serializeRtpCapabilities(capabilities);
                     })
                     .get();
         } catch (ExecutionException | InterruptedException e) {
