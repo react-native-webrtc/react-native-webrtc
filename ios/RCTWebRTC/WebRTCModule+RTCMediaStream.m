@@ -83,7 +83,6 @@
             @"enabled" : @(track.isEnabled),
             @"id" : trackId,
             @"kind" : track.kind,
-            @"label" : trackId,
             @"readyState" : @"live",
             @"remote" : @(NO),
             @"settings" : settings
@@ -155,7 +154,6 @@ RCT_EXPORT_METHOD(getDisplayMedia : (RCTPromiseResolveBlock)resolve rejecter : (
         @"enabled" : @(videoTrack.isEnabled),
         @"id" : videoTrack.trackId,
         @"kind" : videoTrack.kind,
-        @"label" : videoTrack.trackId,
         @"readyState" : @"live",
         @"remote" : @(NO)
     };
@@ -225,7 +223,6 @@ RCT_EXPORT_METHOD(getUserMedia
             @"enabled" : @(track.isEnabled),
             @"id" : trackId,
             @"kind" : track.kind,
-            @"label" : trackId,
             @"readyState" : @"live",
             @"remote" : @(NO),
             @"settings" : settings
