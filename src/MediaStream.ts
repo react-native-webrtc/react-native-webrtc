@@ -10,10 +10,9 @@ const { WebRTCModule } = NativeModules;
 const MEDIA_STREAM_EVENTS = [ 'active', 'inactive', 'addtrack', 'removetrack' ];
 
 export default class MediaStream extends defineCustomEventTarget(...MEDIA_STREAM_EVENTS) {
-    id: string;
-    active = true;
-
     _tracks: MediaStreamTrack[] = [];
+
+    _id: string;
 
     /**
      * The identifier of this MediaStream unique within the associated
@@ -39,13 +38,14 @@ export default class MediaStream extends defineCustomEventTarget(...MEDIA_STREAM
     constructor(arg) {
         super();
 
-        // Assigm a UUID to start with. It may get overridden for remote streams.
-        this.id = uniqueID();
+        // Assign a UUID to start with. It will get overridden for remote streams.
+        this._id = uniqueID();
+
         // Local MediaStreams are created by WebRTCModule to have their id and
         // reactTag equal because WebRTCModule follows the respective standard's
         // recommendation for id generation i.e. uses UUID which is unique enough
         // for the purposes of reactTag.
-        this._reactTag = this.id;
+        this._reactTag = this._id;
 
         if (typeof arg === 'undefined') {
             WebRTCModule.mediaStreamCreate(this.id);
@@ -62,7 +62,7 @@ export default class MediaStream extends defineCustomEventTarget(...MEDIA_STREAM
                 this.addTrack(track);
             }
         } else if (typeof arg === 'object' && arg.streamId && arg.streamReactTag && arg.tracks) {
-            this.id = arg.streamId;
+            this._id = arg.streamId;
             this._reactTag = arg.streamReactTag;
 
             for (const trackInfo of arg.tracks) {
@@ -73,6 +73,16 @@ export default class MediaStream extends defineCustomEventTarget(...MEDIA_STREAM
         } else {
             throw new TypeError(`invalid type: ${typeof arg}`);
         }
+    }
+
+    get id(): string {
+        return this._id;
+    }
+
+    get active(): boolean {
+        // TODO: can we reliably report this value?
+
+        return true;
     }
 
     addTrack(track: MediaStreamTrack): void {
