@@ -1,17 +1,23 @@
 
 #import <Foundation/Foundation.h>
-#import <WebRTC/RTCCameraVideoCapturer.h>
+
+#if !TARGET_OS_TV
+    #import <WebRTC/RTCCameraVideoCapturer.h>
+#endif
 
 #import "CaptureController.h"
 
 @interface VideoCaptureController : CaptureController
-
-@property(nonatomic, readonly, strong) AVCaptureDeviceFormat *selectedFormat;
+#if !TARGET_OS_TV
+    @property(nonatomic, readonly, strong) AVCaptureDeviceFormat *selectedFormat;
+#endif
 @property(nonatomic, readonly, assign) int frameRate;
 
-- (instancetype)initWithCapturer:(RTCCameraVideoCapturer *)capturer andConstraints:(NSDictionary *)constraints;
-- (void)startCapture;
-- (void)stopCapture;
-- (void)switchCamera;
+#if !TARGET_OS_TV
+    - (instancetype)initWithCapturer:(RTCCameraVideoCapturer *)capturer andConstraints:(NSDictionary *)constraints;
+    - (void)startCapture;
+    - (void)stopCapture;
+    - (void)switchCamera;
+#endif
 
 @end

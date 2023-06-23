@@ -1,6 +1,9 @@
 #import <objc/runtime.h>
 
-#import <WebRTC/RTCCameraVideoCapturer.h>
+
+#if !TARGET_OS_TV
+    #import <WebRTC/RTCCameraVideoCapturer.h>
+#endif
 #import <WebRTC/RTCMediaConstraints.h>
 #import <WebRTC/RTCMediaStreamTrack.h>
 #import <WebRTC/RTCVideoTrack.h>
@@ -12,7 +15,9 @@
 #import "ScreenCaptureController.h"
 #import "ScreenCapturer.h"
 #import "TrackCapturerEventsEmitter.h"
-#import "VideoCaptureController.h"
+#if !TARGET_OS_TV
+    #import "VideoCaptureController.h"
+#endif
 
 @implementation WebRTCModule (RTCMediaStream)
 

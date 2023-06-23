@@ -19,6 +19,8 @@ static NSString *const PERMISSION_PROMPT = @"prompt";
     }
 }
 
+
+#if !TARGET_OS_TV
 RCT_EXPORT_METHOD(checkPermission
                   : (NSString *)mediaType resolver
                   : (RCTPromiseResolveBlock)resolve rejecter
@@ -29,27 +31,28 @@ RCT_EXPORT_METHOD(checkPermission
         reject(@"invalid_type", @"Invalid media type", nil);
         return;
     }
+        AVAuthorizationStatus status = [AVCaptureDevice authorizationStatusForMediaType:mediaType_];
+        switch (status) {
+            case AVAuthorizationStatusAuthorized:
+                resolve(PERMISSION_GRANTED);
+                break;
 
-    AVAuthorizationStatus status = [AVCaptureDevice authorizationStatusForMediaType:mediaType_];
-    switch (status) {
-        case AVAuthorizationStatusAuthorized:
-            resolve(PERMISSION_GRANTED);
-            break;
+            case AVAuthorizationStatusNotDetermined:
+                resolve(PERMISSION_PROMPT);
+                break;
 
-        case AVAuthorizationStatusNotDetermined:
-            resolve(PERMISSION_PROMPT);
-            break;
-
-        default:
-            resolve(PERMISSION_DENIED);
-            break;
-    }
+            default:
+                resolve(PERMISSION_DENIED);
+                break;
+        }
 }
+#endif
 
+#if !TARGET_OS_TV
 RCT_EXPORT_METHOD(requestPermission
-                  : (NSString *)mediaType resolver
-                  : (RCTPromiseResolveBlock)resolve rejecter
-                  : (RCTPromiseRejectBlock)reject) {
+                : (NSString *)mediaType resolver
+                : (RCTPromiseResolveBlock)resolve rejecter
+                : (RCTPromiseRejectBlock)reject) {
     AVMediaType mediaType_ = [self avMediaType:mediaType];
 
     if (mediaType_ == nil) {
@@ -58,9 +61,10 @@ RCT_EXPORT_METHOD(requestPermission
     }
 
     [AVCaptureDevice requestAccessForMediaType:mediaType_
-                             completionHandler:^(BOOL granted) {
-                                 resolve(@(granted));
-                             }];
+                            completionHandler:^(BOOL granted) {
+                                resolve(@(granted));
+                            }];
 }
+#endif
 
 @end
