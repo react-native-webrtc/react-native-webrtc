@@ -882,12 +882,18 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
     @ReactMethod
     public void peerConnectionCreateOffer(int id, ReadableMap options, Promise promise) {
         ThreadUtils.runOnExecutor(() -> {
-            PeerConnection peerConnection = getPeerConnection(id);
+            PeerConnectionObserver pco = mPeerConnectionObservers.get(id);
+            PeerConnection peerConnection = pco.getPeerConnection();
 
             if (peerConnection == null) {
                 Log.d(TAG, "peerConnectionCreateOffer() peerConnection is null");
                 promise.reject(new Exception("PeerConnection not found"));
                 return;
+            }
+
+            List<String> receiversIds = new ArrayList<>();
+            for (RtpTransceiver transceiver : peerConnection.getTransceivers()) {
+                receiversIds.add(transceiver.getReceiver().id());
             }
 
             final SdpObserver observer = new SdpObserver() {
@@ -907,6 +913,19 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
 
                         params.putArray("transceiversInfo", getTransceiversInfo(peerConnection));
                         params.putMap("sdpInfo", sdpInfo);
+
+                        WritableArray newTransceivers = Arguments.createArray();
+                        for (RtpTransceiver transceiver : peerConnection.getTransceivers()) {
+                            if (!receiversIds.contains(transceiver.getReceiver().id())) {
+                                WritableMap newTransceiver = Arguments.createMap();
+                                newTransceiver.putInt("transceiverOrder", pco.getNextTransceiverId());
+                                newTransceiver.putMap(
+                                        "transceiver", SerializeUtils.serializeTransceiver(id, transceiver));
+                                newTransceivers.pushMap(newTransceiver);
+                            }
+                        }
+
+                        params.putArray("newTransceivers", newTransceivers);
 
                         promise.resolve(params);
                     });

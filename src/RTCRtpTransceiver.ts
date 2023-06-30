@@ -25,9 +25,9 @@ export default class RTCRtpTransceiver {
         receiver: RTCRtpReceiver,
     }) {
         this._peerConnectionId = args.peerConnectionId;
-        this._mid = args.mid ? args.mid : null;
+        this._mid = args.mid ?? null;
         this._direction = args.direction;
-        this._currentDirection = args.currentDirection;
+        this._currentDirection = args.currentDirection ?? null;
         this._stopped = Boolean(args.isStopped);
         this._sender = args.sender;
         this._receiver = args.receiver;
