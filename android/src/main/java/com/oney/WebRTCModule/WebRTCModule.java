@@ -845,13 +845,16 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
         WritableArray transceiverUpdates = Arguments.createArray();
 
         for (RtpTransceiver transceiver : peerConnection.getTransceivers()) {
-            RtpTransceiver.RtpTransceiverDirection direction = transceiver.getCurrentDirection();
-            if (direction == null) continue;
-            String directionSerialized = SerializeUtils.serializeDirection(direction);
             WritableMap transceiverUpdate = Arguments.createMap();
+
+            RtpTransceiver.RtpTransceiverDirection direction = transceiver.getCurrentDirection();
+            if (direction != null) {
+                String directionSerialized = SerializeUtils.serializeDirection(direction);
+                transceiverUpdate.putString("currentDirection", directionSerialized);
+            }
+
             transceiverUpdate.putString("transceiverId", transceiver.getSender().id());
             transceiverUpdate.putString("mid", transceiver.getMid());
-            transceiverUpdate.putString("currentDirection", directionSerialized);
             transceiverUpdate.putBoolean("isStopped", transceiver.isStopped());
             transceiverUpdate.putMap("senderRtpParameters",
                     SerializeUtils.serializeRtpParameters(transceiver.getSender().getParameters()));
