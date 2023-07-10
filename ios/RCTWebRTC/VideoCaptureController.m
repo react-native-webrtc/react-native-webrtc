@@ -1,3 +1,4 @@
+#if TARGET_OS_IOS 
 
 #import "VideoCaptureController.h"
 
@@ -250,3 +251,5 @@
 }
 
 @end
+
+#endif  // !TARGET_OS_OSX and !TARGET_OS_TVOS

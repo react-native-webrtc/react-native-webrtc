@@ -34,7 +34,7 @@
     RTCAudioTrack *audioTrack = [self.peerConnectionFactory audioTrackWithTrackId:trackId];
     return audioTrack;
 }
-
+# if !TARGET_OS_TV
 /**
  * Initializes a new {@link RTCVideoTrack} with the given capture controller
  */
@@ -51,7 +51,6 @@
 
     return videoTrack;
 }
-
 /**
  * Initializes a new {@link RTCMediaTrack} with the given tracks.
  *
@@ -286,6 +285,7 @@ RCT_EXPORT_METHOD(enumerateDevices : (RCTResponseSenderBlock)callback) {
     }
     callback(@[ devices ]);
 }
+#endif
 
 RCT_EXPORT_METHOD(mediaStreamCreate : (nonnull NSString *)streamID) {
     RTCMediaStream *mediaStream = [self.peerConnectionFactory mediaStreamWithStreamId:streamID];
@@ -340,7 +340,7 @@ RCT_EXPORT_METHOD(mediaStreamRelease : (nonnull NSString *)streamID) {
         [self.localStreams removeObjectForKey:streamID];
     }
 }
-
+#if TARGET_OS_IOS
 RCT_EXPORT_METHOD(mediaStreamTrackRelease : (nonnull NSString *)trackID) {
     RTCMediaStreamTrack *track = self.localTracks[trackID];
     if (track) {
@@ -373,6 +373,7 @@ RCT_EXPORT_METHOD(mediaStreamTrackSwitchCamera : (nonnull NSString *)trackID) {
         [(VideoCaptureController *)videoTrack.captureController switchCamera];
     }
 }
+#endif
 
 RCT_EXPORT_METHOD(mediaStreamTrackSetVolume : (nonnull NSNumber *)pcId : (nonnull NSString *)trackID : (double)volume) {
     RTCMediaStreamTrack *track = [self trackForId:trackID pcId:pcId];

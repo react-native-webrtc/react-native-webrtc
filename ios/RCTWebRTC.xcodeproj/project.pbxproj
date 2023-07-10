@@ -7,17 +7,6 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		0A973A022A4C71C0003AF70C /* RCTConvert+WebRTC.m in Sources */ = {isa = PBXBuildFile; fileRef = 4EE3A8A125B840DA00FAA24A /* RCTConvert+WebRTC.m */; };
-		0A973A042A4C71C0003AF70C /* RTCMediaStreamTrack+React.m in Sources */ = {isa = PBXBuildFile; fileRef = 4EE3A8A625B8411400FAA24A /* RTCMediaStreamTrack+React.m */; };
-		0A973A062A4C71C0003AF70C /* RTCVideoViewManager.m in Sources */ = {isa = PBXBuildFile; fileRef = 4EE3A8AB25B8412700FAA24A /* RTCVideoViewManager.m */; };
-		0A973A072A4C71C0003AF70C /* WebRTCModule+Permissions.m in Sources */ = {isa = PBXBuildFile; fileRef = 4EE3A8B525B8414A00FAA24A /* WebRTCModule+Permissions.m */; };
-		0A973A092A4C71C1003AF70C /* WebRTCModule+RTCDataChannel.m in Sources */ = {isa = PBXBuildFile; fileRef = 4EE3A8B925B8415900FAA24A /* WebRTCModule+RTCDataChannel.m */; };
-		0A973A0B2A4C71C1003AF70C /* WebRTCModule+RTCMediaStream.m in Sources */ = {isa = PBXBuildFile; fileRef = 4EE3A8BC25B8416500FAA24A /* WebRTCModule+RTCMediaStream.m */; };
-		0A973A0D2A4C71C1003AF70C /* WebRTCModule+RTCPeerConnection.m in Sources */ = {isa = PBXBuildFile; fileRef = 4EE3A8BF25B8416F00FAA24A /* WebRTCModule+RTCPeerConnection.m */; };
-		0A973A0F2A4C71C1003AF70C /* WebRTCModule+VideoTrackAdapter.m in Sources */ = {isa = PBXBuildFile; fileRef = 4EE3A8C325B8417800FAA24A /* WebRTCModule+VideoTrackAdapter.m */; };
-		0A973A112A4C71C1003AF70C /* WebRTCModule.m in Sources */ = {isa = PBXBuildFile; fileRef = 4EE3A8B025B8414000FAA24A /* WebRTCModule.m */; };
-		0A973A132A4C71C2003AF70C /* SocketConnection.m in Sources */ = {isa = PBXBuildFile; fileRef = 4EE3A8C825B841DD00FAA24A /* SocketConnection.m */; };
-		0A973A152A4C71C2003AF70C /* DataChannelWrapper.m in Sources */ = {isa = PBXBuildFile; fileRef = DEC96576264176C10052DB35 /* DataChannelWrapper.m */; };
 		0BDDA6E020C18B6B00B38B45 /* VideoCaptureController.m in Sources */ = {isa = PBXBuildFile; fileRef = 0BDDA6DF20C18B6B00B38B45 /* VideoCaptureController.m */; };
 		4EC498BC25B8777F00E76218 /* ScreenCapturePickerViewManager.m in Sources */ = {isa = PBXBuildFile; fileRef = 4EC498BA25B8777F00E76218 /* ScreenCapturePickerViewManager.m */; };
 		4EE3A8A325B840DA00FAA24A /* RCTConvert+WebRTC.m in Sources */ = {isa = PBXBuildFile; fileRef = 4EE3A8A125B840DA00FAA24A /* RCTConvert+WebRTC.m */; };
@@ -39,15 +28,6 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
-		0A9739C52A4A1CA6003AF70C /* CopyFiles */ = {
-			isa = PBXCopyFilesBuildPhase;
-			buildActionMask = 2147483647;
-			dstPath = "include/$(PRODUCT_NAME)";
-			dstSubfolderSpec = 16;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
 		35A2221D1CB493700015FD5C /* CopyFiles */ = {
 			isa = PBXCopyFilesBuildPhase;
 			buildActionMask = 2147483647;
@@ -60,7 +40,8 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
-		0A9739C72A4A1CA6003AF70C /* libRCTWebRTC-tvOS.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libRCTWebRTC-tvOS.a"; sourceTree = BUILT_PRODUCTS_DIR; };
+		0A4A3E202A585B4900D3FECA /* react_native_webrtc_tvos.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = react_native_webrtc_tvos.h; sourceTree = "<group>"; };
+		0A4A3E212A585B4900D3FECA /* react_native_webrtc_tvos.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = react_native_webrtc_tvos.m; sourceTree = "<group>"; };
 		0BDDA6DF20C18B6B00B38B45 /* VideoCaptureController.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = VideoCaptureController.m; path = RCTWebRTC/VideoCaptureController.m; sourceTree = "<group>"; };
 		131131FC732883F1EF6F2CA3 /* Pods-RCTWebRTC.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-RCTWebRTC.release.xcconfig"; path = "Target Support Files/Pods-RCTWebRTC/Pods-RCTWebRTC.release.xcconfig"; sourceTree = "<group>"; };
 		1A7E646283326F2A95C8C1FA /* Pods-RCTWebRTC.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-RCTWebRTC.debug.xcconfig"; path = "Target Support Files/Pods-RCTWebRTC/Pods-RCTWebRTC.debug.xcconfig"; sourceTree = "<group>"; };
@@ -102,13 +83,6 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
-		0A9739C42A4A1CA6003AF70C /* Frameworks */ = {
-			isa = PBXFrameworksBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
 		35A2221C1CB493700015FD5C /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -120,6 +94,15 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		0A4A3E1F2A585B4900D3FECA /* react-native-webrtc-tvos */ = {
+			isa = PBXGroup;
+			children = (
+				0A4A3E202A585B4900D3FECA /* react_native_webrtc_tvos.h */,
+				0A4A3E212A585B4900D3FECA /* react_native_webrtc_tvos.m */,
+			);
+			path = "react-native-webrtc-tvos";
+			sourceTree = "<group>";
+		};
 		22DE4ED9F87C796C5D0480DC /* Pods */ = {
 			isa = PBXGroup;
 			children = (
@@ -133,6 +116,7 @@
 			isa = PBXGroup;
 			children = (
 				35A222311CB493C00015FD5C /* RCTWebRTC */,
+				0A4A3E1F2A585B4900D3FECA /* react-native-webrtc-tvos */,
 				35A222201CB493700015FD5C /* Products */,
 				DEFDBC25256574F500344B23 /* Frameworks */,
 				22DE4ED9F87C796C5D0480DC /* Pods */,
@@ -143,7 +127,6 @@
 			isa = PBXGroup;
 			children = (
 				35A2221F1CB493700015FD5C /* libRCTWebRTC.a */,
-				0A9739C72A4A1CA6003AF70C /* libRCTWebRTC-tvOS.a */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -201,23 +184,6 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		0A9739C62A4A1CA6003AF70C /* RCTWebRTC-tvOS */ = {
-			isa = PBXNativeTarget;
-			buildConfigurationList = 0A9739CD2A4A1CA6003AF70C /* Build configuration list for PBXNativeTarget "RCTWebRTC-tvOS" */;
-			buildPhases = (
-				0A9739C32A4A1CA6003AF70C /* Sources */,
-				0A9739C42A4A1CA6003AF70C /* Frameworks */,
-				0A9739C52A4A1CA6003AF70C /* CopyFiles */,
-			);
-			buildRules = (
-			);
-			dependencies = (
-			);
-			name = "RCTWebRTC-tvOS";
-			productName = "RCTWebRTC-tvOS";
-			productReference = 0A9739C72A4A1CA6003AF70C /* libRCTWebRTC-tvOS.a */;
-			productType = "com.apple.product-type.library.static";
-		};
 		35A2221E1CB493700015FD5C /* RCTWebRTC */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = 35A222281CB493700015FD5C /* Build configuration list for PBXNativeTarget "RCTWebRTC" */;
@@ -245,10 +211,6 @@
 				LastSwiftUpdateCheck = 1420;
 				LastUpgradeCheck = 0720;
 				TargetAttributes = {
-					0A9739C62A4A1CA6003AF70C = {
-						CreatedOnToolsVersion = 14.2;
-						ProvisioningStyle = Automatic;
-					};
 					35A2221E1CB493700015FD5C = {
 						CreatedOnToolsVersion = 7.2.1;
 					};
@@ -268,7 +230,6 @@
 			projectRoot = "";
 			targets = (
 				35A2221E1CB493700015FD5C /* RCTWebRTC */,
-				0A9739C62A4A1CA6003AF70C /* RCTWebRTC-tvOS */,
 			);
 		};
 /* End PBXProject section */
@@ -299,24 +260,6 @@
 /* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
-		0A9739C32A4A1CA6003AF70C /* Sources */ = {
-			isa = PBXSourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-				0A973A022A4C71C0003AF70C /* RCTConvert+WebRTC.m in Sources */,
-				0A973A042A4C71C0003AF70C /* RTCMediaStreamTrack+React.m in Sources */,
-				0A973A062A4C71C0003AF70C /* RTCVideoViewManager.m in Sources */,
-				0A973A072A4C71C0003AF70C /* WebRTCModule+Permissions.m in Sources */,
-				0A973A092A4C71C1003AF70C /* WebRTCModule+RTCDataChannel.m in Sources */,
-				0A973A0B2A4C71C1003AF70C /* WebRTCModule+RTCMediaStream.m in Sources */,
-				0A973A0D2A4C71C1003AF70C /* WebRTCModule+RTCPeerConnection.m in Sources */,
-				0A973A0F2A4C71C1003AF70C /* WebRTCModule+VideoTrackAdapter.m in Sources */,
-				0A973A112A4C71C1003AF70C /* WebRTCModule.m in Sources */,
-				0A973A132A4C71C2003AF70C /* SocketConnection.m in Sources */,
-				0A973A152A4C71C2003AF70C /* DataChannelWrapper.m in Sources */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
 		35A2221B1CB493700015FD5C /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -344,81 +287,6 @@
 /* End PBXSourcesBuildPhase section */
 
 /* Begin XCBuildConfiguration section */
-		0A9739CB2A4A1CA6003AF70C /* Debug */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				ALWAYS_SEARCH_USER_PATHS = NO;
-				CLANG_ANALYZER_NONNULL = YES;
-				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
-				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
-				CLANG_ENABLE_OBJC_WEAK = YES;
-				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
-				CLANG_WARN_COMMA = YES;
-				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
-				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
-				CLANG_WARN_INFINITE_RECURSION = YES;
-				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
-				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
-				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
-				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
-				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
-				CLANG_WARN_STRICT_PROTOTYPES = YES;
-				CLANG_WARN_SUSPICIOUS_MOVE = YES;
-				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
-				CODE_SIGN_STYLE = Automatic;
-				GCC_C_LANGUAGE_STANDARD = gnu11;
-				IPHONEOS_DEPLOYMENT_TARGET = 16.2;
-				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
-				MTL_FAST_MATH = YES;
-				OTHER_LDFLAGS = "-ObjC";
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				SDKROOT = appletvos;
-				SKIP_INSTALL = YES;
-				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
-				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
-				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = 3;
-				TVOS_DEPLOYMENT_TARGET = 16.0;
-			};
-			name = Debug;
-		};
-		0A9739CC2A4A1CA6003AF70C /* Release */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				ALWAYS_SEARCH_USER_PATHS = NO;
-				CLANG_ANALYZER_NONNULL = YES;
-				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
-				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
-				CLANG_ENABLE_OBJC_WEAK = YES;
-				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
-				CLANG_WARN_COMMA = YES;
-				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
-				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
-				CLANG_WARN_INFINITE_RECURSION = YES;
-				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
-				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
-				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
-				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
-				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
-				CLANG_WARN_STRICT_PROTOTYPES = YES;
-				CLANG_WARN_SUSPICIOUS_MOVE = YES;
-				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
-				CODE_SIGN_STYLE = Automatic;
-				GCC_C_LANGUAGE_STANDARD = gnu11;
-				IPHONEOS_DEPLOYMENT_TARGET = 16.2;
-				MTL_ENABLE_DEBUG_INFO = NO;
-				MTL_FAST_MATH = YES;
-				OTHER_LDFLAGS = "-ObjC";
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				SDKROOT = appletvos;
-				SKIP_INSTALL = YES;
-				SWIFT_OPTIMIZATION_LEVEL = "-Owholemodule";
-				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = 3;
-				TVOS_DEPLOYMENT_TARGET = 16.0;
-			};
-			name = Release;
-		};
 		35A222261CB493700015FD5C /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -520,15 +388,6 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		0A9739CD2A4A1CA6003AF70C /* Build configuration list for PBXNativeTarget "RCTWebRTC-tvOS" */ = {
-			isa = XCConfigurationList;
-			buildConfigurations = (
-				0A9739CB2A4A1CA6003AF70C /* Debug */,
-				0A9739CC2A4A1CA6003AF70C /* Release */,
-			);
-			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
-		};
 		35A2221A1CB493700015FD5C /* Build configuration list for PBXProject "RCTWebRTC" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
