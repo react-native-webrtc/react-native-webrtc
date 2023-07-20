@@ -63,8 +63,17 @@ const PEER_CONNECTION_EVENTS = [
 let nextPeerConnectionId = 0;
 
 export default class RTCPeerConnection extends defineCustomEventTarget(...PEER_CONNECTION_EVENTS) {
-    localDescription: RTCSessionDescription | null = null;
-    remoteDescription: RTCSessionDescription | null = null;
+    currentLocalDescription: RTCSessionDescription | null = null;
+    pendingLocalDescription: RTCSessionDescription | null = null;
+    get localDescription(): RTCSessionDescription | null {
+        return this.pendingLocalDescription || this.currentLocalDescription;
+    };
+    
+    currentRemoteDescription: RTCSessionDescription | null = null;
+    pendingRemoteDescription: RTCSessionDescription | null = null;
+    get remoteDescription(): RTCSessionDescription | null {
+        return this.pendingRemoteDescription || this.currentRemoteDescription;
+    };
 
     signalingState: RTCSignalingState = 'stable';
     iceGatheringState: RTCIceGatheringState = 'new';
@@ -157,15 +166,23 @@ export default class RTCPeerConnection extends defineCustomEventTarget(...PEER_C
             desc = null;
         }
 
+        this.pendingLocalDescription = new RTCSessionDescription(desc);
+
+        let localDescriptionResult;
+        try {
+            localDescriptionResult = await WebRTCModule.peerConnectionSetLocalDescription(this._pcId, desc);
+        } finally {
+            this.pendingLocalDescription = null;
+        }
         const {
             sdpInfo,
             transceiversInfo
-        } = await WebRTCModule.peerConnectionSetLocalDescription(this._pcId, desc);
+        } = localDescriptionResult;
 
         if (sdpInfo.type && sdpInfo.sdp) {
-            this.localDescription = new RTCSessionDescription(sdpInfo);
+            this.currentLocalDescription = new RTCSessionDescription(sdpInfo);
         } else {
-            this.localDescription = null;
+            this.currentLocalDescription = null;
         }
 
         this._updateTransceivers(transceiversInfo, /* removeStopped */ desc?.type === 'answer');
@@ -189,16 +206,24 @@ export default class RTCPeerConnection extends defineCustomEventTarget(...PEER_C
             throw new Error(`Invalid session description: invalid type: ${desc.type}`);
         }
 
+        this.pendingRemoteDescription = new RTCSessionDescription(desc);
+        
+        let remoteDescriptionResult;
+        try {
+            remoteDescriptionResult = await WebRTCModule.peerConnectionSetRemoteDescription(this._pcId, desc);
+        } finally {
+            this.pendingRemoteDescription = null;
+        }
         const {
             sdpInfo,
             newTransceivers,
             transceiversInfo
-        } = await WebRTCModule.peerConnectionSetRemoteDescription(this._pcId, desc);
+        } = remoteDescriptionResult;
 
         if (sdpInfo.type && sdpInfo.sdp) {
-            this.remoteDescription = new RTCSessionDescription(sdpInfo);
+            this.currentRemoteDescription = new RTCSessionDescription(sdpInfo);
         } else {
-            this.remoteDescription = null;
+            this.currentRemoteDescription = null;
         }
 
         newTransceivers?.forEach(t => {
