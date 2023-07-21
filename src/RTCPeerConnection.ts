@@ -63,18 +63,6 @@ const PEER_CONNECTION_EVENTS = [
 let nextPeerConnectionId = 0;
 
 export default class RTCPeerConnection extends defineCustomEventTarget(...PEER_CONNECTION_EVENTS) {
-    currentLocalDescription: RTCSessionDescription | null = null;
-    pendingLocalDescription: RTCSessionDescription | null = null;
-    get localDescription(): RTCSessionDescription | null {
-        return this.pendingLocalDescription || this.currentLocalDescription;
-    };
-    
-    currentRemoteDescription: RTCSessionDescription | null = null;
-    pendingRemoteDescription: RTCSessionDescription | null = null;
-    get remoteDescription(): RTCSessionDescription | null {
-        return this.pendingRemoteDescription || this.currentRemoteDescription;
-    };
-
     signalingState: RTCSignalingState = 'stable';
     iceGatheringState: RTCIceGatheringState = 'new';
     connectionState: RTCPeerConnectionState = 'new';
@@ -84,6 +72,11 @@ export default class RTCPeerConnection extends defineCustomEventTarget(...PEER_C
     _transceivers: { order: number, transceiver: RTCRtpTransceiver }[];
     _remoteStreams: Map<string, MediaStream>;
     _pendingTrackEvents: any[];
+
+    _currentLocalDescription: RTCSessionDescription | null = null;
+    _pendingLocalDescription: RTCSessionDescription | null = null;
+    _currentRemoteDescription: RTCSessionDescription | null = null;
+    _pendingRemoteDescription: RTCSessionDescription | null = null;
 
     constructor(configuration) {
         super();
@@ -98,6 +91,30 @@ export default class RTCPeerConnection extends defineCustomEventTarget(...PEER_C
         this._registerEvents();
 
         log.debug(`${this._pcId} ctor`);
+    }
+
+    get currentLocalDescription(): RTCSessionDescription | null {
+        return this._currentLocalDescription;
+    }
+
+    get pendingLocalDescription(): RTCSessionDescription | null {
+        return this._pendingLocalDescription;
+    }
+
+    get localDescription(): RTCSessionDescription | null {
+        return this._pendingLocalDescription || this._currentLocalDescription;
+    }
+
+    get currentRemoteDescription(): RTCSessionDescription | null {
+        return this._currentRemoteDescription;
+    }
+
+    get pendingRemoteDescription(): RTCSessionDescription | null {
+        return this._pendingRemoteDescription;
+    }
+
+    get remoteDescription(): RTCSessionDescription | null {
+        return this._pendingRemoteDescription || this._currentRemoteDescription;
     }
 
     async createOffer(options) {
@@ -166,23 +183,22 @@ export default class RTCPeerConnection extends defineCustomEventTarget(...PEER_C
             desc = null;
         }
 
-        this.pendingLocalDescription = new RTCSessionDescription(desc);
-
-        let localDescriptionResult;
-        try {
-            localDescriptionResult = await WebRTCModule.peerConnectionSetLocalDescription(this._pcId, desc);
-        } finally {
-            this.pendingLocalDescription = null;
-        }
         const {
             sdpInfo,
             transceiversInfo
-        } = localDescriptionResult;
+        } = await WebRTCModule.peerConnectionSetLocalDescription(this._pcId, desc);
 
         if (sdpInfo.type && sdpInfo.sdp) {
-            this.currentLocalDescription = new RTCSessionDescription(sdpInfo);
+            if (sdpInfo.type === 'answer') {
+                this._currentLocalDescription = new RTCSessionDescription(sdpInfo);
+                this._pendingLocalDescription = null;
+            } else {
+                this._currentLocalDescription = null;
+                this._pendingLocalDescription = new RTCSessionDescription(sdpInfo);
+            }
         } else {
-            this.currentLocalDescription = null;
+            this._currentLocalDescription = null;
+            this._pendingLocalDescription = null;
         }
 
         this._updateTransceivers(transceiversInfo, /* removeStopped */ desc?.type === 'answer');
@@ -206,24 +222,23 @@ export default class RTCPeerConnection extends defineCustomEventTarget(...PEER_C
             throw new Error(`Invalid session description: invalid type: ${desc.type}`);
         }
 
-        this.pendingRemoteDescription = new RTCSessionDescription(desc);
-        
-        let remoteDescriptionResult;
-        try {
-            remoteDescriptionResult = await WebRTCModule.peerConnectionSetRemoteDescription(this._pcId, desc);
-        } finally {
-            this.pendingRemoteDescription = null;
-        }
         const {
             sdpInfo,
             newTransceivers,
             transceiversInfo
-        } = remoteDescriptionResult;
+        } = await WebRTCModule.peerConnectionSetRemoteDescription(this._pcId, desc);
 
         if (sdpInfo.type && sdpInfo.sdp) {
-            this.currentRemoteDescription = new RTCSessionDescription(sdpInfo);
+            if (sdpInfo.type === 'answer') {
+                this._currentRemoteDescription = new RTCSessionDescription(sdpInfo);
+                this._pendingRemoteDescription = null;
+            } else {
+                this._currentRemoteDescription = null;
+                this._pendingRemoteDescription = new RTCSessionDescription(sdpInfo);
+            }
         } else {
-            this.currentRemoteDescription = null;
+            this._currentRemoteDescription = null;
+            this._pendingRemoteDescription = null;
         }
 
         newTransceivers?.forEach(t => {
@@ -331,7 +346,13 @@ export default class RTCPeerConnection extends defineCustomEventTarget(...PEER_C
             candidate.toJSON ? candidate.toJSON() : candidate
         );
 
-        this.remoteDescription = new RTCSessionDescription(newSdp);
+        if (this.signalingState === 'stable') {
+            this._currentRemoteDescription = new RTCSessionDescription(newSdp);
+            this._pendingRemoteDescription = null;
+        } else {
+            this._currentRemoteDescription = null;
+            this._pendingRemoteDescription = new RTCSessionDescription(newSdp);
+        }
     }
 
     /**
@@ -594,6 +615,42 @@ export default class RTCPeerConnection extends defineCustomEventTarget(...PEER_C
             }
 
             this.signalingState = ev.signalingState;
+            const { localSdp, remoteSdp } = ev;
+
+            if (localSdp.type && localSdp.sdp) {
+                switch (this.signalingState) {
+                    case 'stable':
+                        this._currentLocalDescription = new RTCSessionDescription(localSdp);
+                        this._pendingLocalDescription = null;
+                        break;
+                    case 'have-local-offer':
+                    case 'have-local-pranswer':
+                        this._currentLocalDescription = null;
+                        this._pendingLocalDescription = new RTCSessionDescription(localSdp);
+                        break;
+                }
+            } else {
+                this._currentLocalDescription = null;
+                this._pendingLocalDescription = null;
+            }
+
+            if (remoteSdp.type && remoteSdp.sdp) {
+                switch (this.signalingState) {
+                    case 'stable':
+                        this._currentRemoteDescription = new RTCSessionDescription(remoteSdp);
+                        this._pendingRemoteDescription = null;
+                        break;
+                    case 'have-remote-offer':
+                    case 'have-remote-pranswer':
+                        this._currentRemoteDescription = null;
+                        this._pendingRemoteDescription = new RTCSessionDescription(remoteSdp);
+                        break;
+                }
+            } else {
+                this._currentRemoteDescription = null;
+                this._pendingRemoteDescription = null;
+            }
+
             // @ts-ignore
             this.dispatchEvent(new RTCEvent('signalingstatechange'));
         });
@@ -655,9 +712,16 @@ export default class RTCPeerConnection extends defineCustomEventTarget(...PEER_C
 
             // Can happen when doing a rollback.
             if (sdpInfo.type && sdpInfo.sdp) {
-                this.localDescription = new RTCSessionDescription(sdpInfo);
+                if (this.signalingState === 'stable') {
+                    this._currentLocalDescription = new RTCSessionDescription(sdpInfo);
+                    this._pendingLocalDescription = null;
+                } else {
+                    this._currentLocalDescription = null;
+                    this._pendingLocalDescription = new RTCSessionDescription(sdpInfo);
+                }
             } else {
-                this.localDescription = null;
+                this._currentLocalDescription = null;
+                this._pendingLocalDescription = null;
             }
 
             const candidate = new RTCIceCandidate(ev.candidate);
@@ -678,9 +742,16 @@ export default class RTCPeerConnection extends defineCustomEventTarget(...PEER_C
 
                 // Can happen when doing a rollback.
                 if (sdpInfo.type && sdpInfo.sdp) {
-                    this.localDescription = new RTCSessionDescription(sdpInfo);
+                    if (this.signalingState === 'stable') {
+                        this._currentLocalDescription = new RTCSessionDescription(sdpInfo);
+                        this._pendingLocalDescription = null;
+                    } else {
+                        this._currentLocalDescription = null;
+                        this._pendingLocalDescription = new RTCSessionDescription(sdpInfo);
+                    }
                 } else {
-                    this.localDescription = null;
+                    this._currentLocalDescription = null;
+                    this._pendingLocalDescription = null;
                 }
 
                 // @ts-ignore

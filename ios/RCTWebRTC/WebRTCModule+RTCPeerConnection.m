@@ -732,10 +732,29 @@ RCT_EXPORT_BLOCKING_SYNCHRONOUS_METHOD(peerConnectionRemoveTrack
 
 - (void)peerConnection:(RTCPeerConnection *)peerConnection didChangeSignalingState:(RTCSignalingState)newState {
     dispatch_async(self.workerQueue, ^{
+        id newLocalSdp = @{};
+        id newRemoteSdp = @{};
+        
+        if (peerConnection.localDescription) {
+            newLocalSdp = @{
+                @"type" : [RTCSessionDescription stringForType:peerConnection.localDescription.type],
+                @"sdp" : peerConnection.localDescription.sdp
+            };
+        }
+        
+        if (peerConnection.remoteDescription) {
+            newRemoteSdp = @{
+                @"type" : [RTCSessionDescription stringForType:peerConnection.remoteDescription.type],
+                @"sdp" : peerConnection.remoteDescription.sdp
+            };
+        }
+        
         [self sendEventWithName:kEventPeerConnectionSignalingStateChanged
                            body:@{
                                @"pcId" : peerConnection.reactTag,
-                               @"signalingState" : [self stringForSignalingState:newState]
+                               @"signalingState" : [self stringForSignalingState:newState],
+                               @"localSdp": newLocalSdp,
+                               @"remoteSdp": newRemoteSdp
                            }];
     });
 }
