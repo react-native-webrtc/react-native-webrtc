@@ -202,14 +202,7 @@ RCT_EXPORT_METHOD(peerConnectionSetLocalDescription
             if (error) {
                 reject(@"E_OPERATION_ERROR", error.localizedDescription, nil);
             } else {
-                NSMutableDictionary *sdpInfo = [NSMutableDictionary new];
-                RTCSessionDescription *localDesc = peerConnection.localDescription;
-                if (localDesc) {
-                    sdpInfo[@"type"] = [RTCSessionDescription stringForType:localDesc.type];
-                    sdpInfo[@"sdp"] = localDesc.sdp;
-                }
                 id data = @{
-                    @"sdpInfo" : sdpInfo,
                     @"transceiversInfo" :
                         [SerializeUtils constructTransceiversInfoArrayWithPeerConnection:peerConnection]
                 };
@@ -257,14 +250,7 @@ RCT_EXPORT_METHOD(peerConnectionSetRemoteDescription
                     }
                 }
 
-                NSMutableDictionary *sdpInfo = [NSMutableDictionary new];
-                RTCSessionDescription *remoteDesc = peerConnection.remoteDescription;
-                if (remoteDesc) {
-                    sdpInfo[@"type"] = [RTCSessionDescription stringForType:remoteDesc.type];
-                    sdpInfo[@"sdp"] = remoteDesc.sdp;
-                }
                 id data = @{
-                    @"sdpInfo" : sdpInfo,
                     @"transceiversInfo" :
                         [SerializeUtils constructTransceiversInfoArrayWithPeerConnection:peerConnection],
                     @"newTransceivers" : newTransceivers

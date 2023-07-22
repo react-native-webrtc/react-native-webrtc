@@ -183,23 +183,7 @@ export default class RTCPeerConnection extends defineCustomEventTarget(...PEER_C
             desc = null;
         }
 
-        const {
-            sdpInfo,
-            transceiversInfo
-        } = await WebRTCModule.peerConnectionSetLocalDescription(this._pcId, desc);
-
-        if (sdpInfo.type && sdpInfo.sdp) {
-            if (sdpInfo.type === 'answer') {
-                this._currentLocalDescription = new RTCSessionDescription(sdpInfo);
-                this._pendingLocalDescription = null;
-            } else {
-                this._currentLocalDescription = null;
-                this._pendingLocalDescription = new RTCSessionDescription(sdpInfo);
-            }
-        } else {
-            this._currentLocalDescription = null;
-            this._pendingLocalDescription = null;
-        }
+        const { transceiversInfo } = await WebRTCModule.peerConnectionSetLocalDescription(this._pcId, desc);
 
         this._updateTransceivers(transceiversInfo, /* removeStopped */ desc?.type === 'answer');
 
@@ -223,23 +207,9 @@ export default class RTCPeerConnection extends defineCustomEventTarget(...PEER_C
         }
 
         const {
-            sdpInfo,
             newTransceivers,
             transceiversInfo
         } = await WebRTCModule.peerConnectionSetRemoteDescription(this._pcId, desc);
-
-        if (sdpInfo.type && sdpInfo.sdp) {
-            if (sdpInfo.type === 'answer') {
-                this._currentRemoteDescription = new RTCSessionDescription(sdpInfo);
-                this._pendingRemoteDescription = null;
-            } else {
-                this._currentRemoteDescription = null;
-                this._pendingRemoteDescription = new RTCSessionDescription(sdpInfo);
-            }
-        } else {
-            this._currentRemoteDescription = null;
-            this._pendingRemoteDescription = null;
-        }
 
         newTransceivers?.forEach(t => {
             const { transceiverOrder, transceiver } = t;
