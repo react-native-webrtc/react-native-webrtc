@@ -1,4 +1,4 @@
-#if TARGET_OS_IOS 
+#if !TARGET_OS_OSX and !TARGET_OS_TVOS
 
 #import <React/RCTUIManager.h>
 #import <ReplayKit/ReplayKit.h>
