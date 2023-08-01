@@ -27,7 +27,7 @@
     "tar": "6.1.11"
   },
   "peerDependencies": {
-    "react-native": "0.69.8-2"
+    "react-native": ">=0.60.0"
   },
   "scripts": {
     "lint": "eslint --max-warnings 0 . && tsc --noEmit",
