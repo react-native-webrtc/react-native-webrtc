@@ -1,4 +1,4 @@
-#if TARGET_OS_IOS 
+#if !TARGET_OS_OSX && !TARGET_OS_TV
 
 #import "ScreenCaptureController.h"
 #import "ScreenCapturer.h"
@@ -76,4 +76,4 @@ NSString *const kRTCAppGroupIdentifier = @"RTCAppGroupIdentifier";
 
 @end
 
-#endif  // !TARGET_OS_OSX and !TARGET_OS_TVOS
+#endif

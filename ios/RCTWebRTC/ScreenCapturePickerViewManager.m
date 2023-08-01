@@ -1,4 +1,4 @@
-#if !TARGET_OS_OSX and !TARGET_OS_TVOS
+#if !TARGET_OS_OSX && !TARGET_OS_TV
 
 #import <React/RCTUIManager.h>
 #import <ReplayKit/ReplayKit.h>
@@ -57,4 +57,4 @@ RCT_EXPORT_METHOD(show : (nonnull NSNumber *)reactTag) {
 
 @end
 
-#endif  // !TARGET_OS_OSX and !TARGET_OS_TVOS
+#endif

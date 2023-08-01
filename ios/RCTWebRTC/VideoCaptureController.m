@@ -252,4 +252,4 @@
 
 @end
 
-#endif  // !TARGET_OS_OSX and !TARGET_OS_TVOS
+#endif
