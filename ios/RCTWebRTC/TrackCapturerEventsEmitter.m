@@ -1,5 +1,3 @@
-#if TARGET_OS_IOS 
-
 #import "TrackCapturerEventsEmitter.h"
 #import "CapturerEventsDelegate.h"
 #import "WebRTCModule.h"
@@ -37,5 +35,3 @@ NS_ASSUME_NONNULL_BEGIN
 @end
 
 NS_ASSUME_NONNULL_END
-
-#endif

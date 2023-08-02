@@ -1,4 +1,4 @@
-#if TARGET_OS_IOS 
+#if !TARGET_OS_TV 
 
 #import "CaptureController.h"
 

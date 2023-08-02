@@ -261,4 +261,4 @@ const NSUInteger kMaxReadLength = 10 * 1024;
 
 @end
 
-#endif  // !TARGET_OS_OSX and !TARGET_OS_TVOS
+#endif
