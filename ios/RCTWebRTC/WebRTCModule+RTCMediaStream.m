@@ -1,9 +1,6 @@
 #import <objc/runtime.h>
 
-
-#if !TARGET_OS_TV
-    #import <WebRTC/RTCCameraVideoCapturer.h>
-#endif
+#import <WebRTC/RTCCameraVideoCapturer.h>
 #import <WebRTC/RTCMediaConstraints.h>
 #import <WebRTC/RTCMediaStreamTrack.h>
 #import <WebRTC/RTCVideoTrack.h>
@@ -15,9 +12,7 @@
 #import "ScreenCaptureController.h"
 #import "ScreenCapturer.h"
 #import "TrackCapturerEventsEmitter.h"
-#if !TARGET_OS_TV
-    #import "VideoCaptureController.h"
-#endif
+#import "VideoCaptureController.h"
 
 @implementation WebRTCModule (RTCMediaStream)
 
@@ -34,11 +29,13 @@
     RTCAudioTrack *audioTrack = [self.peerConnectionFactory audioTrackWithTrackId:trackId];
     return audioTrack;
 }
-# if !TARGET_OS_TV
 /**
  * Initializes a new {@link RTCVideoTrack} with the given capture controller
  */
 - (RTCVideoTrack *)createVideoTrackWithCaptureController:
+#if !TARGET_OS_TV
+    return nil
+#endif
     (CaptureController * (^)(RTCVideoSource *))captureControllerCreator {
     RTCVideoSource *videoSource = [self.peerConnectionFactory videoSource];
 
@@ -56,6 +53,7 @@
  *
  * @return An array with the mediaStreamId in index 0, and track infos in index 1.
  */
+#if !TARGET_OS_TV
 - (NSArray *)createMediaStream:(NSArray<RTCMediaStreamTrack *> *)tracks {
     NSString *mediaStreamId = [[NSUUID UUID] UUIDString];
     RTCMediaStream *mediaStream = [self.peerConnectionFactory mediaStreamWithStreamId:mediaStreamId];
@@ -97,11 +95,15 @@
     self.localStreams[mediaStreamId] = mediaStream;
     return @[ mediaStreamId, trackInfos ];
 }
+#endif
 
 /**
  * Initializes a new {@link RTCVideoTrack} which satisfies the given constraints.
  */
 - (RTCVideoTrack *)createVideoTrack:(NSDictionary *)constraints {
+#if !TARGET_OS_TV
+    return nil
+#endif
     RTCVideoSource *videoSource = [self.peerConnectionFactory videoSource];
 
     NSString *trackUUID = [[NSUUID UUID] UUIDString];
@@ -119,7 +121,7 @@
 }
 
 - (RTCVideoTrack *)createScreenCaptureVideoTrack {
-#if TARGET_IPHONE_SIMULATOR || TARGET_OS_OSX
+#if TARGET_IPHONE_SIMULATOR || TARGET_OS_OSX || TARGET_OS_TV
     return nil;
 #endif
 
@@ -141,6 +143,9 @@
 }
 
 RCT_EXPORT_METHOD(getDisplayMedia : (RCTPromiseResolveBlock)resolve rejecter : (RCTPromiseRejectBlock)reject) {
+#if !TARGET_OS_TV
+    return nil
+#endif
     RTCVideoTrack *videoTrack = [self createScreenCaptureVideoTrack];
 
     if (videoTrack == nil) {
@@ -175,10 +180,12 @@ RCT_EXPORT_METHOD(getDisplayMedia : (RCTPromiseResolveBlock)resolve rejecter : (
  * if audio permission was not granted, there will be no "audio" key in
  * the constraints dictionary.
  */
+#if !TARGET_OS_TV
 RCT_EXPORT_METHOD(getUserMedia
                   : (NSDictionary *)constraints successCallback
                   : (RCTResponseSenderBlock)successCallback errorCallback
                   : (RCTResponseSenderBlock)errorCallback) {
+
     RTCAudioTrack *audioTrack = nil;
     RTCVideoTrack *videoTrack = nil;
 
@@ -239,9 +246,11 @@ RCT_EXPORT_METHOD(getUserMedia
     self.localStreams[mediaStreamId] = mediaStream;
     successCallback(@[ mediaStreamId, tracks ]);
 }
+#endif
 
 #pragma mark - Other stream related APIs
 
+#if !TARGET_OS_TV
 RCT_EXPORT_METHOD(enumerateDevices : (RCTResponseSenderBlock)callback) {
     NSMutableArray *devices = [NSMutableArray array];
     AVCaptureDeviceDiscoverySession *videoevicesSession =
@@ -340,8 +349,11 @@ RCT_EXPORT_METHOD(mediaStreamRelease : (nonnull NSString *)streamID) {
         [self.localStreams removeObjectForKey:streamID];
     }
 }
-#if TARGET_OS_IOS
+
 RCT_EXPORT_METHOD(mediaStreamTrackRelease : (nonnull NSString *)trackID) {
+#if !TARGET_OS_TV
+    return nil
+#endif
     RTCMediaStreamTrack *track = self.localTracks[trackID];
     if (track) {
         track.isEnabled = NO;
@@ -351,6 +363,9 @@ RCT_EXPORT_METHOD(mediaStreamTrackRelease : (nonnull NSString *)trackID) {
 }
 
 RCT_EXPORT_METHOD(mediaStreamTrackSetEnabled : (nonnull NSNumber *)pcId : (nonnull NSString *)trackID : (BOOL)enabled) {
+#if !TARGET_OS_TV
+    return nil
+#endif
     RTCMediaStreamTrack *track = [self trackForId:trackID pcId:pcId];
     if (track == nil) {
         return;
@@ -366,6 +381,7 @@ RCT_EXPORT_METHOD(mediaStreamTrackSetEnabled : (nonnull NSNumber *)pcId : (nonnu
     }
 }
 
+#if !TARGET_OS_TV
 RCT_EXPORT_METHOD(mediaStreamTrackSwitchCamera : (nonnull NSString *)trackID) {
     RTCMediaStreamTrack *track = self.localTracks[trackID];
     if (track) {

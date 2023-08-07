@@ -31,20 +31,20 @@ RCT_EXPORT_METHOD(checkPermission
         reject(@"invalid_type", @"Invalid media type", nil);
         return;
     }
-        AVAuthorizationStatus status = [AVCaptureDevice authorizationStatusForMediaType:mediaType_];
-        switch (status) {
-            case AVAuthorizationStatusAuthorized:
-                resolve(PERMISSION_GRANTED);
-                break;
+    AVAuthorizationStatus status = [AVCaptureDevice authorizationStatusForMediaType:mediaType_];
+    switch (status) {
+        case AVAuthorizationStatusAuthorized:
+            resolve(PERMISSION_GRANTED);
+            break;
 
-            case AVAuthorizationStatusNotDetermined:
-                resolve(PERMISSION_PROMPT);
-                break;
+        case AVAuthorizationStatusNotDetermined:
+            resolve(PERMISSION_PROMPT);
+            break;
 
-            default:
-                resolve(PERMISSION_DENIED);
-                break;
-        }
+        default:
+            resolve(PERMISSION_DENIED);
+            break;
+    }
 }
 #endif
 
