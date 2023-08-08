@@ -1,7 +1,7 @@
+#if !TARGET_OS_TV
 
 #import <Foundation/Foundation.h>
 
-#if !TARGET_OS_TV
     #import <WebRTC/RTCCameraVideoCapturer.h>
 #endif
 
@@ -18,6 +18,6 @@
     - (void)startCapture;
     - (void)stopCapture;
     - (void)switchCamera;
-#endif
 
 @end
+#endif
