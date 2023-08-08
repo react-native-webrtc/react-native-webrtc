@@ -40,8 +40,6 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
-		0A4A3E202A585B4900D3FECA /* react_native_webrtc_tvos.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = react_native_webrtc_tvos.h; sourceTree = "<group>"; };
-		0A4A3E212A585B4900D3FECA /* react_native_webrtc_tvos.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = react_native_webrtc_tvos.m; sourceTree = "<group>"; };
 		0BDDA6DF20C18B6B00B38B45 /* VideoCaptureController.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = VideoCaptureController.m; path = RCTWebRTC/VideoCaptureController.m; sourceTree = "<group>"; };
 		131131FC732883F1EF6F2CA3 /* Pods-RCTWebRTC.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-RCTWebRTC.release.xcconfig"; path = "Target Support Files/Pods-RCTWebRTC/Pods-RCTWebRTC.release.xcconfig"; sourceTree = "<group>"; };
 		1A7E646283326F2A95C8C1FA /* Pods-RCTWebRTC.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-RCTWebRTC.debug.xcconfig"; path = "Target Support Files/Pods-RCTWebRTC/Pods-RCTWebRTC.debug.xcconfig"; sourceTree = "<group>"; };
@@ -94,15 +92,6 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
-		0A4A3E1F2A585B4900D3FECA /* react-native-webrtc-tvos */ = {
-			isa = PBXGroup;
-			children = (
-				0A4A3E202A585B4900D3FECA /* react_native_webrtc_tvos.h */,
-				0A4A3E212A585B4900D3FECA /* react_native_webrtc_tvos.m */,
-			);
-			path = "react-native-webrtc-tvos";
-			sourceTree = "<group>";
-		};
 		22DE4ED9F87C796C5D0480DC /* Pods */ = {
 			isa = PBXGroup;
 			children = (
@@ -116,7 +105,6 @@
 			isa = PBXGroup;
 			children = (
 				35A222311CB493C00015FD5C /* RCTWebRTC */,
-				0A4A3E1F2A585B4900D3FECA /* react-native-webrtc-tvos */,
 				35A222201CB493700015FD5C /* Products */,
 				DEFDBC25256574F500344B23 /* Frameworks */,
 				22DE4ED9F87C796C5D0480DC /* Pods */,
