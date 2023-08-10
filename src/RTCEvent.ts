@@ -1,7 +1,7 @@
+import { Event } from "event-target-shim"
 
-export default class RTCEvent {
-    type: string;
-    constructor(type) {
-        this.type = type.toString();
+export default class RTCEvent<TEventType extends string = string> extends Event<TEventType> {
+    constructor(type, eventInitDict?: Event.EventInit) {
+        super(type, eventInitDict)
     }
 }
