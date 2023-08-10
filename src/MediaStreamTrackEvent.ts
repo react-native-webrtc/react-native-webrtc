@@ -1,11 +1,14 @@
-
+import { Event } from "event-target-shim"
 import type MediaStreamTrack from './MediaStreamTrack';
 
-export default class MediaStreamTrackEvent {
-    type: string;
+interface IMediaStreamTrackEventInitDict extends Event.EventInit {
+  track: MediaStreamTrack;
+}
+
+export default class MediaStreamTrackEvent<TEventType extends string = string> extends Event<TEventType> {
     track: MediaStreamTrack;
-    constructor(type, eventInitDict: { track: MediaStreamTrack }) {
-        this.type = type.toString();
+    constructor(type, eventInitDict: IMediaStreamTrackEventInitDict) {
+        super(type, eventInitDict);
         this.track = eventInitDict.track;
     }
 }
