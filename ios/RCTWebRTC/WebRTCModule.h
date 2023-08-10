@@ -37,8 +37,6 @@ static NSString *const kEventMediaStreamTrackMuteChanged = @"mediaStreamTrackMut
 
 @property(nonatomic, strong) dispatch_queue_t workerQueue;
 
-@property (nonatomic, strong) RTCPeerConnectionFactory *peerConnectionFactory;
-
 @property (nonatomic, strong) NSMutableDictionary<NSNumber *, RTCPeerConnection *> *peerConnections;
 @property (nonatomic, strong) NSMutableDictionary<NSString *, RTCMediaStream *> *localStreams;
 @property (nonatomic, strong) NSMutableDictionary<NSString *, RTCMediaStreamTrack *> *localTracks;
@@ -47,5 +45,7 @@ static NSString *const kEventMediaStreamTrackMuteChanged = @"mediaStreamTrackMut
                         decoderFactory:(id<RTCVideoDecoderFactory>)decoderFactory;
 
 - (RTCMediaStream*)streamForReactTag:(NSString*)reactTag;
+
+- (RTCPeerConnectionFactory*)getPeerConnectionFactory;
 
 @end

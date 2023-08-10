@@ -30,8 +30,8 @@
  */
 - (RTCAudioTrack *)createAudioTrack:(NSDictionary *)constraints {
   NSString *trackId = [[NSUUID UUID] UUIDString];
-  RTCAudioTrack *audioTrack
-    = [self.peerConnectionFactory audioTrackWithTrackId:trackId];
+  RTCAudioTrack *audioTrack =
+      [[self getPeerConnectionFactory] audioTrackWithTrackId:trackId];
   return audioTrack;
 }
 
@@ -39,10 +39,12 @@
  * Initializes a new {@link RTCVideoTrack} which satisfies the given constraints.
  */
 - (RTCVideoTrack *)createVideoTrack:(NSDictionary *)constraints {
-  RTCVideoSource *videoSource = [self.peerConnectionFactory videoSource];
+  RTCVideoSource *videoSource = [[self getPeerConnectionFactory] videoSource];
 
   NSString *trackUUID = [[NSUUID UUID] UUIDString];
-  RTCVideoTrack *videoTrack = [self.peerConnectionFactory videoTrackWithSource:videoSource trackId:trackUUID];
+  RTCVideoTrack *videoTrack =
+      [[self getPeerConnectionFactory] videoTrackWithSource:videoSource
+                                                    trackId:trackUUID];
 
 #if !TARGET_IPHONE_SIMULATOR
   RTCCameraVideoCapturer *videoCapturer = [[RTCCameraVideoCapturer alloc] initWithDelegate:videoSource];
@@ -61,10 +63,13 @@
     return nil;
 #endif
 
-    RTCVideoSource *videoSource = [self.peerConnectionFactory videoSourceForScreenCast:YES];
+    RTCVideoSource *videoSource =
+        [[self getPeerConnectionFactory] videoSourceForScreenCast:YES];
 
     NSString *trackUUID = [[NSUUID UUID] UUIDString];
-    RTCVideoTrack *videoTrack = [self.peerConnectionFactory videoTrackWithSource:videoSource trackId:trackUUID];
+    RTCVideoTrack *videoTrack =
+        [[self getPeerConnectionFactory] videoTrackWithSource:videoSource
+                                                      trackId:trackUUID];
 
     ScreenCapturer *screenCapturer = [[ScreenCapturer alloc] initWithDelegate:videoSource];
     ScreenCaptureController *screenCaptureController = [[ScreenCaptureController alloc] initWithCapturer:screenCapturer];
@@ -84,8 +89,8 @@ RCT_EXPORT_METHOD(getDisplayMedia:(RCTPromiseResolveBlock)resolve
     }
 
     NSString *mediaStreamId = [[NSUUID UUID] UUIDString];
-    RTCMediaStream *mediaStream
-      = [self.peerConnectionFactory mediaStreamWithStreamId:mediaStreamId];
+    RTCMediaStream *mediaStream =
+        [[self getPeerConnectionFactory] mediaStreamWithStreamId:mediaStreamId];
     [mediaStream addVideoTrack:videoTrack];
 
     NSString *trackId = videoTrack.trackId;
@@ -132,8 +137,8 @@ RCT_EXPORT_METHOD(getUserMedia:(NSDictionary *)constraints
   }
 
   NSString *mediaStreamId = [[NSUUID UUID] UUIDString];
-  RTCMediaStream *mediaStream
-    = [self.peerConnectionFactory mediaStreamWithStreamId:mediaStreamId];
+  RTCMediaStream *mediaStream =
+      [[self getPeerConnectionFactory] mediaStreamWithStreamId:mediaStreamId];
   NSMutableArray *tracks = [NSMutableArray array];
   NSMutableArray *tmp = [NSMutableArray array];
   if (audioTrack)
@@ -231,8 +236,9 @@ RCT_EXPORT_METHOD(enumerateDevices:(RCTResponseSenderBlock)callback)
 
 RCT_EXPORT_METHOD(mediaStreamCreate:(nonnull NSString *)streamID)
 {
-    RTCMediaStream *mediaStream = [self.peerConnectionFactory mediaStreamWithStreamId:streamID];
-    self.localStreams[streamID] = mediaStream;
+  RTCMediaStream *mediaStream =
+      [[self getPeerConnectionFactory] mediaStreamWithStreamId:streamID];
+  self.localStreams[streamID] = mediaStream;
 }
 
 RCT_EXPORT_METHOD(mediaStreamAddTrack:(nonnull NSString *)streamID : (nonnull NSString *)trackID)

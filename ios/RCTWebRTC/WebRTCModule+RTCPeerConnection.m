@@ -93,18 +93,18 @@ RCT_EXPORT_BLOCKING_SYNCHRONOUS_METHOD(peerConnectionInit:(RTCConfiguration*)con
         RTCMediaConstraints* constraints =
             [[RTCMediaConstraints alloc] initWithMandatoryConstraints:nil
                                                   optionalConstraints:optionalConstraints];
-          RTCPeerConnection *peerConnection
-            = [self.peerConnectionFactory peerConnectionWithConfiguration:configuration
-                                                              constraints:constraints
-                                                                 delegate:self];
-          peerConnection.dataChannels = [NSMutableDictionary new];
-          peerConnection.reactTag = objectID;
-          peerConnection.remoteStreams = [NSMutableDictionary new];
-          peerConnection.remoteTracks = [NSMutableDictionary new];
-          peerConnection.videoTrackAdapters = [NSMutableDictionary new];
-          peerConnection.webRTCModule = self;
+        RTCPeerConnection *peerConnection = [[self getPeerConnectionFactory]
+            peerConnectionWithConfiguration:configuration
+                                constraints:constraints
+                                   delegate:self];
+        peerConnection.dataChannels = [NSMutableDictionary new];
+        peerConnection.reactTag = objectID;
+        peerConnection.remoteStreams = [NSMutableDictionary new];
+        peerConnection.remoteTracks = [NSMutableDictionary new];
+        peerConnection.videoTrackAdapters = [NSMutableDictionary new];
+        peerConnection.webRTCModule = self;
 
-          self.peerConnections[objectID] = peerConnection;
+        self.peerConnections[objectID] = peerConnection;
     });
 
     return nil;

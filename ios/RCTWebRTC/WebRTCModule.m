@@ -20,6 +20,9 @@
 #import "WebRTCModule+RTCPeerConnection.h"
 
 @interface WebRTCModule ()
+
+@property(nonatomic, strong) RTCPeerConnectionFactory *peerConnectionFactory;
+
 @end
 
 @implementation WebRTCModule
@@ -56,15 +59,19 @@
 {
   self = [super init];
   if (self) {
-    if (encoderFactory == nil) {
-      encoderFactory = [[RTCDefaultVideoEncoderFactory alloc] init];
+    // Only eagerly initialize the PeerConnectionFactory
+    // if there are injected dependencies.
+    if (encoderFactory != nil || decoderFactory != nil) {
+      if (encoderFactory == nil) {
+        encoderFactory = [[RTCDefaultVideoEncoderFactory alloc] init];
+      }
+      if (decoderFactory == nil) {
+        decoderFactory = [[RTCDefaultVideoDecoderFactory alloc] init];
+      }
+      _peerConnectionFactory = [[RTCPeerConnectionFactory alloc]
+          initWithEncoderFactory:encoderFactory
+                  decoderFactory:decoderFactory];
     }
-    if (decoderFactory == nil) {
-      decoderFactory = [[RTCDefaultVideoDecoderFactory alloc] init];
-    }
-    _peerConnectionFactory
-      = [[RTCPeerConnectionFactory alloc] initWithEncoderFactory:encoderFactory
-                                                  decoderFactory:decoderFactory];
 
     _peerConnections = [NSMutableDictionary new];
     _localStreams = [NSMutableDictionary new];
@@ -94,6 +101,12 @@
   return stream;
 }
 
+RCT_EXPORT_METHOD(releaseWebrtc) {
+  if (_peerConnectionFactory) {
+    _peerConnectionFactory = nil;
+  }
+}
+
 RCT_EXPORT_MODULE();
 
 - (dispatch_queue_t)methodQueue
@@ -116,6 +129,24 @@ RCT_EXPORT_MODULE();
     kEventDataChannelReceiveMessage,
     kEventMediaStreamTrackMuteChanged
   ];
+}
+
+- (RTCPeerConnectionFactory *)getPeerConnectionFactory
+{
+  if (_peerConnectionFactory != nil) {
+    return _peerConnectionFactory;
+  }
+
+  id<RTCVideoEncoderFactory> encoderFactory =
+      [[RTCDefaultVideoEncoderFactory alloc] init];
+  id<RTCVideoDecoderFactory> decoderFactory =
+      [[RTCDefaultVideoDecoderFactory alloc] init];
+
+  _peerConnectionFactory =
+      [[RTCPeerConnectionFactory alloc] initWithEncoderFactory:encoderFactory
+                                                decoderFactory:decoderFactory];
+
+  return _peerConnectionFactory;
 }
 
 @end

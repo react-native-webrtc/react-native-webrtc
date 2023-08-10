@@ -15,7 +15,8 @@ import {
 	MediaStream,
 	MediaStreamTrack,
 	mediaDevices,
-	registerGlobals
+	registerGlobals,
+	releaseWebrtcModule
 } from 'react-native-webrtc';
 ```
 
@@ -335,3 +336,9 @@ Don't forget, the user facing camera is usually mirrored.
 | objectFit | string | 'contain' | Can be `'contain'` or `'cover'` nothing more or less. | 
 | streamURL | string | 'streamURL' | Required to have an actual video stream rendering. |
 | zOrder | number | 0 | Similar to zIndex. |
+
+## Releasing WebRTC Handles
+
+After a call, internal WebRTC dependencies remain in a live state to be used in subsequent calls. If you wish to release these handles,
+perhaps before your app goes into background or won't be used for a while, you can call the `releaseWebrtcModule()` global function. After calling this function, necessary dependencies will be lazily reacquired before the next call.
+

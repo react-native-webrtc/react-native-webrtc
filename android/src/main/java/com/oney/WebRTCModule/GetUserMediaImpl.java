@@ -98,7 +98,7 @@ class GetUserMediaImpl {
         Log.d(TAG, "getUserMedia(audio): " + audioConstraintsMap);
 
         String id = UUID.randomUUID().toString();
-        PeerConnectionFactory pcFactory = webRTCModule.mFactory;
+        PeerConnectionFactory pcFactory = webRTCModule.getPeerConnectionFactory();
         MediaConstraints peerConstraints = webRTCModule.constraintsForOptions(audioConstraintsMap);
 
         //PeerConnectionFactory.createAudioSource will throw an error when mandatory constraints contain nulls.
@@ -305,7 +305,7 @@ class GetUserMediaImpl {
 
     private void createStream(MediaStreamTrack[] tracks, BiConsumer<String, ArrayList<WritableMap>> successCallback) {
         String streamId = UUID.randomUUID().toString();
-        MediaStream mediaStream = webRTCModule.mFactory.createLocalMediaStream(streamId);
+        MediaStream mediaStream = webRTCModule.getPeerConnectionFactory().createLocalMediaStream(streamId);
 
         ArrayList<WritableMap> tracksInfo = new ArrayList<>();
 
@@ -366,7 +366,7 @@ class GetUserMediaImpl {
             return null;
         }
 
-        PeerConnectionFactory pcFactory = webRTCModule.mFactory;
+        PeerConnectionFactory pcFactory = webRTCModule.getPeerConnectionFactory();
         EglBase.Context eglContext = EglUtils.getRootEglBaseContext();
         SurfaceTextureHelper surfaceTextureHelper =
             SurfaceTextureHelper.create("CaptureThread", eglContext);

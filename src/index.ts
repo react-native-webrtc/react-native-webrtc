@@ -1,3 +1,4 @@
+import { NativeModules } from 'react-native';
 import ScreenCapturePickerView from './ScreenCapturePickerView';
 import RTCPeerConnection from './RTCPeerConnection';
 import RTCIceCandidate from './RTCIceCandidate';
@@ -7,6 +8,8 @@ import MediaStream from './MediaStream';
 import MediaStreamTrack from './MediaStreamTrack';
 import mediaDevices from './MediaDevices';
 import permissions from './Permissions';
+
+const { WebRTCModule } = NativeModules;
 
 export {
     ScreenCapturePickerView,
@@ -18,7 +21,8 @@ export {
     MediaStreamTrack,
     mediaDevices,
     permissions,
-    registerGlobals
+    registerGlobals,
+    releaseWebrtcModule
 };
 
 function registerGlobals(): void {
@@ -40,4 +44,8 @@ function registerGlobals(): void {
     global.RTCSessionDescription = RTCSessionDescription;
     global.MediaStream = MediaStream;
     global.MediaStreamTrack = MediaStreamTrack;
+}
+
+function releaseWebrtcModule(): void {
+    WebRTCModule.releaseWebrtc();
 }
