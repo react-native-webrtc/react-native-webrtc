@@ -33,10 +33,11 @@
  * Initializes a new {@link RTCVideoTrack} with the given capture controller
  */
 - (RTCVideoTrack *)createVideoTrackWithCaptureController:
-#if !TARGET_OS_TV
-    return nil
-#endif
     (CaptureController * (^)(RTCVideoSource *))captureControllerCreator {
+#if !TARGET_OS_TV
+    return nil;
+#endif
+
     RTCVideoSource *videoSource = [self.peerConnectionFactory videoSource];
 
     NSString *trackUUID = [[NSUUID UUID] UUIDString];
@@ -102,7 +103,7 @@
  */
 - (RTCVideoTrack *)createVideoTrack:(NSDictionary *)constraints {
 #if !TARGET_OS_TV
-    return nil
+    return nil;
 #endif
     RTCVideoSource *videoSource = [self.peerConnectionFactory videoSource];
 
@@ -144,8 +145,9 @@
 
 RCT_EXPORT_METHOD(getDisplayMedia : (RCTPromiseResolveBlock)resolve rejecter : (RCTPromiseRejectBlock)reject) {
 #if !TARGET_OS_TV
-    return nil
+    return;
 #endif
+
     RTCVideoTrack *videoTrack = [self createScreenCaptureVideoTrack];
 
     if (videoTrack == nil) {
@@ -352,8 +354,9 @@ RCT_EXPORT_METHOD(mediaStreamRelease : (nonnull NSString *)streamID) {
 
 RCT_EXPORT_METHOD(mediaStreamTrackRelease : (nonnull NSString *)trackID) {
 #if !TARGET_OS_TV
-    return nil
+    return;
 #endif
+
     RTCMediaStreamTrack *track = self.localTracks[trackID];
     if (track) {
         track.isEnabled = NO;
@@ -364,8 +367,9 @@ RCT_EXPORT_METHOD(mediaStreamTrackRelease : (nonnull NSString *)trackID) {
 
 RCT_EXPORT_METHOD(mediaStreamTrackSetEnabled : (nonnull NSNumber *)pcId : (nonnull NSString *)trackID : (BOOL)enabled) {
 #if !TARGET_OS_TV
-    return nil
+    return;
 #endif
+
     RTCMediaStreamTrack *track = [self trackForId:trackID pcId:pcId];
     if (track == nil) {
         return;

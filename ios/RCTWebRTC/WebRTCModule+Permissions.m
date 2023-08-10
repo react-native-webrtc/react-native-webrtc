@@ -20,11 +20,14 @@ static NSString *const PERMISSION_PROMPT = @"prompt";
 }
 
 
-#if !TARGET_OS_TV
 RCT_EXPORT_METHOD(checkPermission
                   : (NSString *)mediaType resolver
                   : (RCTPromiseResolveBlock)resolve rejecter
                   : (RCTPromiseRejectBlock)reject) {
+
+#if TARGET_OS_TV
+    return;
+#else
     AVMediaType mediaType_ = [self avMediaType:mediaType];
 
     if (mediaType_ == nil) {
@@ -45,14 +48,17 @@ RCT_EXPORT_METHOD(checkPermission
             resolve(PERMISSION_DENIED);
             break;
     }
-}
 #endif
+}
 
-#if !TARGET_OS_TV
 RCT_EXPORT_METHOD(requestPermission
                 : (NSString *)mediaType resolver
                 : (RCTPromiseResolveBlock)resolve rejecter
                 : (RCTPromiseRejectBlock)reject) {
+
+#if TARGET_OS_TV
+    return;
+#else
     AVMediaType mediaType_ = [self avMediaType:mediaType];
 
     if (mediaType_ == nil) {
@@ -64,7 +70,7 @@ RCT_EXPORT_METHOD(requestPermission
                             completionHandler:^(BOOL granted) {
                                 resolve(@(granted));
                             }];
-}
 #endif
+}
 
 @end
