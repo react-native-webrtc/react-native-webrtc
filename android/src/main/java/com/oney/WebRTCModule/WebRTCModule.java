@@ -40,8 +40,7 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
     static final String TAG = WebRTCModule.class.getCanonicalName();
 
     private final ReactApplicationContext reactContext;
-
-    PeerConnectionFactory mFactory;
+    private PeerConnectionFactory mFactory;
     VideoEncoderFactory mVideoEncoderFactory;
     VideoDecoderFactory mVideoDecoderFactory;
 
@@ -1338,14 +1337,7 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
             .setEnableVolumeLogger(false)
             .createAudioDeviceModule();
 
-        this.mFactory
-            = PeerConnectionFactory.builder()
-                .setAudioDeviceModule(adm)
-                .setVideoEncoderFactory(encoderFactory)
-                .setVideoDecoderFactory(decoderFactory)
-                .createPeerConnectionFactory();
-
-        mFactory = PeerConnectionFactory.builder()
+        this.mFactory = PeerConnectionFactory.builder()
                             .setAudioDeviceModule(adm)
                             .setVideoEncoderFactory(this.encoderFactory)
                             .setVideoDecoderFactory(this.decoderFactory)
