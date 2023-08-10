@@ -15,7 +15,8 @@ import {
 	MediaStream,
 	MediaStreamTrack,
 	mediaDevices,
-	registerGlobals
+	registerGlobals,
+	releaseWebrtcModule
 } from 'react-native-webrtc';
 ```
 
@@ -346,3 +347,9 @@ It takes in a number between 0 to 10, defaults to 1.
 const audioTrack = remoteMediaStream.getAudioTracks()[0];
 audioTrack._setVolume(0.5);
 ```
+
+## Releasing WebRTC Handles
+
+After a call, internal WebRTC dependencies remain in a live state to be used in subsequent calls. If you wish to release these handles,
+perhaps before your app goes into background or won't be used for a while, you can call the `releaseWebrtcModule()` global function. After calling this function, necessary dependencies will be lazily reacquired before the next call.
+

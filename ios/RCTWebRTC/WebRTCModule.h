@@ -26,7 +26,6 @@ static NSString *const kEventPeerConnectionOnTrack = @"peerConnectionOnTrack";
 
 @property(nonatomic, strong) dispatch_queue_t workerQueue;
 
-@property(nonatomic, strong) RTCPeerConnectionFactory *peerConnectionFactory;
 @property(nonatomic, strong) id<RTCVideoDecoderFactory> decoderFactory;
 @property(nonatomic, strong) id<RTCVideoEncoderFactory> encoderFactory;
 
@@ -35,5 +34,7 @@ static NSString *const kEventPeerConnectionOnTrack = @"peerConnectionOnTrack";
 @property(nonatomic, strong) NSMutableDictionary<NSString *, RTCMediaStreamTrack *> *localTracks;
 
 - (RTCMediaStream *)streamForReactTag:(NSString *)reactTag;
+
+- (RTCPeerConnectionFactory *)getPeerConnectionFactory;
 
 @end

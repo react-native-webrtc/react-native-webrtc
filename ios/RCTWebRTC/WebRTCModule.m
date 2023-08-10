@@ -12,6 +12,9 @@
 #import "WebRTCModuleOptions.h"
 
 @interface WebRTCModule ()
+
+@property(nonatomic, strong) RTCPeerConnectionFactory *peerConnectionFactory;
+
 @end
 
 @implementation WebRTCModule
@@ -40,7 +43,6 @@
     self = [super init];
     if (self) {
         WebRTCModuleOptions *options = [WebRTCModuleOptions sharedInstance];
-        id<RTCAudioDevice> audioDevice = options.audioDevice;
         id<RTCVideoDecoderFactory> decoderFactory = options.videoDecoderFactory;
         id<RTCVideoEncoderFactory> encoderFactory = options.videoEncoderFactory;
         NSDictionary *fieldTrials = options.fieldTrials;
@@ -69,10 +71,6 @@
         RCTLogInfo(@"Using video encoder factory: %@", NSStringFromClass([encoderFactory class]));
         RCTLogInfo(@"Using video decoder factory: %@", NSStringFromClass([decoderFactory class]));
 
-        _peerConnectionFactory = [[RTCPeerConnectionFactory alloc] initWithEncoderFactory:encoderFactory
-                                                                           decoderFactory:decoderFactory
-                                                                              audioDevice:audioDevice];
-
         _peerConnections = [NSMutableDictionary new];
         _localStreams = [NSMutableDictionary new];
         _localTracks = [NSMutableDictionary new];
@@ -99,6 +97,12 @@
     return stream;
 }
 
+RCT_EXPORT_METHOD(releaseWebrtc) {
+    if (_peerConnectionFactory) {
+        _peerConnectionFactory = nil;
+    }
+}
+
 RCT_EXPORT_MODULE();
 
 - (dispatch_queue_t)methodQueue {
@@ -122,6 +126,21 @@ RCT_EXPORT_MODULE();
         kEventPeerConnectionOnRemoveTrack,
         kEventPeerConnectionOnTrack
     ];
+}
+
+- (RTCPeerConnectionFactory *)getPeerConnectionFactory {
+    if (_peerConnectionFactory != nil) {
+        return _peerConnectionFactory;
+    }
+
+    WebRTCModuleOptions *options = [WebRTCModuleOptions sharedInstance];
+    id<RTCAudioDevice> audioDevice = options.audioDevice;
+
+    _peerConnectionFactory = [[RTCPeerConnectionFactory alloc] initWithEncoderFactory:_encoderFactory
+                                                                       decoderFactory:_decoderFactory
+                                                                          audioDevice:audioDevice];
+
+    return _peerConnectionFactory;
 }
 
 @end
