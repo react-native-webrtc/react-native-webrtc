@@ -1,11 +1,14 @@
-
+import { Event } from "event-target-shim"
 export type MessageEventData = string | ArrayBuffer | Blob;
 
-export default class MessageEvent {
-    type: string;
+interface IMessageEventInitDict extends Event.EventInit {
     data: MessageEventData;
-    constructor(type: string, eventInitDict: { data: MessageEventData }) {
-        this.type = type.toString();
+}
+
+export default class MessageEvent<TEventType extends string = string> extends Event<TEventType> {
+    data: MessageEventData;
+    constructor(type, eventInitDict: IMessageEventInitDict) {
+        super(type, eventInitDict)
         this.data = eventInitDict.data;
     }
 }

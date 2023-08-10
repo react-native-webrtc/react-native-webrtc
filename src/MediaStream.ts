@@ -1,5 +1,5 @@
 
-import { defineCustomEventTarget } from 'event-target-shim';
+import EventTarget, { defineCustomEventTarget } from 'event-target-shim';
 import { NativeModules } from 'react-native';
 
 import MediaStreamTrack from './MediaStreamTrack';
@@ -17,7 +17,7 @@ type MediaStreamEventMap = {
     removetrack: MediaStreamTrackEvent<"removetrack">
   }
   
-export default class MediaStream extends defineCustomEventTarget(...MEDIA_STREAM_EVENTS) {
+export default class MediaStream extends EventTarget<MediaStreamEventMap> {
     _tracks: MediaStreamTrack[] = [];
 
     _id: string;
