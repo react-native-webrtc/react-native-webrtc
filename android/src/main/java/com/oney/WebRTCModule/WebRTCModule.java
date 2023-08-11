@@ -1340,8 +1340,8 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
 
         this.mFactory = PeerConnectionFactory.builder()
                             .setAudioDeviceModule(adm)
-                            .setVideoEncoderFactory(this.encoderFactory)
-                            .setVideoDecoderFactory(this.decoderFactory)
+                            .setVideoEncoderFactory(this.mVideoEncoderFactory)
+                            .setVideoDecoderFactory(this.mVideoDecoderFactory)
                             .createPeerConnectionFactory();
 
         return this.mFactory;
