@@ -1,6 +1,6 @@
 
 import * as base64 from 'base64-js';
-import {EventTarget} from 'event-target-shim';
+import { EventTarget } from 'event-target-shim';
 import { NativeModules } from 'react-native';
 
 import { addListener, removeListener } from './EventEmitter';

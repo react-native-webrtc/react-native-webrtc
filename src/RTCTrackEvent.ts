@@ -1,4 +1,5 @@
-import { Event } from "event-target-shim"
+import { Event } from 'event-target-shim';
+
 import MediaStream from './MediaStream';
 import type MediaStreamTrack from './MediaStreamTrack';
 import RTCRtpReceiver from './RTCRtpReceiver';

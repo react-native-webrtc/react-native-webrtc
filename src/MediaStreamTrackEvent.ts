@@ -1,4 +1,5 @@
-import { Event } from "event-target-shim"
+import { Event } from 'event-target-shim';
+
 import type MediaStreamTrack from './MediaStreamTrack';
 
 interface IMediaStreamTrackEventInitDict extends Event.EventInit {

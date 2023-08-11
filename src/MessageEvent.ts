@@ -1,4 +1,4 @@
-import { Event } from "event-target-shim"
+import { Event } from 'event-target-shim';
 export type MessageEventData = string | ArrayBuffer | Blob;
 
 interface IMessageEventInitDict extends Event.EventInit {
@@ -8,7 +8,7 @@ interface IMessageEventInitDict extends Event.EventInit {
 export default class MessageEvent<TEventType extends string = string> extends Event<TEventType> {
     data: MessageEventData;
     constructor(type, eventInitDict: IMessageEventInitDict) {
-        super(type, eventInitDict)
+        super(type, eventInitDict);
         this.data = eventInitDict.data;
     }
 }

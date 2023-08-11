@@ -1,8 +1,9 @@
-import { Event } from "event-target-shim"
+import { Event } from 'event-target-shim';
+
 import type RTCDataChannel from './RTCDataChannel';
 
 type Options = {
-    [K in "noImplicitAny" | "strictNullChecks" | "strictFunctionTypes"]?: boolean
+    [K in 'noImplicitAny' | 'strictNullChecks' | 'strictFunctionTypes']?: boolean
 }
 interface IRTCDataChannelEventInitDict extends Event.EventInit {
     channel: RTCDataChannel;

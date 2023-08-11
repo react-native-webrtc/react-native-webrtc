@@ -61,16 +61,16 @@ const PEER_CONNECTION_EVENTS = [
 ];
 
 type RTCPeerConnectionEventMap = {
-    connectionstatechange: RTCEvent<"connectionstatechange">
-    icecandidate: RTCIceCandidateEvent<"icecandidate">
+    connectionstatechange: RTCEvent<'connectionstatechange'>
+    icecandidate: RTCIceCandidateEvent<'icecandidate'>
     // icecandidateerror: RTCIceCandidateEvent<"icecandidateerror">
-    iceconnectionstatechange: RTCEvent<"iceconnectionstatechange">
-    icegatheringstatechange: RTCEvent<"icegatheringstatechange">
-    negotiationneeded: RTCEvent<"negotiationneeded">
-    signalingstatechange: RTCEvent<"signalingstatechange">
-    datachannel: RTCDataChannelEvent<"datachannel">
-    track: RTCTrackEvent<"track">
-    error: RTCEvent<"error">
+    iceconnectionstatechange: RTCEvent<'iceconnectionstatechange'>
+    icegatheringstatechange: RTCEvent<'icegatheringstatechange'>
+    negotiationneeded: RTCEvent<'negotiationneeded'>
+    signalingstatechange: RTCEvent<'signalingstatechange'>
+    datachannel: RTCDataChannelEvent<'datachannel'>
+    track: RTCTrackEvent<'track'>
+    error: RTCEvent<'error'>
   }
 
 let nextPeerConnectionId = 0;
