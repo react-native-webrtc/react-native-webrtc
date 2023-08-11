@@ -2,18 +2,17 @@ import { Event } from 'event-target-shim';
 
 import type RTCDataChannel from './RTCDataChannel';
 
-type Options = {
-    [K in 'noImplicitAny' | 'strictNullChecks' | 'strictFunctionTypes']?: boolean
-}
+type DATA_CHANNEL_EVENTS =  'open'| 'message'| 'bufferedamountlow'| 'closing'| 'close'| 'error' | 'datachannel';
+
 interface IRTCDataChannelEventInitDict extends Event.EventInit {
     channel: RTCDataChannel;
 }
 
 export default class RTCDataChannelEvent<
-TEventType extends string = string
+TEventType extends DATA_CHANNEL_EVENTS
 > extends Event<TEventType> {
     channel: RTCDataChannel;
-    constructor(type, eventInitDict: IRTCDataChannelEventInitDict) {
+    constructor(type: TEventType, eventInitDict: IRTCDataChannelEventInitDict) {
         super(type, eventInitDict);
         this.channel = eventInitDict.channel;
     }

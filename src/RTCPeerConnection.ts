@@ -47,23 +47,10 @@ type RTCDataChannelInit = {
     id?: number
 };
 
-const PEER_CONNECTION_EVENTS = [
-    'connectionstatechange',
-    'icecandidate',
-    'icecandidateerror',
-    'iceconnectionstatechange',
-    'icegatheringstatechange',
-    'negotiationneeded',
-    'signalingstatechange',
-    'datachannel',
-    'track',
-    'error'
-];
-
 type RTCPeerConnectionEventMap = {
     connectionstatechange: RTCEvent<'connectionstatechange'>
     icecandidate: RTCIceCandidateEvent<'icecandidate'>
-    // icecandidateerror: RTCIceCandidateEvent<"icecandidateerror">
+    icecandidateerror: RTCIceCandidateEvent<'icecandidateerror'>
     iceconnectionstatechange: RTCEvent<'iceconnectionstatechange'>
     icegatheringstatechange: RTCEvent<'icegatheringstatechange'>
     negotiationneeded: RTCEvent<'negotiationneeded'>

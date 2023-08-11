@@ -11,14 +11,12 @@ const { WebRTCModule } = NativeModules;
 
 type RTCDataChannelState = 'connecting' | 'open' | 'closing' | 'closed';
 
-const DATA_CHANNEL_EVENTS = [ 'open', 'message', 'bufferedamountlow', 'closing', 'close', 'error' ];
-
 type DataChannelEventMap = {
     bufferedamountlow: RTCDataChannelEvent<'bufferedamountlow'>;
     close: RTCDataChannelEvent<'close'>;
     closing: RTCDataChannelEvent<'closing'>;
     error: RTCDataChannelEvent<'error'>;
-    message: MessageEvent;
+    message: MessageEvent<'message'>;
     open: RTCDataChannelEvent<'open'>;
 };
 

@@ -8,8 +8,6 @@ import { uniqueID } from './RTCUtil';
 
 const { WebRTCModule } = NativeModules;
 
-const MEDIA_STREAM_EVENTS = [ 'active', 'inactive', 'addtrack', 'removetrack' ];
-
 type MediaStreamEventMap = {
     active: MediaStreamTrackEvent<'active'>
     inactive: MediaStreamTrackEvent<'inactive'>
