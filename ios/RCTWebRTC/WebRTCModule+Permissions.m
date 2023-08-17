@@ -19,12 +19,10 @@ static NSString *const PERMISSION_PROMPT = @"prompt";
     }
 }
 
-
 RCT_EXPORT_METHOD(checkPermission
                   : (NSString *)mediaType resolver
                   : (RCTPromiseResolveBlock)resolve rejecter
                   : (RCTPromiseRejectBlock)reject) {
-
 #if TARGET_OS_TV
     return;
 #else
@@ -52,10 +50,9 @@ RCT_EXPORT_METHOD(checkPermission
 }
 
 RCT_EXPORT_METHOD(requestPermission
-                : (NSString *)mediaType resolver
-                : (RCTPromiseResolveBlock)resolve rejecter
-                : (RCTPromiseRejectBlock)reject) {
-
+                  : (NSString *)mediaType resolver
+                  : (RCTPromiseResolveBlock)resolve rejecter
+                  : (RCTPromiseRejectBlock)reject) {
 #if TARGET_OS_TV
     return;
 #else
@@ -67,9 +64,9 @@ RCT_EXPORT_METHOD(requestPermission
     }
 
     [AVCaptureDevice requestAccessForMediaType:mediaType_
-                            completionHandler:^(BOOL granted) {
-                                resolve(@(granted));
-                            }];
+                             completionHandler:^(BOOL granted) {
+                                 resolve(@(granted));
+                             }];
 #endif
 }
 
