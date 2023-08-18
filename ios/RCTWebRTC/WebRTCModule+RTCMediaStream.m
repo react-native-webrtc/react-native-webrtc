@@ -36,7 +36,7 @@
     (CaptureController * (^)(RTCVideoSource *))captureControllerCreator {
 #if TARGET_OS_TV
     return nil;
-#endif
+#else
 
     RTCVideoSource *videoSource = [self.peerConnectionFactory videoSource];
 
@@ -48,6 +48,7 @@
     [captureController startCapture];
 
     return videoTrack;
+#endif
 }
 /**
  * Initializes a new {@link RTCMediaTrack} with the given tracks.
@@ -362,7 +363,7 @@ RCT_EXPORT_METHOD(mediaStreamRelease : (nonnull NSString *)streamID) {
 RCT_EXPORT_METHOD(mediaStreamTrackRelease : (nonnull NSString *)trackID) {
 #if TARGET_OS_TV
     return;
-#endif
+#else
 
     RTCMediaStreamTrack *track = self.localTracks[trackID];
     if (track) {
@@ -370,12 +371,13 @@ RCT_EXPORT_METHOD(mediaStreamTrackRelease : (nonnull NSString *)trackID) {
         [track.captureController stopCapture];
         [self.localTracks removeObjectForKey:trackID];
     }
+#endif
 }
 
 RCT_EXPORT_METHOD(mediaStreamTrackSetEnabled : (nonnull NSNumber *)pcId : (nonnull NSString *)trackID : (BOOL)enabled) {
-#if !TARGET_OS_TV
+#if TARGET_OS_TV
     return;
-#endif
+#else
 
     RTCMediaStreamTrack *track = [self trackForId:trackID pcId:pcId];
     if (track == nil) {
@@ -390,6 +392,7 @@ RCT_EXPORT_METHOD(mediaStreamTrackSetEnabled : (nonnull NSNumber *)pcId : (nonnu
             [track.captureController stopCapture];
         }
     }
+#endif
 }
 
 RCT_EXPORT_METHOD(mediaStreamTrackSwitchCamera : (nonnull NSString *)trackID) {
