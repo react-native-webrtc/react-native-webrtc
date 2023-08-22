@@ -149,6 +149,7 @@
 
 RCT_EXPORT_METHOD(getDisplayMedia : (RCTPromiseResolveBlock)resolve rejecter : (RCTPromiseRejectBlock)reject) {
 #if TARGET_OS_TV
+    reject(@"unsupported_platform", @"tvOS is not supported", nil);
     return;
 #else
 
@@ -192,6 +193,7 @@ RCT_EXPORT_METHOD(getUserMedia
                   : (RCTResponseSenderBlock)successCallback errorCallback
                   : (RCTResponseSenderBlock)errorCallback) {
 #if TARGET_OS_TV
+    errorCallback(@[ @"PlatformNotSupported", @"getUserMedia is not supported on tvOS." ]);
     return;
 #else
     RTCAudioTrack *audioTrack = nil;
@@ -260,7 +262,7 @@ RCT_EXPORT_METHOD(getUserMedia
 
 RCT_EXPORT_METHOD(enumerateDevices : (RCTResponseSenderBlock)callback) {
 #if TARGET_OS_TV
-    return;
+    callback(@[]);
 #else
     NSMutableArray *devices = [NSMutableArray array];
     AVCaptureDeviceDiscoverySession *videoevicesSession =

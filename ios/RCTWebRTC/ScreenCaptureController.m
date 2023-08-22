@@ -1,4 +1,4 @@
-#if !TARGET_OS_OSX && !TARGET_OS_TV
+#if TARGET_OS_IOS
 
 #import "ScreenCaptureController.h"
 #import "ScreenCapturer.h"

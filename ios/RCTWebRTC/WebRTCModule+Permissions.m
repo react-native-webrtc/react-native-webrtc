@@ -24,6 +24,7 @@ RCT_EXPORT_METHOD(checkPermission
                   : (RCTPromiseResolveBlock)resolve rejecter
                   : (RCTPromiseRejectBlock)reject) {
 #if TARGET_OS_TV
+    reject(@"unsupported_platform", @"tvOS is not supported", nil);
     return;
 #else
     AVMediaType mediaType_ = [self avMediaType:mediaType];
@@ -54,6 +55,7 @@ RCT_EXPORT_METHOD(requestPermission
                   : (RCTPromiseResolveBlock)resolve rejecter
                   : (RCTPromiseRejectBlock)reject) {
 #if TARGET_OS_TV
+    reject(@"unsupported_platform", @"tvOS is not supported", nil);
     return;
 #else
     AVMediaType mediaType_ = [self avMediaType:mediaType];
