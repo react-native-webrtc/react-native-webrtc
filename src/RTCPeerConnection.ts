@@ -1,5 +1,5 @@
 
-import { defineCustomEventTarget } from 'event-target-shim';
+import { EventTarget } from 'event-target-shim';
 import { NativeModules } from 'react-native';
 
 import { addListener, removeListener } from './EventEmitter';
@@ -47,22 +47,22 @@ type RTCDataChannelInit = {
     id?: number
 };
 
-const PEER_CONNECTION_EVENTS = [
-    'connectionstatechange',
-    'icecandidate',
-    'icecandidateerror',
-    'iceconnectionstatechange',
-    'icegatheringstatechange',
-    'negotiationneeded',
-    'signalingstatechange',
-    'datachannel',
-    'track',
-    'error'
-];
+type RTCPeerConnectionEventMap = {
+    connectionstatechange: RTCEvent<'connectionstatechange'>
+    icecandidate: RTCIceCandidateEvent<'icecandidate'>
+    icecandidateerror: RTCIceCandidateEvent<'icecandidateerror'>
+    iceconnectionstatechange: RTCEvent<'iceconnectionstatechange'>
+    icegatheringstatechange: RTCEvent<'icegatheringstatechange'>
+    negotiationneeded: RTCEvent<'negotiationneeded'>
+    signalingstatechange: RTCEvent<'signalingstatechange'>
+    datachannel: RTCDataChannelEvent<'datachannel'>
+    track: RTCTrackEvent<'track'>
+    error: RTCEvent<'error'>
+  }
 
 let nextPeerConnectionId = 0;
 
-export default class RTCPeerConnection extends defineCustomEventTarget(...PEER_CONNECTION_EVENTS) {
+export default class RTCPeerConnection extends EventTarget<RTCPeerConnectionEventMap> {
     signalingState: RTCSignalingState = 'stable';
     iceGatheringState: RTCIceGatheringState = 'new';
     connectionState: RTCPeerConnectionState = 'new';
@@ -279,11 +279,10 @@ export default class RTCPeerConnection extends defineCustomEventTarget(...PEER_C
                 receiver: transceiver.receiver
             };
 
-            // @ts-ignore
+
             this.dispatchEvent(new RTCTrackEvent('track', eventData));
 
             streams.forEach(stream => {
-                // @ts-ignore
                 stream.dispatchEvent(new MediaStreamTrackEvent('addtrack', { track }));
             });
 
@@ -546,7 +545,6 @@ export default class RTCPeerConnection extends defineCustomEventTarget(...PEER_C
                 return;
             }
 
-            // @ts-ignore
             this.dispatchEvent(new RTCEvent('negotiationneeded'));
         });
 
@@ -557,7 +555,6 @@ export default class RTCPeerConnection extends defineCustomEventTarget(...PEER_C
 
             this.iceConnectionState = ev.iceConnectionState;
 
-            // @ts-ignore
             this.dispatchEvent(new RTCEvent('iceconnectionstatechange'));
         });
 
@@ -568,7 +565,6 @@ export default class RTCPeerConnection extends defineCustomEventTarget(...PEER_C
 
             this.connectionState = ev.connectionState;
 
-            // @ts-ignore
             this.dispatchEvent(new RTCEvent('connectionstatechange'));
 
             if (ev.connectionState === 'closed') {
@@ -621,7 +617,6 @@ export default class RTCPeerConnection extends defineCustomEventTarget(...PEER_C
                 this._pendingRemoteDescription = null;
             }
 
-            // @ts-ignore
             this.dispatchEvent(new RTCEvent('signalingstatechange'));
         });
 
@@ -663,7 +658,6 @@ export default class RTCPeerConnection extends defineCustomEventTarget(...PEER_C
 
                         stream._tracks.splice(trackIdx, 1);
 
-                        // @ts-ignore
                         stream.dispatchEvent(new MediaStreamTrackEvent('removetrack', { track }));
 
                         // Dispatch a mute event for the track.
@@ -696,7 +690,6 @@ export default class RTCPeerConnection extends defineCustomEventTarget(...PEER_C
 
             const candidate = new RTCIceCandidate(ev.candidate);
 
-            // @ts-ignore
             this.dispatchEvent(new RTCIceCandidateEvent('icecandidate', { candidate }));
         });
 
@@ -724,11 +717,9 @@ export default class RTCPeerConnection extends defineCustomEventTarget(...PEER_C
                     this._pendingLocalDescription = null;
                 }
 
-                // @ts-ignore
                 this.dispatchEvent(new RTCIceCandidateEvent('icecandidate', { candidate: null }));
             }
 
-            // @ts-ignore
             this.dispatchEvent(new RTCEvent('icegatheringstatechange'));
         });
 
@@ -739,7 +730,6 @@ export default class RTCPeerConnection extends defineCustomEventTarget(...PEER_C
 
             const channel = new RTCDataChannel(ev.dataChannel);
 
-            // @ts-ignore
             this.dispatchEvent(new RTCDataChannelEvent('datachannel', { channel }));
         });
 
