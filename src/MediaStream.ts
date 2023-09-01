@@ -41,9 +41,9 @@ export default class MediaStream extends EventTarget<MediaStreamEventMap> {
      *   done internally, when the stream is first created in native and the JS wrapper is
      *   built afterwards.
      */
-    constructor(arg?: 
-        MediaStream | 
-        MediaStreamTrack[] | 
+    constructor(arg?:
+        MediaStream |
+        MediaStreamTrack[] |
         { streamId: string, streamReactTag: string, tracks: MediaStreamTrack[] }
     ) {
         super();

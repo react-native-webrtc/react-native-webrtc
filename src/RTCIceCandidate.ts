@@ -10,13 +10,13 @@ export default class RTCIceCandidate {
     sdpMid: string;
 
     constructor(info: RTCIceCandidateInfo) {
-        const { candidate, sdpMLineIndex, sdpMid } = info;
-        // == null checks for both null and undefined, but not for other falsy values
-        if (sdpMLineIndex == null || sdpMid == null) {
+        const { candidate = '', sdpMLineIndex = null, sdpMid = null } = info;
+
+        if (sdpMLineIndex === null || sdpMid === null) {
             throw new TypeError('`sdpMLineIndex` and `sdpMid` must not null');
         }
 
-        this.candidate = candidate ?? '';
+        this.candidate = candidate;
         this.sdpMLineIndex = sdpMLineIndex;
         this.sdpMid = sdpMid;
     }
