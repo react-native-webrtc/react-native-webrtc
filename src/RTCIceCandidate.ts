@@ -1,7 +1,7 @@
 interface RTCIceCandidateInfo {
     candidate?: string;
-    sdpMLineIndex: number | null;
-    sdpMid: string | null;
+    sdpMLineIndex?: number | null;
+    sdpMid?: string | null;
 }
 
 export default class RTCIceCandidate {
@@ -11,7 +11,8 @@ export default class RTCIceCandidate {
 
     constructor(info: RTCIceCandidateInfo) {
         const { candidate, sdpMLineIndex, sdpMid } = info;
-        if (sdpMLineIndex === null || sdpMid === null) {
+        // == null checks for both null and undefined, but not for other falsy values
+        if (sdpMLineIndex == null || sdpMid == null) {
             throw new TypeError('`sdpMLineIndex` and `sdpMid` must not null');
         }
 
