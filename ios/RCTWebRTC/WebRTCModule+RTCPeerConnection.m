@@ -80,9 +80,10 @@ RCT_EXPORT_BLOCKING_SYNCHRONOUS_METHOD(peerConnectionInit
         NSDictionary *optionalConstraints = @{@"DtlsSrtpKeyAgreement" : @"true"};
         RTCMediaConstraints *constraints =
             [[RTCMediaConstraints alloc] initWithMandatoryConstraints:nil optionalConstraints:optionalConstraints];
-        RTCPeerConnection *peerConnection = [self.peerConnectionFactory peerConnectionWithConfiguration:configuration
-                                                                                            constraints:constraints
-                                                                                               delegate:self];
+        RTCPeerConnection *peerConnection =
+            [[self getPeerConnectionFactory] peerConnectionWithConfiguration:configuration
+                                                                 constraints:constraints
+                                                                    delegate:self];
         peerConnection.dataChannels = [NSMutableDictionary new];
         peerConnection.reactTag = objectID;
         peerConnection.remoteStreams = [NSMutableDictionary new];

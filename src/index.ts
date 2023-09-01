@@ -44,7 +44,8 @@ export {
     MediaStreamTrack,
     mediaDevices,
     permissions,
-    registerGlobals
+    registerGlobals,
+    releaseWebrtcModule
 };
 
 declare const global: any;
@@ -75,4 +76,8 @@ function registerGlobals(): void {
     global.RTCRtpReceiver = RTCRtpReceiver;
     global.RTCRtpSender = RTCRtpSender;
     global.RTCErrorEvent = RTCErrorEvent;
+}
+
+function releaseWebrtcModule(): void {
+    WebRTCModule.releaseWebrtc();
 }

@@ -39,7 +39,8 @@ import java.util.concurrent.ExecutionException;
 public class WebRTCModule extends ReactContextBaseJavaModule {
     static final String TAG = WebRTCModule.class.getCanonicalName();
 
-    PeerConnectionFactory mFactory;
+    private final ReactApplicationContext reactContext;
+    private PeerConnectionFactory mFactory;
     VideoEncoderFactory mVideoEncoderFactory;
     VideoDecoderFactory mVideoDecoderFactory;
 
@@ -51,6 +52,8 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
 
     public WebRTCModule(ReactApplicationContext reactContext) {
         super(reactContext);
+
+        this.reactContext = reactContext;
 
         mPeerConnectionObservers = new SparseArray<>();
         localStreams = new HashMap<>();
@@ -87,18 +90,19 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
             }
         }
 
-        if (adm == null) {
-            adm = JavaAudioDeviceModule.builder(reactContext).setEnableVolumeLogger(false).createAudioDeviceModule();
-        }
-
         Log.d(TAG, "Using video encoder factory: " + encoderFactory.getClass().getCanonicalName());
         Log.d(TAG, "Using video decoder factory: " + decoderFactory.getClass().getCanonicalName());
 
-        mFactory = PeerConnectionFactory.builder()
-                           .setAudioDeviceModule(adm)
-                           .setVideoEncoderFactory(encoderFactory)
-                           .setVideoDecoderFactory(decoderFactory)
-                           .createPeerConnectionFactory();
+        if (adm != null) {
+            // Only eagerly initialize the PeerConnectionFactory 
+            // if there is an injected adm.
+
+            mFactory = PeerConnectionFactory.builder()
+                            .setAudioDeviceModule(adm)
+                            .setVideoEncoderFactory(encoderFactory)
+                            .setVideoDecoderFactory(decoderFactory)
+                            .createPeerConnectionFactory();
+        }
 
         // Saving the encoder and decoder factories to get codec info later when needed.
         mVideoEncoderFactory = encoderFactory;
@@ -374,7 +378,7 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
             ThreadUtils
                     .submitToExecutor(() -> {
                         PeerConnectionObserver observer = new PeerConnectionObserver(this, id);
-                        PeerConnection peerConnection = mFactory.createPeerConnection(rtcConfiguration, observer);
+                        PeerConnection peerConnection = getPeerConnectionFactory().createPeerConnection(rtcConfiguration, observer);
                         observer.setPeerConnection(peerConnection);
                         mPeerConnectionObservers.put(id, observer);
                     })
@@ -713,7 +717,7 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
     @ReactMethod
     public void mediaStreamCreate(String id) {
         ThreadUtils.runOnExecutor(() -> {
-            MediaStream mediaStream = mFactory.createLocalMediaStream(id);
+            MediaStream mediaStream = getPeerConnectionFactory().createLocalMediaStream(id);
             localStreams.put(id, mediaStream);
         });
     }
@@ -1321,5 +1325,35 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
     @ReactMethod
     public void removeListeners(Integer count) {
         // Keep: Required for RN built in Event Emitter Calls.
+    }
+
+    public PeerConnectionFactory getPeerConnectionFactory() {
+        // Return the PeerConnectionFactory, creating it if needed. 
+
+        if (this.mFactory != null) {
+            return this.mFactory;
+        }
+
+        AudioDeviceModule adm = JavaAudioDeviceModule.builder(this.reactContext)
+            .setEnableVolumeLogger(false)
+            .createAudioDeviceModule();
+
+        this.mFactory = PeerConnectionFactory.builder()
+                            .setAudioDeviceModule(adm)
+                            .setVideoEncoderFactory(this.mVideoEncoderFactory)
+                            .setVideoDecoderFactory(this.mVideoDecoderFactory)
+                            .createPeerConnectionFactory();
+
+        return this.mFactory;
+    }
+
+    @ReactMethod
+    public void releaseWebrtc() {
+        // Release all WebRTC resources. Typical usage is to call
+        // after all calling is ended and the app will be backgrounded.
+
+        if (this.mFactory != null) {
+            this.mFactory = null;
+        }
     }
 }
