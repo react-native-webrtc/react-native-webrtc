@@ -10,9 +10,9 @@ A WebRTC module for React Native.
 
 ## Feature Overview
 
-|  | Android | iOS | macOS* | Windows* | Web* | Expo* |
-| :-: | :-------: | :---: | :-----: | :--------: | :----: | :-----: |
-| Audio/Video | :heavy_check_mark: | :heavy_check_mark: | - | - | :heavy_check_mark: | :heavy_check_mark: |
+|  | Android | iOS | tvOS | macOS* | Windows* | Web* | Expo* |
+| :-: | :-------: | :---: | :---: | :-----: | :--------: | :----: | :-----: |
+| Audio/Video | :heavy_check_mark: |:heavy_check_mark: | :heavy_check_mark: | - | - | :heavy_check_mark: | :heavy_check_mark: |
 | Data Channels | :heavy_check_mark: | :heavy_check_mark: | - | - | :heavy_check_mark: | :heavy_check_mark: |
 | Screen Capture | :heavy_check_mark: | :heavy_check_mark: | - | - | :heavy_check_mark: | :heavy_check_mark: |
 | Plan B | - | - | - | - | - | - |
@@ -42,6 +42,7 @@ Software encode/decode factories have been enabled by default.
 * Supported architectures
   * Android: armeabi-v7a, arm64-v8a, x86, x86_64
   * iOS: arm64, x86_64
+  * tvOS: arm64
   * macOS: (temporarily disabled)
 
 ## Getting Started
@@ -57,6 +58,7 @@ Don't forget to follow platform guides below to cover any extra required steps.
 
 - [Android Install](./Documentation/AndroidInstallation.md)
 - [iOS Install](./Documentation/iOSInstallation.md)
+- [tvOS Install](./Documentation/tvOSInstallation.md)
 - [Basic Usage](./Documentation/BasicUsage.md)
 - [Step by Step Call Guide](./Documentation/CallGuide.md)
 - [Improving Call Reliability](./Documentation/ImprovingCallReliability.md)
