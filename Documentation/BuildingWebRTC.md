@@ -22,7 +22,7 @@ python build-webrtc.py --setup --ios ~/src/
 ### Android
 
 NOTE: Make sure you have the Java JDK installed beforehand. On Debian and
-Ubuntu systems this can be accomplished by installing the `default-jdk-headless`
+Ubuntu systems, this can be accomplished by installing the `default-jdk-headless`
 package.
 
 ```

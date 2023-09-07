@@ -1,3 +1,4 @@
+#if !TARGET_OS_TV
 
 #import <Foundation/Foundation.h>
 #import <WebRTC/RTCCameraVideoCapturer.h>
@@ -16,3 +17,4 @@
 - (void)switchCamera;
 
 @end
+#endif

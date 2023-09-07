@@ -1,6 +1,6 @@
 
 import * as base64 from 'base64-js';
-import { defineCustomEventTarget } from 'event-target-shim';
+import { EventTarget } from 'event-target-shim';
 import { NativeModules } from 'react-native';
 
 import { addListener, removeListener } from './EventEmitter';
@@ -11,9 +11,16 @@ const { WebRTCModule } = NativeModules;
 
 type RTCDataChannelState = 'connecting' | 'open' | 'closing' | 'closed';
 
-const DATA_CHANNEL_EVENTS = [ 'open', 'message', 'bufferedamountlow', 'closing', 'close', 'error' ];
+type DataChannelEventMap = {
+    bufferedamountlow: RTCDataChannelEvent<'bufferedamountlow'>;
+    close: RTCDataChannelEvent<'close'>;
+    closing: RTCDataChannelEvent<'closing'>;
+    error: RTCDataChannelEvent<'error'>;
+    message: MessageEvent<'message'>;
+    open: RTCDataChannelEvent<'open'>;
+};
 
-export default class RTCDataChannel extends defineCustomEventTarget(...DATA_CHANNEL_EVENTS) {
+export default class RTCDataChannel extends EventTarget<DataChannelEventMap> {
     _peerConnectionId: number;
     _reactTag: string;
 
@@ -130,13 +137,10 @@ export default class RTCDataChannel extends defineCustomEventTarget(...DATA_CHAN
             }
 
             if (this._readyState === 'open') {
-                // @ts-ignore
                 this.dispatchEvent(new RTCDataChannelEvent('open', { channel: this }));
             } else if (this._readyState === 'closing') {
-                // @ts-ignore
                 this.dispatchEvent(new RTCDataChannelEvent('closing', { channel: this }));
             } else if (this._readyState === 'closed') {
-                // @ts-ignore
                 this.dispatchEvent(new RTCDataChannelEvent('close', { channel: this }));
 
                 // This DataChannel is done, clean up event handlers.
@@ -157,7 +161,6 @@ export default class RTCDataChannel extends defineCustomEventTarget(...DATA_CHAN
                 data = base64.toByteArray(ev.data).buffer;
             }
 
-            // @ts-ignore
             this.dispatchEvent(new MessageEvent('message', { data }));
         });
 
@@ -169,7 +172,6 @@ export default class RTCDataChannel extends defineCustomEventTarget(...DATA_CHAN
             this._bufferedAmount = ev.bufferedAmount;
 
             if (this._bufferedAmount < this.bufferedAmountLowThreshold) {
-                // @ts-ignore
                 this.dispatchEvent(new RTCDataChannelEvent('bufferedamountlow', { channel: this }));
             }
         });

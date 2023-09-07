@@ -10,14 +10,14 @@ A WebRTC module for React Native.
 
 ## Feature Overview
 
-|  | Android | iOS | macOS* | Windows* | Web* | Expo* |
-| :-: | :-------: | :---: | :-----: | :--------: | :----: | :-----: |
-| Audio/Video | :heavy_check_mark: | :heavy_check_mark: | - | - | :heavy_check_mark: | :heavy_check_mark: |
-| Data Channels | :heavy_check_mark: | :heavy_check_mark: | - | - | :heavy_check_mark: | :heavy_check_mark: |
-| Screen Capture | :heavy_check_mark: | :heavy_check_mark: | - | - | :heavy_check_mark: | :heavy_check_mark: |
-| Plan B | - | - | - | - | - | - |
-| Unified Plan* | :heavy_check_mark: | :heavy_check_mark: | - | - | :heavy_check_mark: | :heavy_check_mark: |
-| Simulcast* | :heavy_check_mark: | :heavy_check_mark: | - | - | :heavy_check_mark: | :heavy_check_mark: |
+|  | Android | iOS | tvOS | macOS* | Windows* | Web* | Expo* |
+| :- | :-: | :-: | :-: | :-: | :-: | :-: | :-: |
+| Audio/Video | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | - | - | :heavy_check_mark: | :heavy_check_mark: |
+| Data Channels | :heavy_check_mark: | :heavy_check_mark: | - | - | - | :heavy_check_mark: | :heavy_check_mark: |
+| Screen Capture | :heavy_check_mark: | :heavy_check_mark: | - | - | - | :heavy_check_mark: | :heavy_check_mark: |
+| Plan B | - | - | - | - | - | - | - |
+| Unified Plan* | :heavy_check_mark: | :heavy_check_mark: | - | - | - | :heavy_check_mark: | :heavy_check_mark: |
+| Simulcast* | :heavy_check_mark: | :heavy_check_mark: | - | - | - | :heavy_check_mark: | :heavy_check_mark: |
 
 > **macOS** - We don't currently actively support macOS at this time.  
 Support might return in the future.
@@ -25,9 +25,10 @@ Support might return in the future.
 > **Windows** - We don't currently support the [react-native-windows](https://github.com/microsoft/react-native-windows) platform at this time.  
 Anyone interested in getting the ball rolling? We're open to contributions.
 
-> **Web** - The [react-native-webrtc-web-shim](https://github.com/react-native-webrtc/react-native-webrtc-web-shim) project provides a shim for [react-native-web](https://github.com/necolas/react-native-web) support. Which will allow you to use [(almost)](https://github.com/react-native-webrtc/react-native-webrtc-web-shim/tree/main#setup) the exact same code in your [react-native-web](https://github.com/necolas/react-native-web) project as you would with [react-native](https://reactnative.dev/) directly.  
+> **Web** - The [react-native-webrtc-web-shim](https://github.com/react-native-webrtc/react-native-webrtc-web-shim) project provides a shim for [react-native-web](https://github.com/necolas/react-native-web) support.  
+Which will allow you to use [(almost)](https://github.com/react-native-webrtc/react-native-webrtc-web-shim/tree/main#setup) the exact same code in your [react-native-web](https://github.com/necolas/react-native-web) project as you would with [react-native](https://reactnative.dev/) directly.  
 
-> **Expo** - As this module includes native code it is not available in the [Expo Go](https://expo.dev/client) app by default. 
+> **Expo** - As this module includes native code it is not available in the [Expo Go](https://expo.dev/client) app by default.  
 However you can get things working via the [expo-dev-client](https://docs.expo.dev/development/getting-started/) library and out-of-tree [config-plugins/react-native-webrtc](https://github.com/expo/config-plugins/tree/master/packages/react-native-webrtc) package.  
 
 > **Unified Plan** - As of version 106.0.0 Unified Plan is the only supported mode.  
@@ -42,6 +43,7 @@ Software encode/decode factories have been enabled by default.
 * Supported architectures
   * Android: armeabi-v7a, arm64-v8a, x86, x86_64
   * iOS: arm64, x86_64
+  * tvOS: arm64
   * macOS: (temporarily disabled)
 
 ## Getting Started
@@ -57,6 +59,7 @@ Don't forget to follow platform guides below to cover any extra required steps.
 
 - [Android Install](./Documentation/AndroidInstallation.md)
 - [iOS Install](./Documentation/iOSInstallation.md)
+- [tvOS Install](./Documentation/tvOSInstallation.md)
 - [Basic Usage](./Documentation/BasicUsage.md)
 - [Step by Step Call Guide](./Documentation/CallGuide.md)
 - [Improving Call Reliability](./Documentation/ImprovingCallReliability.md)
