@@ -95,7 +95,7 @@ class MediaStreamTrack extends defineCustomEventTarget(...MEDIA_STREAM_TRACK_EVE
         WebRTCModule.mediaStreamTrackSwitchCamera(this.id);
     }
 
-    _setVideoEffects(names:string[]) {
+    _setVideoEffects(names: string[]) {
         if (this.remote) {
             throw new Error('Not implemented for remote tracks');
         }
@@ -107,8 +107,8 @@ class MediaStreamTrack extends defineCustomEventTarget(...MEDIA_STREAM_TRACK_EVE
         WebRTCModule.mediaStreamTrackSetVideoEffects(this.id, names);
     }
 
-    _setVideoEffect(name:string) {
-        this._setVideoEffects([name]);
+    _setVideoEffect(name: string) {
+        this._setVideoEffects([ name ]);
     }
 
     /**
