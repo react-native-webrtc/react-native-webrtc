@@ -27,11 +27,6 @@
   "peerDependencies": {
     "react-native": ">=0.60.0"
   },
-  "scripts": {
-    "lint": "eslint --max-warnings 0 . && tsc --noEmit",
-    "prepare": "husky install && bob build",
-    "format": "tools/format.sh"
-  },
   "bugs": {
     "url": "https://github.com/react-native-webrtc/react-native-webrtc/issues"
   },
