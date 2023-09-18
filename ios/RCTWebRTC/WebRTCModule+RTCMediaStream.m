@@ -377,9 +377,6 @@ RCT_EXPORT_METHOD(mediaStreamTrackRelease : (nonnull NSString *)trackID) {
 }
 
 RCT_EXPORT_METHOD(mediaStreamTrackSetEnabled : (nonnull NSNumber *)pcId : (nonnull NSString *)trackID : (BOOL)enabled) {
-#if TARGET_OS_TV
-    return;
-#else
 
     RTCMediaStreamTrack *track = [self trackForId:trackID pcId:pcId];
     if (track == nil) {
@@ -387,14 +384,15 @@ RCT_EXPORT_METHOD(mediaStreamTrackSetEnabled : (nonnull NSNumber *)pcId : (nonnu
     }
 
     track.isEnabled = enabled;
-    if (track.captureController) {  // It could be a remote track!
-        if (enabled) {
-            [track.captureController startCapture];
-        } else {
-            [track.captureController stopCapture];
+    #if TARGET_OS_TV
+        if (track.captureController) {  // It could be a remote track!
+            if (enabled) {
+                [track.captureController startCapture];
+            } else {
+                [track.captureController stopCapture];
+            }
         }
-    }
-#endif
+    #endif
 }
 
 RCT_EXPORT_METHOD(mediaStreamTrackSwitchCamera : (nonnull NSString *)trackID) {
