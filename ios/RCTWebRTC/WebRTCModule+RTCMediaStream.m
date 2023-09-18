@@ -383,15 +383,15 @@ RCT_EXPORT_METHOD(mediaStreamTrackSetEnabled : (nonnull NSNumber *)pcId : (nonnu
     }
 
     track.isEnabled = enabled;
-    #if !TARGET_OS_TV
-        if (track.captureController) {  // It could be a remote track!
-            if (enabled) {
-                [track.captureController startCapture];
-            } else {
-                [track.captureController stopCapture];
-            }
+#if !TARGET_OS_TV
+    if (track.captureController) {  // It could be a remote track!
+        if (enabled) {
+            [track.captureController startCapture];
+        } else {
+            [track.captureController stopCapture];
         }
-    #endif
+    }
+#endif
 }
 
 RCT_EXPORT_METHOD(mediaStreamTrackSwitchCamera : (nonnull NSString *)trackID) {
