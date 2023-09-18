@@ -1,5 +1,5 @@
 
-import { EventTarget } from 'event-target-shim';
+import { defineCustomEventTarget } from 'event-target-shim';
 import { NativeModules } from 'react-native';
 
 import { addListener, removeListener } from './EventEmitter';
@@ -47,22 +47,25 @@ type RTCDataChannelInit = {
     id?: number
 };
 
-type RTCPeerConnectionEventMap = {
-    connectionstatechange: RTCEvent<'connectionstatechange'>
-    icecandidate: RTCIceCandidateEvent<'icecandidate'>
-    icecandidateerror: RTCIceCandidateEvent<'icecandidateerror'>
-    iceconnectionstatechange: RTCEvent<'iceconnectionstatechange'>
-    icegatheringstatechange: RTCEvent<'icegatheringstatechange'>
-    negotiationneeded: RTCEvent<'negotiationneeded'>
-    signalingstatechange: RTCEvent<'signalingstatechange'>
-    datachannel: RTCDataChannelEvent<'datachannel'>
-    track: RTCTrackEvent<'track'>
-    error: RTCEvent<'error'>
-  }
+const PEER_CONNECTION_EVENTS = [
+    'connectionstatechange',
+    'icecandidate',
+    'icecandidateerror',
+    'iceconnectionstatechange',
+    'icegatheringstatechange',
+    'negotiationneeded',
+    'signalingstatechange',
+    'datachannel',
+    'track',
+    'error'
+];
 
 let nextPeerConnectionId = 0;
 
-export default class RTCPeerConnection extends EventTarget<RTCPeerConnectionEventMap> {
+export default class RTCPeerConnection extends defineCustomEventTarget(...PEER_CONNECTION_EVENTS) {
+    localDescription: RTCSessionDescription | null = null;
+    remoteDescription: RTCSessionDescription | null = null;
+
     signalingState: RTCSignalingState = 'stable';
     iceGatheringState: RTCIceGatheringState = 'new';
     connectionState: RTCPeerConnectionState = 'new';
@@ -72,11 +75,6 @@ export default class RTCPeerConnection extends EventTarget<RTCPeerConnectionEven
     _transceivers: { order: number, transceiver: RTCRtpTransceiver }[];
     _remoteStreams: Map<string, MediaStream>;
     _pendingTrackEvents: any[];
-
-    _currentLocalDescription: RTCSessionDescription | null = null;
-    _pendingLocalDescription: RTCSessionDescription | null = null;
-    _currentRemoteDescription: RTCSessionDescription | null = null;
-    _pendingRemoteDescription: RTCSessionDescription | null = null;
 
     constructor(configuration) {
         super();
@@ -91,30 +89,6 @@ export default class RTCPeerConnection extends EventTarget<RTCPeerConnectionEven
         this._registerEvents();
 
         log.debug(`${this._pcId} ctor`);
-    }
-
-    get currentLocalDescription(): RTCSessionDescription | null {
-        return this._currentLocalDescription;
-    }
-
-    get pendingLocalDescription(): RTCSessionDescription | null {
-        return this._pendingLocalDescription;
-    }
-
-    get localDescription(): RTCSessionDescription | null {
-        return this._pendingLocalDescription || this._currentLocalDescription;
-    }
-
-    get currentRemoteDescription(): RTCSessionDescription | null {
-        return this._currentRemoteDescription;
-    }
-
-    get pendingRemoteDescription(): RTCSessionDescription | null {
-        return this._pendingRemoteDescription;
-    }
-
-    get remoteDescription(): RTCSessionDescription | null {
-        return this._pendingRemoteDescription || this._currentRemoteDescription;
     }
 
     async createOffer(options) {
@@ -183,7 +157,16 @@ export default class RTCPeerConnection extends EventTarget<RTCPeerConnectionEven
             desc = null;
         }
 
-        const { transceiversInfo } = await WebRTCModule.peerConnectionSetLocalDescription(this._pcId, desc);
+        const {
+            sdpInfo,
+            transceiversInfo
+        } = await WebRTCModule.peerConnectionSetLocalDescription(this._pcId, desc);
+
+        if (sdpInfo.type && sdpInfo.sdp) {
+            this.localDescription = new RTCSessionDescription(sdpInfo);
+        } else {
+            this.localDescription = null;
+        }
 
         this._updateTransceivers(transceiversInfo, /* removeStopped */ desc?.type === 'answer');
 
@@ -207,9 +190,16 @@ export default class RTCPeerConnection extends EventTarget<RTCPeerConnectionEven
         }
 
         const {
+            sdpInfo,
             newTransceivers,
             transceiversInfo
         } = await WebRTCModule.peerConnectionSetRemoteDescription(this._pcId, desc);
+
+        if (sdpInfo.type && sdpInfo.sdp) {
+            this.remoteDescription = new RTCSessionDescription(sdpInfo);
+        } else {
+            this.remoteDescription = null;
+        }
 
         newTransceivers?.forEach(t => {
             const { transceiverOrder, transceiver } = t;
@@ -279,10 +269,11 @@ export default class RTCPeerConnection extends EventTarget<RTCPeerConnectionEven
                 receiver: transceiver.receiver
             };
 
-
+            // @ts-ignore
             this.dispatchEvent(new RTCTrackEvent('track', eventData));
 
             streams.forEach(stream => {
+                // @ts-ignore
                 stream.dispatchEvent(new MediaStreamTrackEvent('addtrack', { track }));
             });
 
@@ -315,13 +306,7 @@ export default class RTCPeerConnection extends EventTarget<RTCPeerConnectionEven
             candidate.toJSON ? candidate.toJSON() : candidate
         );
 
-        if (this.signalingState === 'stable') {
-            this._currentRemoteDescription = new RTCSessionDescription(newSdp);
-            this._pendingRemoteDescription = null;
-        } else {
-            this._currentRemoteDescription = null;
-            this._pendingRemoteDescription = new RTCSessionDescription(newSdp);
-        }
+        this.remoteDescription = new RTCSessionDescription(newSdp);
     }
 
     /**
@@ -545,6 +530,7 @@ export default class RTCPeerConnection extends EventTarget<RTCPeerConnectionEven
                 return;
             }
 
+            // @ts-ignore
             this.dispatchEvent(new RTCEvent('negotiationneeded'));
         });
 
@@ -555,6 +541,7 @@ export default class RTCPeerConnection extends EventTarget<RTCPeerConnectionEven
 
             this.iceConnectionState = ev.iceConnectionState;
 
+            // @ts-ignore
             this.dispatchEvent(new RTCEvent('iceconnectionstatechange'));
         });
 
@@ -565,6 +552,7 @@ export default class RTCPeerConnection extends EventTarget<RTCPeerConnectionEven
 
             this.connectionState = ev.connectionState;
 
+            // @ts-ignore
             this.dispatchEvent(new RTCEvent('connectionstatechange'));
 
             if (ev.connectionState === 'closed') {
@@ -581,42 +569,7 @@ export default class RTCPeerConnection extends EventTarget<RTCPeerConnectionEven
             }
 
             this.signalingState = ev.signalingState;
-            const { localSdp, remoteSdp } = ev;
-
-            if (localSdp.type && localSdp.sdp) {
-                switch (this.signalingState) {
-                    case 'stable':
-                        this._currentLocalDescription = new RTCSessionDescription(localSdp);
-                        this._pendingLocalDescription = null;
-                        break;
-                    case 'have-local-offer':
-                    case 'have-local-pranswer':
-                        this._currentLocalDescription = null;
-                        this._pendingLocalDescription = new RTCSessionDescription(localSdp);
-                        break;
-                }
-            } else {
-                this._currentLocalDescription = null;
-                this._pendingLocalDescription = null;
-            }
-
-            if (remoteSdp.type && remoteSdp.sdp) {
-                switch (this.signalingState) {
-                    case 'stable':
-                        this._currentRemoteDescription = new RTCSessionDescription(remoteSdp);
-                        this._pendingRemoteDescription = null;
-                        break;
-                    case 'have-remote-offer':
-                    case 'have-remote-pranswer':
-                        this._currentRemoteDescription = null;
-                        this._pendingRemoteDescription = new RTCSessionDescription(remoteSdp);
-                        break;
-                }
-            } else {
-                this._currentRemoteDescription = null;
-                this._pendingRemoteDescription = null;
-            }
-
+            // @ts-ignore
             this.dispatchEvent(new RTCEvent('signalingstatechange'));
         });
 
@@ -658,6 +611,7 @@ export default class RTCPeerConnection extends EventTarget<RTCPeerConnectionEven
 
                         stream._tracks.splice(trackIdx, 1);
 
+                        // @ts-ignore
                         stream.dispatchEvent(new MediaStreamTrackEvent('removetrack', { track }));
 
                         // Dispatch a mute event for the track.
@@ -676,20 +630,14 @@ export default class RTCPeerConnection extends EventTarget<RTCPeerConnectionEven
 
             // Can happen when doing a rollback.
             if (sdpInfo.type && sdpInfo.sdp) {
-                if (this.signalingState === 'stable') {
-                    this._currentLocalDescription = new RTCSessionDescription(sdpInfo);
-                    this._pendingLocalDescription = null;
-                } else {
-                    this._currentLocalDescription = null;
-                    this._pendingLocalDescription = new RTCSessionDescription(sdpInfo);
-                }
+                this.localDescription = new RTCSessionDescription(sdpInfo);
             } else {
-                this._currentLocalDescription = null;
-                this._pendingLocalDescription = null;
+                this.localDescription = null;
             }
 
             const candidate = new RTCIceCandidate(ev.candidate);
 
+            // @ts-ignore
             this.dispatchEvent(new RTCIceCandidateEvent('icecandidate', { candidate }));
         });
 
@@ -705,21 +653,16 @@ export default class RTCPeerConnection extends EventTarget<RTCPeerConnectionEven
 
                 // Can happen when doing a rollback.
                 if (sdpInfo.type && sdpInfo.sdp) {
-                    if (this.signalingState === 'stable') {
-                        this._currentLocalDescription = new RTCSessionDescription(sdpInfo);
-                        this._pendingLocalDescription = null;
-                    } else {
-                        this._currentLocalDescription = null;
-                        this._pendingLocalDescription = new RTCSessionDescription(sdpInfo);
-                    }
+                    this.localDescription = new RTCSessionDescription(sdpInfo);
                 } else {
-                    this._currentLocalDescription = null;
-                    this._pendingLocalDescription = null;
+                    this.localDescription = null;
                 }
 
+                // @ts-ignore
                 this.dispatchEvent(new RTCIceCandidateEvent('icecandidate', { candidate: null }));
             }
 
+            // @ts-ignore
             this.dispatchEvent(new RTCEvent('icegatheringstatechange'));
         });
 
@@ -730,6 +673,7 @@ export default class RTCPeerConnection extends EventTarget<RTCPeerConnectionEven
 
             const channel = new RTCDataChannel(ev.dataChannel);
 
+            // @ts-ignore
             this.dispatchEvent(new RTCDataChannelEvent('datachannel', { channel }));
         });
 
