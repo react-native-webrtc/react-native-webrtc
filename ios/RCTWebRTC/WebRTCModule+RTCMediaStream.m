@@ -374,10 +374,6 @@ RCT_EXPORT_METHOD(mediaStreamTrackRelease : (nonnull NSString *)trackID) {
 }
 
 RCT_EXPORT_METHOD(mediaStreamTrackSetEnabled : (nonnull NSNumber *)pcId : (nonnull NSString *)trackID : (BOOL)enabled) {
-#if TARGET_OS_TV
-    return;
-#else
-
     RTCMediaStreamTrack *track = [self trackForId:trackID pcId:pcId];
     if (track == nil) {
         return;
