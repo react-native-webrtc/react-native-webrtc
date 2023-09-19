@@ -89,7 +89,6 @@
             @"enabled" : @(track.isEnabled),
             @"id" : trackId,
             @"kind" : track.kind,
-            @"label" : trackId,
             @"readyState" : @"live",
             @"remote" : @(NO),
             @"settings" : settings
@@ -171,7 +170,6 @@ RCT_EXPORT_METHOD(getDisplayMedia : (RCTPromiseResolveBlock)resolve rejecter : (
         @"enabled" : @(videoTrack.isEnabled),
         @"id" : videoTrack.trackId,
         @"kind" : videoTrack.kind,
-        @"label" : videoTrack.trackId,
         @"readyState" : @"live",
         @"remote" : @(NO)
     };
@@ -246,7 +244,6 @@ RCT_EXPORT_METHOD(getUserMedia
             @"enabled" : @(track.isEnabled),
             @"id" : trackId,
             @"kind" : track.kind,
-            @"label" : trackId,
             @"readyState" : @"live",
             @"remote" : @(NO),
             @"settings" : settings
@@ -377,6 +374,10 @@ RCT_EXPORT_METHOD(mediaStreamTrackRelease : (nonnull NSString *)trackID) {
 }
 
 RCT_EXPORT_METHOD(mediaStreamTrackSetEnabled : (nonnull NSNumber *)pcId : (nonnull NSString *)trackID : (BOOL)enabled) {
+#if TARGET_OS_TV
+    return;
+#else
+
     RTCMediaStreamTrack *track = [self trackForId:trackID pcId:pcId];
     if (track == nil) {
         return;

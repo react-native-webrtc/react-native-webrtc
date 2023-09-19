@@ -21,30 +21,35 @@ public class ScreenCaptureController extends AbstractVideoCaptureController {
 
     private final Intent mediaProjectionPermissionResultData;
 
-    private final OrientationEventListener orientatationListener;
+    private final OrientationEventListener orientationListener;
 
     public ScreenCaptureController(Context context, int width, int height, Intent mediaProjectionPermissionResultData) {
         super(width, height, DEFAULT_FPS);
 
         this.mediaProjectionPermissionResultData = mediaProjectionPermissionResultData;
 
-        this.orientatationListener = new OrientationEventListener(context) {
+        this.orientationListener = new OrientationEventListener(context) {
             @Override
             public void onOrientationChanged(int orientation) {
-                try {
-                    DisplayMetrics displayMetrics = DisplayUtils.getDisplayMetrics((Activity) context);
-                    int width = displayMetrics.widthPixels;
-                    int height = displayMetrics.heightPixels;
-                    videoCapturer.changeCaptureFormat(width, height, DEFAULT_FPS);
-                } catch (Exception ex) {
-                    // We ignore exceptions here. The video capturer runs on its own
-                    // thread and we cannot synchronize with it.
-                }
+                DisplayMetrics displayMetrics = DisplayUtils.getDisplayMetrics((Activity) context);
+                final int width = displayMetrics.widthPixels;
+                final int height = displayMetrics.heightPixels;
+
+                // Pivot to the executor thread because videoCapturer.changeCaptureFormat runs in the main
+                // thread and may deadlock.
+                ThreadUtils.runOnExecutor(() -> {
+                    try {
+                        videoCapturer.changeCaptureFormat(width, height, DEFAULT_FPS);
+                    } catch (Exception ex) {
+                        // We ignore exceptions here. The video capturer runs on its own
+                        // thread and we cannot synchronize with it.
+                    }
+                });
             }
         };
 
-        if (this.orientatationListener.canDetectOrientation()) {
-            this.orientatationListener.enable();
+        if (this.orientationListener.canDetectOrientation()) {
+            this.orientationListener.enable();
         }
     }
 
@@ -55,7 +60,7 @@ public class ScreenCaptureController extends AbstractVideoCaptureController {
                     @Override
                     public void onStop() {
                         Log.w(TAG, "Media projection stopped.");
-                        orientatationListener.disable();
+                        orientationListener.disable();
                         stopCapture();
 
                         if (capturerEventsListener != null) {
