@@ -1,4 +1,3 @@
-#if !TARGET_OS_TV
 
 #import "VideoCaptureController.h"
 
@@ -251,5 +250,3 @@
 }
 
 @end
-
-#endif

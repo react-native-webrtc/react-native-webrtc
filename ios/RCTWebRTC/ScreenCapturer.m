@@ -1,5 +1,3 @@
-#if TARGET_OS_IOS
-
 #include <mach/mach_time.h>
 
 #import <ReplayKit/ReplayKit.h>
@@ -260,5 +258,3 @@ const NSUInteger kMaxReadLength = 10 * 1024;
 }
 
 @end
-
-#endif

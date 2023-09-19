@@ -1,5 +1,3 @@
-#if TARGET_OS_IOS
-
 #import "ScreenCaptureController.h"
 #import "ScreenCapturer.h"
 #import "SocketConnection.h"
@@ -75,5 +73,3 @@ NSString *const kRTCAppGroupIdentifier = @"RTCAppGroupIdentifier";
 }
 
 @end
-
-#endif

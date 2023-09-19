@@ -23,16 +23,13 @@ RCT_EXPORT_METHOD(checkPermission
                   : (NSString *)mediaType resolver
                   : (RCTPromiseResolveBlock)resolve rejecter
                   : (RCTPromiseRejectBlock)reject) {
-#if TARGET_OS_TV
-    resolve(@"tvOS is not supported");
-    return;
-#else
     AVMediaType mediaType_ = [self avMediaType:mediaType];
 
     if (mediaType_ == nil) {
         reject(@"invalid_type", @"Invalid media type", nil);
         return;
     }
+
     AVAuthorizationStatus status = [AVCaptureDevice authorizationStatusForMediaType:mediaType_];
     switch (status) {
         case AVAuthorizationStatusAuthorized:
@@ -47,17 +44,12 @@ RCT_EXPORT_METHOD(checkPermission
             resolve(PERMISSION_DENIED);
             break;
     }
-#endif
 }
 
 RCT_EXPORT_METHOD(requestPermission
                   : (NSString *)mediaType resolver
                   : (RCTPromiseResolveBlock)resolve rejecter
                   : (RCTPromiseRejectBlock)reject) {
-#if TARGET_OS_TV
-    resolve(@"tvOS is not supported");
-    return;
-#else
     AVMediaType mediaType_ = [self avMediaType:mediaType];
 
     if (mediaType_ == nil) {
@@ -69,7 +61,6 @@ RCT_EXPORT_METHOD(requestPermission
                              completionHandler:^(BOOL granted) {
                                  resolve(@(granted));
                              }];
-#endif
 }
 
 @end
