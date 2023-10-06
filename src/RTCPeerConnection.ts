@@ -82,7 +82,10 @@ export default class RTCPeerConnection extends EventTarget<RTCPeerConnectionEven
         super();
 
         this._pcId = nextPeerConnectionId++;
-        WebRTCModule.peerConnectionInit(configuration, this._pcId);
+
+        if (!WebRTCModule.peerConnectionInit(configuration, this._pcId)) {
+            throw new Error('Failed to initialize PeerConnection, check the native logs!');
+        }
 
         this._transceivers = [];
         this._remoteStreams = new Map();
