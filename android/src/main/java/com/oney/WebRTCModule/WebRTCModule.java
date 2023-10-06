@@ -367,16 +367,20 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
     }
 
     @ReactMethod(isBlockingSynchronousMethod = true)
-    public void peerConnectionInit(ReadableMap configuration, int id) {
+    public boolean peerConnectionInit(ReadableMap configuration, int id) {
         PeerConnection.RTCConfiguration rtcConfiguration = parseRTCConfiguration(configuration);
 
         try {
-            ThreadUtils
+            return (boolean) ThreadUtils
                     .submitToExecutor(() -> {
                         PeerConnectionObserver observer = new PeerConnectionObserver(this, id);
                         PeerConnection peerConnection = mFactory.createPeerConnection(rtcConfiguration, observer);
+                        if (peerConnection == null) {
+                            return false;
+                        }
                         observer.setPeerConnection(peerConnection);
                         mPeerConnectionObservers.put(id, observer);
+                        return true;
                     })
                     .get();
         } catch (ExecutionException | InterruptedException e) {
