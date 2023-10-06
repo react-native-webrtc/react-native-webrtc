@@ -79,9 +79,8 @@ RCT_EXPORT_BLOCKING_SYNCHRONOUS_METHOD(peerConnectionInit
     __block BOOL ret = YES;
 
     dispatch_sync(self.workerQueue, ^{
-        NSDictionary *optionalConstraints = @{@"DtlsSrtpKeyAgreement" : @"true"};
-        RTCMediaConstraints *constraints =
-            [[RTCMediaConstraints alloc] initWithMandatoryConstraints:nil optionalConstraints:optionalConstraints];
+        RTCMediaConstraints *constraints = [[RTCMediaConstraints alloc] initWithMandatoryConstraints:nil
+                                                                                 optionalConstraints:nil];
         RTCPeerConnection *peerConnection = [self.peerConnectionFactory peerConnectionWithConfiguration:configuration
                                                                                             constraints:constraints
                                                                                                delegate:self];
