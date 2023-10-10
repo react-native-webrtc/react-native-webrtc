@@ -1010,7 +1010,17 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
                 @Override
                 public void onSetSuccess() {
                     ThreadUtils.runOnExecutor(() -> {
+                        WritableMap newSdpMap = Arguments.createMap();
                         WritableMap params = Arguments.createMap();
+
+                        SessionDescription newSdp = peerConnection.getLocalDescription();
+                        // Can happen when doing a rollback.
+                        if (newSdp != null) {
+                            newSdpMap.putString("type", newSdp.type.canonicalForm());
+                            newSdpMap.putString("sdp", newSdp.description);
+                        }
+
+                        params.putMap("sdpInfo", newSdpMap);
                         params.putArray("transceiversInfo", getTransceiversInfo(peerConnection));
 
                         promise.resolve(params);
@@ -1065,8 +1075,18 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
                 @Override
                 public void onSetSuccess() {
                     ThreadUtils.runOnExecutor(() -> {
+                        WritableMap newSdpMap = Arguments.createMap();
                         WritableMap params = Arguments.createMap();
+
+                        SessionDescription newSdp = peerConnection.getRemoteDescription();
+                        // Be defensive for the rollback cases.
+                        if (newSdp != null) {
+                            newSdpMap.putString("type", newSdp.type.canonicalForm());
+                            newSdpMap.putString("sdp", newSdp.description);
+                        }
+
                         params.putArray("transceiversInfo", getTransceiversInfo(peerConnection));
+                        params.putMap("sdpInfo", newSdpMap);
 
                         WritableArray newTransceivers = Arguments.createArray();
                         for (RtpTransceiver transceiver : peerConnection.getTransceivers()) {
