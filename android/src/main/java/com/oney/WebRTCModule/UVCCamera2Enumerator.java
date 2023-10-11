@@ -71,6 +71,7 @@ public class UVCCamera2Enumerator extends Camera2Enumerator  {
         if (isUvcCamera(deviceName)) {
             CameraUvcStrategy cameraUvcStrategy = new CameraUvcStrategy(this.context);
             List<PreviewSize> sizes = cameraUvcStrategy.getAllPreviewSizes(null); // null := Ask all sizes for all aspect ratios.
+            cameraUvcStrategy.unRegister();
             if (sizes == null) {
                 return null;
             }
