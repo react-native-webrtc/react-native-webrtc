@@ -7,7 +7,6 @@ import androidx.annotation.Nullable;
 
 import com.jiangdg.ausbc.camera.CameraUvcStrategy;
 import com.jiangdg.ausbc.camera.bean.PreviewSize;
-import com.jiangdg.usb.USBMonitor;
 
 import org.webrtc.Camera2Enumerator;
 import org.webrtc.CameraEnumerationAndroid;
@@ -28,7 +27,7 @@ import java.util.stream.Collectors;
 public class UVCCamera2Enumerator extends Camera2Enumerator  {
 
     /** UVC camera names will be prefix with this value. Currently, there is no other way to
-     * easily distinguish between device's own and external uvc cameras. */
+     * easily distinguish between device's own and external uvc cameras in JS-side. */
     public static final String UVC_PREFIX = "uvc-camera:";
 
     private final UVCMonitor uvcMonitor;
@@ -47,7 +46,6 @@ public class UVCCamera2Enumerator extends Camera2Enumerator  {
         if (uvcDevice != null) {
             devicesNames.add(UVC_PREFIX + uvcDevice.getDeviceName());
         }
-
         return devicesNames.toArray(new String[0]);
     }
 

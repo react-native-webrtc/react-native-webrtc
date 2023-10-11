@@ -47,6 +47,7 @@ public class UVCVideoCapturer implements CameraVideoCapturer {
     @Override
     public void stopCapture() {
         Log.d(WebRTCModule.TAG, "Stopping uvc capture");
+        this.cameraUvcStrategy.removePreviewDataCallBack(this.previewDataCallback);
         this.cameraUvcStrategy.stopPreview();
         this.capturerObserver.onCapturerStopped();
     }
@@ -99,7 +100,7 @@ public class UVCVideoCapturer implements CameraVideoCapturer {
 
         @Override
         public void onPreviewData(@Nullable byte[] bytes, int width, int height, @NonNull DataFormat dataFormat) {
-            if (dataFormat.equals(DataFormat.NV21)) {
+            if (DataFormat.NV21.equals(dataFormat)) {
                 NV21Buffer nv21Buffer = new NV21Buffer(bytes, width, height, null);
                 VideoFrame frame = new VideoFrame(nv21Buffer, 0, System.nanoTime());
                 videoFrameConsumer.accept(frame);

@@ -7,14 +7,11 @@ import android.content.Context;
 import android.hardware.usb.UsbDevice;
 import android.util.Log;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 import com.jiangdg.usb.USBMonitor;
-import com.jiangdg.uvc.UVCCamera;
 
 import java.util.List;
-import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
