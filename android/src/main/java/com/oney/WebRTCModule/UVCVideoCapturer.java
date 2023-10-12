@@ -24,9 +24,10 @@ public class UVCVideoCapturer implements CameraVideoCapturer {
     private CapturerObserver capturerObserver;
     private CameraUvcStrategy cameraUvcStrategy;
     private PreviewDataCallback previewDataCallback;
+    private boolean isCapturerStarted;
 
     @Override
-    public void initialize(SurfaceTextureHelper surfaceTextureHelper, Context context, CapturerObserver capturerObserver) {
+    public synchronized void initialize(SurfaceTextureHelper surfaceTextureHelper, Context context, CapturerObserver capturerObserver) {
         this.surfaceTextureHelper = surfaceTextureHelper;
         this.capturerObserver = capturerObserver;
         this.previewDataCallback = new PreviewDataCallback(this.capturerObserver::onFrameCaptured);
@@ -35,32 +36,36 @@ public class UVCVideoCapturer implements CameraVideoCapturer {
     }
 
     @Override
-    public void startCapture(int width, int height, int fps) {
+    public synchronized void startCapture(int width, int height, int fps) {
         stopCapture();
 
         Log.i(WebRTCModule.TAG, String.format("Starting uvc capture with %d x %d @ %d", width, height, fps));
         this.capturerObserver.onCapturerStarted(true);
+        this.isCapturerStarted = true;
         this.cameraUvcStrategy.addPreviewDataCallBack(this.previewDataCallback);
         this.cameraUvcStrategy.startPreview(createCameraRequest(width, height), this.surfaceTextureHelper.getSurfaceTexture());
     }
 
     @Override
-    public void stopCapture() {
+    public synchronized void stopCapture() {
         Log.d(WebRTCModule.TAG, "Stopping uvc capture");
         this.cameraUvcStrategy.removePreviewDataCallBack(this.previewDataCallback);
         this.cameraUvcStrategy.stopPreview();
-        this.capturerObserver.onCapturerStopped();
+        if (this.isCapturerStarted) {
+            this.capturerObserver.onCapturerStopped();
+            this.isCapturerStarted = false;
+        }
     }
 
     @Override
-    public void changeCaptureFormat(int width, int height, int fps) {
+    public synchronized void changeCaptureFormat(int width, int height, int fps) {
         Log.d(WebRTCModule.TAG, String.format("Capture format changed to %d x %d @ %d", width, height, fps));
         this.stopCapture();
         this.startCapture(width, height, fps);
     }
 
     @Override
-    public void dispose() {
+    public synchronized void dispose() {
         Log.d(WebRTCModule.TAG, "Disposing uvc capturer");
         stopCapture();
         this.cameraUvcStrategy.unRegister();
