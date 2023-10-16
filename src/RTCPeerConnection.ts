@@ -1,4 +1,4 @@
-import { EventTarget, defineEventAttribute } from 'event-target-shim';
+import { EventTarget, Event, defineEventAttribute } from 'event-target-shim';
 import { NativeModules } from 'react-native';
 
 import { addListener, removeListener } from './EventEmitter';
@@ -8,7 +8,6 @@ import MediaStreamTrack from './MediaStreamTrack';
 import MediaStreamTrackEvent from './MediaStreamTrackEvent';
 import RTCDataChannel from './RTCDataChannel';
 import RTCDataChannelEvent from './RTCDataChannelEvent';
-import RTCEvent from './RTCEvent';
 import RTCIceCandidate from './RTCIceCandidate';
 import RTCIceCandidateEvent from './RTCIceCandidateEvent';
 import RTCRtpReceiveParameters from './RTCRtpReceiveParameters';
@@ -47,16 +46,16 @@ type RTCDataChannelInit = {
 };
 
 type RTCPeerConnectionEventMap = {
-    connectionstatechange: RTCEvent<'connectionstatechange'>
+    connectionstatechange: Event<'connectionstatechange'>
     icecandidate: RTCIceCandidateEvent<'icecandidate'>
     icecandidateerror: RTCIceCandidateEvent<'icecandidateerror'>
-    iceconnectionstatechange: RTCEvent<'iceconnectionstatechange'>
-    icegatheringstatechange: RTCEvent<'icegatheringstatechange'>
-    negotiationneeded: RTCEvent<'negotiationneeded'>
-    signalingstatechange: RTCEvent<'signalingstatechange'>
+    iceconnectionstatechange: Event<'iceconnectionstatechange'>
+    icegatheringstatechange: Event<'icegatheringstatechange'>
+    negotiationneeded: Event<'negotiationneeded'>
+    signalingstatechange: Event<'signalingstatechange'>
     datachannel: RTCDataChannelEvent<'datachannel'>
     track: RTCTrackEvent<'track'>
-    error: RTCEvent<'error'>
+    error: Event<'error'>
 }
 
 let nextPeerConnectionId = 0;
@@ -530,7 +529,7 @@ export default class RTCPeerConnection extends EventTarget<RTCPeerConnectionEven
                 return;
             }
 
-            this.dispatchEvent(new RTCEvent('negotiationneeded'));
+            this.dispatchEvent(new Event('negotiationneeded'));
         });
 
         addListener(this, 'peerConnectionIceConnectionChanged', (ev: any) => {
@@ -540,7 +539,7 @@ export default class RTCPeerConnection extends EventTarget<RTCPeerConnectionEven
 
             this.iceConnectionState = ev.iceConnectionState;
 
-            this.dispatchEvent(new RTCEvent('iceconnectionstatechange'));
+            this.dispatchEvent(new Event('iceconnectionstatechange'));
         });
 
         addListener(this, 'peerConnectionStateChanged', (ev: any) => {
@@ -550,7 +549,7 @@ export default class RTCPeerConnection extends EventTarget<RTCPeerConnectionEven
 
             this.connectionState = ev.connectionState;
 
-            this.dispatchEvent(new RTCEvent('connectionstatechange'));
+            this.dispatchEvent(new Event('connectionstatechange'));
 
             if (ev.connectionState === 'closed') {
                 // This PeerConnection is done, clean up.
@@ -567,7 +566,7 @@ export default class RTCPeerConnection extends EventTarget<RTCPeerConnectionEven
 
             this.signalingState = ev.signalingState;
 
-            this.dispatchEvent(new RTCEvent('signalingstatechange'));
+            this.dispatchEvent(new Event('signalingstatechange'));
         });
 
         // Consider moving away from this event: https://github.com/WebKit/WebKit/pull/3953
@@ -656,7 +655,7 @@ export default class RTCPeerConnection extends EventTarget<RTCPeerConnectionEven
                 this.dispatchEvent(new RTCIceCandidateEvent('icecandidate', { candidate: null }));
             }
 
-            this.dispatchEvent(new RTCEvent('icegatheringstatechange'));
+            this.dispatchEvent(new Event('icegatheringstatechange'));
         });
 
         addListener(this, 'peerConnectionDidOpenDataChannel', (ev: any) => {
