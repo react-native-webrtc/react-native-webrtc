@@ -1,5 +1,4 @@
-
-import { EventTarget } from 'event-target-shim';
+import { EventTarget, defineEventAttribute } from 'event-target-shim';
 import { NativeModules } from 'react-native';
 
 import { addListener, removeListener } from './EventEmitter';
@@ -58,7 +57,7 @@ type RTCPeerConnectionEventMap = {
     datachannel: RTCDataChannelEvent<'datachannel'>
     track: RTCTrackEvent<'track'>
     error: RTCEvent<'error'>
-  }
+}
 
 let nextPeerConnectionId = 0;
 
@@ -769,3 +768,19 @@ export default class RTCPeerConnection extends EventTarget<RTCPeerConnectionEven
         this._transceivers.sort((a, b) => a.order - b.order);
     }
 }
+
+/**
+ * Define the `onxxx` event handlers.
+ */
+const proto = RTCPeerConnection.prototype;
+
+defineEventAttribute(proto, 'connectionstatechange');
+defineEventAttribute(proto, 'icecandidate');
+defineEventAttribute(proto, 'icecandidateerror');
+defineEventAttribute(proto, 'iceconnectionstatechange');
+defineEventAttribute(proto, 'icegatheringstatechange');
+defineEventAttribute(proto, 'negotiationneeded');
+defineEventAttribute(proto, 'signalingstatechange');
+defineEventAttribute(proto, 'datachannel');
+defineEventAttribute(proto, 'track');
+defineEventAttribute(proto, 'error');
