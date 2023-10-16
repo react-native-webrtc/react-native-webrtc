@@ -1,6 +1,5 @@
-
 import * as base64 from 'base64-js';
-import { EventTarget } from 'event-target-shim';
+import { EventTarget, defineEventAttribute } from 'event-target-shim';
 import { NativeModules } from 'react-native';
 
 import { addListener, removeListener } from './EventEmitter';
@@ -177,3 +176,15 @@ export default class RTCDataChannel extends EventTarget<DataChannelEventMap> {
         });
     }
 }
+
+/**
+ * Define the `onxxx` event handlers.
+ */
+const proto = RTCDataChannel.prototype;
+
+defineEventAttribute(proto, 'bufferedamountlow');
+defineEventAttribute(proto, 'close');
+defineEventAttribute(proto, 'closing');
+defineEventAttribute(proto, 'error');
+defineEventAttribute(proto, 'message');
+defineEventAttribute(proto, 'open');
