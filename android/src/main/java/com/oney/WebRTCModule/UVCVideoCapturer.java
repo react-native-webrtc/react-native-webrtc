@@ -91,7 +91,6 @@ public class UVCVideoCapturer implements CameraVideoCapturer {
                 .Builder()
                 .setPreviewWidth(width)
                 .setPreviewHeight(height)
-                .setAudioSource(CameraRequest.AudioSource.SOURCE_AUTO)
                 .create();
     }
 
@@ -109,6 +108,7 @@ public class UVCVideoCapturer implements CameraVideoCapturer {
                 NV21Buffer nv21Buffer = new NV21Buffer(bytes, width, height, null);
                 VideoFrame frame = new VideoFrame(nv21Buffer, 0, System.nanoTime());
                 videoFrameConsumer.accept(frame);
+                frame.release();
             } else {
                 Log.e(WebRTCModule.TAG, String.format("Support for data format '%s' has not been implemented.", dataFormat));
             }

@@ -26,6 +26,5 @@ android {
 dependencies {
     implementation 'com.facebook.react:react-native:+'
     implementation 'com.github.jiangdongguo.AndroidUSBCamera:libausbc:3.3.3'
-    implementation 'com.github.jiangdongguo.AndroidUSBCamera:libuvc:3.3.3'
     api 'org.jitsi:webrtc:111.+'
 }
