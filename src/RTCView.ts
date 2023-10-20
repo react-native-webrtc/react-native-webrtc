@@ -32,7 +32,7 @@ interface RTCVideoViewProps extends ViewProps {
    *
    * streamURL: string
    */
-  streamURL: string;
+  streamURL?: string;
   /**
    * Similarly to the CSS property z-index, specifies the z-order of this
    * RTCView in the stacking space of all RTCViews. When RTCViews overlap,
