@@ -181,50 +181,50 @@ export default class RTCDataChannel extends EventTarget<DataChannelEventMap> {
      */
 
     get onbufferedamountlow() {
-        return getEventAttributeValue<DataChannelEventMap['bufferedamountlow']>(this, 'bufferedamountlow');
+        return getEventAttributeValue(this, 'bufferedamountlow');
     }
 
     set onbufferedamountlow(value) {
-        setEventAttributeValue<DataChannelEventMap['bufferedamountlow']>(this, 'bufferedamountlow', value);
+        setEventAttributeValue(this, 'bufferedamountlow', value);
     }
 
     get onclose() {
-        return getEventAttributeValue<DataChannelEventMap['close']>(this, 'close');
+        return getEventAttributeValue(this, 'close');
     }
 
     set onclose(value) {
-        setEventAttributeValue<DataChannelEventMap['close']>(this, 'close', value);
+        setEventAttributeValue(this, 'close', value);
     }
 
     get onclosing() {
-        return getEventAttributeValue<DataChannelEventMap['closing']>(this, 'closing');
+        return getEventAttributeValue(this, 'closing');
     }
 
     set onclosing(value) {
-        setEventAttributeValue<DataChannelEventMap['closing']>(this, 'closing', value);
+        setEventAttributeValue(this, 'closing', value);
     }
 
     get onerror() {
-        return getEventAttributeValue<DataChannelEventMap['error']>(this, 'error');
+        return getEventAttributeValue(this, 'error');
     }
 
     set onerror(value) {
-        setEventAttributeValue<DataChannelEventMap['error']>(this, 'error', value);
+        setEventAttributeValue(this, 'error', value);
     }
 
     get onmessage() {
-        return getEventAttributeValue<DataChannelEventMap['message']>(this, 'message');
+        return getEventAttributeValue(this, 'message');
     }
 
     set onmessage(value) {
-        setEventAttributeValue<DataChannelEventMap['message']>(this, 'message', value);
+        setEventAttributeValue(this, 'message', value);
     }
 
     get onopen() {
-        return getEventAttributeValue<DataChannelEventMap['open']>(this, 'open');
+        return getEventAttributeValue(this, 'open');
     }
 
     set onopen(value) {
-        setEventAttributeValue<DataChannelEventMap['open']>(this, 'open', value);
+        setEventAttributeValue(this, 'open', value);
     }
 }

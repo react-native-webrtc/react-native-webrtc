@@ -156,18 +156,18 @@ export default class MediaStream extends EventTarget<MediaStreamEventMap> {
      */
 
     get onaddtrack() {
-        return getEventAttributeValue<MediaStreamEventMap['addtrack']>(this, 'addtrack');
+        return getEventAttributeValue(this, 'addtrack');
     }
 
     set onaddtrack(value) {
-        setEventAttributeValue<MediaStreamEventMap['addtrack']>(this, 'addtrack', value);
+        setEventAttributeValue(this, 'addtrack', value);
     }
 
     get onremovetrack() {
-        return getEventAttributeValue<MediaStreamEventMap['removetrack']>(this, 'removetrack');
+        return getEventAttributeValue(this, 'removetrack');
     }
 
     set onremovetrack(value) {
-        setEventAttributeValue<MediaStreamEventMap['removetrack']>(this, 'removetrack', value);
+        setEventAttributeValue(this, 'removetrack', value);
     }
 }

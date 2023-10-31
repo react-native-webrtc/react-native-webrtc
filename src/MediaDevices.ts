@@ -46,11 +46,11 @@ class MediaDevices extends EventTarget<MediaDevicesEventMap> {
      */
 
     get ondevicechange() {
-        return getEventAttributeValue<MediaDevicesEventMap['devicechange']>(this, 'devicechange');
+        return getEventAttributeValue(this, 'devicechange');
     }
 
     set ondevicechange(value) {
-        setEventAttributeValue<MediaDevicesEventMap['devicechange']>(this, 'devicechange', value);
+        setEventAttributeValue(this, 'devicechange', value);
     }
 }
 

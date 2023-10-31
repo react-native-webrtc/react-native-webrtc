@@ -771,82 +771,82 @@ export default class RTCPeerConnection extends EventTarget<RTCPeerConnectionEven
      */
 
     get onconnectionstatechange() {
-        return getEventAttributeValue<RTCPeerConnectionEventMap['connectionstatechange']>(this, 'connectionstatechange');
+        return getEventAttributeValue(this, 'connectionstatechange');
     }
 
     set onconnectionstatechange(value) {
-        setEventAttributeValue<RTCPeerConnectionEventMap['connectionstatechange']>(this, 'connectionstatechange', value);
+        setEventAttributeValue(this, 'connectionstatechange', value);
     }
 
     get onicecandidate() {
-        return getEventAttributeValue<RTCPeerConnectionEventMap['icecandidate']>(this, 'icecandidate');
+        return getEventAttributeValue(this, 'icecandidate');
     }
 
     set onicecandidate(value) {
-        setEventAttributeValue<RTCPeerConnectionEventMap['icecandidate']>(this, 'icecandidate', value);
+        setEventAttributeValue(this, 'icecandidate', value);
     }
 
     get onicecandidateerror() {
-        return getEventAttributeValue<RTCPeerConnectionEventMap['icecandidateerror']>(this, 'icecandidateerror');
+        return getEventAttributeValue(this, 'icecandidateerror');
     }
 
     set onicecandidateerror(value) {
-        setEventAttributeValue<RTCPeerConnectionEventMap['icecandidateerror']>(this, 'icecandidateerror', value);
+        setEventAttributeValue(this, 'icecandidateerror', value);
     }
 
     get oniceconnectionstatechange() {
-        return getEventAttributeValue<RTCPeerConnectionEventMap['iceconnectionstatechange']>(this, 'iceconnectionstatechange');
+        return getEventAttributeValue(this, 'iceconnectionstatechange');
     }
 
     set oniceconnectionstatechange(value) {
-        setEventAttributeValue<RTCPeerConnectionEventMap['iceconnectionstatechange']>(this, 'iceconnectionstatechange', value);
+        setEventAttributeValue(this, 'iceconnectionstatechange', value);
     }
 
     get onicegatheringstatechange() {
-        return getEventAttributeValue<RTCPeerConnectionEventMap['icegatheringstatechange']>(this, 'icegatheringstatechange');
+        return getEventAttributeValue(this, 'icegatheringstatechange');
     }
 
     set onicegatheringstatechange(value) {
-        setEventAttributeValue<RTCPeerConnectionEventMap['icegatheringstatechange']>(this, 'icegatheringstatechange', value);
+        setEventAttributeValue(this, 'icegatheringstatechange', value);
     }
 
     get onnegotiationneeded() {
-        return getEventAttributeValue<RTCPeerConnectionEventMap['negotiationneeded']>(this, 'negotiationneeded');
+        return getEventAttributeValue(this, 'negotiationneeded');
     }
 
     set onnegotiationneeded(value) {
-        setEventAttributeValue<RTCPeerConnectionEventMap['negotiationneeded']>(this, 'negotiationneeded', value);
+        setEventAttributeValue(this, 'negotiationneeded', value);
     }
 
     get onsignalingstatechange() {
-        return getEventAttributeValue<RTCPeerConnectionEventMap['signalingstatechange']>(this, 'signalingstatechange');
+        return getEventAttributeValue(this, 'signalingstatechange');
     }
 
     set onsignalingstatechange(value) {
-        setEventAttributeValue<RTCPeerConnectionEventMap['signalingstatechange']>(this, 'signalingstatechange', value);
+        setEventAttributeValue(this, 'signalingstatechange', value);
     }
 
     get ondatachannel() {
-        return getEventAttributeValue<RTCPeerConnectionEventMap['datachannel']>(this, 'datachannel');
+        return getEventAttributeValue(this, 'datachannel');
     }
 
     set ondatachannel(value) {
-        setEventAttributeValue<RTCPeerConnectionEventMap['datachannel']>(this, 'datachannel', value);
+        setEventAttributeValue(this, 'datachannel', value);
     }
 
     get ontrack() {
-        return getEventAttributeValue<RTCPeerConnectionEventMap['track']>(this, 'track');
+        return getEventAttributeValue(this, 'track');
     }
 
     set ontrack(value) {
-        setEventAttributeValue<RTCPeerConnectionEventMap['track']>(this, 'track', value);
+        setEventAttributeValue(this, 'track', value);
     }
 
     get onerror() {
-        return getEventAttributeValue<RTCPeerConnectionEventMap['error']>(this, 'error');
+        return getEventAttributeValue(this, 'error');
     }
 
     set onerror(value) {
-        setEventAttributeValue<RTCPeerConnectionEventMap['error']>(this, 'error', value);
+        setEventAttributeValue(this, 'error', value);
     }
 }

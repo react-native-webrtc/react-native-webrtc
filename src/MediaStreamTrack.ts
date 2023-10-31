@@ -197,26 +197,26 @@ export default class MediaStreamTrack extends EventTarget<MediaStreamTrackEventM
      */
 
     get onended() {
-        return getEventAttributeValue<MediaStreamTrackEventMap['ended']>(this, 'ended');
+        return getEventAttributeValue(this, 'ended');
     }
 
     set onended(value) {
-        setEventAttributeValue<MediaStreamTrackEventMap['ended']>(this, 'ended', value);
+        setEventAttributeValue(this, 'ended', value);
     }
 
     get onmute() {
-        return getEventAttributeValue<MediaStreamTrackEventMap['mute']>(this, 'mute');
+        return getEventAttributeValue(this, 'mute');
     }
 
     set onmute(value) {
-        setEventAttributeValue<MediaStreamTrackEventMap['mute']>(this, 'mute', value);
+        setEventAttributeValue(this, 'mute', value);
     }
 
     get onunmute() {
-        return getEventAttributeValue<MediaStreamTrackEventMap['unmute']>(this, 'unmute');
+        return getEventAttributeValue(this, 'unmute');
     }
 
     set onunmute(value) {
-        setEventAttributeValue<MediaStreamTrackEventMap['unmute']>(this, 'unmute', value);
+        setEventAttributeValue(this, 'unmute', value);
     }
 }
