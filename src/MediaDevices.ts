@@ -1,4 +1,4 @@
-import { EventTarget, Event, defineEventAttribute } from 'event-target-shim';
+import { EventTarget, Event, getEventAttributeValue, setEventAttributeValue } from 'event-target-shim';
 import { NativeModules } from 'react-native';
 
 import getDisplayMedia from './getDisplayMedia';
@@ -40,14 +40,18 @@ class MediaDevices extends EventTarget<MediaDevicesEventMap> {
     getUserMedia(constraints) {
         return getUserMedia(constraints);
     }
+
+    /**
+     * Define the `onxxx` event handlers.
+     */
+
+    get ondevicechange() {
+        return getEventAttributeValue<MediaDevicesEventMap['devicechange']>(this, 'devicechange');
+    }
+
+    set ondevicechange(value) {
+        setEventAttributeValue<MediaDevicesEventMap['devicechange']>(this, 'devicechange', value);
+    }
 }
-
-/**
- * Define the `onxxx` event handlers.
- */
-const proto = MediaDevices.prototype;
-
-defineEventAttribute(proto, 'devicechange');
-
 
 export default new MediaDevices();
