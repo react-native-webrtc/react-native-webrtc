@@ -248,7 +248,12 @@ RCT_EXPORT_BLOCKING_SYNCHRONOUS_METHOD(transceiverSetCodecPreferences
         }
     }
 
-    [transceiver setCodecPreferences:codecsToSet];
+    NSError *error;
+    [transceiver setCodecPreferences:codecsToSet error:&error];
+
+    if (error) {
+        RTCLogError(@"transceiverSetCodecPreferences() Could not set preferences: %@", error);
+    }
     return nil;
 }
 
