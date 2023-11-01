@@ -205,11 +205,11 @@ RCT_EXPORT_BLOCKING_SYNCHRONOUS_METHOD(transceiverSetCodecPreferences
     }
 
     if (transceiver == nil) {
-        RCTLogWarn(@"senderSetParameters() transceiver is null");
+        RCTLogWarn(@"transceiverSetCodecPreferences() transceiver is null");
         return nil;
     }
 
-    // Convert JSON codec capabilities to the actual objects.
+    // Get the available codecs
     RTCRtpTransceiverDirection direction = transceiver.direction;
     NSMutableArray *availableCodecs = [NSMutableArray new];
     if (direction == RTCRtpTransceiverDirectionSendRecv || direction == RTCRtpTransceiverDirectionSendOnly) {
@@ -233,7 +233,8 @@ RCT_EXPORT_BLOCKING_SYNCHRONOUS_METHOD(transceiverSetCodecPreferences
             }];
         }
     }
-
+    
+    // Convert JSON codec capabilities to the actual objects.
     // Codec preferences is order sensitive.
     NSMutableArray *codecsToSet = [NSMutableArray new];
 
@@ -247,7 +248,7 @@ RCT_EXPORT_BLOCKING_SYNCHRONOUS_METHOD(transceiverSetCodecPreferences
         }
     }
 
-    transceiver.codecPreferences = codecsToSet;
+    [transceiver setCodecPreferences:codecsToSet];
     return nil;
 }
 
