@@ -5,6 +5,11 @@ def safeExtGet(prop, fallback) {
 }
 
 android {
+    def agpVersion = com.android.Version.ANDROID_GRADLE_PLUGIN_VERSION
+    if (agpVersion.tokenize('.')[0].toInteger() >= 7) {
+      namespace "com.oney.WebRTCModule"
+    }
+
     compileSdkVersion safeExtGet('compileSdkVersion', 24)
     buildToolsVersion safeExtGet('buildToolsVersion', "23.0.1")
 
