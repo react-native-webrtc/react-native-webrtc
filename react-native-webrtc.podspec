@@ -19,5 +19,5 @@ Pod::Spec.new do |s|
   s.libraries           = 'c', 'sqlite3', 'stdc++'
   s.framework           = 'AudioToolbox','AVFoundation', 'CoreAudio', 'CoreGraphics', 'CoreVideo', 'GLKit', 'VideoToolbox'
   s.dependency          'React-Core'
-  s.dependency          'TSLWebRTC', '~> 111.0.3'
+  s.dependency          'TSLWebRTC', '~> 118.0.0'
 end

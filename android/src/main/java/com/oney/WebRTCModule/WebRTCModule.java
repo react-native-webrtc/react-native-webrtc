@@ -42,6 +42,7 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
     PeerConnectionFactory mFactory;
     VideoEncoderFactory mVideoEncoderFactory;
     VideoDecoderFactory mVideoDecoderFactory;
+    AudioDeviceModule mAudioDeviceModule;
 
     // Need to expose the peer connection codec factories here to get capabilities
     private final SparseArray<PeerConnectionObserver> mPeerConnectionObservers;
@@ -103,6 +104,7 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
         // Saving the encoder and decoder factories to get codec info later when needed.
         mVideoEncoderFactory = encoderFactory;
         mVideoDecoderFactory = decoderFactory;
+        mAudioDeviceModule = adm;
 
         getUserMediaImpl = new GetUserMediaImpl(this, reactContext);
     }
@@ -111,6 +113,14 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
     @Override
     public String getName() {
         return "WebRTCModule";
+    }
+
+    @Override
+    public void onCatalystInstanceDestroy() {
+        if (mAudioDeviceModule != null) {
+            mAudioDeviceModule.release();
+        }
+        super.onCatalystInstanceDestroy();
     }
 
     private PeerConnection getPeerConnection(int id) {
@@ -367,16 +377,20 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
     }
 
     @ReactMethod(isBlockingSynchronousMethod = true)
-    public void peerConnectionInit(ReadableMap configuration, int id) {
+    public boolean peerConnectionInit(ReadableMap configuration, int id) {
         PeerConnection.RTCConfiguration rtcConfiguration = parseRTCConfiguration(configuration);
 
         try {
-            ThreadUtils
+            return (boolean) ThreadUtils
                     .submitToExecutor(() -> {
                         PeerConnectionObserver observer = new PeerConnectionObserver(this, id);
                         PeerConnection peerConnection = mFactory.createPeerConnection(rtcConfiguration, observer);
+                        if (peerConnection == null) {
+                            return false;
+                        }
                         observer.setPeerConnection(peerConnection);
                         mPeerConnectionObservers.put(id, observer);
+                        return true;
                     })
                     .get();
         } catch (ExecutionException | InterruptedException e) {

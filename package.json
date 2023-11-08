@@ -1,6 +1,6 @@
 {
   "name": "react-native-webrtc",
-  "version": "1.0.3",
+  "version": "111.0.6",
   "repository": {
     "type": "git",
     "url": "git@github.com:daman-talkshoplive/react-native-webrtc.git"
@@ -26,6 +26,11 @@
   },
   "peerDependencies": {
     "react-native": ">=0.60.0"
+  },
+  "scripts": {
+    "lint": "eslint --max-warnings 0 . && tsc --noEmit",
+    "prepare": "husky install && bob build",
+    "format": "tools/format.sh"
   },
   "bugs": {
     "url": "https://github.com/react-native-webrtc/react-native-webrtc/issues"
