@@ -45,6 +45,21 @@ type RTCDataChannelInit = {
     id?: number
 };
 
+type RTCIceServer = {
+    credential?: string,
+    url?: string, // Deprecated.
+    urls?: string | string[],
+    username?: string
+};
+
+type RTCConfiguration = {
+    bundlePolicy?: 'balanced' | 'max-compat' | 'max-bundle',
+    iceCandidatePoolSize?: number,
+    iceServers?: RTCIceServer[],
+    iceTransportPolicy?: 'all' | 'relay',
+    rtcpMuxPolicy?: 'negotiate' | 'require'
+};
+
 type RTCPeerConnectionEventMap = {
     connectionstatechange: Event<'connectionstatechange'>
     icecandidate: RTCIceCandidateEvent<'icecandidate'>
@@ -73,10 +88,36 @@ export default class RTCPeerConnection extends EventTarget<RTCPeerConnectionEven
     _remoteStreams: Map<string, MediaStream>;
     _pendingTrackEvents: any[];
 
-    constructor(configuration) {
+    constructor(configuration?: RTCConfiguration) {
         super();
 
         this._pcId = nextPeerConnectionId++;
+
+        // Sanitize ICE servers.
+        if (configuration) {
+            const servers = configuration?.iceServers ?? [];
+
+            for (const server of servers) {
+                let urls = server.url || server.urls;
+
+                delete server.url;
+                delete server.urls;
+
+                if (!urls) {
+                    continue;
+                }
+
+                if (!Array.isArray(urls)) {
+                    urls = [ urls ];
+                }
+
+                // Native WebRTC does case sensitive parsing.
+                server.urls = urls.map(url => url.toLowerCase());
+            }
+
+            // Filter out bogus servers.
+            configuration.iceServers = servers.filter(s => s.urls);
+        }
 
         if (!WebRTCModule.peerConnectionInit(configuration, this._pcId)) {
             throw new Error('Failed to initialize PeerConnection, check the native logs!');
