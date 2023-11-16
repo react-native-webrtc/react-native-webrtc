@@ -8,7 +8,7 @@ Pod::Spec.new do |s|
   s.summary             = package['description']
   s.homepage            = 'https://github.com/GetStream/react-native-webrtc'
   s.license             = package['license']
-  s.author              = 'https://github.com/lGetStreamivekit/react-native-webrtc/graphs/contributors'
+  s.author              = 'https://github.com/GetStream/react-native-webrtc/graphs/contributors'
   s.source              = { :git => 'git@github.com:GetStream/react-native-webrtc.git', :tag => 'release #{s.version}' }
   s.requires_arc        = true
 
