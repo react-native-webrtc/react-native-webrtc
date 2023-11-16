@@ -43,6 +43,7 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
     PeerConnectionFactory mFactory;
     VideoEncoderFactory mVideoEncoderFactory;
     VideoDecoderFactory mVideoDecoderFactory;
+    AudioDeviceModule mAudioDeviceModule;
 
     // Need to expose the peer connection codec factories here to get capabilities
     private final SparseArray<PeerConnectionObserver> mPeerConnectionObservers;
@@ -104,6 +105,7 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
         // Saving the encoder and decoder factories to get codec info later when needed.
         mVideoEncoderFactory = encoderFactory;
         mVideoDecoderFactory = decoderFactory;
+        mAudioDeviceModule = adm;
 
         getUserMediaImpl = new GetUserMediaImpl(this, reactContext);
     }
@@ -112,6 +114,14 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
     @Override
     public String getName() {
         return "WebRTCModule";
+    }
+
+    @Override
+    public void onCatalystInstanceDestroy() {
+        if (mAudioDeviceModule != null) {
+            mAudioDeviceModule.release();
+        }
+        super.onCatalystInstanceDestroy();
     }
 
     private PeerConnection getPeerConnection(int id) {
@@ -368,16 +378,20 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
     }
 
     @ReactMethod(isBlockingSynchronousMethod = true)
-    public void peerConnectionInit(ReadableMap configuration, int id) {
+    public boolean peerConnectionInit(ReadableMap configuration, int id) {
         PeerConnection.RTCConfiguration rtcConfiguration = parseRTCConfiguration(configuration);
 
         try {
-            ThreadUtils
+            return (boolean) ThreadUtils
                     .submitToExecutor(() -> {
                         PeerConnectionObserver observer = new PeerConnectionObserver(this, id);
                         PeerConnection peerConnection = mFactory.createPeerConnection(rtcConfiguration, observer);
+                        if (peerConnection == null) {
+                            return false;
+                        }
                         observer.setPeerConnection(peerConnection);
                         mPeerConnectionObservers.put(id, observer);
+                        return true;
                     })
                     .get();
         } catch (ExecutionException | InterruptedException e) {
@@ -908,13 +922,16 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
         WritableArray transceiverUpdates = Arguments.createArray();
 
         for (RtpTransceiver transceiver : peerConnection.getTransceivers()) {
-            RtpTransceiver.RtpTransceiverDirection direction = transceiver.getCurrentDirection();
-            if (direction == null) continue;
-            String directionSerialized = SerializeUtils.serializeDirection(direction);
             WritableMap transceiverUpdate = Arguments.createMap();
+
+            RtpTransceiver.RtpTransceiverDirection direction = transceiver.getCurrentDirection();
+            if (direction != null) {
+                String directionSerialized = SerializeUtils.serializeDirection(direction);
+                transceiverUpdate.putString("currentDirection", directionSerialized);
+            }
+
             transceiverUpdate.putString("transceiverId", transceiver.getSender().id());
             transceiverUpdate.putString("mid", transceiver.getMid());
-            transceiverUpdate.putString("currentDirection", directionSerialized);
             transceiverUpdate.putBoolean("isStopped", transceiver.isStopped());
             transceiverUpdate.putMap("senderRtpParameters",
                     SerializeUtils.serializeRtpParameters(transceiver.getSender().getParameters()));
@@ -945,12 +962,18 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
     @ReactMethod
     public void peerConnectionCreateOffer(int id, ReadableMap options, Promise promise) {
         ThreadUtils.runOnExecutor(() -> {
-            PeerConnection peerConnection = getPeerConnection(id);
+            PeerConnectionObserver pco = mPeerConnectionObservers.get(id);
+            PeerConnection peerConnection = pco.getPeerConnection();
 
             if (peerConnection == null) {
                 Log.d(TAG, "peerConnectionCreateOffer() peerConnection is null");
                 promise.reject(new Exception("PeerConnection not found"));
                 return;
+            }
+
+            List<String> receiversIds = new ArrayList<>();
+            for (RtpTransceiver transceiver : peerConnection.getTransceivers()) {
+                receiversIds.add(transceiver.getReceiver().id());
             }
 
             final SdpObserver observer = new SdpObserver() {
@@ -970,6 +993,19 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
 
                         params.putArray("transceiversInfo", getTransceiversInfo(peerConnection));
                         params.putMap("sdpInfo", sdpInfo);
+
+                        WritableArray newTransceivers = Arguments.createArray();
+                        for (RtpTransceiver transceiver : peerConnection.getTransceivers()) {
+                            if (!receiversIds.contains(transceiver.getReceiver().id())) {
+                                WritableMap newTransceiver = Arguments.createMap();
+                                newTransceiver.putInt("transceiverOrder", pco.getNextTransceiverId());
+                                newTransceiver.putMap(
+                                        "transceiver", SerializeUtils.serializeTransceiver(id, transceiver));
+                                newTransceivers.pushMap(newTransceiver);
+                            }
+                        }
+
+                        params.putArray("newTransceivers", newTransceivers);
 
                         promise.resolve(params);
                     });

@@ -309,7 +309,7 @@ public class SerializeUtils {
             return null;
         }
 
-        RtpTransceiver.RtpTransceiverDirection direction = RtpTransceiver.RtpTransceiverDirection.INACTIVE;
+        RtpTransceiver.RtpTransceiverDirection direction = RtpTransceiver.RtpTransceiverDirection.SEND_RECV;
         List<String> streamIds = new ArrayList<>();
         List<RtpParameters.Encoding> sendEncodings = new ArrayList<>();
 

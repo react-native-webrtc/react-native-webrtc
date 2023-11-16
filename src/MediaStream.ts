@@ -1,19 +1,20 @@
-
-import { defineCustomEventTarget } from 'event-target-shim';
+import { EventTarget, defineEventAttribute } from 'event-target-shim';
 import { NativeModules } from 'react-native';
 
-import MediaStreamTrack from './MediaStreamTrack';
+import MediaStreamTrack, { MediaStreamTrackInfo } from './MediaStreamTrack';
+import MediaStreamTrackEvent from './MediaStreamTrackEvent';
 import { uniqueID } from './RTCUtil';
 
 const { WebRTCModule } = NativeModules;
 
-const MEDIA_STREAM_EVENTS = [ 'active', 'inactive', 'addtrack', 'removetrack' ];
+type MediaStreamEventMap = {
+    addtrack: MediaStreamTrackEvent<'addtrack'>
+    removetrack: MediaStreamTrackEvent<'removetrack'>
+}
 
-export default class MediaStream extends defineCustomEventTarget(...MEDIA_STREAM_EVENTS) {
-    id: string;
-    active = true;
-
+export default class MediaStream extends EventTarget<MediaStreamEventMap> {
     _tracks: MediaStreamTrack[] = [];
+    _id: string;
 
     /**
      * The identifier of this MediaStream unique within the associated
@@ -36,16 +37,21 @@ export default class MediaStream extends defineCustomEventTarget(...MEDIA_STREAM
      *   done internally, when the stream is first created in native and the JS wrapper is
      *   built afterwards.
      */
-    constructor(arg) {
+    constructor(arg?:
+        MediaStream |
+        MediaStreamTrack[] |
+        { streamId: string, streamReactTag: string, tracks: MediaStreamTrackInfo[] }
+    ) {
         super();
 
-        // Assigm a UUID to start with. It may get overridden for remote streams.
-        this.id = uniqueID();
+        // Assign a UUID to start with. It will get overridden for remote streams.
+        this._id = uniqueID();
+
         // Local MediaStreams are created by WebRTCModule to have their id and
         // reactTag equal because WebRTCModule follows the respective standard's
         // recommendation for id generation i.e. uses UUID which is unique enough
         // for the purposes of reactTag.
-        this._reactTag = this.id;
+        this._reactTag = this._id;
 
         if (typeof arg === 'undefined') {
             WebRTCModule.mediaStreamCreate(this.id);
@@ -62,7 +68,7 @@ export default class MediaStream extends defineCustomEventTarget(...MEDIA_STREAM
                 this.addTrack(track);
             }
         } else if (typeof arg === 'object' && arg.streamId && arg.streamReactTag && arg.tracks) {
-            this.id = arg.streamId;
+            this._id = arg.streamId;
             this._reactTag = arg.streamReactTag;
 
             for (const trackInfo of arg.tracks) {
@@ -73,6 +79,16 @@ export default class MediaStream extends defineCustomEventTarget(...MEDIA_STREAM
         } else {
             throw new TypeError(`invalid type: ${typeof arg}`);
         }
+    }
+
+    get id(): string {
+        return this._id;
+    }
+
+    get active(): boolean {
+        // TODO: can we reliably report this value?
+
+        return true;
     }
 
     addTrack(track: MediaStreamTrack): void {
@@ -135,3 +151,11 @@ export default class MediaStream extends defineCustomEventTarget(...MEDIA_STREAM
         WebRTCModule.mediaStreamRelease(this._reactTag);
     }
 }
+
+/**
+ * Define the `onxxx` event handlers.
+ */
+const proto = MediaStream.prototype;
+
+defineEventAttribute(proto, 'addtrack');
+defineEventAttribute(proto, 'removetrack');

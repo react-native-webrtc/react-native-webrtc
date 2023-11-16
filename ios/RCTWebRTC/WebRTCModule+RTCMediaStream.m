@@ -29,12 +29,15 @@
     RTCAudioTrack *audioTrack = [self.peerConnectionFactory audioTrackWithTrackId:trackId];
     return audioTrack;
 }
-
 /**
  * Initializes a new {@link RTCVideoTrack} with the given capture controller
  */
 - (RTCVideoTrack *)createVideoTrackWithCaptureController:
     (CaptureController * (^)(RTCVideoSource *))captureControllerCreator {
+#if TARGET_OS_TV
+    return nil;
+#else
+
     RTCVideoSource *videoSource = [self.peerConnectionFactory videoSource];
 
     NSString *trackUUID = [[NSUUID UUID] UUIDString];
@@ -45,14 +48,17 @@
     [captureController startCapture];
 
     return videoTrack;
+#endif
 }
-
 /**
  * Initializes a new {@link RTCMediaTrack} with the given tracks.
  *
  * @return An array with the mediaStreamId in index 0, and track infos in index 1.
  */
 - (NSArray *)createMediaStream:(NSArray<RTCMediaStreamTrack *> *)tracks {
+#if TARGET_OS_TV
+    return nil;
+#else
     NSString *mediaStreamId = [[NSUUID UUID] UUIDString];
     RTCMediaStream *mediaStream = [self.peerConnectionFactory mediaStreamWithStreamId:mediaStreamId];
     NSMutableArray<NSDictionary *> *trackInfos = [NSMutableArray array];
@@ -83,7 +89,6 @@
             @"enabled" : @(track.isEnabled),
             @"id" : trackId,
             @"kind" : track.kind,
-            @"label" : trackId,
             @"readyState" : @"live",
             @"remote" : @(NO),
             @"settings" : settings
@@ -92,12 +97,16 @@
 
     self.localStreams[mediaStreamId] = mediaStream;
     return @[ mediaStreamId, trackInfos ];
+#endif
 }
 
 /**
  * Initializes a new {@link RTCVideoTrack} which satisfies the given constraints.
  */
 - (RTCVideoTrack *)createVideoTrack:(NSDictionary *)constraints {
+#if TARGET_OS_TV
+    return nil;
+#else
     RTCVideoSource *videoSource = [self.peerConnectionFactory videoSource];
 
     NSString *trackUUID = [[NSUUID UUID] UUIDString];
@@ -112,10 +121,11 @@
 #endif
 
     return videoTrack;
+#endif
 }
 
 - (RTCVideoTrack *)createScreenCaptureVideoTrack {
-#if TARGET_IPHONE_SIMULATOR || TARGET_OS_OSX
+#if TARGET_IPHONE_SIMULATOR || TARGET_OS_OSX || TARGET_OS_TV
     return nil;
 #endif
 
@@ -137,6 +147,11 @@
 }
 
 RCT_EXPORT_METHOD(getDisplayMedia : (RCTPromiseResolveBlock)resolve rejecter : (RCTPromiseRejectBlock)reject) {
+#if TARGET_OS_TV
+    reject(@"unsupported_platform", @"tvOS is not supported", nil);
+    return;
+#else
+
     RTCVideoTrack *videoTrack = [self createScreenCaptureVideoTrack];
 
     if (videoTrack == nil) {
@@ -155,13 +170,13 @@ RCT_EXPORT_METHOD(getDisplayMedia : (RCTPromiseResolveBlock)resolve rejecter : (
         @"enabled" : @(videoTrack.isEnabled),
         @"id" : videoTrack.trackId,
         @"kind" : videoTrack.kind,
-        @"label" : videoTrack.trackId,
         @"readyState" : @"live",
         @"remote" : @(NO)
     };
 
     self.localStreams[mediaStreamId] = mediaStream;
     resolve(@{@"streamId" : mediaStreamId, @"track" : trackInfo});
+#endif
 }
 
 /**
@@ -175,6 +190,10 @@ RCT_EXPORT_METHOD(getUserMedia
                   : (NSDictionary *)constraints successCallback
                   : (RCTResponseSenderBlock)successCallback errorCallback
                   : (RCTResponseSenderBlock)errorCallback) {
+#if TARGET_OS_TV
+    errorCallback(@[ @"PlatformNotSupported", @"getUserMedia is not supported on tvOS." ]);
+    return;
+#else
     RTCAudioTrack *audioTrack = nil;
     RTCVideoTrack *videoTrack = nil;
 
@@ -225,7 +244,6 @@ RCT_EXPORT_METHOD(getUserMedia
             @"enabled" : @(track.isEnabled),
             @"id" : trackId,
             @"kind" : track.kind,
-            @"label" : trackId,
             @"readyState" : @"live",
             @"remote" : @(NO),
             @"settings" : settings
@@ -234,11 +252,15 @@ RCT_EXPORT_METHOD(getUserMedia
 
     self.localStreams[mediaStreamId] = mediaStream;
     successCallback(@[ mediaStreamId, tracks ]);
+#endif
 }
 
 #pragma mark - Other stream related APIs
 
 RCT_EXPORT_METHOD(enumerateDevices : (RCTResponseSenderBlock)callback) {
+#if TARGET_OS_TV
+    callback(@[]);
+#else
     NSMutableArray *devices = [NSMutableArray array];
     AVCaptureDeviceDiscoverySession *videoevicesSession =
         [AVCaptureDeviceDiscoverySession discoverySessionWithDeviceTypes:@[ AVCaptureDeviceTypeBuiltInWideAngleCamera ]
@@ -280,6 +302,7 @@ RCT_EXPORT_METHOD(enumerateDevices : (RCTResponseSenderBlock)callback) {
         }];
     }
     callback(@[ devices ]);
+#endif
 }
 
 RCT_EXPORT_METHOD(mediaStreamCreate : (nonnull NSString *)streamID) {
@@ -337,12 +360,17 @@ RCT_EXPORT_METHOD(mediaStreamRelease : (nonnull NSString *)streamID) {
 }
 
 RCT_EXPORT_METHOD(mediaStreamTrackRelease : (nonnull NSString *)trackID) {
+#if TARGET_OS_TV
+    return;
+#else
+
     RTCMediaStreamTrack *track = self.localTracks[trackID];
     if (track) {
         track.isEnabled = NO;
         [track.captureController stopCapture];
         [self.localTracks removeObjectForKey:trackID];
     }
+#endif
 }
 
 RCT_EXPORT_METHOD(mediaStreamTrackSetEnabled : (nonnull NSNumber *)pcId : (nonnull NSString *)trackID : (BOOL)enabled) {
@@ -352,6 +380,7 @@ RCT_EXPORT_METHOD(mediaStreamTrackSetEnabled : (nonnull NSNumber *)pcId : (nonnu
     }
 
     track.isEnabled = enabled;
+#if !TARGET_OS_TV
     if (track.captureController) {  // It could be a remote track!
         if (enabled) {
             [track.captureController startCapture];
@@ -359,14 +388,19 @@ RCT_EXPORT_METHOD(mediaStreamTrackSetEnabled : (nonnull NSNumber *)pcId : (nonnu
             [track.captureController stopCapture];
         }
     }
+#endif
 }
 
 RCT_EXPORT_METHOD(mediaStreamTrackSwitchCamera : (nonnull NSString *)trackID) {
+#if TARGET_OS_TV
+    return;
+#else
     RTCMediaStreamTrack *track = self.localTracks[trackID];
     if (track) {
         RTCVideoTrack *videoTrack = (RTCVideoTrack *)track;
         [(VideoCaptureController *)videoTrack.captureController switchCamera];
     }
+#endif
 }
 
 RCT_EXPORT_METHOD(mediaStreamTrackSetVolume : (nonnull NSNumber *)pcId : (nonnull NSString *)trackID : (double)volume) {

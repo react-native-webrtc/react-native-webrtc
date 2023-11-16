@@ -76,13 +76,19 @@ int _transceiverNextId = 0;
 RCT_EXPORT_BLOCKING_SYNCHRONOUS_METHOD(peerConnectionInit
                                        : (RTCConfiguration *)configuration objectID
                                        : (nonnull NSNumber *)objectID) {
+    __block BOOL ret = YES;
+
     dispatch_sync(self.workerQueue, ^{
-        NSDictionary *optionalConstraints = @{@"DtlsSrtpKeyAgreement" : @"true"};
-        RTCMediaConstraints *constraints =
-            [[RTCMediaConstraints alloc] initWithMandatoryConstraints:nil optionalConstraints:optionalConstraints];
+        RTCMediaConstraints *constraints = [[RTCMediaConstraints alloc] initWithMandatoryConstraints:nil
+                                                                                 optionalConstraints:nil];
         RTCPeerConnection *peerConnection = [self.peerConnectionFactory peerConnectionWithConfiguration:configuration
                                                                                             constraints:constraints
                                                                                                delegate:self];
+        if (peerConnection == nil) {
+            ret = NO;
+            return;
+        }
+
         peerConnection.dataChannels = [NSMutableDictionary new];
         peerConnection.reactTag = objectID;
         peerConnection.remoteStreams = [NSMutableDictionary new];
@@ -93,7 +99,7 @@ RCT_EXPORT_BLOCKING_SYNCHRONOUS_METHOD(peerConnectionInit
         self.peerConnections[objectID] = peerConnection;
     });
 
-    return nil;
+    return @(ret);
 }
 
 RCT_EXPORT_METHOD(peerConnectionSetConfiguration
@@ -120,18 +126,31 @@ RCT_EXPORT_METHOD(peerConnectionCreateOffer
     RTCMediaConstraints *constraints = [[RTCMediaConstraints alloc] initWithMandatoryConstraints:options
                                                                              optionalConstraints:nil];
 
+    NSMutableArray *receiversIds = [NSMutableArray new];
+    for (RTCRtpTransceiver *transceiver in peerConnection.transceivers) {
+        [receiversIds addObject:transceiver.receiver.receiverId];
+    }
+
     RTCCreateSessionDescriptionCompletionHandler handler = ^(RTCSessionDescription *desc, NSError *error) {
         dispatch_async(self.workerQueue, ^{
             if (error) {
                 reject(@"E_OPERATION_ERROR", error.localizedDescription, nil);
             } else {
-                NSMutableDictionary *sdpInfo = [NSMutableDictionary new];
-                sdpInfo[@"type"] = [RTCSessionDescription stringForType:desc.type];
-                sdpInfo[@"sdp"] = desc.sdp;
+                NSMutableArray *newTransceivers = [NSMutableArray new];
+                for (RTCRtpTransceiver *transceiver in peerConnection.transceivers) {
+                    if (![receiversIds containsObject:transceiver.receiver.receiverId]) {
+                        NSMutableDictionary *newTransceiver = [NSMutableDictionary new];
+                        newTransceiver[@"transceiverOrder"] = [NSNumber numberWithInt:_transceiverNextId++];
+                        newTransceiver[@"transceiver"] =
+                            [SerializeUtils transceiverToJSONWithPeerConnectionId:objectID transceiver:transceiver];
+                        [newTransceivers addObject:newTransceiver];
+                    }
+                }
                 id data = @{
-                    @"sdpInfo" : sdpInfo,
+                    @"sdpInfo" : @{@"type" : [RTCSessionDescription stringForType:desc.type], @"sdp" : desc.sdp},
                     @"transceiversInfo" :
-                        [SerializeUtils constructTransceiversInfoArrayWithPeerConnection:peerConnection]
+                        [SerializeUtils constructTransceiversInfoArrayWithPeerConnection:peerConnection],
+                    @"newTransceivers" : newTransceivers
                 };
                 resolve(data);
             }
@@ -160,11 +179,8 @@ RCT_EXPORT_METHOD(peerConnectionCreateAnswer
             if (error) {
                 reject(@"E_OPERATION_ERROR", error.localizedDescription, nil);
             } else {
-                NSMutableDictionary *sdpInfo = [NSMutableDictionary new];
-                sdpInfo[@"type"] = [RTCSessionDescription stringForType:desc.type];
-                sdpInfo[@"sdp"] = desc.sdp;
                 id data = @{
-                    @"sdpInfo" : sdpInfo,
+                    @"sdpInfo" : @{@"type" : [RTCSessionDescription stringForType:desc.type], @"sdp" : desc.sdp},
                     @"transceiversInfo" :
                         [SerializeUtils constructTransceiversInfoArrayWithPeerConnection:peerConnection]
                 };

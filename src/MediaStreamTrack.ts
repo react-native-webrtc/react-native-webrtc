@@ -1,5 +1,4 @@
-
-import { defineCustomEventTarget, Event } from 'event-target-shim';
+import { EventTarget, Event, defineEventAttribute } from 'event-target-shim';
 import { NativeModules } from 'react-native';
 
 import { addListener, removeListener } from './EventEmitter';
@@ -9,11 +8,27 @@ import { deepClone } from './RTCUtil';
 const log = new Logger('pc');
 const { WebRTCModule } = NativeModules;
 
-const MEDIA_STREAM_TRACK_EVENTS = [ 'ended', 'mute', 'unmute' ];
 
 type MediaStreamTrackState = 'live' | 'ended';
 
-class MediaStreamTrack extends defineCustomEventTarget(...MEDIA_STREAM_TRACK_EVENTS) {
+export type MediaStreamTrackInfo = {
+    id: string;
+    kind: string;
+    remote: boolean;
+    constraints: object;
+    enabled: boolean;
+    settings: object;
+    peerConnectionId: number;
+    readyState: MediaStreamTrackState;
+}
+
+type MediaStreamTrackEventMap = {
+    ended: Event<'ended'>;
+    mute: Event<'mute'>;
+    unmute: Event<'unmute'>;
+}
+
+export default class MediaStreamTrack extends EventTarget<MediaStreamTrackEventMap> {
     _constraints: object;
     _enabled: boolean;
     _settings: object;
@@ -26,7 +41,7 @@ class MediaStreamTrack extends defineCustomEventTarget(...MEDIA_STREAM_TRACK_EVE
     readonly label: string = '';
     readonly remote: boolean;
 
-    constructor(info) {
+    constructor(info: MediaStreamTrackInfo) {
         super();
 
         this._constraints = info.constraints || {};
@@ -164,7 +179,6 @@ class MediaStreamTrack extends defineCustomEventTarget(...MEDIA_STREAM_TRACK_EVE
             log.debug(`${this.id} mediaStreamTrackEnded`);
             this._readyState = 'ended';
 
-            // @ts-ignore
             this.dispatchEvent(new Event('ended'));
         });
     }
@@ -179,4 +193,11 @@ class MediaStreamTrack extends defineCustomEventTarget(...MEDIA_STREAM_TRACK_EVE
     }
 }
 
-export default MediaStreamTrack;
+/**
+ * Define the `onxxx` event handlers.
+ */
+const proto = MediaStreamTrack.prototype;
+
+defineEventAttribute(proto, 'ended');
+defineEventAttribute(proto, 'mute');
+defineEventAttribute(proto, 'unmute');

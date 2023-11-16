@@ -25,8 +25,7 @@ import RTCSessionDescription from './RTCSessionDescription';
 import RTCView from './RTCView';
 import ScreenCapturePickerView from './ScreenCapturePickerView';
 
-Logger.enable('*');
-// Logger.enable(`*,-${Logger.ROOT_PREFIX}:*:DEBUG`);
+Logger.enable(`${Logger.ROOT_PREFIX}:*`);
 
 // Add listeners for the native events early, since they are added asynchronously.
 setupNativeEvents();

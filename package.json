@@ -20,11 +20,9 @@
   "main": "lib/commonjs/index.js",
   "module": "lib/module/index.js",
   "dependencies": {
-    "adm-zip": "0.5.9",
     "base64-js": "1.5.1",
     "debug": "4.3.4",
-    "event-target-shim": "6.0.2",
-    "tar": "6.1.11"
+    "event-target-shim": "6.0.2"
   },
   "peerDependencies": {
     "react-native": ">=0.60.0"

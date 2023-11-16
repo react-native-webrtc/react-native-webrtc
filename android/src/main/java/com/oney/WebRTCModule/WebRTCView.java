@@ -323,13 +323,15 @@ public class WebRTCView extends ViewGroup {
     private void removeRendererFromVideoTrack() {
         if (rendererAttached) {
             if (videoTrack != null) {
-                try {
-                    ThreadUtils.submitToExecutor(() -> { videoTrack.removeSink(surfaceViewRenderer); }).get();
-                } catch (Throwable tr) {
-                    // XXX If WebRTCModule#mediaStreamTrackRelease has already been
-                    // invoked on videoTrack, then it is no longer safe to call removeSink
-                    // on the instance, it will throw IllegalStateException.
-                }
+                ThreadUtils.runOnExecutor(() -> {
+                    try {
+                        videoTrack.removeSink(surfaceViewRenderer);
+                    } catch (Throwable tr) {
+                        // XXX If WebRTCModule#mediaStreamTrackRelease has already been
+                        // invoked on videoTrack, then it is no longer safe to call removeSink
+                        // on the instance, it will throw IllegalStateException.
+                    }
+                });
             }
 
             surfaceViewRenderer.release();
@@ -518,27 +520,25 @@ public class WebRTCView extends ViewGroup {
             }
 
             try {
-                surfaceViewRendererInstances++;
                 surfaceViewRenderer.init(sharedContext, rendererEvents);
+                surfaceViewRendererInstances++;
             } catch (Exception e) {
                 Logging.e(
                         TAG, "Failed to initialize surfaceViewRenderer on instance " + surfaceViewRendererInstances, e);
-                surfaceViewRendererInstances--;
-            }
-
-            try {
-                ThreadUtils.submitToExecutor(() -> { videoTrack.addSink(surfaceViewRenderer); }).get();
-            } catch (Throwable tr) {
-                // XXX If WebRTCModule#mediaStreamTrackRelease has already been
-                // invoked on videoTrack, then it is no longer safe to call addSink
-                // on the instance, it will throw IllegalStateException.
-
-                Log.e(TAG, "Failed to add renderer", tr);
-
-                surfaceViewRenderer.release();
-                surfaceViewRendererInstances--;
                 return;
             }
+
+            ThreadUtils.runOnExecutor(() -> {
+                try {
+                    videoTrack.addSink(surfaceViewRenderer);
+                } catch (Throwable tr) {
+                    // XXX If WebRTCModule#mediaStreamTrackRelease has already been
+                    // invoked on videoTrack, then it is no longer safe to call addSink
+                    // on the instance, it will throw IllegalStateException.
+
+                    Log.e(TAG, "Failed to add renderer", tr);
+                }
+            });
 
             rendererAttached = true;
         }
