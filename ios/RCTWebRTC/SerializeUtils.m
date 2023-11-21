@@ -171,20 +171,16 @@
 }
 
 + (NSDictionary *)capabilitiesToJSON:(RTCRtpCapabilities *)capabilities {
-
     NSMutableArray *codecs = [NSMutableArray new];
 
     for (RTCRtpCodecCapability *codec in capabilities.codecs) {
         [codecs addObject:[self codecCapabilityToJSON:codec]];
     }
 
-    return @{
-        @"codecs" : codecs
-    };
+    return @{@"codecs" : codecs};
 }
 
 + (NSDictionary *)codecCapabilityToJSON:(RTCRtpCodecCapability *)codec {
-
     NSMutableDictionary *codecDictionary = [NSMutableDictionary new];
 
     codecDictionary[@"payloadType"] = codec.preferredPayloadType;
@@ -203,16 +199,14 @@
 }
 
 + (NSString *)serializeSdpParameters:(NSDictionary *)parameters {
-
-    if(parameters == nil || parameters.count == 0) {
+    if (parameters == nil || parameters.count == 0) {
         return nil;
     }
 
     NSMutableArray *parts = [NSMutableArray arrayWithCapacity:parameters.count];
-    [parameters
-        enumerateKeysAndObjectsUsingBlock:^(id _Nonnull key, id _Nonnull value, BOOL *_Nonnull stop) {
-            [parts addObject:[NSString stringWithFormat:@"%@=%@", key, value]];
-        }];
+    [parameters enumerateKeysAndObjectsUsingBlock:^(id _Nonnull key, id _Nonnull value, BOOL *_Nonnull stop) {
+        [parts addObject:[NSString stringWithFormat:@"%@=%@", key, value]];
+    }];
 
     return [parts componentsJoinedByString:@";"];
 }
