@@ -17,6 +17,7 @@
 
 - (instancetype)init {
     if (self = [super init]) {
+        self.audioDevice = nil;
         self.fieldTrials = nil;
         self.videoEncoderFactory = nil;
         self.videoDecoderFactory = nil;
