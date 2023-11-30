@@ -1,5 +1,4 @@
-
-import { EventTarget } from 'event-target-shim';
+import { EventTarget, Event, defineEventAttribute } from 'event-target-shim';
 import { NativeModules } from 'react-native';
 
 import { addListener, removeListener } from './EventEmitter';
@@ -9,7 +8,6 @@ import MediaStreamTrack from './MediaStreamTrack';
 import MediaStreamTrackEvent from './MediaStreamTrackEvent';
 import RTCDataChannel from './RTCDataChannel';
 import RTCDataChannelEvent from './RTCDataChannelEvent';
-import RTCEvent from './RTCEvent';
 import RTCIceCandidate from './RTCIceCandidate';
 import RTCIceCandidateEvent from './RTCIceCandidateEvent';
 import RTCRtpReceiveParameters from './RTCRtpReceiveParameters';
@@ -47,22 +45,39 @@ type RTCDataChannelInit = {
     id?: number
 };
 
+type RTCIceServer = {
+    credential?: string,
+    url?: string, // Deprecated.
+    urls?: string | string[],
+    username?: string
+};
+
+type RTCConfiguration = {
+    bundlePolicy?: 'balanced' | 'max-compat' | 'max-bundle',
+    iceCandidatePoolSize?: number,
+    iceServers?: RTCIceServer[],
+    iceTransportPolicy?: 'all' | 'relay',
+    rtcpMuxPolicy?: 'negotiate' | 'require'
+};
+
 type RTCPeerConnectionEventMap = {
-    connectionstatechange: RTCEvent<'connectionstatechange'>
+    connectionstatechange: Event<'connectionstatechange'>
     icecandidate: RTCIceCandidateEvent<'icecandidate'>
     icecandidateerror: RTCIceCandidateEvent<'icecandidateerror'>
-    iceconnectionstatechange: RTCEvent<'iceconnectionstatechange'>
-    icegatheringstatechange: RTCEvent<'icegatheringstatechange'>
-    negotiationneeded: RTCEvent<'negotiationneeded'>
-    signalingstatechange: RTCEvent<'signalingstatechange'>
+    iceconnectionstatechange: Event<'iceconnectionstatechange'>
+    icegatheringstatechange: Event<'icegatheringstatechange'>
+    negotiationneeded: Event<'negotiationneeded'>
+    signalingstatechange: Event<'signalingstatechange'>
     datachannel: RTCDataChannelEvent<'datachannel'>
     track: RTCTrackEvent<'track'>
-    error: RTCEvent<'error'>
-  }
+    error: Event<'error'>
+}
 
 let nextPeerConnectionId = 0;
 
 export default class RTCPeerConnection extends EventTarget<RTCPeerConnectionEventMap> {
+    localDescription: RTCSessionDescription | null = null;
+    remoteDescription: RTCSessionDescription | null = null;
     signalingState: RTCSignalingState = 'stable';
     iceGatheringState: RTCIceGatheringState = 'new';
     connectionState: RTCPeerConnectionState = 'new';
@@ -73,16 +88,40 @@ export default class RTCPeerConnection extends EventTarget<RTCPeerConnectionEven
     _remoteStreams: Map<string, MediaStream>;
     _pendingTrackEvents: any[];
 
-    _currentLocalDescription: RTCSessionDescription | null = null;
-    _pendingLocalDescription: RTCSessionDescription | null = null;
-    _currentRemoteDescription: RTCSessionDescription | null = null;
-    _pendingRemoteDescription: RTCSessionDescription | null = null;
-
-    constructor(configuration) {
+    constructor(configuration?: RTCConfiguration) {
         super();
 
         this._pcId = nextPeerConnectionId++;
-        WebRTCModule.peerConnectionInit(configuration, this._pcId);
+
+        // Sanitize ICE servers.
+        if (configuration) {
+            const servers = configuration?.iceServers ?? [];
+
+            for (const server of servers) {
+                let urls = server.url || server.urls;
+
+                delete server.url;
+                delete server.urls;
+
+                if (!urls) {
+                    continue;
+                }
+
+                if (!Array.isArray(urls)) {
+                    urls = [ urls ];
+                }
+
+                // Native WebRTC does case sensitive parsing.
+                server.urls = urls.map(url => url.toLowerCase());
+            }
+
+            // Filter out bogus servers.
+            configuration.iceServers = servers.filter(s => s.urls);
+        }
+
+        if (!WebRTCModule.peerConnectionInit(configuration, this._pcId)) {
+            throw new Error('Failed to initialize PeerConnection, check the native logs!');
+        }
 
         this._transceivers = [];
         this._remoteStreams = new Map();
@@ -91,30 +130,6 @@ export default class RTCPeerConnection extends EventTarget<RTCPeerConnectionEven
         this._registerEvents();
 
         log.debug(`${this._pcId} ctor`);
-    }
-
-    get currentLocalDescription(): RTCSessionDescription | null {
-        return this._currentLocalDescription;
-    }
-
-    get pendingLocalDescription(): RTCSessionDescription | null {
-        return this._pendingLocalDescription;
-    }
-
-    get localDescription(): RTCSessionDescription | null {
-        return this._pendingLocalDescription || this._currentLocalDescription;
-    }
-
-    get currentRemoteDescription(): RTCSessionDescription | null {
-        return this._currentRemoteDescription;
-    }
-
-    get pendingRemoteDescription(): RTCSessionDescription | null {
-        return this._pendingRemoteDescription;
-    }
-
-    get remoteDescription(): RTCSessionDescription | null {
-        return this._pendingRemoteDescription || this._currentRemoteDescription;
     }
 
     async createOffer(options) {
@@ -183,7 +198,16 @@ export default class RTCPeerConnection extends EventTarget<RTCPeerConnectionEven
             desc = null;
         }
 
-        const { transceiversInfo } = await WebRTCModule.peerConnectionSetLocalDescription(this._pcId, desc);
+        const {
+            sdpInfo,
+            transceiversInfo
+        } = await WebRTCModule.peerConnectionSetLocalDescription(this._pcId, desc);
+
+        if (sdpInfo.type && sdpInfo.sdp) {
+            this.localDescription = new RTCSessionDescription(sdpInfo);
+        } else {
+            this.localDescription = null;
+        }
 
         this._updateTransceivers(transceiversInfo, /* removeStopped */ desc?.type === 'answer');
 
@@ -207,9 +231,16 @@ export default class RTCPeerConnection extends EventTarget<RTCPeerConnectionEven
         }
 
         const {
+            sdpInfo,
             newTransceivers,
             transceiversInfo
         } = await WebRTCModule.peerConnectionSetRemoteDescription(this._pcId, desc);
+
+        if (sdpInfo.type && sdpInfo.sdp) {
+            this.remoteDescription = new RTCSessionDescription(sdpInfo);
+        } else {
+            this.remoteDescription = null;
+        }
 
         newTransceivers?.forEach(t => {
             const { transceiverOrder, transceiver } = t;
@@ -315,13 +346,7 @@ export default class RTCPeerConnection extends EventTarget<RTCPeerConnectionEven
             candidate.toJSON ? candidate.toJSON() : candidate
         );
 
-        if (this.signalingState === 'stable') {
-            this._currentRemoteDescription = new RTCSessionDescription(newSdp);
-            this._pendingRemoteDescription = null;
-        } else {
-            this._currentRemoteDescription = null;
-            this._pendingRemoteDescription = new RTCSessionDescription(newSdp);
-        }
+        this.remoteDescription = new RTCSessionDescription(newSdp);
     }
 
     /**
@@ -545,7 +570,7 @@ export default class RTCPeerConnection extends EventTarget<RTCPeerConnectionEven
                 return;
             }
 
-            this.dispatchEvent(new RTCEvent('negotiationneeded'));
+            this.dispatchEvent(new Event('negotiationneeded'));
         });
 
         addListener(this, 'peerConnectionIceConnectionChanged', (ev: any) => {
@@ -555,7 +580,7 @@ export default class RTCPeerConnection extends EventTarget<RTCPeerConnectionEven
 
             this.iceConnectionState = ev.iceConnectionState;
 
-            this.dispatchEvent(new RTCEvent('iceconnectionstatechange'));
+            this.dispatchEvent(new Event('iceconnectionstatechange'));
         });
 
         addListener(this, 'peerConnectionStateChanged', (ev: any) => {
@@ -565,7 +590,7 @@ export default class RTCPeerConnection extends EventTarget<RTCPeerConnectionEven
 
             this.connectionState = ev.connectionState;
 
-            this.dispatchEvent(new RTCEvent('connectionstatechange'));
+            this.dispatchEvent(new Event('connectionstatechange'));
 
             if (ev.connectionState === 'closed') {
                 // This PeerConnection is done, clean up.
@@ -581,43 +606,8 @@ export default class RTCPeerConnection extends EventTarget<RTCPeerConnectionEven
             }
 
             this.signalingState = ev.signalingState;
-            const { localSdp, remoteSdp } = ev;
 
-            if (localSdp.type && localSdp.sdp) {
-                switch (this.signalingState) {
-                    case 'stable':
-                        this._currentLocalDescription = new RTCSessionDescription(localSdp);
-                        this._pendingLocalDescription = null;
-                        break;
-                    case 'have-local-offer':
-                    case 'have-local-pranswer':
-                        this._currentLocalDescription = null;
-                        this._pendingLocalDescription = new RTCSessionDescription(localSdp);
-                        break;
-                }
-            } else {
-                this._currentLocalDescription = null;
-                this._pendingLocalDescription = null;
-            }
-
-            if (remoteSdp.type && remoteSdp.sdp) {
-                switch (this.signalingState) {
-                    case 'stable':
-                        this._currentRemoteDescription = new RTCSessionDescription(remoteSdp);
-                        this._pendingRemoteDescription = null;
-                        break;
-                    case 'have-remote-offer':
-                    case 'have-remote-pranswer':
-                        this._currentRemoteDescription = null;
-                        this._pendingRemoteDescription = new RTCSessionDescription(remoteSdp);
-                        break;
-                }
-            } else {
-                this._currentRemoteDescription = null;
-                this._pendingRemoteDescription = null;
-            }
-
-            this.dispatchEvent(new RTCEvent('signalingstatechange'));
+            this.dispatchEvent(new Event('signalingstatechange'));
         });
 
         // Consider moving away from this event: https://github.com/WebKit/WebKit/pull/3953
@@ -676,16 +666,9 @@ export default class RTCPeerConnection extends EventTarget<RTCPeerConnectionEven
 
             // Can happen when doing a rollback.
             if (sdpInfo.type && sdpInfo.sdp) {
-                if (this.signalingState === 'stable') {
-                    this._currentLocalDescription = new RTCSessionDescription(sdpInfo);
-                    this._pendingLocalDescription = null;
-                } else {
-                    this._currentLocalDescription = null;
-                    this._pendingLocalDescription = new RTCSessionDescription(sdpInfo);
-                }
+                this.localDescription = new RTCSessionDescription(sdpInfo);
             } else {
-                this._currentLocalDescription = null;
-                this._pendingLocalDescription = null;
+                this.localDescription = null;
             }
 
             const candidate = new RTCIceCandidate(ev.candidate);
@@ -705,22 +688,15 @@ export default class RTCPeerConnection extends EventTarget<RTCPeerConnectionEven
 
                 // Can happen when doing a rollback.
                 if (sdpInfo.type && sdpInfo.sdp) {
-                    if (this.signalingState === 'stable') {
-                        this._currentLocalDescription = new RTCSessionDescription(sdpInfo);
-                        this._pendingLocalDescription = null;
-                    } else {
-                        this._currentLocalDescription = null;
-                        this._pendingLocalDescription = new RTCSessionDescription(sdpInfo);
-                    }
+                    this.localDescription = new RTCSessionDescription(sdpInfo);
                 } else {
-                    this._currentLocalDescription = null;
-                    this._pendingLocalDescription = null;
+                    this.localDescription = null;
                 }
 
                 this.dispatchEvent(new RTCIceCandidateEvent('icecandidate', { candidate: null }));
             }
 
-            this.dispatchEvent(new RTCEvent('icegatheringstatechange'));
+            this.dispatchEvent(new Event('icegatheringstatechange'));
         });
 
         addListener(this, 'peerConnectionDidOpenDataChannel', (ev: any) => {
@@ -832,3 +808,19 @@ export default class RTCPeerConnection extends EventTarget<RTCPeerConnectionEven
         this._transceivers.sort((a, b) => a.order - b.order);
     }
 }
+
+/**
+ * Define the `onxxx` event handlers.
+ */
+const proto = RTCPeerConnection.prototype;
+
+defineEventAttribute(proto, 'connectionstatechange');
+defineEventAttribute(proto, 'icecandidate');
+defineEventAttribute(proto, 'icecandidateerror');
+defineEventAttribute(proto, 'iceconnectionstatechange');
+defineEventAttribute(proto, 'icegatheringstatechange');
+defineEventAttribute(proto, 'negotiationneeded');
+defineEventAttribute(proto, 'signalingstatechange');
+defineEventAttribute(proto, 'datachannel');
+defineEventAttribute(proto, 'track');
+defineEventAttribute(proto, 'error');

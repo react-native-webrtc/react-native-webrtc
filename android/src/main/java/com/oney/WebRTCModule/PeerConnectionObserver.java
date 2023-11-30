@@ -502,27 +502,9 @@ class PeerConnectionObserver implements PeerConnection.Observer {
     @Override
     public void onSignalingChange(PeerConnection.SignalingState signalingState) {
         ThreadUtils.runOnExecutor(() -> {
-            WritableMap newLocalSdpMap = Arguments.createMap();
-            WritableMap newRemoteSdpMap = Arguments.createMap();
-            SessionDescription newLocalSdp = peerConnection.getLocalDescription();
-            SessionDescription newRemoteSdp = peerConnection.getRemoteDescription();
-
-            if (newLocalSdp != null) {
-                newLocalSdpMap.putString("type", newLocalSdp.type.canonicalForm());
-                newLocalSdpMap.putString("sdp", newLocalSdp.description);
-            }
-
-            if (newRemoteSdp != null) {
-                newRemoteSdpMap.putString("type", newRemoteSdp.type.canonicalForm());
-                newRemoteSdpMap.putString("sdp", newRemoteSdp.description);
-            }
-
             WritableMap params = Arguments.createMap();
             params.putInt("pcId", id);
             params.putString("signalingState", signalingStateString(signalingState));
-            params.putMap("localSdp", newLocalSdpMap);
-            params.putMap("remoteSdp", newRemoteSdpMap);
-
             webRTCModule.sendEvent("peerConnectionSignalingStateChanged", params);
         });
     }

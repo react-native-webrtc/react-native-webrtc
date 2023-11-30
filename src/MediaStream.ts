@@ -1,23 +1,19 @@
-
-import EventTarget from 'event-target-shim';
+import { EventTarget, defineEventAttribute } from 'event-target-shim';
 import { NativeModules } from 'react-native';
 
-import MediaStreamTrack from './MediaStreamTrack';
+import MediaStreamTrack, { MediaStreamTrackInfo } from './MediaStreamTrack';
 import MediaStreamTrackEvent from './MediaStreamTrackEvent';
 import { uniqueID } from './RTCUtil';
 
 const { WebRTCModule } = NativeModules;
 
 type MediaStreamEventMap = {
-    active: MediaStreamTrackEvent<'active'>
-    inactive: MediaStreamTrackEvent<'inactive'>
     addtrack: MediaStreamTrackEvent<'addtrack'>
     removetrack: MediaStreamTrackEvent<'removetrack'>
-  }
+}
 
 export default class MediaStream extends EventTarget<MediaStreamEventMap> {
     _tracks: MediaStreamTrack[] = [];
-
     _id: string;
 
     /**
@@ -44,7 +40,7 @@ export default class MediaStream extends EventTarget<MediaStreamEventMap> {
     constructor(arg?:
         MediaStream |
         MediaStreamTrack[] |
-        { streamId: string, streamReactTag: string, tracks: MediaStreamTrack[] }
+        { streamId: string, streamReactTag: string, tracks: MediaStreamTrackInfo[] }
     ) {
         super();
 
@@ -155,3 +151,11 @@ export default class MediaStream extends EventTarget<MediaStreamEventMap> {
         WebRTCModule.mediaStreamRelease(this._reactTag);
     }
 }
+
+/**
+ * Define the `onxxx` event handlers.
+ */
+const proto = MediaStream.prototype;
+
+defineEventAttribute(proto, 'addtrack');
+defineEventAttribute(proto, 'removetrack');
