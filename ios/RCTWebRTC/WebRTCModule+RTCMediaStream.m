@@ -286,7 +286,7 @@ RCT_EXPORT_METHOD(enumerateDevices : (RCTResponseSenderBlock)callback) {
         }];
     }
     AVCaptureDeviceDiscoverySession *audioDevicesSession =
-        [AVCaptureDeviceDiscoverySession discoverySessionWithDeviceTypes:@[ AVCaptureDeviceTypeBuiltInMicrophone ]
+        [AVCaptureDeviceDiscoverySession discoverySessionWithDeviceTypes:@[ AVCaptureDeviceTypeMicrophone ]
                                                                mediaType:AVMediaTypeAudio
                                                                 position:AVCaptureDevicePositionUnspecified];
     for (AVCaptureDevice *device in audioDevicesSession.devices) {
