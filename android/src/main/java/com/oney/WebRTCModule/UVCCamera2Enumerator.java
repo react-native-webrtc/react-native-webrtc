@@ -2,6 +2,7 @@ package com.oney.WebRTCModule;
 
 import android.content.Context;
 import android.hardware.usb.UsbDevice;
+import android.util.Log;
 
 import androidx.annotation.Nullable;
 
@@ -29,23 +30,28 @@ public class UVCCamera2Enumerator extends Camera2Enumerator  {
     /** UVC camera names will be prefix with this value. Currently, there is no other way to
      * easily distinguish between device's own and external uvc cameras in JS-side. */
     public static final String UVC_PREFIX = "uvc-camera:";
-
-    private final UVCMonitor uvcMonitor;
     private final Context context;
 
     public UVCCamera2Enumerator(Context context) {
         super(context);
-        this.uvcMonitor = new UVCMonitor(context);
         this.context = context;
     }
 
     @Override
     public String[] getDeviceNames() {
         ArrayList<String> devicesNames = new ArrayList<>(Arrays.asList(super.getDeviceNames()));
-        UsbDevice uvcDevice = this.uvcMonitor.getUvcCameraDevice();
-        if (uvcDevice != null) {
-            devicesNames.add(UVC_PREFIX + uvcDevice.getDeviceName());
+
+        try {
+            CameraUvcStrategy uvcStrategy = new CameraUvcStrategy(context);
+            List<UsbDevice> uvcCameras = uvcStrategy.getUsbDeviceList(null); // null := no filtering
+            if (uvcCameras != null) {
+                uvcCameras.forEach(camera -> devicesNames.add(UVC_PREFIX + camera.getDeviceName()));
+            }
+            uvcStrategy.unRegister();
+        } catch (Exception e) {
+            Log.e(WebRTCModule.TAG, "Error in uvc camera enumeration", e);
         }
+
         return devicesNames.toArray(new String[0]);
     }
 
