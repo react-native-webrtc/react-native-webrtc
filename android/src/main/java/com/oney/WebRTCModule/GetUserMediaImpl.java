@@ -494,7 +494,5 @@ class GetUserMediaImpl {
         }
     }
 
-    public interface BiConsumer<T, U> {
-        void accept(T t, U u);
-    }
+    public interface BiConsumer<T, U> { void accept(T t, U u); }
 }

@@ -19,7 +19,6 @@ import org.webrtc.VideoFrame;
 import java.util.function.Consumer;
 
 public class UVCVideoCapturer implements CameraVideoCapturer {
-
     private SurfaceTextureHelper surfaceTextureHelper;
     private CapturerObserver capturerObserver;
     private CameraUvcStrategy cameraUvcStrategy;
@@ -27,7 +26,8 @@ public class UVCVideoCapturer implements CameraVideoCapturer {
     private boolean isCapturerStarted;
 
     @Override
-    public synchronized void initialize(SurfaceTextureHelper surfaceTextureHelper, Context context, CapturerObserver capturerObserver) {
+    public synchronized void initialize(
+            SurfaceTextureHelper surfaceTextureHelper, Context context, CapturerObserver capturerObserver) {
         this.surfaceTextureHelper = surfaceTextureHelper;
         this.capturerObserver = capturerObserver;
         this.previewDataCallback = new PreviewDataCallback(this.capturerObserver::onFrameCaptured);
@@ -43,7 +43,8 @@ public class UVCVideoCapturer implements CameraVideoCapturer {
         this.capturerObserver.onCapturerStarted(true);
         this.isCapturerStarted = true;
         this.cameraUvcStrategy.addPreviewDataCallBack(this.previewDataCallback);
-        this.cameraUvcStrategy.startPreview(createCameraRequest(width, height), this.surfaceTextureHelper.getSurfaceTexture());
+        this.cameraUvcStrategy.startPreview(
+                createCameraRequest(width, height), this.surfaceTextureHelper.getSurfaceTexture());
     }
 
     @Override
@@ -87,15 +88,10 @@ public class UVCVideoCapturer implements CameraVideoCapturer {
     }
 
     private CameraRequest createCameraRequest(int width, int height) {
-        return new CameraRequest
-                .Builder()
-                .setPreviewWidth(width)
-                .setPreviewHeight(height)
-                .create();
+        return new CameraRequest.Builder().setPreviewWidth(width).setPreviewHeight(height).create();
     }
 
     private static class PreviewDataCallback implements IPreviewDataCallBack {
-
         private final Consumer<VideoFrame> videoFrameConsumer;
 
         public PreviewDataCallback(Consumer<VideoFrame> videoFrameConsumer) {
@@ -110,7 +106,8 @@ public class UVCVideoCapturer implements CameraVideoCapturer {
                 videoFrameConsumer.accept(frame);
                 frame.release();
             } else {
-                Log.e(WebRTCModule.TAG, String.format("Support for data format '%s' has not been implemented.", dataFormat));
+                Log.e(WebRTCModule.TAG,
+                        String.format("Support for data format '%s' has not been implemented.", dataFormat));
             }
         }
     }

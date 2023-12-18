@@ -18,17 +18,17 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
-
 /**
  * Camera2Enumerator with UVC Camera support.
  * <p/>
  * This implementation only adds support for UVC camera devices.
  * Ie. Device's (back and/or front) cameras will use the basic implementation of {@link Camera2Enumerator}.
  */
-public class UVCCamera2Enumerator extends Camera2Enumerator  {
-
-    /** UVC camera names will be prefix with this value. Currently, there is no other way to
-     * easily distinguish between device's own and external uvc cameras in JS-side. */
+public class UVCCamera2Enumerator extends Camera2Enumerator {
+    /**
+     * UVC camera names will be prefix with this value. Currently, there is no other way to
+     * easily distinguish between device's own and external uvc cameras in JS-side.
+     */
     public static final String UVC_PREFIX = "uvc-camera:";
     private final Context context;
 
@@ -76,7 +76,8 @@ public class UVCCamera2Enumerator extends Camera2Enumerator  {
     public List<CameraEnumerationAndroid.CaptureFormat> getSupportedFormats(String deviceName) {
         if (isUvcCamera(deviceName)) {
             CameraUvcStrategy cameraUvcStrategy = new CameraUvcStrategy(this.context);
-            List<PreviewSize> sizes = cameraUvcStrategy.getAllPreviewSizes(null); // null := Ask all sizes for all aspect ratios.
+            List<PreviewSize> sizes =
+                    cameraUvcStrategy.getAllPreviewSizes(null); // null := Ask all sizes for all aspect ratios.
             cameraUvcStrategy.unRegister();
             if (sizes == null) {
                 return null;
@@ -85,7 +86,9 @@ public class UVCCamera2Enumerator extends Camera2Enumerator  {
             int minFps = 1;
             int maxFps = 30;
             return sizes.stream()
-                    .map(size -> new CameraEnumerationAndroid.CaptureFormat(size.getWidth(), size.getHeight(), minFps, maxFps))
+                    .map(size
+                            -> new CameraEnumerationAndroid.CaptureFormat(
+                                    size.getWidth(), size.getHeight(), minFps, maxFps))
                     .collect(Collectors.toList());
         }
 
@@ -93,7 +96,8 @@ public class UVCCamera2Enumerator extends Camera2Enumerator  {
     }
 
     @Override
-    public CameraVideoCapturer createCapturer(String cameraName, CameraVideoCapturer.CameraEventsHandler eventsHandler) {
+    public CameraVideoCapturer createCapturer(
+            String cameraName, CameraVideoCapturer.CameraEventsHandler eventsHandler) {
         if (isUvcCamera(cameraName)) {
             return new UVCVideoCapturer();
         }
