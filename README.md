@@ -63,6 +63,7 @@ Don't forget to follow platform guides below to cover any extra required steps.
 - [Basic Usage](./Documentation/BasicUsage.md)
 - [Step by Step Call Guide](./Documentation/CallGuide.md)
 - [Improving Call Reliability](./Documentation/ImprovingCallReliability.md)
+- [Migrating to Unified Plan](https://docs.google.com/document/d/1-ZfikoUtoJa9k-GZG1daN0BU3IjIanQ_JSscHxQesvU/edit#heading=h.wuu7dx8tnifl)
 
 ## Example Projects
 
