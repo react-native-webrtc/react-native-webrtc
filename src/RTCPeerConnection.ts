@@ -1,5 +1,4 @@
-
-import { defineCustomEventTarget } from 'event-target-shim';
+import { EventTarget, Event, defineEventAttribute } from 'event-target-shim';
 import { NativeModules } from 'react-native';
 
 import { addListener, removeListener } from './EventEmitter';
@@ -9,7 +8,6 @@ import MediaStreamTrack from './MediaStreamTrack';
 import MediaStreamTrackEvent from './MediaStreamTrackEvent';
 import RTCDataChannel from './RTCDataChannel';
 import RTCDataChannelEvent from './RTCDataChannelEvent';
-import RTCEvent from './RTCEvent';
 import RTCIceCandidate from './RTCIceCandidate';
 import RTCIceCandidateEvent from './RTCIceCandidateEvent';
 import RTCRtpReceiveParameters from './RTCRtpReceiveParameters';
@@ -47,25 +45,39 @@ type RTCDataChannelInit = {
     id?: number
 };
 
-const PEER_CONNECTION_EVENTS = [
-    'connectionstatechange',
-    'icecandidate',
-    'icecandidateerror',
-    'iceconnectionstatechange',
-    'icegatheringstatechange',
-    'negotiationneeded',
-    'signalingstatechange',
-    'datachannel',
-    'track',
-    'error'
-];
+type RTCIceServer = {
+    credential?: string,
+    url?: string, // Deprecated.
+    urls?: string | string[],
+    username?: string
+};
+
+type RTCConfiguration = {
+    bundlePolicy?: 'balanced' | 'max-compat' | 'max-bundle',
+    iceCandidatePoolSize?: number,
+    iceServers?: RTCIceServer[],
+    iceTransportPolicy?: 'all' | 'relay',
+    rtcpMuxPolicy?: 'negotiate' | 'require'
+};
+
+type RTCPeerConnectionEventMap = {
+    connectionstatechange: Event<'connectionstatechange'>
+    icecandidate: RTCIceCandidateEvent<'icecandidate'>
+    icecandidateerror: RTCIceCandidateEvent<'icecandidateerror'>
+    iceconnectionstatechange: Event<'iceconnectionstatechange'>
+    icegatheringstatechange: Event<'icegatheringstatechange'>
+    negotiationneeded: Event<'negotiationneeded'>
+    signalingstatechange: Event<'signalingstatechange'>
+    datachannel: RTCDataChannelEvent<'datachannel'>
+    track: RTCTrackEvent<'track'>
+    error: Event<'error'>
+}
 
 let nextPeerConnectionId = 0;
 
-export default class RTCPeerConnection extends defineCustomEventTarget(...PEER_CONNECTION_EVENTS) {
+export default class RTCPeerConnection extends EventTarget<RTCPeerConnectionEventMap> {
     localDescription: RTCSessionDescription | null = null;
     remoteDescription: RTCSessionDescription | null = null;
-
     signalingState: RTCSignalingState = 'stable';
     iceGatheringState: RTCIceGatheringState = 'new';
     connectionState: RTCPeerConnectionState = 'new';
@@ -76,11 +88,40 @@ export default class RTCPeerConnection extends defineCustomEventTarget(...PEER_C
     _remoteStreams: Map<string, MediaStream>;
     _pendingTrackEvents: any[];
 
-    constructor(configuration) {
+    constructor(configuration?: RTCConfiguration) {
         super();
 
         this._pcId = nextPeerConnectionId++;
-        WebRTCModule.peerConnectionInit(configuration, this._pcId);
+
+        // Sanitize ICE servers.
+        if (configuration) {
+            const servers = configuration?.iceServers ?? [];
+
+            for (const server of servers) {
+                let urls = server.url || server.urls;
+
+                delete server.url;
+                delete server.urls;
+
+                if (!urls) {
+                    continue;
+                }
+
+                if (!Array.isArray(urls)) {
+                    urls = [ urls ];
+                }
+
+                // Native WebRTC does case sensitive parsing.
+                server.urls = urls.map(url => url.toLowerCase());
+            }
+
+            // Filter out bogus servers.
+            configuration.iceServers = servers.filter(s => s.urls);
+        }
+
+        if (!WebRTCModule.peerConnectionInit(configuration, this._pcId)) {
+            throw new Error('Failed to initialize PeerConnection, check the native logs!');
+        }
 
         this._transceivers = [];
         this._remoteStreams = new Map();
@@ -269,11 +310,10 @@ export default class RTCPeerConnection extends defineCustomEventTarget(...PEER_C
                 receiver: transceiver.receiver
             };
 
-            // @ts-ignore
+
             this.dispatchEvent(new RTCTrackEvent('track', eventData));
 
             streams.forEach(stream => {
-                // @ts-ignore
                 stream.dispatchEvent(new MediaStreamTrackEvent('addtrack', { track }));
             });
 
@@ -530,8 +570,7 @@ export default class RTCPeerConnection extends defineCustomEventTarget(...PEER_C
                 return;
             }
 
-            // @ts-ignore
-            this.dispatchEvent(new RTCEvent('negotiationneeded'));
+            this.dispatchEvent(new Event('negotiationneeded'));
         });
 
         addListener(this, 'peerConnectionIceConnectionChanged', (ev: any) => {
@@ -541,8 +580,7 @@ export default class RTCPeerConnection extends defineCustomEventTarget(...PEER_C
 
             this.iceConnectionState = ev.iceConnectionState;
 
-            // @ts-ignore
-            this.dispatchEvent(new RTCEvent('iceconnectionstatechange'));
+            this.dispatchEvent(new Event('iceconnectionstatechange'));
         });
 
         addListener(this, 'peerConnectionStateChanged', (ev: any) => {
@@ -552,8 +590,7 @@ export default class RTCPeerConnection extends defineCustomEventTarget(...PEER_C
 
             this.connectionState = ev.connectionState;
 
-            // @ts-ignore
-            this.dispatchEvent(new RTCEvent('connectionstatechange'));
+            this.dispatchEvent(new Event('connectionstatechange'));
 
             if (ev.connectionState === 'closed') {
                 // This PeerConnection is done, clean up.
@@ -569,8 +606,8 @@ export default class RTCPeerConnection extends defineCustomEventTarget(...PEER_C
             }
 
             this.signalingState = ev.signalingState;
-            // @ts-ignore
-            this.dispatchEvent(new RTCEvent('signalingstatechange'));
+
+            this.dispatchEvent(new Event('signalingstatechange'));
         });
 
         // Consider moving away from this event: https://github.com/WebKit/WebKit/pull/3953
@@ -611,7 +648,6 @@ export default class RTCPeerConnection extends defineCustomEventTarget(...PEER_C
 
                         stream._tracks.splice(trackIdx, 1);
 
-                        // @ts-ignore
                         stream.dispatchEvent(new MediaStreamTrackEvent('removetrack', { track }));
 
                         // Dispatch a mute event for the track.
@@ -637,7 +673,6 @@ export default class RTCPeerConnection extends defineCustomEventTarget(...PEER_C
 
             const candidate = new RTCIceCandidate(ev.candidate);
 
-            // @ts-ignore
             this.dispatchEvent(new RTCIceCandidateEvent('icecandidate', { candidate }));
         });
 
@@ -658,12 +693,10 @@ export default class RTCPeerConnection extends defineCustomEventTarget(...PEER_C
                     this.localDescription = null;
                 }
 
-                // @ts-ignore
                 this.dispatchEvent(new RTCIceCandidateEvent('icecandidate', { candidate: null }));
             }
 
-            // @ts-ignore
-            this.dispatchEvent(new RTCEvent('icegatheringstatechange'));
+            this.dispatchEvent(new Event('icegatheringstatechange'));
         });
 
         addListener(this, 'peerConnectionDidOpenDataChannel', (ev: any) => {
@@ -673,7 +706,6 @@ export default class RTCPeerConnection extends defineCustomEventTarget(...PEER_C
 
             const channel = new RTCDataChannel(ev.dataChannel);
 
-            // @ts-ignore
             this.dispatchEvent(new RTCDataChannelEvent('datachannel', { channel }));
         });
 
@@ -776,3 +808,19 @@ export default class RTCPeerConnection extends defineCustomEventTarget(...PEER_C
         this._transceivers.sort((a, b) => a.order - b.order);
     }
 }
+
+/**
+ * Define the `onxxx` event handlers.
+ */
+const proto = RTCPeerConnection.prototype;
+
+defineEventAttribute(proto, 'connectionstatechange');
+defineEventAttribute(proto, 'icecandidate');
+defineEventAttribute(proto, 'icecandidateerror');
+defineEventAttribute(proto, 'iceconnectionstatechange');
+defineEventAttribute(proto, 'icegatheringstatechange');
+defineEventAttribute(proto, 'negotiationneeded');
+defineEventAttribute(proto, 'signalingstatechange');
+defineEventAttribute(proto, 'datachannel');
+defineEventAttribute(proto, 'track');
+defineEventAttribute(proto, 'error');

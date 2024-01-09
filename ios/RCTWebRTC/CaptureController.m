@@ -1,3 +1,5 @@
+#if !TARGET_OS_TV
+
 #import "CaptureController.h"
 
 @implementation CaptureController
@@ -11,3 +13,5 @@
 }
 
 @end
+
+#endif

@@ -1,17 +1,19 @@
-
-import { defineCustomEventTarget } from 'event-target-shim';
+import { EventTarget, defineEventAttribute } from 'event-target-shim';
 import { NativeModules } from 'react-native';
 
-import MediaStreamTrack from './MediaStreamTrack';
+import MediaStreamTrack, { MediaStreamTrackInfo } from './MediaStreamTrack';
+import MediaStreamTrackEvent from './MediaStreamTrackEvent';
 import { uniqueID } from './RTCUtil';
 
 const { WebRTCModule } = NativeModules;
 
-const MEDIA_STREAM_EVENTS = [ 'active', 'inactive', 'addtrack', 'removetrack' ];
+type MediaStreamEventMap = {
+    addtrack: MediaStreamTrackEvent<'addtrack'>
+    removetrack: MediaStreamTrackEvent<'removetrack'>
+}
 
-export default class MediaStream extends defineCustomEventTarget(...MEDIA_STREAM_EVENTS) {
+export default class MediaStream extends EventTarget<MediaStreamEventMap> {
     _tracks: MediaStreamTrack[] = [];
-
     _id: string;
 
     /**
@@ -35,7 +37,11 @@ export default class MediaStream extends defineCustomEventTarget(...MEDIA_STREAM
      *   done internally, when the stream is first created in native and the JS wrapper is
      *   built afterwards.
      */
-    constructor(arg) {
+    constructor(arg?:
+        MediaStream |
+        MediaStreamTrack[] |
+        { streamId: string, streamReactTag: string, tracks: MediaStreamTrackInfo[] }
+    ) {
         super();
 
         // Assign a UUID to start with. It will get overridden for remote streams.
@@ -145,3 +151,11 @@ export default class MediaStream extends defineCustomEventTarget(...MEDIA_STREAM
         WebRTCModule.mediaStreamRelease(this._reactTag);
     }
 }
+
+/**
+ * Define the `onxxx` event handlers.
+ */
+const proto = MediaStream.prototype;
+
+defineEventAttribute(proto, 'addtrack');
+defineEventAttribute(proto, 'removetrack');

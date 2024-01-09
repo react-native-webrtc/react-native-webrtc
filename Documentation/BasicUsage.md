@@ -1,6 +1,6 @@
 # Basic Usage
 
-For starters we're going to import everything ready to use.  
+For starters, we're going to import everything ready to use.  
 Most of the included functionality is similar to how you would deal with WebRTC in your browser.  
 We support a lot of the official WebRTC APIs, see this [document](https://developer.mozilla.org/en-US/docs/Web/API/RTCPeerConnection) for more details.  
 If you see functions that are listed in the document above but not listed below then they are likely not supported by this module yet and will most likely be supported in the near future, we're open to contributions.
@@ -41,7 +41,7 @@ You can also find a shim for react-native-web over [here](https://github.com/rea
 
 ## Get Available Media Devices
 
-Some devices might not have more than 1 camera. The following will allow you to know how many cameras the device has. You can ofcourse use `enumerateDevices` to list other media device information too.  
+Some devices might not have more than 1 camera. The following will allow you to know how many cameras the device has. You can use `enumerateDevices` to list other media device information too.  
 
 ```javascript
 let cameraCount = 0;
@@ -115,7 +115,7 @@ try {
 ## Destroying the Media Stream
 
 Cycling all of the tracks and stopping them is more than enough to clean up after a call has finished.  
-You won't usually need to do this for remote tracks, only local.  
+You usually won't need to do this for remote tracks, only local.  
 
 ```javascript
 localMediaStream.getTracks().forEach(
@@ -142,7 +142,7 @@ let peerConstraints = {
 
 ## Creating a Peer Connection
 
-Here we're creating a peer connection required to get a call started.  
+Here, we're creating a peer connection required to get a call started.  
 You can also hook up events by directly overwriting functions instead of using event listeners.  
 
 ```javascript
@@ -170,8 +170,8 @@ peerConnection = null;
 
 ## Adding the Media Stream
 
-After using one of the media functions above you can then add the media stream to the peer.  
-The negotiation needed event will be triggered on the peer connection afterwords.  
+After using one of the media functions above, you can then add the media stream to the peer.  
+The negotiation needed event will be triggered on the peer connection afterwards.  
 
 ```javascript
 localMediaStream.getTracks().forEach( 
@@ -195,7 +195,7 @@ datachannel.addEventListener( 'message', message => {} );
 ## Handling Data Channels
 
 The following event is for the second client, not the client which created the data channel.  
-Unless ofcourse you want both sides to create separate data channels.  
+Unless you want both sides to create separate data channels.  
 
 ```javascript
 peerConnection.addEventListener( 'datachannel', event => {
@@ -208,8 +208,8 @@ peerConnection.addEventListener( 'datachannel', event => {
 
 ## Sending a Message via the Data Channel
 
-You can send a range of different data types over data channels, we're gong to send a simple string.  
-Bare in mind there are limits so sending large amounts of data isn't usually advised.  
+You can send a range of different data types over data channels, we're going to send a simple string.  
+Bear in mind that there are limits to sending large amounts of data which isn't usually advised.  
 
 ```javascript
 datachannel.send( 'Hey There!' );
@@ -227,7 +227,7 @@ datachannel = null;
 
 ## Defining Session Constraints
 
-As mentioned above by default we're going for the approach of offering both video and voice.  
+As mentioned above, by default we're going for the approach of offering both video and voice.  
 That will allow you to enable and disable video streams on demand while a call is active.  
 
 ```javascript
@@ -258,8 +258,8 @@ try {
 
 ## Creating an Answer
 
-All parties will need to ensure they are handling ICE Candidates correctly.  
-Otherwise the offer and answer handshake stage will go a little wonky.  
+All parties must ensure the proper handling of ICE Candidates.
+Otherwise, the offer-answer handshake stage might encounter some unexpected behavior.
 
 ```javascript
 try {
@@ -278,8 +278,9 @@ try {
 
 ## Toggle the Active Microphone
 
-During an active call you might want to mute your microphone.  
-Easy to accomplish by flipping the track enabled value to false, also possible on remote tracks.  
+While engaging in a live call, you may find it necessary to mute your microphone. 
+This can be easily achieved by toggling the track enabled value to false.
+This functionality is also applicable to remote tracks.
 
 ```javascript
 let isMuted = false;
@@ -296,7 +297,7 @@ try {
 
 ## Switching the Active Camera
 
-Naturally we assume you'll be using the front camera by default when starting a call.  
+Naturally, we assume you'll be using the front camera by default when starting a call.  
 So we set `isFrontCam` as `true` and let the value flip on execution.  
 
 ```javascript
