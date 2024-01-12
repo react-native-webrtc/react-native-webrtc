@@ -707,6 +707,10 @@ export default class RTCPeerConnection extends EventTarget<RTCPeerConnectionEven
             const channel = new RTCDataChannel(ev.dataChannel);
 
             this.dispatchEvent(new RTCDataChannelEvent('datachannel', { channel }));
+
+            // Send 'open' event. Native doesn't update the state since it's already
+            // set at this point.
+            channel.dispatchEvent(new RTCDataChannelEvent('open', { channel }));
         });
 
         addListener(this, 'mediaStreamTrackMuteChanged', (ev: any) => {
