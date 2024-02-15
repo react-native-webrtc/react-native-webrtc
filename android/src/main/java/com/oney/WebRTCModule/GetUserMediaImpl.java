@@ -27,6 +27,7 @@ import org.webrtc.*;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.UUID;
 
 /**
@@ -350,11 +351,11 @@ class GetUserMediaImpl {
     }
 
     private VideoTrack createScreenTrack() {
-        DisplayMetrics displayMetrics = DisplayUtils.getDisplayMetrics(reactContext.getCurrentActivity());
+        DisplayMetrics displayMetrics = DisplayUtils.getDisplayMetrics(Objects.requireNonNull(reactContext.getCurrentActivity()));
         int width = displayMetrics.widthPixels;
         int height = displayMetrics.heightPixels;
         ScreenCaptureController screenCaptureController = new ScreenCaptureController(
-                reactContext.getCurrentActivity(), width, height, mediaProjectionPermissionResultData);
+                reactContext.getCurrentActivity(), width, height, mediaProjectionPermissionResultData, reactContext);
         return createVideoTrack(screenCaptureController);
     }
 

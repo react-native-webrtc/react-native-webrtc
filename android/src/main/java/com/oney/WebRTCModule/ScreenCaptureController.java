@@ -8,6 +8,8 @@ import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.OrientationEventListener;
 
+import com.facebook.react.bridge.ReactApplicationContext;
+
 import org.webrtc.ScreenCapturerAndroid;
 import org.webrtc.VideoCapturer;
 
@@ -23,15 +25,27 @@ public class ScreenCaptureController extends AbstractVideoCaptureController {
 
     private final OrientationEventListener orientationListener;
 
-    public ScreenCaptureController(Context context, int width, int height, Intent mediaProjectionPermissionResultData) {
+    private final Activity activityContext;
+
+    private final ReactApplicationContext reactContext;
+
+    public ScreenCaptureController(Activity context,
+                                   int width,
+                                   int height,
+                                   Intent mediaProjectionPermissionResultData,
+                                   ReactApplicationContext reactContext) {
         super(width, height, DEFAULT_FPS);
 
         this.mediaProjectionPermissionResultData = mediaProjectionPermissionResultData;
 
+        this.activityContext = context;
+
+        this.reactContext = reactContext;
+
         this.orientationListener = new OrientationEventListener(context) {
             @Override
             public void onOrientationChanged(int orientation) {
-                DisplayMetrics displayMetrics = DisplayUtils.getDisplayMetrics((Activity) context);
+                DisplayMetrics displayMetrics = DisplayUtils.getDisplayMetrics(context);
                 final int width = displayMetrics.widthPixels;
                 final int height = displayMetrics.heightPixels;
 
@@ -51,6 +65,18 @@ public class ScreenCaptureController extends AbstractVideoCaptureController {
         if (this.orientationListener.canDetectOrientation()) {
             this.orientationListener.enable();
         }
+    }
+
+    @Override
+    public void startCapture() {
+        MediaProjectionService.launch(reactContext, activityContext);
+        super.startCapture();
+    }
+
+    @Override
+    public boolean stopCapture() {
+        MediaProjectionService.abort(reactContext);
+        return super.stopCapture();
     }
 
     @Override
