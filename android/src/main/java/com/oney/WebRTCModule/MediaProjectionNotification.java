@@ -17,10 +17,6 @@ import android.util.Log;
 class MediaProjectionNotification {
     private static final String TAG = MediaProjectionNotification.class.getSimpleName();
 
-    static final String MEDIA_PROJECTION_NOTIFICATION_TITLE = "Media Projection";
-    static final String MEDIA_PROJECTION_NOTIFICATION_ACTION = "You are currently screen-sharing";
-
-
     static Notification buildMediaProjectionNotification(Context context) {
 
         if (context == null) {
