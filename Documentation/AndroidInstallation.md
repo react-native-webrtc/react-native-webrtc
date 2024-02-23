@@ -64,6 +64,14 @@ In `android/app/main/AndroidManifest.xml` add the following inside the `<applica
 	android:foregroundServiceType="mediaProjection|camera|microphone" />
 ```
 
+Additionally, add the respective foreground service type permissions before the `<application>` section.
+
+```xml
+<uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PROJECTION" />
+<uses-permission android:name="android.permission.FOREGROUND_SERVICE_CAMERA" />
+<uses-permission android:name="android.permission.FOREGROUND_SERVICE_MICROPHONE" />
+```
+
 The following will create an ongoing persistent notification which also comes with a foreground service.  
 You will be prompted for permissions automatically each time you want to initialise screen capturing.  
 A notification channel is also required and created.  
