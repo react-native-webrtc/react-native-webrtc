@@ -1,6 +1,5 @@
 package com.oney.WebRTCModule;
 
-import android.app.Activity;
 import android.app.Notification;
 import android.app.Service;
 import android.content.ComponentName;
@@ -26,9 +25,9 @@ public class MediaProjectionService extends Service {
 
     static final int NOTIFICATION_ID = new Random().nextInt(99999) + 10000;
 
-    public static void launch(Context context, Activity currentActivity) {
+    public static void launch(Context context) {
 
-        NotificationUtils.createNotificationChannel(currentActivity);
+        NotificationUtils.createNotificationChannel(context);
 
         Intent intent = new Intent(context, MediaProjectionService.class);
 

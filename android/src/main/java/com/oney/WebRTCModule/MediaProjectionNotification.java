@@ -36,7 +36,8 @@ class MediaProjectionNotification {
             .setAutoCancel(true)
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
             .setOnlyAlertOnce(true)
-            .setSmallIcon(context.getResources().getIdentifier("", "drawable", context.getPackageName()));
+            .setSmallIcon(context.getResources().getIdentifier("", "drawable", context.getPackageName()))
+            .setForegroundServiceBehavior(NotificationCompat.FOREGROUND_SERVICE_IMMEDIATE);
 
         return builder.build();
     }

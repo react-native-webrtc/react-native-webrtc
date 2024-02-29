@@ -25,11 +25,9 @@ public class ScreenCaptureController extends AbstractVideoCaptureController {
 
     private final OrientationEventListener orientationListener;
 
-    private final Activity activityContext;
-
     private final ReactApplicationContext reactContext;
 
-    public ScreenCaptureController(Activity context,
+    public ScreenCaptureController(Context context,
                                    int width,
                                    int height,
                                    Intent mediaProjectionPermissionResultData,
@@ -38,14 +36,12 @@ public class ScreenCaptureController extends AbstractVideoCaptureController {
 
         this.mediaProjectionPermissionResultData = mediaProjectionPermissionResultData;
 
-        this.activityContext = context;
-
         this.reactContext = reactContext;
 
         this.orientationListener = new OrientationEventListener(context) {
             @Override
             public void onOrientationChanged(int orientation) {
-                DisplayMetrics displayMetrics = DisplayUtils.getDisplayMetrics(context);
+                DisplayMetrics displayMetrics = DisplayUtils.getDisplayMetrics((Activity) context);
                 final int width = displayMetrics.widthPixels;
                 final int height = displayMetrics.heightPixels;
 
@@ -69,7 +65,7 @@ public class ScreenCaptureController extends AbstractVideoCaptureController {
 
     @Override
     public void startCapture() {
-        MediaProjectionService.launch(reactContext, activityContext);
+        MediaProjectionService.launch(reactContext);
         super.startCapture();
     }
 
