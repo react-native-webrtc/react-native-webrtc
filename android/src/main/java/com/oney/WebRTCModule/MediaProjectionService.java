@@ -26,11 +26,12 @@ public class MediaProjectionService extends Service {
     static final int NOTIFICATION_ID = new Random().nextInt(99999) + 10000;
 
     public static void launch(Context context) {
+        if (!WebRTCModuleOptions.getInstance().enableMediaProjectionService) {
+            return;
+        }
 
         MediaProjectionNotification.createNotificationChannel(context);
-
         Intent intent = new Intent(context, MediaProjectionService.class);
-
         ComponentName componentName;
 
         try {
@@ -52,6 +53,10 @@ public class MediaProjectionService extends Service {
     }
 
     public static void abort(Context context) {
+        if (!WebRTCModuleOptions.getInstance().enableMediaProjectionService) {
+            return;
+        }
+
         Intent intent = new Intent(context, MediaProjectionService.class);
         context.stopService(intent);
     }
