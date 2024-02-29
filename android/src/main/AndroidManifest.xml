@@ -2,6 +2,14 @@
           package="com.oney.WebRTCModule"
           xmlns:tools="http://schemas.android.com/tools"
     >
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PROJECTION" />
+    <application>
+        <service
+                android:name=".MediaProjectionService"
+                android:foregroundServiceType="mediaProjection">
+        </service>
+    </application>
     <uses-feature
         android:name="android.hardware.usb.host"
         android:required="false"
