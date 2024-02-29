@@ -27,7 +27,7 @@ public class MediaProjectionService extends Service {
 
     public static void launch(Context context) {
 
-        NotificationUtils.createNotificationChannel(context);
+        MediaProjectionNotification.createNotificationChannel(context);
 
         Intent intent = new Intent(context, MediaProjectionService.class);
 

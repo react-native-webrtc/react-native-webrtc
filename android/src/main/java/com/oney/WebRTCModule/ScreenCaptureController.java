@@ -63,15 +63,9 @@ public class ScreenCaptureController extends AbstractVideoCaptureController {
     }
 
     @Override
-    public void startCapture() {
-        MediaProjectionService.launch(context);
-        super.startCapture();
-    }
-
-    @Override
-    public boolean stopCapture() {
+    public void dispose() {
         MediaProjectionService.abort(context);
-        return super.stopCapture();
+        super.dispose();
     }
 
     @Override

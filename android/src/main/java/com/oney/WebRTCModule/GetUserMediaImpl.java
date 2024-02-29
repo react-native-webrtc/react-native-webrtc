@@ -95,7 +95,11 @@ class GetUserMediaImpl {
                     }
 
                     mediaProjectionPermissionResultData = data;
-                    createScreenStream();
+
+                    ThreadUtils.runOnExecutor(() -> {
+                        MediaProjectionService.launch(activity);
+                        createScreenStream();
+                    });
                 }
             }
         });
