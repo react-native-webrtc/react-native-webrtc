@@ -25,18 +25,17 @@ public class ScreenCaptureController extends AbstractVideoCaptureController {
 
     private final OrientationEventListener orientationListener;
 
-    private final ReactApplicationContext reactContext;
+    private final Context reactContext;
 
     public ScreenCaptureController(Context context,
                                    int width,
                                    int height,
-                                   Intent mediaProjectionPermissionResultData,
-                                   ReactApplicationContext reactContext) {
+                                   Intent mediaProjectionPermissionResultData) {
         super(width, height, DEFAULT_FPS);
 
         this.mediaProjectionPermissionResultData = mediaProjectionPermissionResultData;
 
-        this.reactContext = reactContext;
+        this.reactContext = context;
 
         this.orientationListener = new OrientationEventListener(context) {
             @Override

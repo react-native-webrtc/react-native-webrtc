@@ -354,7 +354,7 @@ class GetUserMediaImpl {
         int width = displayMetrics.widthPixels;
         int height = displayMetrics.heightPixels;
         ScreenCaptureController screenCaptureController = new ScreenCaptureController(
-                reactContext.getCurrentActivity(), width, height, mediaProjectionPermissionResultData, reactContext);
+                reactContext.getCurrentActivity(), width, height, mediaProjectionPermissionResultData);
         return createVideoTrack(screenCaptureController);
     }
 
