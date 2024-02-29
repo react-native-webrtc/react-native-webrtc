@@ -36,8 +36,10 @@ public class MediaProjectionService extends Service {
 
         try {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                Log.w(TAG, "Media projection service started");
                 componentName = context.startForegroundService(intent);
             } else {
+                Log.w(TAG, "Media projection service started");
                 componentName = context.startService(intent);
             }
         } catch (RuntimeException e) {
