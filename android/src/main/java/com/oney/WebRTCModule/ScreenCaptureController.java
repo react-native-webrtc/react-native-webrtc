@@ -25,7 +25,7 @@ public class ScreenCaptureController extends AbstractVideoCaptureController {
 
     private final OrientationEventListener orientationListener;
 
-    private final Context reactContext;
+    private final Context context;
 
     public ScreenCaptureController(Context context,
                                    int width,
@@ -35,7 +35,7 @@ public class ScreenCaptureController extends AbstractVideoCaptureController {
 
         this.mediaProjectionPermissionResultData = mediaProjectionPermissionResultData;
 
-        this.reactContext = context;
+        this.context = context;
 
         this.orientationListener = new OrientationEventListener(context) {
             @Override
@@ -64,13 +64,13 @@ public class ScreenCaptureController extends AbstractVideoCaptureController {
 
     @Override
     public void startCapture() {
-        MediaProjectionService.launch(reactContext);
+        MediaProjectionService.launch(context);
         super.startCapture();
     }
 
     @Override
     public boolean stopCapture() {
-        MediaProjectionService.abort(reactContext);
+        MediaProjectionService.abort(context);
         return super.stopCapture();
     }
 
