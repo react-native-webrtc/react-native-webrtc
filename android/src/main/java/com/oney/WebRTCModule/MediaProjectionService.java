@@ -66,13 +66,6 @@ public class MediaProjectionService extends Service {
 
         Notification notification = MediaProjectionNotification.buildMediaProjectionNotification(this);
 
-        if (notification == null) {
-            stopSelf();
-            Log.w(TAG, " Couldn't start service, notification is null");
-
-            return START_NOT_STICKY;
-        }
-
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             startForeground(NOTIFICATION_ID, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PROJECTION);
         } else {

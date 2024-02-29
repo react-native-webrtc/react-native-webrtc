@@ -19,11 +19,6 @@ class MediaProjectionNotification {
 
     static Notification buildMediaProjectionNotification(Context context) {
 
-        if (context == null) {
-            Log.d(TAG, " Cannot create notification: no current context");
-            return null;
-        }
-
         NotificationCompat.Builder builder = new NotificationCompat.Builder(context, ONGOING_CONFERENCE_CHANNEL_ID);
 
         builder
