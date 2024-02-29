@@ -8,8 +8,6 @@ import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.OrientationEventListener;
 
-import com.facebook.react.bridge.ReactApplicationContext;
-
 import org.webrtc.ScreenCapturerAndroid;
 import org.webrtc.VideoCapturer;
 
