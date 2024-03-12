@@ -1,7 +1,9 @@
 package com.oney.WebRTCModule;
 
 import android.content.Context;
+import android.content.pm.PackageManager;
 import android.hardware.usb.UsbDevice;
+import android.os.Build;
 import android.util.Log;
 
 import androidx.annotation.Nullable;
@@ -35,6 +37,15 @@ public class UVCCamera2Enumerator extends Camera2Enumerator {
     public UVCCamera2Enumerator(Context context) {
         super(context);
         this.context = context;
+    }
+
+    public static boolean isSupported(Context context) {
+        // Disable for Android 14 because of: https://github.com/jiangdongguo/AndroidUSBCamera/pull/647
+        if (Build.VERSION.SDK_INT < 34) {
+            return context.getPackageManager().hasSystemFeature(PackageManager.FEATURE_USB_HOST);
+        }
+
+        return false;
     }
 
     @Override
