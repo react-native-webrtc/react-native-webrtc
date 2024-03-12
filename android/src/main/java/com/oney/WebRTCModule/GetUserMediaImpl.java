@@ -3,7 +3,6 @@ package com.oney.WebRTCModule;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
-import android.content.pm.PackageManager;
 import android.media.projection.MediaProjectionManager;
 import android.util.DisplayMetrics;
 import android.util.Log;
@@ -71,7 +70,7 @@ class GetUserMediaImpl {
         }
 
         if (camera2supported) {
-            if (reactContext.getPackageManager().hasSystemFeature(PackageManager.FEATURE_USB_HOST)) {
+            if (UVCCamera2Enumerator.isSupported(reactContext)) {
                 Log.d(TAG, "Creating video capturer using Camera2 API with UVC support.");
                 cameraEnumerator = new UVCCamera2Enumerator(reactContext);
             } else {
