@@ -1,4 +1,4 @@
-import { EventTarget, defineEventAttribute } from 'event-target-shim';
+import { EventTarget, defineEventAttribute } from 'event-target-shim/index';
 import { NativeModules } from 'react-native';
 
 import MediaStreamTrack, { MediaStreamTrackInfo } from './MediaStreamTrack';
