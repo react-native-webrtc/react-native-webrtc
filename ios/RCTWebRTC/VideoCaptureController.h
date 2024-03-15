@@ -6,8 +6,10 @@
 #import "CaptureController.h"
 
 @interface VideoCaptureController : CaptureController
-@property(nonatomic, readonly, strong) AVCaptureDeviceFormat *selectedFormat;
-@property(nonatomic, readonly, assign) int frameRate;
+
+@property (nonatomic, readonly, strong) RTCCameraVideoCapturer *capturer;
+@property (nonatomic, readonly, strong) AVCaptureDeviceFormat *selectedFormat;
+@property (nonatomic, readonly, assign) int frameRate;
 
 - (instancetype)initWithCapturer:(RTCCameraVideoCapturer *)capturer andConstraints:(NSDictionary *)constraints;
 - (void)startCapture;

@@ -942,9 +942,12 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
         return transceiverUpdates;
     }
 
+
     @ReactMethod
-    public void mediaStreamTrackSetVideoEffect(String id, String name) {
-        ThreadUtils.runOnExecutor(() -> { getUserMediaImpl.setVideoEffect(id, name); });
+    public void mediaStreamTrackSetVideoEffects(String id, ReadableArray names) {
+        ThreadUtils.runOnExecutor(() -> {
+            getUserMediaImpl.setVideoEffects(id, names);
+        });
     }
 
     @ReactMethod
