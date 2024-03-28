@@ -483,10 +483,7 @@ class PeerConnectionObserver implements PeerConnection.Observer {
             params.putInt("pcId", this.id);
             params.putString("receiverId", receiver.id());
 
-            MediaStreamTrack track = remoteTracks.remove(receiver.id());
-            if (track != null) {
-                track.dispose();
-            }
+            remoteTracks.remove(receiver.id());
 
             webRTCModule.sendEvent("peerConnectionOnRemoveTrack", params);
         });
