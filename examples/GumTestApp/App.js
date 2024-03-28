@@ -11,22 +11,30 @@ import {
   Button,
   SafeAreaView,
   StyleSheet,
-  ScrollView,
   View,
-  Text,
   StatusBar,
 } from 'react-native';
 import { Colors } from 'react-native/Libraries/NewAppScreen';
 import { mediaDevices, RTCView } from 'react-native-webrtc';
 
-const App: () => React$Node = () => {
+const useUvc = true; // Change to true to test uvc camera.
+
+const App = () => {
   const [stream, setStream] = useState(null);
   const start = async () => {
     console.log('start');
     if (!stream) {
       let s;
       try {
-        s = await mediaDevices.getUserMedia({ video: true });
+        let constraints = { video: true };
+        if (useUvc) {
+          const devices = await mediaDevices.enumerateDevices();
+          const uvc = devices.find(d => d.kind === 'videoinput' && d.label?.startsWith('uvc-camera:'));
+          if (uvc) {
+            constraints = { video: { deviceId: uvc?.deviceId }};
+          }
+        }
+        s = await mediaDevices.getUserMedia(constraints);
         setStream(s);
       } catch(e) {
         console.error(e);
