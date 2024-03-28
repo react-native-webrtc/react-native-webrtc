@@ -17,7 +17,7 @@ import {
 import { Colors } from 'react-native/Libraries/NewAppScreen';
 import { mediaDevices, RTCView } from 'react-native-webrtc';
 
-const useUvc = true; // Change to true to test uvc camera.
+const useUvc = false; // Change to true to test uvc camera.
 
 const App = () => {
   const [stream, setStream] = useState(null);
