@@ -32,6 +32,27 @@ If you plan to also support Bluetooth devices then also add the following.
 <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
 ```
 
+### Screen-sharing
+
+Starting with version 118.0.2 a foreground service is included in this library in order to make
+screen-sharing possible under Android 14 rules.
+
+If you want to enable it, first declare the following permissions:
+
+```xml
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PROJECTION" />
+```
+
+Then enable the builtin service as follows, by adding the following code very early in your
+application, in your main activity's `onCreate` for instance:
+
+```java
+    // Initialize the WebRTC module options.
+    WebRTCModuleOptions options = WebRTCModuleOptions.getInstance();
+    options.enableMediaProjectionService = true;
+```
+
 ## Enable Java 8 Support
 
 In `android/app/build.gradle` add the following inside the `android` section.
