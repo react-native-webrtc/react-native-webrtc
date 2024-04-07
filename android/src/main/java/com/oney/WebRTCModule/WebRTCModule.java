@@ -1244,22 +1244,23 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
         ThreadUtils.runOnExecutor(() -> {
             PeerConnectionObserver pco = mPeerConnectionObservers.get(pcId);
             if (pco == null || pco.getPeerConnection() == null) {
-                Log.d(TAG, "peerConnectionGetStats() peerConnection is null");
+                Log.d(TAG, "receiverGetStats() peerConnection is null");
                 promise.reject(new Exception("PeerConnection ID not found"));
             } else {
-                pco.getFilteredStats(receiverId, true, promise);
+                pco.receiverGetStats(receiverId, promise);
             }
         });
     }
+
     @ReactMethod
     public void senderGetStats(int pcId, String senderId, Promise promise) {
         ThreadUtils.runOnExecutor(() -> {
             PeerConnectionObserver pco = mPeerConnectionObservers.get(pcId);
             if (pco == null || pco.getPeerConnection() == null) {
-                Log.d(TAG, "peerConnectionGetStats() peerConnection is null");
+                Log.d(TAG, "senderGetStats() peerConnection is null");
                 promise.reject(new Exception("PeerConnection ID not found"));
             } else {
-                pco.getFilteredStats(senderId, false, promise);
+                pco.senderGetStats(senderId, promise);
             }
         });
     }

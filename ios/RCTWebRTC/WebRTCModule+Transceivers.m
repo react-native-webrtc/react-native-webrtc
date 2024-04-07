@@ -3,6 +3,7 @@
 #import <React/RCTBridge.h>
 #import <React/RCTBridgeModule.h>
 
+#import <WebRTC/RTCRtpCodecCapability.h>
 #import <WebRTC/RTCRtpReceiver.h>
 #import <WebRTC/RTCRtpSender.h>
 #import <WebRTC/RTCRtpCodecCapability.h>
@@ -12,7 +13,7 @@
 
 @implementation WebRTCModule (Transceivers)
 
-RCT_EXPORT_BLOCKING_SYNCHRONOUS_METHOD(senderGetCapabilities:(NSString *)kind) {
+RCT_EXPORT_BLOCKING_SYNCHRONOUS_METHOD(senderGetCapabilities : (NSString *)kind) {
     __block id params;
 
     dispatch_sync(self.workerQueue, ^{
@@ -24,13 +25,13 @@ RCT_EXPORT_BLOCKING_SYNCHRONOUS_METHOD(senderGetCapabilities:(NSString *)kind) {
         }
 
         RTCRtpCapabilities *capabilities = [self.peerConnectionFactory rtpSenderCapabilitiesFor:mediaType];
-        params = [SerializeUtils capabilitiesToJSON: capabilities];
+        params = [SerializeUtils capabilitiesToJSON:capabilities];
     });
 
     return params;
 }
 
-RCT_EXPORT_BLOCKING_SYNCHRONOUS_METHOD(receiverGetCapabilities:(NSString *)kind) {
+RCT_EXPORT_BLOCKING_SYNCHRONOUS_METHOD(receiverGetCapabilities : (NSString *)kind) {
     __block id params;
 
     dispatch_sync(self.workerQueue, ^{
@@ -42,7 +43,7 @@ RCT_EXPORT_BLOCKING_SYNCHRONOUS_METHOD(receiverGetCapabilities:(NSString *)kind)
         }
 
         RTCRtpCapabilities *capabilities = [self.peerConnectionFactory rtpSenderCapabilitiesFor:mediaType];
-        params = [SerializeUtils capabilitiesToJSON: capabilities];
+        params = [SerializeUtils capabilitiesToJSON:capabilities];
     });
 
     return params;
@@ -186,9 +187,9 @@ RCT_EXPORT_METHOD(transceiverStop
 }
 
 RCT_EXPORT_BLOCKING_SYNCHRONOUS_METHOD(transceiverSetCodecPreferences
-                  : (nonnull NSNumber *)objectID senderId
-                  : (NSString *)senderId codecPreferences
-                  : (NSArray *)codecPreferences) {
+                                       : (nonnull NSNumber *)objectID senderId
+                                       : (NSString *)senderId codecPreferences
+                                       : (NSArray *)codecPreferences) {
     RTCPeerConnection *peerConnection = self.peerConnections[objectID];
 
     if (peerConnection == nil) {
@@ -205,34 +206,36 @@ RCT_EXPORT_BLOCKING_SYNCHRONOUS_METHOD(transceiverSetCodecPreferences
     }
 
     if (transceiver == nil) {
-        RCTLogWarn(@"senderSetParameters() transceiver is null");
+        RCTLogWarn(@"transceiverSetCodecPreferences() transceiver is null");
         return nil;
     }
 
-    // Convert JSON codec capabilities to the actual objects.
+    // Get the available codecs
     RTCRtpTransceiverDirection direction = transceiver.direction;
     NSMutableArray *availableCodecs = [NSMutableArray new];
     if (direction == RTCRtpTransceiverDirectionSendRecv || direction == RTCRtpTransceiverDirectionSendOnly) {
         RTCRtpCapabilities *capabilities = [self.peerConnectionFactory rtpSenderCapabilitiesFor:transceiver.mediaType];
-        for(RTCRtpCodecCapability *codec in capabilities.codecs) {
+        for (RTCRtpCodecCapability *codec in capabilities.codecs) {
             NSDictionary *codecDict = [SerializeUtils codecCapabilityToJSON:codec];
             [availableCodecs addObject:@{
-                @"dict": codecDict,
-                @"codec": codec,
+                @"dict" : codecDict,
+                @"codec" : codec,
             }];
         }
     }
     if (direction == RTCRtpTransceiverDirectionSendRecv || direction == RTCRtpTransceiverDirectionRecvOnly) {
-        RTCRtpCapabilities *capabilities = [self.peerConnectionFactory rtpReceiverCapabilitiesFor:transceiver.mediaType];
-        for(RTCRtpCodecCapability *codec in capabilities.codecs) {
+        RTCRtpCapabilities *capabilities =
+            [self.peerConnectionFactory rtpReceiverCapabilitiesFor:transceiver.mediaType];
+        for (RTCRtpCodecCapability *codec in capabilities.codecs) {
             NSDictionary *codecDict = [SerializeUtils codecCapabilityToJSON:codec];
             [availableCodecs addObject:@{
-                @"dict": codecDict,
-                @"codec": codec,
+                @"dict" : codecDict,
+                @"codec" : codec,
             }];
         }
     }
-
+    
+    // Convert JSON codec capabilities to the actual objects.
     // Codec preferences is order sensitive.
     NSMutableArray *codecsToSet = [NSMutableArray new];
 

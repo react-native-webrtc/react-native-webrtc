@@ -23,10 +23,17 @@ public class ScreenCaptureController extends AbstractVideoCaptureController {
 
     private final OrientationEventListener orientationListener;
 
-    public ScreenCaptureController(Context context, int width, int height, Intent mediaProjectionPermissionResultData) {
+    private final Context context;
+
+    public ScreenCaptureController(Context context,
+                                   int width,
+                                   int height,
+                                   Intent mediaProjectionPermissionResultData) {
         super(width, height, DEFAULT_FPS);
 
         this.mediaProjectionPermissionResultData = mediaProjectionPermissionResultData;
+
+        this.context = context;
 
         this.orientationListener = new OrientationEventListener(context) {
             @Override
@@ -51,6 +58,12 @@ public class ScreenCaptureController extends AbstractVideoCaptureController {
         if (this.orientationListener.canDetectOrientation()) {
             this.orientationListener.enable();
         }
+    }
+
+    @Override
+    public void dispose() {
+        MediaProjectionService.abort(context);
+        super.dispose();
     }
 
     @Override

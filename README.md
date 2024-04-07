@@ -39,7 +39,7 @@ Software encode/decode factories have been enabled by default.
 
 ## WebRTC Revision
 
-* Currently used revision: [M111](https://github.com/jitsi/webrtc/tree/M111)
+* Currently used revision: [M118](https://github.com/jitsi/webrtc/tree/M118)
 * Supported architectures
   * Android: armeabi-v7a, arm64-v8a, x86, x86_64
   * iOS: arm64, x86_64
@@ -63,6 +63,7 @@ Don't forget to follow platform guides below to cover any extra required steps.
 - [Basic Usage](./Documentation/BasicUsage.md)
 - [Step by Step Call Guide](./Documentation/CallGuide.md)
 - [Improving Call Reliability](./Documentation/ImprovingCallReliability.md)
+- [Migrating to Unified Plan](https://docs.google.com/document/d/1-ZfikoUtoJa9k-GZG1daN0BU3IjIanQ_JSscHxQesvU/edit#heading=h.wuu7dx8tnifl)
 
 ## Example Projects
 

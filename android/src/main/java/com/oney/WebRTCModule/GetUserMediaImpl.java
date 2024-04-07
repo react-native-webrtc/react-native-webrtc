@@ -70,8 +70,13 @@ class GetUserMediaImpl {
         }
 
         if (camera2supported) {
-            Log.d(TAG, "Creating video capturer using Camera2 API.");
-            cameraEnumerator = new Camera2Enumerator(reactContext);
+            if (UVCCamera2Enumerator.isSupported(reactContext)) {
+                Log.d(TAG, "Creating video capturer using Camera2 API with UVC support.");
+                cameraEnumerator = new UVCCamera2Enumerator(reactContext);
+            } else {
+                Log.d(TAG, "Creating video capturer using Camera2 API.");
+                cameraEnumerator = new Camera2Enumerator(reactContext);
+            }
         } else {
             Log.d(TAG, "Creating video capturer using Camera1 API.");
             cameraEnumerator = new Camera1Enumerator(false);
@@ -89,7 +94,11 @@ class GetUserMediaImpl {
                     }
 
                     mediaProjectionPermissionResultData = data;
-                    createScreenStream();
+
+                    ThreadUtils.runOnExecutor(() -> {
+                        MediaProjectionService.launch(activity);
+                        createScreenStream();
+                    });
                 }
             }
         });
@@ -321,7 +330,7 @@ class GetUserMediaImpl {
             trackInfo.putBoolean("enabled", track.enabled());
             trackInfo.putString("id", trackId);
             trackInfo.putString("kind", track.kind());
-            trackInfo.putString("readyState", track.state().toString().toLowerCase());
+            trackInfo.putString("readyState", "live");
             trackInfo.putBoolean("remote", false);
 
             if (track instanceof VideoTrack) {
@@ -488,7 +497,5 @@ class GetUserMediaImpl {
         }
     }
 
-    public interface BiConsumer<T, U> {
-        void accept(T t, U u);
-    }
+    public interface BiConsumer<T, U> { void accept(T t, U u); }
 }
