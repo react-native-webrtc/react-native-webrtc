@@ -34,7 +34,7 @@ If you plan to also support Bluetooth devices then also add the following.
 
 ### Screen-sharing
 
-Starting with version 118.0.2 a foreground service is included in this library in order to make
+Starting with version 114.1.0 a foreground service is included in this library in order to make
 screen-sharing possible under Android 14 rules.
 
 If you want to enable it, first declare the following permissions:
