@@ -1245,7 +1245,7 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
             PeerConnectionObserver pco = mPeerConnectionObservers.get(pcId);
             if (pco == null || pco.getPeerConnection() == null) {
                 Log.d(TAG, "receiverGetStats() peerConnection is null");
-                promise.reject(new Exception("PeerConnection ID not found"));
+                promise.resolve(StringUtils.statsToJSON(new RTCStatsReport(0, new HashMap<>())));
             } else {
                 pco.receiverGetStats(receiverId, promise);
             }
@@ -1258,7 +1258,7 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
             PeerConnectionObserver pco = mPeerConnectionObservers.get(pcId);
             if (pco == null || pco.getPeerConnection() == null) {
                 Log.d(TAG, "senderGetStats() peerConnection is null");
-                promise.reject(new Exception("PeerConnection ID not found"));
+                promise.resolve(StringUtils.statsToJSON(new RTCStatsReport(0, new HashMap<>())));
             } else {
                 pco.senderGetStats(senderId, promise);
             }
@@ -1311,7 +1311,7 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
             PeerConnectionObserver pco = mPeerConnectionObservers.get(peerConnectionId);
             if (pco == null || pco.getPeerConnection() == null) {
                 Log.d(TAG, "peerConnectionGetStats() peerConnection is null");
-                promise.reject(new Exception("PeerConnection ID not found"));
+                promise.resolve(StringUtils.statsToJSON(new RTCStatsReport(0, new HashMap<>())));
             } else {
                 pco.getStats(promise);
             }
