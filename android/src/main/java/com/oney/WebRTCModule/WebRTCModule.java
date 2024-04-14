@@ -595,6 +595,99 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
             return false;
         }
     }
+    @ReactMethod(isBlockingSynchronousMethod = true)
+    public boolean senderCanInsertDTMF(int peerConnectionId, String senderId) {
+            try {
+                return (boolean) ThreadUtils.submitToExecutor((Callable<Object>) () -> {
+                PeerConnectionObserver peerConnectionObserver = mPeerConnectionObservers.get(peerConnectionId);
+                
+                if (peerConnectionObserver == null) {
+                    Log.d(TAG, "senderCanInsertDTMF() peerConnectionObserver is null");
+                    return false;
+                }
+                RtpSender audioSender = peerConnectionObserver.getSender(senderId);
+                
+                if (audioSender != null) {
+                    DtmfSender dtmfSender = audioSender.dtmf();
+                    if (dtmfSender != null) {
+                        return dtmfSender.canInsertDtmf();
+                    }
+                    Log.d(TAG, "senderCanInsertDTMF() dtmfSender is null");
+                    return false;
+                }
+                Log.d(TAG, "senderCanInsertDTMF() audioSender is null");
+                return false;
+                }).get(); 
+            } catch (Exception e) {
+                Log.d(TAG, "senderCanInsertDTMF(): " + e.getMessage());
+                return false;
+            }
+    }
+
+    @ReactMethod(isBlockingSynchronousMethod = true)
+    public String getDTMFToneBuffer(int peerConnectionId, String senderId) {
+            try {
+                return (String) ThreadUtils.submitToExecutor((Callable<Object>) () -> {
+                PeerConnectionObserver peerConnectionObserver = mPeerConnectionObservers.get(peerConnectionId);
+                
+                if (peerConnectionObserver == null) {
+                    Log.d(TAG, "getDTMFToneBuffer() peerConnectionObserver is null");
+                    return "";
+                }
+                RtpSender audioSender = peerConnectionObserver.getSender(senderId);
+                
+                if (audioSender != null) {
+                    DtmfSender dtmfSender = audioSender.dtmf();
+                    if (dtmfSender != null) {
+                        return dtmfSender.tones();
+                    }
+                    Log.d(TAG, "getDTMFToneBuffer() dtmfSender is null");
+                    return "";
+                }
+                Log.d(TAG, "getDTMFToneBuffer() audioSender is null");
+                return "";
+                }).get(); 
+            } catch (Exception e) {
+                Log.d(TAG, "getDTMFToneBuffer(): " + e.getMessage());
+                return "";
+            }
+    }
+
+
+    @ReactMethod
+    public void senderInsertDTMF(int peerConnectionId, String senderId, String tone, int duration, int interToneGap) {
+        ThreadUtils.runOnExecutor(() -> {
+            try {
+                PeerConnectionObserver peerConnectionObserver = mPeerConnectionObservers.get(peerConnectionId);
+                if (peerConnectionObserver == null) {
+                    Log.d(TAG, "senderInsertDTMF() peerConnectionObserver is null");
+                    return;
+                }
+                RtpSender audioSender = peerConnectionObserver.getSender(senderId);
+                if (audioSender != null) {
+                    DtmfSender dtmfSender = audioSender.dtmf();
+                    if (dtmfSender != null) {
+                        if (dtmfSender.canInsertDtmf()) {
+                            dtmfSender.insertDtmf(tone, duration, interToneGap);
+                            return;
+                        } else {
+                            Log.d(TAG, "senderInsertDTMF() canInsertDtmf is false");
+                            return;
+                        }
+                    } else {
+                        Log.d(TAG, "senderInsertDTMF() dtmfSender is null");
+                        return;
+                    }
+                }
+
+                Log.d(TAG, "senderInsertDTMF() audioSender is null");
+                return;
+                
+            } catch (Exception e) {
+                Log.d(TAG, "senderInsertDTMF(): " + e.getMessage());
+            }
+        });
+    }
 
     @ReactMethod
     public void senderSetParameters(int id, String senderId, ReadableMap options, Promise promise) {
