@@ -1,9 +1,10 @@
 import { NativeModules } from 'react-native';
 
-import RTCDTMFSender from './RTCDTMFSender';
 import MediaStreamTrack from './MediaStreamTrack';
+import RTCDTMFSender from './RTCDTMFSender';
 import RTCRtpCapabilities from './RTCRtpCapabilities';
 import RTCRtpSendParameters, { RTCRtpSendParametersInit } from './RTCRtpSendParameters';
+
 
 const { WebRTCModule } = NativeModules;
 
@@ -59,7 +60,7 @@ export default class RTCRtpSender {
 
     getStats() {
         return WebRTCModule.senderGetStats(this._peerConnectionId, this._id).then(data =>
-                /* On both Android and iOS it is faster to construct a single
+            /* On both Android and iOS it is faster to construct a single
             JSON string representing the Map of StatsReports and have it
             pass through the React Native bridge rather than the Map of
             StatsReports. While the implementations do try to be faster in
@@ -67,7 +68,7 @@ export default class RTCRtpSender {
             Native bridge which is a bottleneck that tends to be visible in
             the UI when there is congestion involving UI-related passing.
             */
-                new Map(JSON.parse(data))
+            new Map(JSON.parse(data))
         );
     }
 
@@ -78,7 +79,7 @@ export default class RTCRtpSender {
     get id() {
         return this._id;
     }
-    
+
     get dtmf() {
         return this._dtmf;
     }
