@@ -79,7 +79,7 @@ export default class RTCRtpSender {
     get id() {
         return this._id;
     }
-    
+
     get dtmf() {
         return this._dtmf;
     }
