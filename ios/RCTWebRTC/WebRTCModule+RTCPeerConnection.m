@@ -927,8 +927,6 @@ RCT_EXPORT_BLOCKING_SYNCHRONOUS_METHOD(peerConnectionRemoveTrack
         params[@"pcId"] = peerConnection.reactTag;
         params[@"receiverId"] = rtpReceiver.receiverId;
 
-        [peerConnection.remoteTracks removeObjectForKey:rtpReceiver.receiverId];
-
         [self sendEventWithName:kEventPeerConnectionOnRemoveTrack body:params];
     });
 }
