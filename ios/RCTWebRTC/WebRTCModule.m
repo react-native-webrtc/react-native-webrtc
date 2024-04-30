@@ -45,6 +45,7 @@
         id<RTCVideoEncoderFactory> encoderFactory = options.videoEncoderFactory;
         NSDictionary *fieldTrials = options.fieldTrials;
         RTCLoggingSeverity loggingSeverity = options.loggingSeverity;
+        bool audioRecvOnly = options.audioReceiveOnlyMode;
 
         // Initialize field trials.
         if (fieldTrials == nil) {
@@ -56,6 +57,14 @@
 
         // Initialize logging.
         RTCSetMinDebugLogLevel(loggingSeverity);
+
+        // Configure Webrtc Audio Session to be recvOnly mode
+        if (audioRecvOnly) {
+          RTC_OBJC_TYPE(RTCAudioSessionConfiguration) *webRTCConfig =
+              [RTC_OBJC_TYPE(RTCAudioSessionConfiguration) webRTCConfiguration];
+          webRTCConfig.recvOnlyMode = true;
+          [RTC_OBJC_TYPE(RTCAudioSessionConfiguration) setWebRTCConfiguration:webRTCConfig];
+        }
 
         if (encoderFactory == nil) {
             encoderFactory = [[RTCDefaultVideoEncoderFactory alloc] init];

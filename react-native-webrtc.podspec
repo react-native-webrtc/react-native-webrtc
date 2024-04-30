@@ -19,5 +19,7 @@ Pod::Spec.new do |s|
   s.libraries           = 'c', 'sqlite3', 'stdc++'
   s.framework           = 'AudioToolbox','AVFoundation', 'CoreAudio', 'CoreGraphics', 'CoreVideo', 'GLKit', 'VideoToolbox'
   s.dependency          'React-Core'
-  s.dependency          'JitsiWebRTC', '~> 118.0.0'
+
+  # Note: Need to be supplied by a private pod specs repo
+  s.dependency          'RNMillicastWebRTC', '~> 118.0.0'
 end

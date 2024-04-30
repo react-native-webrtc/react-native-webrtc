@@ -22,6 +22,7 @@
         self.videoEncoderFactory = nil;
         self.videoDecoderFactory = nil;
         self.loggingSeverity = RTCLoggingSeverityNone;
+        self.audioReceiveOnlyMode = true;
     }
 
     return self;
