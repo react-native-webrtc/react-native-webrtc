@@ -66,7 +66,7 @@ export default class RTCRtpEncodingParameters {
 
     toJSON(): RTCRtpEncodingParametersInit {
         const obj = {
-            active: this.active,
+            active: Boolean(this.active),
         };
 
         if (this._rid !== null) {

@@ -265,7 +265,7 @@ RCT_EXPORT_BLOCKING_SYNCHRONOUS_METHOD(transceiverSetCodecPreferences
         NSDictionary *encodingUpdate = encodingsArray[i];
         RTCRtpEncodingParameters *encoding = encodings[i];
 
-        encoding.isActive = encodingUpdate[@"active"];
+        encoding.isActive = [encodingUpdate[@"active"] boolValue];
         encoding.rid = encodingUpdate[@"rid"];
         encoding.maxBitrateBps = encodingUpdate[@"maxBitrate"];
         encoding.maxFramerate = encodingUpdate[@"maxFramerate"];
