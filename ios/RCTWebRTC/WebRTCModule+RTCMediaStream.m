@@ -9,12 +9,23 @@
 #import "WebRTCModule+RTCMediaStream.h"
 #import "WebRTCModule+RTCPeerConnection.h"
 
+#import "ProcessorProvider.h"
 #import "ScreenCaptureController.h"
 #import "ScreenCapturer.h"
 #import "TrackCapturerEventsEmitter.h"
 #import "VideoCaptureController.h"
 
 @implementation WebRTCModule (RTCMediaStream)
+
+- (VideoEffectProcessor *)videoEffectProcessor
+{
+  return objc_getAssociatedObject(self, _cmd);
+}
+
+- (void)setVideoEffectProcessor:(VideoEffectProcessor *)videoEffectProcessor
+{
+  objc_setAssociatedObject(self, @selector(videoEffectProcessor), videoEffectProcessor, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+}
 
 #pragma mark - getUserMedia
 
@@ -409,6 +420,31 @@ RCT_EXPORT_METHOD(mediaStreamTrackSetVolume : (nonnull NSNumber *)pcId : (nonnul
         RTCAudioTrack *audioTrack = (RTCAudioTrack *)track;
         audioTrack.source.volume = volume;
     }
+}
+
+RCT_EXPORT_METHOD(mediaStreamTrackSetVideoEffects:(nonnull NSString *)trackID names:(nonnull NSArray<NSString *> *)names)
+{
+  RTCMediaStreamTrack *track = self.localTracks[trackID];
+  if (track) {
+    RTCVideoTrack *videoTrack = (RTCVideoTrack *)track;
+    RTCVideoSource *videoSource = videoTrack.source;
+    
+    NSMutableArray *processors = [[NSMutableArray alloc] init];
+    for (NSString *name in names) {
+      NSObject<VideoFrameProcessorDelegate> *processor = [ProcessorProvider getProcessor:name];
+      if (processor != nil) {
+        [processors addObject:processor];
+      }
+    }
+    
+    self.videoEffectProcessor = [[VideoEffectProcessor alloc] initWithProcessors:processors
+                                                                     videoSource:videoSource];
+    
+    VideoCaptureController *vcc = (VideoCaptureController *)videoTrack.captureController;
+    RTCVideoCapturer *capturer = vcc.capturer;
+    
+    capturer.delegate = self.videoEffectProcessor;
+  }
 }
 
 #pragma mark - Helpers
