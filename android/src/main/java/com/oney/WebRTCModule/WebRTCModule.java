@@ -1275,16 +1275,16 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
                 return;
             }
 
-            if (!(candidateMap.hasKey("sdpMid") && candidateMap.hasKey("sdpMLineIndex")
-                        && candidateMap.hasKey("sdpMid"))) {
+            if (!candidateMap.hasKey("sdpMid") && !candidateMap.hasKey("sdpMLineIndex")) {
                 promise.reject("E_TYPE_ERROR", "Invalid argument");
                 return;
             }
 
-            IceCandidate candidate = new IceCandidate(candidateMap.getString("sdpMid"),
-                    candidateMap.getInt("sdpMLineIndex"),
-                    candidateMap.getString("candidate"));
-
+            IceCandidate candidate = new IceCandidate(
+                candidateMap.hasKey("sdpMid") && !candidateMap.isNull("sdpMid") ? candidateMap.getString("sdpMid")  : "",
+                candidateMap.hasKey("sdpMLineIndex") && !candidateMap.isNull("sdpMLineIndex")  ? candidateMap.getInt("sdpMLineIndex") : 0,
+                candidateMap.getString("candidate"));
+            
             peerConnection.addIceCandidate(candidate, new AddIceObserver() {
                 @Override
                 public void onAddSuccess() {
