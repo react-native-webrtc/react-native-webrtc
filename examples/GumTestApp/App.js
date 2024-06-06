@@ -11,22 +11,20 @@ import {
   Button,
   SafeAreaView,
   StyleSheet,
-  ScrollView,
   View,
-  Text,
   StatusBar,
 } from 'react-native';
 import { Colors } from 'react-native/Libraries/NewAppScreen';
 import { mediaDevices, RTCView } from 'react-native-webrtc';
 
-const App: () => React$Node = () => {
+
+const App = () => {
   const [stream, setStream] = useState(null);
   const start = async () => {
     console.log('start');
     if (!stream) {
-      let s;
       try {
-        s = await mediaDevices.getUserMedia({ video: true });
+        const s = await mediaDevices.getUserMedia({ video: true });
         setStream(s);
       } catch(e) {
         console.error(e);

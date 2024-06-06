@@ -2,24 +2,20 @@ package com.oney.WebRTCModule;
 
 import android.util.Base64;
 import android.util.Log;
-import android.util.SparseArray;
 
 import androidx.annotation.Nullable;
 
 import com.facebook.react.bridge.Arguments;
 import com.facebook.react.bridge.Promise;
-import com.facebook.react.bridge.ReadableArray;
 import com.facebook.react.bridge.ReadableMap;
 import com.facebook.react.bridge.WritableArray;
 import com.facebook.react.bridge.WritableMap;
 
-import org.webrtc.AudioTrack;
 import org.webrtc.DataChannel;
 import org.webrtc.IceCandidate;
 import org.webrtc.MediaStream;
 import org.webrtc.MediaStreamTrack;
 import org.webrtc.PeerConnection;
-import org.webrtc.RTCStats;
 import org.webrtc.RTCStatsReport;
 import org.webrtc.RtpReceiver;
 import org.webrtc.RtpSender;
@@ -27,18 +23,11 @@ import org.webrtc.RtpTransceiver;
 import org.webrtc.SessionDescription;
 import org.webrtc.VideoTrack;
 
-import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Set;
 import java.util.UUID;
 
 class PeerConnectionObserver implements PeerConnection.Observer {
@@ -243,140 +232,43 @@ class PeerConnectionObserver implements PeerConnection.Observer {
     }
 
     void getStats(Promise promise) {
-        peerConnection.getStats(rtcStatsReport -> { promise.resolve(StringUtils.statsToJSON(rtcStatsReport)); });
+        peerConnection.getStats(rtcStatsReport -> promise.resolve(StringUtils.statsToJSON(rtcStatsReport)));
     }
 
-    /**
-     * @param trackIdentifier sender or receiver id
-     * @param streamType "outbound-rtp" for sender or "inbound-rtp" for receiver
-     */
-    void getFilteredStats(String trackIdentifier, boolean isReceiver, Promise promise) {
-        peerConnection.getStats(rtcStatsReport -> {
-            Map<String, RTCStats> statsMap = rtcStatsReport.getStatsMap();
-            Set<RTCStats> filteredStats = new HashSet<>();
-            // Get track stats
-            RTCStats trackStats = getTrackStats(trackIdentifier, statsMap);
-            if (trackStats == null) {
-                Log.w(TAG, "getStats: couldn't find track stats!");
-                RTCStatsReport report = new RTCStatsReport((long) rtcStatsReport.getTimestampUs(), new HashMap<>());
-                promise.resolve(StringUtils.statsToJSON(report));
-                return;
-            }
-
-            filteredStats.add(trackStats);
-            String trackId = trackStats.getId();
-
-            // Get stream stats
-            RTCStats streamStats = getStreamStats(trackId, statsMap);
-            if (streamStats != null) {
-                filteredStats.add(streamStats);
-            }
-
-            // Get streamType stats and associated information
-            Set<Long> ssrcs = new HashSet<>();
-            Set<String> codecIds = new HashSet<>();
-
-            String streamType;
-            if (isReceiver) {
-                streamType = "inbound-rtp";
-            } else {
-                streamType = "outbound-rtp";
-            }
-
-            for (RTCStats stats : statsMap.values()) {
-                if (stats.getType().equals(streamType) && trackId.equals(stats.getMembers().get("trackId"))) {
-                    ssrcs.add((Long) stats.getMembers().get("ssrc"));
-                    codecIds.add((String) stats.getMembers().get("codecId"));
-                    filteredStats.add(stats);
-                }
-            }
-
-            // Get candidate information
-            RTCStats candidatePairStats = null;
-            for (RTCStats stats : statsMap.values()) {
-                if (stats.getType().equals("candidate-pair") && stats.getMembers().get("nominated").equals(true)) {
-                    candidatePairStats = stats;
-                    break;
-                }
-            }
-
-            String localCandidateId = null;
-            String remoteCandidateId = null;
-            if (candidatePairStats != null) {
-                filteredStats.add(candidatePairStats);
-                localCandidateId = (String) candidatePairStats.getMembers().get("localCandidateId");
-                remoteCandidateId = (String) candidatePairStats.getMembers().get("remoteCandidateId");
-            }
-
-            // Sweep for any remaining stats we want.
-            filteredStats.addAll(
-                    getExtraStats(trackIdentifier, ssrcs, codecIds, localCandidateId, remoteCandidateId, statsMap));
-
-            Map<String, RTCStats> filteredStatsMap = new HashMap<>();
-            for (RTCStats stats : filteredStats) {
-                filteredStatsMap.put(stats.getId(), stats);
-            }
-            RTCStatsReport filteredStatsReport =
-                    new RTCStatsReport((long) rtcStatsReport.getTimestampUs(), filteredStatsMap);
-            promise.resolve(StringUtils.statsToJSON(filteredStatsReport));
-        });
-    }
-
-    // Note: trackIdentifier can differ from the internal stats trackId
-    // trackIdentifier refers to the sender or receiver id
-    @Nullable
-    private RTCStats getTrackStats(String trackIdentifier, Map<String, RTCStats> statsMap) {
-        for (RTCStats stats : statsMap.values()) {
-            if (stats.getType().equals("track") && trackIdentifier.equals(stats.getMembers().get("trackIdentifier"))) {
-                return stats;
-            }
-        }
-        return null;
-    }
-
-    @Nullable
-    private RTCStats getStreamStats(String trackId, Map<String, RTCStats> statsMap) {
-        for (RTCStats stats : statsMap.values()) {
-            if (stats.getType().equals("stream")
-                    && Arrays.asList((String[]) stats.getMembers().get("trackIds")).contains(trackId)) {
-                return stats;
-            }
-        }
-        return null;
-    }
-
-    // Note: trackIdentifier can differ from the internal stats trackId
-    // trackIdentifier refers to the sender or receiver id
-    public Set<RTCStats> getExtraStats(String trackIdentifier, Set<Long> ssrcs, Set<String> codecIds,
-            @Nullable String localCandidateId, @Nullable String remoteCandidateId, Map<String, RTCStats> statsMap) {
-        Set<RTCStats> extraStats = new HashSet<>();
-        for (RTCStats stats : statsMap.values()) {
-            switch (stats.getType()) {
-                case "certificate":
-                case "transport":
-                    extraStats.add(stats);
-                    break;
-            }
-
-            if (stats.getId().equals(localCandidateId) || stats.getId().equals(remoteCandidateId)) {
-                extraStats.add(stats);
-                continue;
-            }
-
-            if (ssrcs.contains(stats.getMembers().get("ssrc"))) {
-                extraStats.add(stats);
-                continue;
-            }
-            if (trackIdentifier.equals(stats.getMembers().get("trackIdentifier"))) {
-                extraStats.add(stats);
-                continue;
-            }
-            if (codecIds.contains(stats.getId())) {
-                extraStats.add(stats);
+    public void receiverGetStats(String receiverId, Promise promise) {
+        RtpReceiver targetReceiver = null;
+        for (RtpReceiver r : peerConnection.getReceivers()) {
+            if (r.id().equals(receiverId)) {
+                targetReceiver = r;
+                break;
             }
         }
 
-        return extraStats;
+        if (targetReceiver == null) {
+            Log.w(TAG, "receiverGetStats(): Receiver ID " + receiverId + " not found");
+            promise.resolve(StringUtils.statsToJSON(new RTCStatsReport(0, new HashMap<>())));
+            return;
+        }
+
+        peerConnection.getStats(targetReceiver, rtcStatsReport -> promise.resolve(StringUtils.statsToJSON(rtcStatsReport)));
+    }
+
+    public void senderGetStats(String senderId, Promise promise) {
+        RtpSender targetSender = null;
+        for (RtpSender s : peerConnection.getSenders()) {
+            if (s.id().equals(senderId)) {
+                targetSender = s;
+                break;
+            }
+        }
+
+        if (targetSender == null) {
+            Log.w(TAG, "senderGetStats(): Sender ID " + senderId + " not found");
+            promise.resolve(StringUtils.statsToJSON(new RTCStatsReport(0, new HashMap<>())));
+            return;
+        }
+
+        peerConnection.getStats(targetSender, rtcStatsReport -> promise.resolve(StringUtils.statsToJSON(rtcStatsReport)));
     }
 
     @Override

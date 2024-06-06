@@ -1,4 +1,4 @@
-import { EventTarget, Event, defineEventAttribute } from 'event-target-shim';
+import { EventTarget, Event, defineEventAttribute } from 'event-target-shim/index';
 import { NativeModules } from 'react-native';
 
 import { addListener, removeListener } from './EventEmitter';
@@ -332,13 +332,12 @@ export default class RTCPeerConnection extends EventTarget<RTCPeerConnectionEven
             return;
         }
 
-        if (
-            candidate.sdpMLineIndex === null ||
-            candidate.sdpMLineIndex === undefined ||
-            candidate.sdpMid === null ||
-            candidate.sdpMid === undefined
+        if ((candidate.sdpMLineIndex === null ||
+             candidate.sdpMLineIndex === undefined) &&
+            (candidate.sdpMid === null ||
+             candidate.sdpMid === undefined)
         ) {
-            throw new TypeError('`sdpMLineIndex` and `sdpMid` must not null or undefined');
+            throw new TypeError('`sdpMLineIndex` and `sdpMid` must not be both null or undefined');
         }
 
         const newSdp = await WebRTCModule.peerConnectionAddICECandidate(
@@ -707,6 +706,10 @@ export default class RTCPeerConnection extends EventTarget<RTCPeerConnectionEven
             const channel = new RTCDataChannel(ev.dataChannel);
 
             this.dispatchEvent(new RTCDataChannelEvent('datachannel', { channel }));
+
+            // Send 'open' event. Native doesn't update the state since it's already
+            // set at this point.
+            channel.dispatchEvent(new RTCDataChannelEvent('open', { channel }));
         });
 
         addListener(this, 'mediaStreamTrackMuteChanged', (ev: any) => {

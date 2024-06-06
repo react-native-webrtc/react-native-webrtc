@@ -40,7 +40,7 @@ class GetUserMediaImpl {
 
     private static final int PERMISSION_REQUEST_CODE = (int) (Math.random() * Short.MAX_VALUE);
 
-    private final CameraEnumerator cameraEnumerator;
+    private CameraEnumerator cameraEnumerator;
     private final ReactApplicationContext reactContext;
 
     /**
@@ -59,24 +59,6 @@ class GetUserMediaImpl {
         this.webRTCModule = webRTCModule;
         this.reactContext = reactContext;
 
-        boolean camera2supported = false;
-
-        try {
-            camera2supported = Camera2Enumerator.isSupported(reactContext);
-        } catch (Throwable tr) {
-            // Some devices will crash here with: Fatal Exception: java.lang.AssertionError: Supported FPS ranges cannot
-            // be null. Make sure we don't.
-            Log.w(TAG, "Error checking for Camera2 API support.", tr);
-        }
-
-        if (camera2supported) {
-            Log.d(TAG, "Creating video capturer using Camera2 API.");
-            cameraEnumerator = new Camera2Enumerator(reactContext);
-        } else {
-            Log.d(TAG, "Creating video capturer using Camera1 API.");
-            cameraEnumerator = new Camera1Enumerator(false);
-        }
-
         reactContext.addActivityEventListener(new BaseActivityEventListener() {
             @Override
             public void onActivityResult(Activity activity, int requestCode, int resultCode, Intent data) {
@@ -89,7 +71,11 @@ class GetUserMediaImpl {
                     }
 
                     mediaProjectionPermissionResultData = data;
-                    createScreenStream();
+
+                    ThreadUtils.runOnExecutor(() -> {
+                        MediaProjectionService.launch(activity);
+                        createScreenStream();
+                    });
                 }
             }
         });
@@ -132,16 +118,30 @@ class GetUserMediaImpl {
         peerConstraints.mandatory.addAll(valid);
     }
 
+    private CameraEnumerator getCameraEnumerator() {
+        if (cameraEnumerator == null) {
+            if (Camera2Enumerator.isSupported(reactContext)) {
+                Log.d(TAG, "Creating camera enumerator using the Camera2 API");
+                cameraEnumerator = new Camera2Enumerator(reactContext);
+            } else {
+                Log.d(TAG, "Creating camera enumerator using the Camera1 API");
+                cameraEnumerator = new Camera1Enumerator(false);
+            }
+        }
+
+        return cameraEnumerator;
+    }
+
     ReadableArray enumerateDevices() {
         WritableArray array = Arguments.createArray();
-        String[] devices = cameraEnumerator.getDeviceNames();
+        String[] devices = getCameraEnumerator().getDeviceNames();
 
         for (int i = 0; i < devices.length; ++i) {
             String deviceName = devices[i];
             boolean isFrontFacing;
             try {
                 // This can throw an exception when using the Camera 1 API.
-                isFrontFacing = cameraEnumerator.isFrontFacing(deviceName);
+                isFrontFacing = getCameraEnumerator().isFrontFacing(deviceName);
             } catch (Exception e) {
                 Log.e(TAG, "Failed to check the facing mode of camera");
                 continue;
@@ -192,7 +192,7 @@ class GetUserMediaImpl {
             Log.d(TAG, "getUserMedia(video): " + videoConstraintsMap);
 
             CameraCaptureController cameraCaptureController =
-                    new CameraCaptureController(cameraEnumerator, videoConstraintsMap);
+                    new CameraCaptureController(getCameraEnumerator(), videoConstraintsMap);
 
             videoTrack = createVideoTrack(cameraCaptureController);
         }
@@ -321,7 +321,7 @@ class GetUserMediaImpl {
             trackInfo.putBoolean("enabled", track.enabled());
             trackInfo.putString("id", trackId);
             trackInfo.putString("kind", track.kind());
-            trackInfo.putString("readyState", track.state().toString().toLowerCase());
+            trackInfo.putString("readyState", "live");
             trackInfo.putBoolean("remote", false);
 
             if (track instanceof VideoTrack) {
@@ -488,7 +488,5 @@ class GetUserMediaImpl {
         }
     }
 
-    public interface BiConsumer<T, U> {
-        void accept(T t, U u);
-    }
+    public interface BiConsumer<T, U> { void accept(T t, U u); }
 }

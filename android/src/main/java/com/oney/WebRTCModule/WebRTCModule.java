@@ -1244,22 +1244,23 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
         ThreadUtils.runOnExecutor(() -> {
             PeerConnectionObserver pco = mPeerConnectionObservers.get(pcId);
             if (pco == null || pco.getPeerConnection() == null) {
-                Log.d(TAG, "peerConnectionGetStats() peerConnection is null");
-                promise.reject(new Exception("PeerConnection ID not found"));
+                Log.d(TAG, "receiverGetStats() peerConnection is null");
+                promise.resolve(StringUtils.statsToJSON(new RTCStatsReport(0, new HashMap<>())));
             } else {
-                pco.getFilteredStats(receiverId, true, promise);
+                pco.receiverGetStats(receiverId, promise);
             }
         });
     }
+
     @ReactMethod
     public void senderGetStats(int pcId, String senderId, Promise promise) {
         ThreadUtils.runOnExecutor(() -> {
             PeerConnectionObserver pco = mPeerConnectionObservers.get(pcId);
             if (pco == null || pco.getPeerConnection() == null) {
-                Log.d(TAG, "peerConnectionGetStats() peerConnection is null");
-                promise.reject(new Exception("PeerConnection ID not found"));
+                Log.d(TAG, "senderGetStats() peerConnection is null");
+                promise.resolve(StringUtils.statsToJSON(new RTCStatsReport(0, new HashMap<>())));
             } else {
-                pco.getFilteredStats(senderId, false, promise);
+                pco.senderGetStats(senderId, promise);
             }
         });
     }
@@ -1274,16 +1275,16 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
                 return;
             }
 
-            if (!(candidateMap.hasKey("sdpMid") && candidateMap.hasKey("sdpMLineIndex")
-                        && candidateMap.hasKey("sdpMid"))) {
+            if (!candidateMap.hasKey("sdpMid") && !candidateMap.hasKey("sdpMLineIndex")) {
                 promise.reject("E_TYPE_ERROR", "Invalid argument");
                 return;
             }
 
-            IceCandidate candidate = new IceCandidate(candidateMap.getString("sdpMid"),
-                    candidateMap.getInt("sdpMLineIndex"),
-                    candidateMap.getString("candidate"));
-
+            IceCandidate candidate = new IceCandidate(
+                candidateMap.hasKey("sdpMid") && !candidateMap.isNull("sdpMid") ? candidateMap.getString("sdpMid")  : "",
+                candidateMap.hasKey("sdpMLineIndex") && !candidateMap.isNull("sdpMLineIndex")  ? candidateMap.getInt("sdpMLineIndex") : 0,
+                candidateMap.getString("candidate"));
+            
             peerConnection.addIceCandidate(candidate, new AddIceObserver() {
                 @Override
                 public void onAddSuccess() {
@@ -1310,7 +1311,7 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
             PeerConnectionObserver pco = mPeerConnectionObservers.get(peerConnectionId);
             if (pco == null || pco.getPeerConnection() == null) {
                 Log.d(TAG, "peerConnectionGetStats() peerConnection is null");
-                promise.reject(new Exception("PeerConnection ID not found"));
+                promise.resolve(StringUtils.statsToJSON(new RTCStatsReport(0, new HashMap<>())));
             } else {
                 pco.getStats(promise);
             }

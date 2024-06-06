@@ -1,0 +1,5 @@
+<resources>
+    <string name="media_projection_notification_title">Screen sharing</string>
+    <string name="media_projection_notification_text">You are currently sharing your screen.</string>
+    <string name="ongoing_notification_channel_name">Screen Sharing Notifications</string>
+</resources>
