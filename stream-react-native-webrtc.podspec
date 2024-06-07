@@ -20,4 +20,8 @@ Pod::Spec.new do |s|
   s.framework           = 'AudioToolbox','AVFoundation', 'CoreAudio', 'CoreGraphics', 'CoreVideo', 'GLKit', 'VideoToolbox'
   s.dependency          'React-Core'
   s.dependency          'JitsiWebRTC', '~> 124.0.0'
+  # Swift/Objective-C compatibility #https://blog.cocoapods.org/CocoaPods-1.5.0/
+  s.pod_target_xcconfig = {
+    'DEFINES_MODULE' => 'YES'
+  }
 end
