@@ -27,6 +27,28 @@
   "peerDependencies": {
     "react-native": ">=0.60.0"
   },
+  "files": [
+    "lib",
+    "src",
+    "android",
+    "ios",
+    "macos",
+    "cpp",
+    "stream-react-native-webrtc.podspec",
+    "package.json",
+    "app.plugin.js",
+    "!macos/build",
+    "!ios/build",
+    "!android/build",
+    "!android/gradle",
+    "!android/gradlew",
+    "!android/gradlew.bat",
+    "!android/local.properties",
+    "!**/__tests__",
+    "!**/__fixtures__",
+    "!**/__mocks__",
+    "!**/.*"
+  ],
   "scripts": {
     "lint": "eslint --max-warnings 0 . && tsc --noEmit",
     "prepare": "husky install && bob build",
