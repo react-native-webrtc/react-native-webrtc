@@ -16,7 +16,14 @@ RCT_EXPORT_BLOCKING_SYNCHRONOUS_METHOD(senderGetCapabilities : (NSString *)kind)
     __block id params;
 
     dispatch_sync(self.workerQueue, ^{
-        RTCRtpCapabilities *capabilities = [self.peerConnectionFactory rtpSenderCapabilitiesForKind:kind];
+        RTCRtpMediaType mediaType = RTCRtpMediaTypeUnsupported;
+        if ([kind isEqual:@"audio"]) {
+            mediaType = RTCRtpMediaTypeAudio;
+        } else if ([kind isEqual:@"video"]) {
+            mediaType = RTCRtpMediaTypeVideo;
+        }
+
+        RTCRtpCapabilities *capabilities = [self.peerConnectionFactory rtpSenderCapabilitiesFor:mediaType];
         params = [SerializeUtils capabilitiesToJSON:capabilities];
     });
 
@@ -27,7 +34,14 @@ RCT_EXPORT_BLOCKING_SYNCHRONOUS_METHOD(receiverGetCapabilities : (NSString *)kin
     __block id params;
 
     dispatch_sync(self.workerQueue, ^{
-        RTCRtpCapabilities *capabilities = [self.peerConnectionFactory rtpReceiverCapabilitiesForKind:kind];
+        RTCRtpMediaType mediaType = RTCRtpMediaTypeUnsupported;
+        if ([kind isEqual:@"audio"]) {
+            mediaType = RTCRtpMediaTypeAudio;
+        } else if ([kind isEqual:@"video"]) {
+            mediaType = RTCRtpMediaTypeVideo;
+        }
+
+        RTCRtpCapabilities *capabilities = [self.peerConnectionFactory rtpSenderCapabilitiesFor:mediaType];
         params = [SerializeUtils capabilitiesToJSON:capabilities];
     });
 
@@ -198,9 +212,8 @@ RCT_EXPORT_BLOCKING_SYNCHRONOUS_METHOD(transceiverSetCodecPreferences
     // Get the available codecs
     RTCRtpTransceiverDirection direction = transceiver.direction;
     NSMutableArray *availableCodecs = [NSMutableArray new];
-    NSString *kind = transceiver.mediaType == RTCRtpMediaTypeAudio ? @"audio" : @"video";
     if (direction == RTCRtpTransceiverDirectionSendRecv || direction == RTCRtpTransceiverDirectionSendOnly) {
-        RTCRtpCapabilities *capabilities = [self.peerConnectionFactory rtpSenderCapabilitiesForKind:kind];
+        RTCRtpCapabilities *capabilities = [self.peerConnectionFactory rtpSenderCapabilitiesFor:transceiver.mediaType];
         for (RTCRtpCodecCapability *codec in capabilities.codecs) {
             NSDictionary *codecDict = [SerializeUtils codecCapabilityToJSON:codec];
             [availableCodecs addObject:@{
@@ -210,7 +223,8 @@ RCT_EXPORT_BLOCKING_SYNCHRONOUS_METHOD(transceiverSetCodecPreferences
         }
     }
     if (direction == RTCRtpTransceiverDirectionSendRecv || direction == RTCRtpTransceiverDirectionRecvOnly) {
-        RTCRtpCapabilities *capabilities = [self.peerConnectionFactory rtpReceiverCapabilitiesForKind:kind];
+        RTCRtpCapabilities *capabilities =
+            [self.peerConnectionFactory rtpReceiverCapabilitiesFor:transceiver.mediaType];
         for (RTCRtpCodecCapability *codec in capabilities.codecs) {
             NSDictionary *codecDict = [SerializeUtils codecCapabilityToJSON:codec];
             [availableCodecs addObject:@{
@@ -234,8 +248,12 @@ RCT_EXPORT_BLOCKING_SYNCHRONOUS_METHOD(transceiverSetCodecPreferences
         }
     }
 
-    [transceiver setCodecPreferences:codecsToSet];
+    NSError *error;
+    [transceiver setCodecPreferences:codecsToSet error:&error];
 
+    if (error) {
+        RTCLogError(@"transceiverSetCodecPreferences() Could not set preferences: %@", error);
+    }
     return nil;
 }
 
