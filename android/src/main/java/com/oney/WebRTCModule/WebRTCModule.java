@@ -117,6 +117,11 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
     }
 
     @Override
+    public void invalidate() {
+        onCatalystInstanceDestroy();
+    }
+
+    @Override
     public void onCatalystInstanceDestroy() {
         if (mAudioDeviceModule != null) {
             mAudioDeviceModule.release();
