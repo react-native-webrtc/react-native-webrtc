@@ -102,6 +102,9 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
                            .setVideoDecoderFactory(decoderFactory)
                            .createPeerConnectionFactory();
 
+        // PeerConnectionFactory now owns the adm native pointer, and we don't need it anymore.
+        adm.release();
+
         // Saving the encoder and decoder factories to get codec info later when needed.
         mVideoEncoderFactory = encoderFactory;
         mVideoDecoderFactory = decoderFactory;
@@ -114,14 +117,6 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
     @Override
     public String getName() {
         return "WebRTCModule";
-    }
-
-    @Override
-    public void onCatalystInstanceDestroy() {
-        if (mAudioDeviceModule != null) {
-            mAudioDeviceModule.release();
-        }
-        super.onCatalystInstanceDestroy();
     }
 
     private PeerConnection getPeerConnection(int id) {

@@ -13,7 +13,7 @@
   "dependencies": {
     "react": "18.2.0",
     "react-native": "0.71.4",
-    "react-native-webrtc": "*"
+    "@livekit/react-native-webrtc": "*"
   },
   "devDependencies": {
     "@babel/core": "^7.20.0",
