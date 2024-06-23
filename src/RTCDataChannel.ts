@@ -157,7 +157,8 @@ export default class RTCDataChannel extends EventTarget<DataChannelEventMap> {
             let data = ev.data;
 
             if (ev.type === 'binary') {
-                data = base64.toByteArray(ev.data);
+                const bytes = base64.toByteArray(ev.data)
+                data = bytes?.buffer || bytes;
             }
 
             this.dispatchEvent(new MessageEvent('message', { data }));
