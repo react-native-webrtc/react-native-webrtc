@@ -15,7 +15,7 @@ import {
   StatusBar,
 } from 'react-native';
 import { Colors } from 'react-native/Libraries/NewAppScreen';
-import { mediaDevices, RTCView } from 'react-native-webrtc';
+import { mediaDevices, RTCView } from '@livekit/react-native-webrtc';
 
 
 const App = () => {
