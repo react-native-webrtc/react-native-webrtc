@@ -1,7 +1,6 @@
 [<img src="https://avatars.githubusercontent.com/u/42463376" alt="React Native WebRTC" style="height: 6em;" />](https://github.com/react-native-webrtc/react-native-webrtc)
 
 # React-Native-WebRTC for LiveKit
-https://img.shields.io/npm/v/@livekit/react-native-webrtc
 [![npm version](https://img.shields.io/npm/v/@livekit/react-native-webrtc)](https://www.npmjs.com/package/@livekit/react-native-webrtc)
 [![Discourse topics](https://img.shields.io/discourse/topics?server=https%3A%2F%2Freact-native-webrtc.discourse.group%2F)](https://react-native-webrtc.discourse.group/)
 
