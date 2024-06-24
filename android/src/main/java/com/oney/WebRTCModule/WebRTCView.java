@@ -260,6 +260,63 @@ public class WebRTCView extends ViewGroup {
         }
     }
 
+<<<<<<< Updated upstream
+//    @Override
+//    protected void onLayout(boolean changed, int l, int t, int r, int b) {
+//        int height = b - t;
+//        int width = r - l;
+//
+//        if (height == 0 || width == 0) {
+//            l = t = r = b = 0;
+//        } else {
+//            int frameHeight;
+//            int frameRotation;
+//            int frameWidth;
+//            ScalingType scalingType;
+//
+//            synchronized (layoutSyncRoot) {
+//                frameHeight = this.frameHeight;
+//                frameRotation = this.frameRotation;
+//                frameWidth = this.frameWidth;
+//                scalingType = this.scalingType;
+//            }
+//
+//            switch (scalingType) {
+//                case SCALE_ASPECT_FILL:
+//                    // Fill this ViewGroup with surfaceViewRenderer and the latter
+//                    // will take care of filling itself with the video similarly to
+//                    // the cover value the CSS property object-fit.
+//                    r = width;
+//                    l = 0;
+//                    b = height;
+//                    t = 0;
+//                    break;
+//                case SCALE_ASPECT_FIT:
+//                default:
+//                    // Lay surfaceViewRenderer out inside this ViewGroup in accord
+//                    // with the contain value of the CSS property object-fit.
+//                    // SurfaceViewRenderer will fill itself with the video similarly
+//                    // to the cover or contain value of the CSS property object-fit
+//                    // (which will not matter, eventually).
+//                    if (frameHeight == 0 || frameWidth == 0) {
+//                        l = t = r = b = 0;
+//                    } else {
+//                        float frameAspectRatio = (frameRotation % 180 == 0) ? frameWidth / (float) frameHeight
+//                                                                            : frameHeight / (float) frameWidth;
+//                        Point frameDisplaySize =
+//                                RendererCommon.getDisplaySize(scalingType, frameAspectRatio, width, height);
+//
+//                        l = (width - frameDisplaySize.x) / 2;
+//                        t = (height - frameDisplaySize.y) / 2;
+//                        r = l + frameDisplaySize.x;
+//                        b = t + frameDisplaySize.y;
+//                    }
+//                    break;
+//            }
+//        }
+//        surfaceViewRenderer.layout(l, t, r, b);
+//    }
+=======
     @Override
     protected void onLayout(boolean changed, int l, int t, int r, int b) {
         int height = b - t;
@@ -268,53 +325,10 @@ public class WebRTCView extends ViewGroup {
         if (height == 0 || width == 0) {
             l = t = r = b = 0;
         } else {
-            int frameHeight;
-            int frameRotation;
-            int frameWidth;
-            ScalingType scalingType;
-
-            synchronized (layoutSyncRoot) {
-                frameHeight = this.frameHeight;
-                frameRotation = this.frameRotation;
-                frameWidth = this.frameWidth;
-                scalingType = this.scalingType;
-            }
-
-            switch (scalingType) {
-                case SCALE_ASPECT_FILL:
-                    // Fill this ViewGroup with surfaceViewRenderer and the latter
-                    // will take care of filling itself with the video similarly to
-                    // the cover value the CSS property object-fit.
-                    r = width;
-                    l = 0;
-                    b = height;
-                    t = 0;
-                    break;
-                case SCALE_ASPECT_FIT:
-                default:
-                    // Lay surfaceViewRenderer out inside this ViewGroup in accord
-                    // with the contain value of the CSS property object-fit.
-                    // SurfaceViewRenderer will fill itself with the video similarly
-                    // to the cover or contain value of the CSS property object-fit
-                    // (which will not matter, eventually).
-                    if (frameHeight == 0 || frameWidth == 0) {
-                        l = t = r = b = 0;
-                    } else {
-                        float frameAspectRatio = (frameRotation % 180 == 0) ? frameWidth / (float) frameHeight
-                                                                            : frameHeight / (float) frameWidth;
-                        Point frameDisplaySize =
-                                RendererCommon.getDisplaySize(scalingType, frameAspectRatio, width, height);
-
-                        l = (width - frameDisplaySize.x) / 2;
-                        t = (height - frameDisplaySize.y) / 2;
-                        r = l + frameDisplaySize.x;
-                        b = t + frameDisplaySize.y;
-                    }
-                    break;
-            }
+            surfaceViewRenderer.layout(l, t, r, b);
         }
-        surfaceViewRenderer.layout(l, t, r, b);
     }
+>>>>>>> Stashed changes
 
     /**
      * Stops rendering {@link #videoTrack} and releases the associated acquired
@@ -359,12 +373,6 @@ public class WebRTCView extends ViewGroup {
         // Google/WebRTC just call requestLayout() on surfaceViewRenderer when
         // they change the value of its mirror or surfaceType property.
         surfaceViewRenderer.requestLayout();
-        // The above is not enough though when the video frame's dimensions or
-        // rotation change. The following will suffice.
-        if (!ViewCompat.isInLayout(this)) {
-            onLayout(
-                    /* changed */ false, getLeft(), getTop(), getRight(), getBottom());
-        }
     }
 
     /**
