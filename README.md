@@ -1,12 +1,17 @@
 [<img src="https://avatars.githubusercontent.com/u/42463376" alt="React Native WebRTC" style="height: 6em;" />](https://github.com/react-native-webrtc/react-native-webrtc)
 
-# React-Native-WebRTC
-
-[![npm version](https://img.shields.io/npm/v/react-native-webrtc)](https://www.npmjs.com/package/react-native-webrtc)
-[![npm downloads](https://img.shields.io/npm/dm/react-native-webrtc)](https://www.npmjs.com/package/react-native-webrtc)
+# React-Native-WebRTC for LiveKit
+https://img.shields.io/npm/v/@livekit/react-native-webrtc
+[![npm version](https://img.shields.io/npm/v/@livekit/react-native-webrtc)](https://www.npmjs.com/package/@livekit/react-native-webrtc)
 [![Discourse topics](https://img.shields.io/discourse/topics?server=https%3A%2F%2Freact-native-webrtc.discourse.group%2F)](https://react-native-webrtc.discourse.group/)
 
 A WebRTC module for React Native.
+
+> [!NOTE]
+> This is a fork of the original [react-native-webrtc](https://github.com/react-native-webrtc/react-native-webrtc) repo, with different underlying WebRTC fork.
+> This module is primarily to be used in conjunction with the [LiveKit React Native SDK](https://github.com/livekit/client-sdk-react-native), and shouldn't be used independently.
+>
+> Developers looking to add WebRTC without LiveKit functionality to their React Native projects should use the original module instead.
 
 ## Feature Overview
 
@@ -51,9 +56,9 @@ Software encode/decode factories have been enabled by default.
 Use one of the following preferred package install methods to immediately get going.  
 Don't forget to follow platform guides below to cover any extra required steps.  
 
-**npm:** `npm install react-native-webrtc --save`  
-**yarn:** `yarn add react-native-webrtc`  
-**pnpm:** `pnpm install react-native-webrtc`  
+**npm:** `npm install @livekit/react-native-webrtc --save`  
+**yarn:** `yarn add @livekit/react-native-webrtc`  
+**pnpm:** `pnpm install @livekit/react-native-webrtc`  
 
 ## Guides
 
