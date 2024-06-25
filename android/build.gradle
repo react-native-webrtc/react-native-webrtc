@@ -31,4 +31,5 @@ android {
 dependencies {
     implementation 'com.facebook.react:react-native:+'
     api 'org.jitsi:webrtc:118.+'
+    implementation "androidx.core:core:1.7.0"
 }
