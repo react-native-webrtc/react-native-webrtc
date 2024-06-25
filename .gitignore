@@ -1,6 +1,7 @@
 node_modules
 xcuserdata
 project.xcworkspace
+.vscode
 .DS_Store
 .idea
 android/build
