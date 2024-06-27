@@ -4,6 +4,8 @@ project.xcworkspace
 .vscode
 .DS_Store
 .idea
+.gradle
+local.properties
 android/build
 Podfile.lock
 WebRTC.xcframework
