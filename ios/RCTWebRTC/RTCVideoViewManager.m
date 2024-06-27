@@ -2,6 +2,8 @@
 #import <objc/runtime.h>
 
 #import <React/RCTLog.h>
+#import <React/RCTView.h>
+
 #import <WebRTC/RTCMediaStream.h>
 #if TARGET_OS_OSX
 #import <WebRTC/RTCMTLNSVideoView.h>
@@ -42,12 +44,7 @@ typedef NS_ENUM(NSInteger, RTCVideoViewObjectFit) {
  * Implements an equivalent of {@code HTMLVideoElement} i.e. Web's video
  * element.
  */
-
-#if TARGET_OS_OSX
-@interface RTCVideoView : NSView
-#else
-@interface RTCVideoView : UIView
-#endif
+@interface RTCVideoView : RCTView
 
 /**
  * The indicator which determines whether this {@code RTCVideoView} is to mirror
@@ -252,11 +249,7 @@ typedef NS_ENUM(NSInteger, RTCVideoViewObjectFit) {
 
 RCT_EXPORT_MODULE()
 
-#if TARGET_OS_OSX
-- (NSView *)view {
-#else
-- (UIView *)view {
-#endif
+- (RCTView *)view {
     RTCVideoView *v = [[RTCVideoView alloc] init];
     v.module = [self.bridge moduleForName:@"WebRTCModule"];
     v.clipsToBounds = YES;
