@@ -1,4 +1,3 @@
-
 export interface RTCSessionDescriptionInit {
     sdp: string;
     type: string | null;

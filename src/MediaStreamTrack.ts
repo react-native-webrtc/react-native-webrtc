@@ -1,13 +1,12 @@
+import WebRTC from './wrapper';
+
 import { EventTarget, Event, defineEventAttribute } from 'event-target-shim/index';
-import { NativeModules } from 'react-native';
 
 import { addListener, removeListener } from './EventEmitter';
 import Logger from './Logger';
 import { deepClone } from './RTCUtil';
 
 const log = new Logger('pc');
-const { WebRTCModule } = NativeModules;
-
 
 type MediaStreamTrackState = 'live' | 'ended';
 
@@ -75,7 +74,7 @@ export default class MediaStreamTrack extends EventTarget<MediaStreamTrackEventM
             return;
         }
 
-        WebRTCModule.mediaStreamTrackSetEnabled(this.remote ? this._peerConnectionId : -1, this.id, this._enabled);
+        WebRTC.mediaStreamTrackSetEnabled(this.remote ? this._peerConnectionId : -1, this.id, this._enabled);
     }
 
     get muted(): boolean {
@@ -107,7 +106,7 @@ export default class MediaStreamTrack extends EventTarget<MediaStreamTrackEventM
             throw new Error('Only implemented for video tracks');
         }
 
-        WebRTCModule.mediaStreamTrackSwitchCamera(this.id);
+        WebRTC.mediaStreamTrackSwitchCamera(this.id);
     }
 
     _setVideoEffects(names: string[]) {
@@ -119,7 +118,7 @@ export default class MediaStreamTrack extends EventTarget<MediaStreamTrackEventM
             throw new Error('Only implemented for video tracks');
         }
 
-        WebRTCModule.mediaStreamTrackSetVideoEffects(this.id, names);
+        WebRTC.mediaStreamTrackSetVideoEffects(this.id, names);
     }
 
     _setVideoEffect(name: string) {
@@ -151,7 +150,7 @@ export default class MediaStreamTrack extends EventTarget<MediaStreamTrackEventM
             throw new Error('Only implemented for audio tracks');
         }
 
-        WebRTCModule.mediaStreamTrackSetVolume(this.remote ? this._peerConnectionId : -1, this.id, volume);
+        WebRTC.mediaStreamTrackSetVolume(this.remote ? this._peerConnectionId : -1, this.id, volume);
     }
 
     applyConstraints(): never {
@@ -193,7 +192,7 @@ export default class MediaStreamTrack extends EventTarget<MediaStreamTrackEventM
         }
 
         removeListener(this);
-        WebRTCModule.mediaStreamTrackRelease(this.id);
+        WebRTC.mediaStreamTrackRelease(this.id);
     }
 }
 

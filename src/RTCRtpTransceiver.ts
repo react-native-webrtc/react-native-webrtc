@@ -1,10 +1,8 @@
-import { NativeModules } from 'react-native';
+import WebRTC from './wrapper';
 
 import RTCRtpCodecCapability from './RTCRtpCodecCapability';
 import RTCRtpReceiver from './RTCRtpReceiver';
 import RTCRtpSender from './RTCRtpSender';
-
-const { WebRTCModule } = NativeModules;
 
 export default class RTCRtpTransceiver {
     _peerConnectionId: number;
@@ -61,7 +59,7 @@ export default class RTCRtpTransceiver {
 
         const oldDirection = this._direction;
 
-        WebRTCModule.transceiverSetDirection(this._peerConnectionId, this.sender.id, val)
+        WebRTC.transceiverSetDirection(this._peerConnectionId, this.sender.id, val)
             .catch(() => {
                 this._direction = oldDirection;
             });
@@ -86,12 +84,12 @@ export default class RTCRtpTransceiver {
             return;
         }
 
-        WebRTCModule.transceiverStop(this._peerConnectionId, this.sender.id)
+        WebRTC.transceiverStop(this._peerConnectionId, this.sender.id)
             .then(() => this._setStopped());
     }
 
     setCodecPreferences(codecs: RTCRtpCodecCapability[]) {
-        WebRTCModule.transceiverSetCodecPreferences(
+        WebRTC.transceiverSetCodecPreferences(
             this._peerConnectionId,
             this.sender.id,
             codecs

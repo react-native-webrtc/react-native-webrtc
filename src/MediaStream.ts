@@ -1,11 +1,10 @@
+import WebRTC from './wrapper';
+
 import { EventTarget, defineEventAttribute } from 'event-target-shim/index';
-import { NativeModules } from 'react-native';
 
 import MediaStreamTrack, { MediaStreamTrackInfo } from './MediaStreamTrack';
 import MediaStreamTrackEvent from './MediaStreamTrackEvent';
 import { uniqueID } from './RTCUtil';
-
-const { WebRTCModule } = NativeModules;
 
 type MediaStreamEventMap = {
     addtrack: MediaStreamTrackEvent<'addtrack'>
@@ -54,15 +53,15 @@ export default class MediaStream extends EventTarget<MediaStreamEventMap> {
         this._reactTag = this._id;
 
         if (typeof arg === 'undefined') {
-            WebRTCModule.mediaStreamCreate(this.id);
+            WebRTC.mediaStreamCreate(this.id);
         } else if (arg instanceof MediaStream) {
-            WebRTCModule.mediaStreamCreate(this.id);
+            WebRTC.mediaStreamCreate(this.id);
 
             for (const track of arg.getTracks()) {
                 this.addTrack(track);
             }
         } else if (Array.isArray(arg)) {
-            WebRTCModule.mediaStreamCreate(this.id);
+            WebRTC.mediaStreamCreate(this.id);
 
             for (const track of arg) {
                 this.addTrack(track);
@@ -99,7 +98,7 @@ export default class MediaStream extends EventTarget<MediaStreamEventMap> {
         }
 
         this._tracks.push(track);
-        WebRTCModule.mediaStreamAddTrack(this._reactTag, track.remote ? track._peerConnectionId : -1, track.id);
+        WebRTC.mediaStreamAddTrack(this._reactTag, track.remote ? track._peerConnectionId : -1, track.id);
     }
 
     removeTrack(track: MediaStreamTrack): void {
@@ -110,7 +109,7 @@ export default class MediaStream extends EventTarget<MediaStreamEventMap> {
         }
 
         this._tracks.splice(index, 1);
-        WebRTCModule.mediaStreamRemoveTrack(this._reactTag, track.remote ? track._peerConnectionId : -1, track.id);
+        WebRTC.mediaStreamRemoveTrack(this._reactTag, track.remote ? track._peerConnectionId : -1, track.id);
     }
 
     getTracks(): MediaStreamTrack[] {
@@ -148,7 +147,7 @@ export default class MediaStream extends EventTarget<MediaStreamEventMap> {
             }
         }
 
-        WebRTCModule.mediaStreamRelease(this._reactTag);
+        WebRTC.mediaStreamRelease(this._reactTag);
     }
 }
 

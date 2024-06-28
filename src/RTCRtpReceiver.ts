@@ -1,11 +1,9 @@
-import { NativeModules } from 'react-native';
+import WebRTC from './wrapper';
 
 import MediaStreamTrack from './MediaStreamTrack';
 import RTCRtpCapabilities from './RTCRtpCapabilities';
 import { RTCRtpParametersInit } from './RTCRtpParameters';
 import RTCRtpReceiveParameters from './RTCRtpReceiveParameters';
-
-const { WebRTCModule } = NativeModules;
 
 export default class RTCRtpReceiver {
     _id: string;
@@ -29,11 +27,11 @@ export default class RTCRtpReceiver {
     }
 
     static getCapabilities(kind: 'audio' | 'video'): RTCRtpCapabilities {
-        return WebRTCModule.receiverGetCapabilities(kind);
+        return WebRTC.receiverGetCapabilities(kind);
     }
 
     getStats() {
-        return WebRTCModule.receiverGetStats(this._peerConnectionId, this._id).then(data =>
+        return WebRTC.receiverGetStats(this._peerConnectionId, this._id).then(data =>
             /* On both Android and iOS it is faster to construct a single
             JSON string representing the Map of StatsReports and have it
             pass through the React Native bridge rather than the Map of

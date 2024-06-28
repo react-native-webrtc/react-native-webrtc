@@ -1,4 +1,4 @@
-#import "DataChannelWrapper.h"
+#import "DataChannelObserver.h"
 #import "WebRTCModule.h"
 
 @interface RTCDataChannel (React)
@@ -7,7 +7,7 @@
 
 @end
 
-@interface WebRTCModule (RTCDataChannel)<DataChannelWrapperDelegate>
+@interface WebRTCModule (RTCDataChannel)<DataChannelObserverDelegate>
 
 - (NSString *)stringForDataChannelState:(RTCDataChannelState)state;
 
