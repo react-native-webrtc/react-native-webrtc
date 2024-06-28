@@ -43,13 +43,8 @@
         return nil;
     }
 
-    if (json[@"sdpMid"] == nil) {
-        RCTLogConvertError(json, @".sdpMid must not be null");
-        return nil;
-    }
-
-    if (json[@"sdpMLineIndex"] == nil) {
-        RCTLogConvertError(json, @".sdpMLineIndex must not be null");
+    if (json[@"sdpMid"] == nil && json[@"sdpMLineIndex"] == nil) {
+        RCTLogConvertError(json, @".sdpMid and .sdpMLineIndex must not be both null");
         return nil;
     }
 
