@@ -8,7 +8,6 @@ interface IRTCDataChannelEventInitDict extends Event.EventInit {
     channel: RTCDataChannel;
 }
 
-
 /**
  * @eventClass
  * This event is fired whenever the RTCDataChannel has changed in any way.

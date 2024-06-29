@@ -1,7 +1,8 @@
-import { NativeModules, Platform } from 'react-native';
-const { WebRTCModule } = NativeModules;
+import WebRTC from './wrapper';
 
-if (WebRTCModule === null) {
+import { Platform } from 'react-native';
+
+if (WebRTC === null) {
     throw new Error(`WebRTC native module not found.\n${Platform.OS === 'ios' ?
         'Try executing the "pod install" command inside your projects ios folder.' :
         'Try executing the "npm install" command inside your projects folder.'
@@ -22,7 +23,7 @@ import RTCRtpReceiver from './RTCRtpReceiver';
 import RTCRtpSender from './RTCRtpSender';
 import RTCRtpTransceiver from './RTCRtpTransceiver';
 import RTCSessionDescription from './RTCSessionDescription';
-import RTCView from './RTCView';
+import RTCVideoView from './RTCVideoViewNativeComponent';
 import ScreenCapturePickerView from './ScreenCapturePickerView';
 
 Logger.enable(`${Logger.ROOT_PREFIX}:*`);
@@ -34,7 +35,7 @@ export {
     RTCIceCandidate,
     RTCPeerConnection,
     RTCSessionDescription,
-    RTCView,
+    RTCVideoView,
     ScreenCapturePickerView,
     RTCRtpTransceiver,
     RTCRtpReceiver,

@@ -37,10 +37,10 @@ RCT_EXPORT_BLOCKING_SYNCHRONOUS_METHOD(createDataChannel
         }
 
         NSString *reactTag = [[NSUUID UUID] UUIDString];
-        DataChannelWrapper *dcw = [[DataChannelWrapper alloc] initWithChannel:dataChannel reactTag:reactTag];
-        dcw.pcId = peerConnectionId;
-        peerConnection.dataChannels[reactTag] = dcw;
-        dcw.delegate = self;
+        DataChannelObserver *dco = [[DataChannelObserver alloc] initWithChannel:dataChannel reactTag:reactTag];
+        dco.peerConnectionId = peerConnectionId;
+        peerConnection.dataChannels[reactTag] = dco;
+        dco.delegate = self;
 
         channelInfo = @{
             @"peerConnectionId" : peerConnectionId,
@@ -63,9 +63,9 @@ RCT_EXPORT_METHOD(dataChannelClose
                   : (nonnull NSNumber *)peerConnectionId reactTag
                   : (nonnull NSString *)tag {
                       RTCPeerConnection *peerConnection = self.peerConnections[peerConnectionId];
-                      DataChannelWrapper *dcw = peerConnection.dataChannels[tag];
-                      if (dcw) {
-                          [dcw.channel close];
+                      DataChannelObserver *dco = peerConnection.dataChannels[tag];
+                      if (dco) {
+                          [dco.channel close];
                       }
                   })
 
@@ -73,9 +73,9 @@ RCT_EXPORT_METHOD(dataChannelDispose
                   : (nonnull NSNumber *)peerConnectionId reactTag
                   : (nonnull NSString *)tag {
                       RTCPeerConnection *peerConnection = self.peerConnections[peerConnectionId];
-                      DataChannelWrapper *dcw = peerConnection.dataChannels[tag];
-                      if (dcw) {
-                          dcw.delegate = nil;
+                      DataChannelObserver *dco = peerConnection.dataChannels[tag];
+                      if (dco) {
+                          dco.delegate = nil;
                           [peerConnection.dataChannels removeObjectForKey:tag];
                       }
                   })
@@ -86,13 +86,13 @@ RCT_EXPORT_METHOD(dataChannelSend
                   : (NSString *)data type
                   : (NSString *)type {
                       RTCPeerConnection *peerConnection = self.peerConnections[peerConnectionId];
-                      DataChannelWrapper *dcw = peerConnection.dataChannels[tag];
-                      if (dcw) {
+                      DataChannelObserver *dco = peerConnection.dataChannels[tag];
+                      if (dco) {
                           BOOL isBinary = [type isEqualToString:@"binary"];
                           NSData *bytes = isBinary ? [[NSData alloc] initWithBase64EncodedString:data options:0]
                                                    : [data dataUsingEncoding:NSUTF8StringEncoding];
                           RTCDataBuffer *buffer = [[RTCDataBuffer alloc] initWithData:bytes isBinary:isBinary];
-                          [dcw.channel sendData:buffer];
+                          [dco.channel sendData:buffer];
                       }
                   })
 
@@ -110,14 +110,14 @@ RCT_EXPORT_METHOD(dataChannelSend
     return nil;
 }
 
-#pragma mark - DataChannelWrapperDelegate methods
+#pragma mark - DataChannelObserverDelegate methods
 
 // Called when the data channel state has changed.
-- (void)dataChannelDidChangeState:(DataChannelWrapper *)dcw {
-    RTCDataChannel *channel = dcw.channel;
+- (void)dataChannelDidChangeState:(DataChannelObserver *)dco {
+    RTCDataChannel *channel = dco.channel;
     NSDictionary *event = @{
-        @"reactTag" : dcw.reactTag,
-        @"peerConnectionId" : dcw.pcId,
+        @"reactTag" : dco.reactTag,
+        @"peerConnectionId" : dco.peerConnectionId,
         @"id" : @(channel.channelId),
         @"state" : [self stringForDataChannelState:channel.readyState]
     };
@@ -125,7 +125,7 @@ RCT_EXPORT_METHOD(dataChannelSend
 }
 
 // Called when a data buffer was successfully received.
-- (void)dataChannel:(DataChannelWrapper *)dcw didReceiveMessageWithBuffer:(RTCDataBuffer *)buffer {
+- (void)dataChannel:(DataChannelObserver *)dco didReceiveMessageWithBuffer:(RTCDataBuffer *)buffer {
     NSString *type;
     NSString *data;
     if (buffer.isBinary) {
@@ -141,8 +141,8 @@ RCT_EXPORT_METHOD(dataChannelSend
         data = [[NSString alloc] initWithData:buffer.data encoding:NSUTF8StringEncoding];
     }
     NSDictionary *event = @{
-        @"reactTag" : dcw.reactTag,
-        @"peerConnectionId" : dcw.pcId,
+        @"reactTag" : dco.reactTag,
+        @"peerConnectionId" : dco.peerConnectionId,
         @"type" : type,
         // XXX NSDictionary will crash the process upon
         // attempting to insert nil. Such behavior is
@@ -153,10 +153,10 @@ RCT_EXPORT_METHOD(dataChannelSend
     [self sendEventWithName:kEventDataChannelReceiveMessage body:event];
 }
 
-- (void)dataChannel:(DataChannelWrapper *)dcw didChangeBufferedAmount:(uint64_t)amount {
+- (void)dataChannel:(DataChannelObserver *)dco didChangeBufferedAmount:(uint64_t)amount {
     NSDictionary *event = @{
-        @"reactTag" : dcw.reactTag,
-        @"peerConnectionId" : dcw.pcId,
+        @"reactTag" : dco.reactTag,
+        @"peerConnectionId" : dco.peerConnectionId,
         @"bufferedAmount" : [NSNumber numberWithUnsignedLongLong:amount]
     };
     [self sendEventWithName:kEventDataChannelDidChangeBufferedAmount body:event];

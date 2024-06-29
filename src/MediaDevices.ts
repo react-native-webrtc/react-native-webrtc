@@ -1,10 +1,9 @@
+import WebRTC from './wrapper';
+
 import { EventTarget, Event, defineEventAttribute } from 'event-target-shim/index';
-import { NativeModules } from 'react-native';
 
 import getDisplayMedia from './getDisplayMedia';
 import getUserMedia from './getUserMedia';
-
-const { WebRTCModule } = NativeModules;
 
 type MediaDevicesEventMap = {
     devicechange: Event<'devicechange'>
@@ -16,7 +15,7 @@ class MediaDevices extends EventTarget<MediaDevicesEventMap> {
      * implementation.
      */
     enumerateDevices() {
-        return new Promise(resolve => WebRTCModule.enumerateDevices(resolve));
+        return WebRTC.enumerateDevices();
     }
 
     /**
