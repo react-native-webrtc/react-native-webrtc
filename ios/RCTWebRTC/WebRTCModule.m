@@ -50,7 +50,11 @@
         if (fieldTrials == nil) {
             // Fix for dual-sim connectivity:
             // https://bugs.chromium.org/p/webrtc/issues/detail?id=10966
-            fieldTrials = @{kRTCFieldTrialUseNWPathMonitor : kRTCFieldTrialEnabledValue};
+            fieldTrials = @{kRTCFieldTrialUseNWPathMonitor : kRTCFieldTrialEnabledValue,
+                // Initialize field trial for solving audio issues after hold when using CallKit.
+                // See: https://bugs.chromium.org/p/webrtc/issues/detail?id=8126#c35
+                @"WebRTC-Audio-iOS-Holding" : kRTCFieldTrialEnabledValue
+            };
         }
         RTCInitFieldTrialDictionary(fieldTrials);
 

@@ -309,6 +309,106 @@ RCT_EXPORT_METHOD(peerConnectionAddICECandidate
     [peerConnection addIceCandidate:candidate completionHandler:handler];
 }
 
+RCT_EXPORT_BLOCKING_SYNCHRONOUS_METHOD(senderCanInsertDTMF:(nonnull NSNumber *)peerConnectionId senderId:(nonnull NSString *)senderId) {
+    __block BOOL ret = NO;
+    dispatch_sync(self.workerQueue, ^{
+        RTCPeerConnection *peerConnection = self.peerConnections[peerConnectionId];
+        if(!peerConnection) {
+            RCTLogWarn(@"senderCanInsertDTMF() peerConnection is nil");
+            return;
+        }
+
+        RTCRtpSender *audioSender = nil;
+
+        for(RTCRtpSender *sender in peerConnection.senders) {
+            if([sender.senderId isEqual: senderId]) {
+                audioSender = sender;
+                break;
+            }
+        }
+
+        if(audioSender) {
+            if(audioSender.dtmfSender) {
+                ret = [audioSender.dtmfSender canInsertDtmf];
+                return;
+            }
+            RCTLogWarn(@"senderCanInsertDTMF() dtmfSender is nil");
+            return;
+        }
+        
+        RCTLogWarn(@"senderCanInsertDTMF() audioSender is nil");
+        return;
+    });
+    
+    return @(ret);
+}
+
+RCT_EXPORT_BLOCKING_SYNCHRONOUS_METHOD(getDTMFToneBuffer:(nonnull NSNumber *)peerConnectionId senderId:(nonnull NSString *)senderId) {
+    __block NSString *toneBuffer = @"";
+    dispatch_sync(self.workerQueue, ^{
+        RTCPeerConnection *peerConnection = self.peerConnections[peerConnectionId];
+        if(!peerConnection) {
+            RCTLogWarn(@"getDTMFToneBuffer() peerConnection is nil");
+            return;
+        }
+
+        RTCRtpSender *audioSender = nil;
+
+        for(RTCRtpSender *sender in peerConnection.senders) {
+            if([sender.senderId isEqual: senderId]) {
+                audioSender = sender;
+                break;
+            }
+        }
+
+        if(audioSender) {
+            if(audioSender.dtmfSender) {
+                toneBuffer = [audioSender.dtmfSender remainingTones];
+                return;
+            }
+            RCTLogWarn(@"getDTMFToneBuffer() dtmfSender is nil");
+            return;
+        }
+        
+        RCTLogWarn(@"getDTMFToneBuffer() audioSender is nil");
+        return;
+    });
+    
+    return toneBuffer;
+}
+
+RCT_EXPORT_METHOD(senderInsertDTMF:(nonnull NSNumber *)peerConnectionId senderId:(nonnull NSString *)senderId tone:(nonnull NSString *)tone duration:(NSTimeInterval)duration interToneGap:(NSTimeInterval)interToneGap) {
+    RTCRtpSender* audioSender = nil;
+    RTCPeerConnection *peerConnection = self.peerConnections[peerConnectionId];
+    if(!peerConnection) {
+        RCTLogWarn(@"senderInsertDTMF() peerConnection is nil");
+        return;
+    }
+    for(RTCRtpSender *sender in peerConnection.senders) {
+        if([sender.senderId isEqual: senderId]) {
+            audioSender = sender;
+            break;
+        }
+    }
+    
+    if(audioSender) {
+        if(audioSender.dtmfSender) {
+            if([audioSender.dtmfSender canInsertDtmf]) {
+                [audioSender.dtmfSender insertDtmf:tone duration:duration interToneGap:interToneGap];
+                return;
+            }
+            RCTLogWarn(@"senderInsertDTMF() canInsertDtmf is false");
+            return;
+        }
+        
+        RCTLogWarn(@"senderInsertDTMF() dtmfSender is nil");
+        return;
+    }
+    
+    RCTLogWarn(@"senderInsertDTMF() audioSender is nil");
+    return;
+}
+
 RCT_EXPORT_METHOD(peerConnectionClose : (nonnull NSNumber *)objectID) {
     RTCPeerConnection *peerConnection = self.peerConnections[objectID];
     if (!peerConnection) {
