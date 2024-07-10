@@ -46,6 +46,8 @@ public class RTCVideoView extends ViewGroup {
 
     private static final String TAG = WebRTCModuleImpl.TAG;
 
+    private final ThemedReactContext reactContext;
+
     /**
      * The number of instances for {@link SurfaceViewRenderer}, used for logging.
      * When the renderer is initialized, it creates a new {@link javax.microedition.khronos.egl.EGLContext}
@@ -142,6 +144,8 @@ public class RTCVideoView extends ViewGroup {
     public RTCVideoView(ThemedReactContext context) {
         super(context);
 
+        reactContext = context;
+
         surfaceViewRenderer = new SurfaceViewRenderer(context);
         addView(surfaceViewRenderer);
 
@@ -161,22 +165,26 @@ public class RTCVideoView extends ViewGroup {
     private VideoTrack getVideoTrackForStreamURL(String streamURL) {
         VideoTrack videoTrack = null;
 
-        if (streamURL != null) {
-            ReactContext reactContext = (ReactContext) getContext();
-            WebRTCModule module = reactContext.getNativeModule(WebRTCModule.class);
-            MediaStream stream = module.getStreamForReactTag(streamURL);
+        try {
+            if (streamURL != null) {
+                WebRTCModule module = reactContext.getNativeModule(WebRTCModule.class);
+                MediaStream stream = module.getStreamForReactTag(streamURL);
 
-            if (stream != null) {
-                List<VideoTrack> videoTracks = stream.videoTracks;
+                if (stream != null) {
+                    List<VideoTrack> videoTracks = stream.videoTracks;
 
-                if (!videoTracks.isEmpty()) {
-                    videoTrack = videoTracks.get(0);
+                    if (!videoTracks.isEmpty()) {
+                        videoTrack = videoTracks.get(0);
+                    }
+                }
+
+                if (videoTrack == null) {
+                    Log.w(TAG, "No video stream for react tag: " + streamURL);
                 }
             }
-
-            if (videoTrack == null) {
-                Log.w(TAG, "No video stream for react tag: " + streamURL);
-            }
+        } catch (Exception e) {
+            // FIXME: remove this after debugging weird new arch issues
+            Log.w(TAG, e);
         }
 
         return videoTrack;

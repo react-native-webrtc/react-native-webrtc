@@ -38,6 +38,7 @@ public class WebRTCModulePackage extends TurboReactPackage {
                 false, // canOverrideExistingModule
                 false, // needsEagerInit
                 true, // hasConstants
+                false, // isCxxModule
                 isTurboModule // isTurboModule
             );
 
