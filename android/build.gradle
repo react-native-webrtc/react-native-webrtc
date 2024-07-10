@@ -1,23 +1,69 @@
+buildscript {
+    ext.safeExtGet = {prop, fallback ->
+        rootProject.ext.has(prop) ? rootProject.ext.get(prop) : fallback
+    }
+    repositories {
+        google()
+        gradlePluginPortal()
+    }
+    dependencies {
+        classpath('com.android.tools.build:gradle:7.3.1')
+    }
+}
+
+def isNewArchitectureEnabled() {
+    return project.hasProperty('newArchEnabled') && project.newArchEnabled == 'true'
+}
+
+def supportsNamespace() {
+    def parsed = com.android.Version.ANDROID_GRADLE_PLUGIN_VERSION.tokenize('.')
+    def major = parsed[0].toInteger()
+    def minor = parsed[1].toInteger()
+
+    // Namespace support was added in 7.3.0
+    if (major == 7 && minor >= 3) {
+        return true
+    }
+
+    return major >= 8
+}
+
 apply plugin: 'com.android.library'
 
-def safeExtGet(prop, fallback) {
-    rootProject.ext.has(prop) ? rootProject.ext.get(prop) : fallback
+if (isNewArchitectureEnabled()) {
+    apply plugin: 'com.facebook.react'
 }
 
 android {
-    def agpVersion = com.android.Version.ANDROID_GRADLE_PLUGIN_VERSION
-    if (agpVersion.tokenize('.')[0].toInteger() >= 7) {
-      namespace "com.oney.WebRTCModule"
+    if (supportsNamespace()) {
+        namespace 'com.oney.rnwebrtc'
+
+        sourceSets {
+            main {
+                manifest.srcFile 'src/main/AndroidManifestNew.xml'
+            }
+        }
     }
 
-    compileSdkVersion safeExtGet('compileSdkVersion', 24)
-    buildToolsVersion safeExtGet('buildToolsVersion', "23.0.1")
+    compileSdkVersion safeExtGet('compileSdkVersion', 34)
 
     defaultConfig {
         minSdkVersion safeExtGet('minSdkVersion', 24)
-        targetSdkVersion safeExtGet('targetSdkVersion', 24)
+        targetSdkVersion safeExtGet('targetSdkVersion', 34)
+        buildConfigField("boolean", "IS_NEW_ARCHITECTURE_ENABLED", isNewArchitectureEnabled().toString())
+
         versionCode 1
         versionName "1.0"
+    }
+
+    sourceSets {
+        main {
+            if (isNewArchitectureEnabled()) {
+                java.srcDirs += ['src/newarch']
+            } else {
+                java.srcDirs += ['src/oldarch']
+            }
+        }
     }
 
     // WebRTC requires Java 8 features
@@ -28,8 +74,17 @@ android {
     }
 }
 
+repositories {
+    maven {
+        // All of React Native (JS, Obj-C sources, Android binaries) is installed from npm
+        url('$rootDir/../node_modules/react-native/android')
+    }
+    mavenCentral()
+    google()
+}
+
 dependencies {
     implementation 'com.facebook.react:react-native:+'
+    implementation 'androidx.core:core:1.7.0'
     api 'org.jitsi:webrtc:124.+'
-    implementation "androidx.core:core:1.7.0"
 }

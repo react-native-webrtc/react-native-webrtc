@@ -1,13 +1,9 @@
-
-import { NativeModules } from 'react-native';
-
+import WebRTC from './wrapper';
 
 import MediaStream from './MediaStream';
 import MediaStreamError from './MediaStreamError';
 import permissions from './Permissions';
 import * as RTCUtil from './RTCUtil';
-
-const { WebRTCModule } = NativeModules;
 
 interface Constraints {
     audio?: boolean | object;
@@ -69,42 +65,44 @@ export default function getUserMedia(constraints: Constraints = {}): Promise<Med
             audioPerm || delete constraints.audio;
             videoPerm || delete constraints.video;
 
-            const success = (id, tracks) => {
-                // Store initial constraints.
-                for (const trackInfo of tracks) {
-                    const c = constraints[trackInfo.kind];
+            WebRTC.getUserMedia(constraints).then(
+                data => {
+                    const { streamId, tracksInfo } = data;
 
-                    if (typeof c === 'object') {
-                        trackInfo.constraints = RTCUtil.deepClone(c);
+                    // Store initial constraints.
+                    for (const trackInfo of tracksInfo) {
+                        const c = constraints[trackInfo.kind];
+
+                        if (typeof c === 'object') {
+                            trackInfo.constraints = RTCUtil.deepClone(c);
+                        }
                     }
+
+                    const info = {
+                        streamId: streamId,
+                        streamReactTag: streamId,
+                        tracks: tracksInfo
+                    };
+
+                    resolve(new MediaStream(info));
+                },
+                err => {
+                    const { type, message } = err;
+                    let error;
+
+                    switch (type) {
+                        case 'TypeError':
+                            error = new TypeError(message);
+                            break;
+                    }
+
+                    if (!error) {
+                        error = new MediaStreamError({ message, name: type });
+                    }
+
+                    reject(error);
                 }
-
-                const info = {
-                    streamId: id,
-                    streamReactTag: id,
-                    tracks
-                };
-
-                resolve(new MediaStream(info));
-            };
-
-            const failure = (type, message) => {
-                let error;
-
-                switch (type) {
-                    case 'TypeError':
-                        error = new TypeError(message);
-                        break;
-                }
-
-                if (!error) {
-                    error = new MediaStreamError({ message, name: type });
-                }
-
-                reject(error);
-            };
-
-            WebRTCModule.getUserMedia(constraints, success, failure);
+            );
         });
     });
 }

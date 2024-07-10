@@ -17,6 +17,10 @@
   ],
   "react-native": "src/index.ts",
   "types": "lib/typescript/index.d.ts",
+  "typings": "lib/typescript/index.d.ts",
+  "typescript": {
+    "definition": "lib/typescript/index.d.ts"
+  },
   "main": "lib/commonjs/index.js",
   "module": "lib/module/index.js",
   "dependencies": {
@@ -60,5 +64,18 @@
       "module",
       "typescript"
     ]
+  },
+  "codegenConfig": {
+    "name": "WebRTCSpec",
+    "type": "all",
+    "jsSrcsDir": "src",
+    "outputDir": {
+      "ios": "ios/generated",
+      "android": "android/generated"
+    },
+    "includesGeneratedCode": false,
+    "android": {
+      "javaPackageName": "com.oney.rnwebrtc"
+    }
   }
 }
