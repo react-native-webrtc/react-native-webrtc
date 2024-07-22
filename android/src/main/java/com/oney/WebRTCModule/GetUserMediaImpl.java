@@ -192,7 +192,7 @@ class GetUserMediaImpl {
             Log.d(TAG, "getUserMedia(video): " + videoConstraintsMap);
 
             CameraCaptureController cameraCaptureController =
-                    new CameraCaptureController(getCameraEnumerator(), videoConstraintsMap);
+                    new CameraCaptureController(reactContext.getCurrentActivity(), getCameraEnumerator(), videoConstraintsMap);
 
             videoTrack = createVideoTrack(cameraCaptureController);
         }
