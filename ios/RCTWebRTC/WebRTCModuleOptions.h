@@ -8,6 +8,7 @@ NS_ASSUME_NONNULL_BEGIN
 @property(nonatomic, strong, nullable) id<RTCVideoDecoderFactory> videoDecoderFactory;
 @property(nonatomic, strong, nullable) id<RTCVideoEncoderFactory> videoEncoderFactory;
 @property(nonatomic, strong, nullable) id<RTCAudioDevice> audioDevice;
+@property(nonatomic, strong, nullable) id<RTCAudioProcessingModule> audioProcessingModule;
 @property(nonatomic, strong, nullable) NSDictionary *fieldTrials;
 @property(nonatomic, assign) RTCLoggingSeverity loggingSeverity;
 
