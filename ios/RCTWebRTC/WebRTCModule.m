@@ -43,6 +43,7 @@
         id<RTCAudioDevice> audioDevice = options.audioDevice;
         id<RTCVideoDecoderFactory> decoderFactory = options.videoDecoderFactory;
         id<RTCVideoEncoderFactory> encoderFactory = options.videoEncoderFactory;
+        id<RTCAudioProcessingModule> audioProcessingModule = options.audioProcessingModule;
         NSDictionary *fieldTrials = options.fieldTrials;
         RTCLoggingSeverity loggingSeverity = options.loggingSeverity;
 
@@ -69,9 +70,21 @@
         RCTLogInfo(@"Using video encoder factory: %@", NSStringFromClass([encoderFactory class]));
         RCTLogInfo(@"Using video decoder factory: %@", NSStringFromClass([decoderFactory class]));
 
-        _peerConnectionFactory = [[RTCPeerConnectionFactory alloc] initWithEncoderFactory:encoderFactory
-                                                                           decoderFactory:decoderFactory
-                                                                              audioDevice:audioDevice];
+        if (audioProcessingModule != nil) {
+            if (audioDevice != nil) {
+                NSLog(@"Both audioProcessingModule and audioDevice are provided, but only one can be used. Ignoring audioDevice.");
+            }
+            RCTLogInfo(@"Using audio processing module: %@", NSStringFromClass([audioProcessingModule class]));
+            _peerConnectionFactory = [[RTCPeerConnectionFactory alloc] initWithBypassVoiceProcessing:NO
+                                                                                      encoderFactory:encoderFactory
+                                                                                      decoderFactory:decoderFactory
+                                                                               audioProcessingModule:audioProcessingModule];
+        } else {
+            RCTLogInfo(@"Using audio device: %@", NSStringFromClass([audioDevice class]));
+            _peerConnectionFactory = [[RTCPeerConnectionFactory alloc] initWithEncoderFactory:encoderFactory
+                                                                               decoderFactory:decoderFactory
+                                                                                  audioDevice:audioDevice];
+        }
 
         _peerConnections = [NSMutableDictionary new];
         _localStreams = [NSMutableDictionary new];
