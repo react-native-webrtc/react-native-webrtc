@@ -1,6 +1,6 @@
 {
   "name": "@livekit/react-native-webrtc",
-  "version": "125.0.0",
+  "version": "125.0.1",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/livekit/react-native-webrtc.git"
