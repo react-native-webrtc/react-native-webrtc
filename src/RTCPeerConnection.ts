@@ -739,6 +739,10 @@ export default class RTCPeerConnection extends EventTarget<RTCPeerConnectionEven
      * instance such as id
      */
     createDataChannel(label: string, dataChannelDict?: RTCDataChannelInit): RTCDataChannel {
+        if (arguments.length === 0) {
+            throw new TypeError('1 argument required, but 0 present');
+        }
+
         if (dataChannelDict && 'id' in dataChannelDict) {
             const id = dataChannelDict.id;
 
@@ -747,7 +751,7 @@ export default class RTCPeerConnection extends EventTarget<RTCPeerConnectionEven
             }
         }
 
-        const channelInfo = WebRTCModule.createDataChannel(this._pcId, label, dataChannelDict);
+        const channelInfo = WebRTCModule.createDataChannel(this._pcId, String(label), dataChannelDict);
 
         if (channelInfo === null) {
             throw new TypeError('Failed to create new DataChannel');
