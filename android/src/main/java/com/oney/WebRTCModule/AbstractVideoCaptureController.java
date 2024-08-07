@@ -3,9 +3,13 @@ package com.oney.WebRTCModule;
 import org.webrtc.VideoCapturer;
 
 public abstract class AbstractVideoCaptureController {
-    private final int width;
-    private final int height;
-    private final int fps;
+    protected final int targetWidth;
+    protected final int targetHeight;
+    protected final int targetFps;
+
+    protected int actualWidth;
+    protected int actualHeight;
+    protected int actualFps;
 
     /**
      * {@link VideoCapturer} which this controller manages.
@@ -15,9 +19,12 @@ public abstract class AbstractVideoCaptureController {
     protected CapturerEventsListener capturerEventsListener;
 
     public AbstractVideoCaptureController(int width, int height, int fps) {
-        this.width = width;
-        this.height = height;
-        this.fps = fps;
+        this.targetWidth = width;
+        this.targetHeight = height;
+        this.targetFps = fps;
+        this.actualWidth = width;
+        this.actualHeight = height;
+        this.actualFps = fps;
     }
 
     public void initializeVideoCapturer() {
@@ -32,15 +39,15 @@ public abstract class AbstractVideoCaptureController {
     }
 
     public int getHeight() {
-        return height;
+        return actualHeight;
     }
 
     public int getWidth() {
-        return width;
+        return actualWidth;
     }
 
     public int getFrameRate() {
-        return fps;
+        return actualFps;
     }
 
     public VideoCapturer getVideoCapturer() {
@@ -49,7 +56,7 @@ public abstract class AbstractVideoCaptureController {
 
     public void startCapture() {
         try {
-            videoCapturer.startCapture(width, height, fps);
+            videoCapturer.startCapture(targetWidth, targetHeight, targetFps);
         } catch (RuntimeException e) {
             // XXX This can only fail if we initialize the capturer incorrectly,
             // which we don't. Thus, ignore any failures here since we trust
