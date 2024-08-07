@@ -262,7 +262,8 @@ RCT_EXPORT_METHOD(enumerateDevices : (RCTResponseSenderBlock)callback) {
     callback(@[]);
 #else
     NSMutableArray *devices = [NSMutableArray array];
-    NSMutableArray *deviceTypes = @[ AVCaptureDeviceTypeBuiltInWideAngleCamera, AVCaptureDeviceTypeBuiltInUltraWideCamera, AVCaptureDeviceTypeBuiltInTelephotoCamera, AVCaptureDeviceTypeBuiltInDualCamera, AVCaptureDeviceTypeBuiltInDualWideCamera, AVCaptureDeviceTypeBuiltInTripleCamera];
+    NSMutableArray *deviceTypes = [NSMutableArray array];
+    [deviceTypes addObjectsFromArray:@[ AVCaptureDeviceTypeBuiltInWideAngleCamera, AVCaptureDeviceTypeBuiltInUltraWideCamera, AVCaptureDeviceTypeBuiltInTelephotoCamera, AVCaptureDeviceTypeBuiltInDualCamera, AVCaptureDeviceTypeBuiltInDualWideCamera, AVCaptureDeviceTypeBuiltInTripleCamera]];
     if (@available(macos 14.0, ios 17.0, tvos 17.0, *)) {
         [deviceTypes addObject:AVCaptureDeviceTypeExternal];
     }
