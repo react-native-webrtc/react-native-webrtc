@@ -48,7 +48,7 @@ export default class RTCRtpSendParameters extends RTCRtpParameters {
         }
     }
 
-    toJSON(): RTCRtpSendParametersInit {
+    toJSON() {
         const obj = super.toJSON();
 
         obj['transactionId'] = this.transactionId;
@@ -58,6 +58,6 @@ export default class RTCRtpSendParameters extends RTCRtpParameters {
             obj['degradationPreference'] = DegradationPreference.toNative(this.degradationPreference);
         }
 
-        return obj as RTCRtpSendParametersInit;
+        return obj;
     }
 }

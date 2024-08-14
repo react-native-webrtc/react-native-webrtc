@@ -342,7 +342,7 @@ export default class RTCPeerConnection extends EventTarget<RTCPeerConnectionEven
 
         const newSdp = await WebRTCModule.peerConnectionAddICECandidate(
             this._pcId,
-            candidate.toJSON ? candidate.toJSON() : candidate
+            RTCUtil.deepClone(candidate)
         );
 
         this.remoteDescription = new RTCSessionDescription(newSdp);
