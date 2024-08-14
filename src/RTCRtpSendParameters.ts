@@ -1,5 +1,6 @@
 import RTCRtpEncodingParameters, { RTCRtpEncodingParametersInit } from './RTCRtpEncodingParameters';
 import RTCRtpParameters, { RTCRtpParametersInit } from './RTCRtpParameters';
+import { deepClone } from './RTCUtil';
 
 type DegradationPreferenceType = 'maintain-framerate'
     | 'maintain-resolution'
@@ -31,7 +32,7 @@ export interface RTCRtpSendParametersInit extends RTCRtpParametersInit {
 
 export default class RTCRtpSendParameters extends RTCRtpParameters {
     readonly transactionId: string;
-    readonly encodings: RTCRtpEncodingParameters[];
+    encodings: (RTCRtpEncodingParameters | RTCRtpEncodingParametersInit)[];
     degradationPreference: DegradationPreferenceType | null;
 
     constructor(init: RTCRtpSendParametersInit) {
@@ -51,8 +52,7 @@ export default class RTCRtpSendParameters extends RTCRtpParameters {
         const obj = super.toJSON();
 
         obj['transactionId'] = this.transactionId;
-
-        obj['encodings'] = this.encodings.map(e => e.toJSON());
+        obj['encodings'] = this.encodings.map(e => deepClone(e));
 
         if (this.degradationPreference !== null) {
             obj['degradationPreference'] = DegradationPreference.toNative(this.degradationPreference);
