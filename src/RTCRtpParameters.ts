@@ -3,7 +3,6 @@ import RTCRtpCodecParameters, { RTCRtpCodecParametersInit } from './RTCRtpCodecP
 import RTCRtpHeaderExtension, { RTCRtpHeaderExtensionInit } from './RTCRtpHeaderExtension';
 import { deepClone } from './RTCUtil';
 
-
 export interface RTCRtpParametersInit {
     codecs: RTCRtpCodecParametersInit[],
     headerExtensions: RTCRtpHeaderExtensionInit[],

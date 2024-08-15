@@ -1,0 +1,50 @@
+import type { TurboModule } from 'react-native';
+import type { Int32, Double } from 'react-native/Libraries/Types/CodegenTypes';
+
+import { TurboModuleRegistry } from 'react-native';
+
+export interface Spec extends TurboModule {
+    addListener(eventType: string): void;
+    removeListeners(id: Int32): void;
+    peerConnectionInit(configuration: {}, id: Int32): boolean;
+    peerConnectionAddTransceiver(id: Int32, options: {}): {};
+    peerConnectionAddTrack(id: Int32, trackId: string, options: {}): {};
+    peerConnectionRemoveTrack(id: Int32, senderId: string): boolean;
+    senderSetParameters(id: Int32, senderId: string, options: {}): Promise<{}>;
+    transceiverStop(id: Int32, senderId: string): Promise<void>;
+    senderReplaceTrack(id: Int32, senderId: string, trackId: string): Promise<void>;
+    transceiverSetDirection(id: Int32, senderId: string, direction: string): Promise<void>;
+    transceiverSetCodecPreferences(id: Int32, senderId: string, codecPreferences: string[]): void;
+    enumerateDevices(): Promise<{}>;
+    getUserMedia(constraints: {}): Promise<{}>;
+    getDisplayMedia(): Promise<{}>;
+    mediaStreamCreate(id: string): void;
+    mediaStreamAddTrack(streamId: string, peerConnectionId: Int32, trackId: string): void;
+    mediaStreamRemoveTrack(streamId: string, peerConnectionId: Int32, trackId: string): void;
+    mediaStreamRelease(id: string): void;
+    mediaStreamTrackRelease(id: string): void;
+    mediaStreamTrackSetEnabled(peerConnectionId: Int32, id: string, enabled: boolean): void;
+    mediaStreamTrackSwitchCamera(id: string): void;
+    mediaStreamTrackSetVolume(peerConnectionId: Int32, id: string, volume: Double): void;
+    mediaStreamTrackSetVideoEffects(id: string, names: string[]): void;
+    peerConnectionSetConfiguration(configuration: {}, id: Int32): void;
+    peerConnectionCreateOffer(id: Int32, options: {}): Promise<{}>;
+    peerConnectionCreateAnswer(id: Int32, options: {}): Promise<{}>;
+    peerConnectionSetLocalDescription(peerConnectionId: Int32, desc: {}): Promise<{}>;
+    peerConnectionSetRemoteDescription(id: Int32, desc: {}): Promise<{}>;
+    receiverGetCapabilities(kind: string): {};
+    senderGetCapabilities(kind: string): {};
+    receiverGetStats(peerConnectionId: Int32, receiverId: string): Promise<{}>;
+    senderGetStats(peerConnectionId: Int32, senderId: string): Promise<{}>;
+    peerConnectionAddICECandidate(peerConnectionId: Int32, candidateMap: {}): Promise<{}>;
+    peerConnectionGetStats(peerConnectionId: Int32): Promise<{}>;
+    peerConnectionClose(id: Int32): void;
+    peerConnectionDispose(id: Int32): void;
+    peerConnectionRestartIce(peerConnectionId: Int32): void;
+    createDataChannel(peerConnectionId: Int32, label: string, config: {}): {};
+    dataChannelClose(peerConnectionId: Int32, reactTag: string): void;
+    dataChannelDispose(peerConnectionId: Int32, reactTag: string): void;
+    dataChannelSend(peerConnectionId: Int32, reactTag: string, data: string, type: string): void;
+};
+
+export default TurboModuleRegistry.getEnforcing<Spec>('WebRTC');

@@ -1,4 +1,3 @@
-
 export default class MediaStreamError {
     name: string;
     message?: string;

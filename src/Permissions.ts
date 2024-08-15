@@ -1,7 +1,6 @@
+import WebRTC from './wrapper';
 
-import { NativeModules, Permission, PermissionsAndroid, Platform } from 'react-native';
-
-const { WebRTCModule } = NativeModules;
+import { Permission, PermissionsAndroid, Platform } from 'react-native';
 
 /**
  * Type declaration for a permissions descriptor.
@@ -95,7 +94,7 @@ class Permissions {
                 );
             });
         } else if (Platform.OS === 'ios' || Platform.OS === 'macos') {
-            return WebRTCModule.checkPermission(permissionDesc.name);
+            return WebRTC.checkPermission(permissionDesc.name);
         } else {
             return Promise.reject(new TypeError('Unsupported platform.'));
         }
@@ -123,7 +122,7 @@ class Permissions {
 
             return this._lastReq;
         } else if (Platform.OS === 'ios' || Platform.OS === 'macos') {
-            return WebRTCModule.requestPermission(permissionDesc.name);
+            return WebRTC.requestPermission(permissionDesc.name);
         } else {
             return Promise.reject(new TypeError('Unsupported platform.'));
         }

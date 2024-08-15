@@ -7,7 +7,6 @@ type DegradationPreferenceType = 'maintain-framerate'
     | 'balanced'
     | 'disabled'
 
-
 /**
  * Class to convert degradation preference format. Native has a format such as
  * MAINTAIN_FRAMERATE whereas the web APIs expect maintain-framerate

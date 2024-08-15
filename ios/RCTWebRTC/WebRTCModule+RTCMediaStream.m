@@ -9,12 +9,23 @@
 #import "WebRTCModule+RTCMediaStream.h"
 #import "WebRTCModule+RTCPeerConnection.h"
 
+#import "ProcessorProvider.h"
 #import "ScreenCaptureController.h"
 #import "ScreenCapturer.h"
 #import "TrackCapturerEventsEmitter.h"
 #import "VideoCaptureController.h"
 
 @implementation WebRTCModule (RTCMediaStream)
+
+- (VideoEffectProcessor *)videoEffectProcessor
+{
+  return objc_getAssociatedObject(self, _cmd);
+}
+
+- (void)setVideoEffectProcessor:(VideoEffectProcessor *)videoEffectProcessor
+{
+  objc_setAssociatedObject(self, @selector(videoEffectProcessor), videoEffectProcessor, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+}
 
 #pragma mark - getUserMedia
 
@@ -53,14 +64,14 @@
 /**
  * Initializes a new {@link RTCMediaTrack} with the given tracks.
  *
- * @return An array with the mediaStreamId in index 0, and track infos in index 1.
+ * @return An array with the streamID in index 0, and track infos in index 1.
  */
 - (NSArray *)createMediaStream:(NSArray<RTCMediaStreamTrack *> *)tracks {
 #if TARGET_OS_TV
     return nil;
 #else
-    NSString *mediaStreamId = [[NSUUID UUID] UUIDString];
-    RTCMediaStream *mediaStream = [self.peerConnectionFactory mediaStreamWithStreamId:mediaStreamId];
+    NSString *streamID = [[NSUUID UUID] UUIDString];
+    RTCMediaStream *mediaStream = [self.peerConnectionFactory mediaStreamWithStreamId:streamID];
     NSMutableArray<NSDictionary *> *trackInfos = [NSMutableArray array];
 
     for (RTCMediaStreamTrack *track in tracks) {
@@ -95,8 +106,8 @@
         }];
     }
 
-    self.localStreams[mediaStreamId] = mediaStream;
-    return @[ mediaStreamId, trackInfos ];
+    self.localStreams[streamID] = mediaStream;
+    return @[ streamID, trackInfos ];
 #endif
 }
 
@@ -159,8 +170,8 @@ RCT_EXPORT_METHOD(getDisplayMedia : (RCTPromiseResolveBlock)resolve rejecter : (
         return;
     }
 
-    NSString *mediaStreamId = [[NSUUID UUID] UUIDString];
-    RTCMediaStream *mediaStream = [self.peerConnectionFactory mediaStreamWithStreamId:mediaStreamId];
+    NSString *streamID = [[NSUUID UUID] UUIDString];
+    RTCMediaStream *mediaStream = [self.peerConnectionFactory mediaStreamWithStreamId:streamID];
     [mediaStream addVideoTrack:videoTrack];
 
     NSString *trackId = videoTrack.trackId;
@@ -174,8 +185,8 @@ RCT_EXPORT_METHOD(getDisplayMedia : (RCTPromiseResolveBlock)resolve rejecter : (
         @"remote" : @(NO)
     };
 
-    self.localStreams[mediaStreamId] = mediaStream;
-    resolve(@{@"streamId" : mediaStreamId, @"track" : trackInfo});
+    self.localStreams[streamID] = mediaStream;
+    resolve(@{@"streamId" : streamID, @"track" : trackInfo});
 #endif
 }
 
@@ -187,11 +198,11 @@ RCT_EXPORT_METHOD(getDisplayMedia : (RCTPromiseResolveBlock)resolve rejecter : (
  * the constraints dictionary.
  */
 RCT_EXPORT_METHOD(getUserMedia
-                  : (NSDictionary *)constraints successCallback
-                  : (RCTResponseSenderBlock)successCallback errorCallback
-                  : (RCTResponseSenderBlock)errorCallback) {
+                  : (NSDictionary *)constraints resolver
+                  : (RCTPromiseResolveBlock)resolve rejecter
+                  : (RCTPromiseRejectBlock)reject) {
 #if TARGET_OS_TV
-    errorCallback(@[ @"PlatformNotSupported", @"getUserMedia is not supported on tvOS." ]);
+    reject(@"unsupported_platform", @"tvOS is not supported", nil);
     return;
 #else
     RTCAudioTrack *audioTrack = nil;
@@ -207,13 +218,13 @@ RCT_EXPORT_METHOD(getUserMedia
     if (audioTrack == nil && videoTrack == nil) {
         // Fail with DOMException with name AbortError as per:
         // https://www.w3.org/TR/mediacapture-streams/#dom-mediadevices-getusermedia
-        errorCallback(@[ @"DOMException", @"AbortError" ]);
+        reject(@"DOMException", @"AbortError", nil);
         return;
     }
 
-    NSString *mediaStreamId = [[NSUUID UUID] UUIDString];
-    RTCMediaStream *mediaStream = [self.peerConnectionFactory mediaStreamWithStreamId:mediaStreamId];
-    NSMutableArray *tracks = [NSMutableArray array];
+    NSString *streamID = [[NSUUID UUID] UUIDString];
+    RTCMediaStream *mediaStream = [self.peerConnectionFactory mediaStreamWithStreamId:streamID];
+    NSMutableArray *trackInfos = [NSMutableArray array];
     NSMutableArray *tmp = [NSMutableArray array];
     if (audioTrack)
         [tmp addObject:audioTrack];
@@ -240,7 +251,7 @@ RCT_EXPORT_METHOD(getUserMedia
             settings = @{@"height" : @(dimensions.height), @"width" : @(dimensions.width), @"frameRate" : @(30)};
         }
 
-        [tracks addObject:@{
+        [trackInfos addObject:@{
             @"enabled" : @(track.isEnabled),
             @"id" : trackId,
             @"kind" : track.kind,
@@ -250,16 +261,16 @@ RCT_EXPORT_METHOD(getUserMedia
         }];
     }
 
-    self.localStreams[mediaStreamId] = mediaStream;
-    successCallback(@[ mediaStreamId, tracks ]);
+    self.localStreams[streamID] = mediaStream;
+    resolve(@{@"streamId" : streamID, @"trackInfos" : trackInfos});
 #endif
 }
 
 #pragma mark - Other stream related APIs
 
-RCT_EXPORT_METHOD(enumerateDevices : (RCTResponseSenderBlock)callback) {
+RCT_EXPORT_METHOD(enumerateDevices : (RCTPromiseResolveBlock)resolve rejecter : (RCTPromiseRejectBlock)reject) {
 #if TARGET_OS_TV
-    callback(@[]);
+    resolve(@[]);
 #else
     NSMutableArray *devices = [NSMutableArray array];
     NSMutableArray *deviceTypes = [NSMutableArray array];
@@ -307,7 +318,7 @@ RCT_EXPORT_METHOD(enumerateDevices : (RCTResponseSenderBlock)callback) {
             @"kind" : @"audioinput",
         }];
     }
-    callback(@[ devices ]);
+    resolve(@[ devices ]);
 #endif
 }
 
@@ -318,14 +329,14 @@ RCT_EXPORT_METHOD(mediaStreamCreate : (nonnull NSString *)streamID) {
 
 RCT_EXPORT_METHOD(mediaStreamAddTrack
                   : (nonnull NSString *)streamID
-                  : (nonnull NSNumber *)pcId
+                  : (nonnull NSNumber *)peerConnectionId
                   : (nonnull NSString *)trackID) {
     RTCMediaStream *mediaStream = self.localStreams[streamID];
     if (mediaStream == nil) {
         return;
     }
 
-    RTCMediaStreamTrack *track = [self trackForId:trackID pcId:pcId];
+    RTCMediaStreamTrack *track = [self trackForId:trackID peerConnectionId:peerConnectionId];
     if (track == nil) {
         return;
     }
@@ -339,14 +350,14 @@ RCT_EXPORT_METHOD(mediaStreamAddTrack
 
 RCT_EXPORT_METHOD(mediaStreamRemoveTrack
                   : (nonnull NSString *)streamID
-                  : (nonnull NSNumber *)pcId
+                  : (nonnull NSNumber *)peerConnectionId
                   : (nonnull NSString *)trackID) {
     RTCMediaStream *mediaStream = self.localStreams[streamID];
     if (mediaStream == nil) {
         return;
     }
 
-    RTCMediaStreamTrack *track = [self trackForId:trackID pcId:pcId];
+    RTCMediaStreamTrack *track = [self trackForId:trackID peerConnectionId:peerConnectionId];
     if (track == nil) {
         return;
     }
@@ -379,8 +390,8 @@ RCT_EXPORT_METHOD(mediaStreamTrackRelease : (nonnull NSString *)trackID) {
 #endif
 }
 
-RCT_EXPORT_METHOD(mediaStreamTrackSetEnabled : (nonnull NSNumber *)pcId : (nonnull NSString *)trackID : (BOOL)enabled) {
-    RTCMediaStreamTrack *track = [self trackForId:trackID pcId:pcId];
+RCT_EXPORT_METHOD(mediaStreamTrackSetEnabled : (nonnull NSNumber *)peerConnectionId : (nonnull NSString *)trackID : (BOOL)enabled) {
+    RTCMediaStreamTrack *track = [self trackForId:trackID peerConnectionId:peerConnectionId];
     if (track == nil) {
         return;
     }
@@ -409,22 +420,47 @@ RCT_EXPORT_METHOD(mediaStreamTrackSwitchCamera : (nonnull NSString *)trackID) {
 #endif
 }
 
-RCT_EXPORT_METHOD(mediaStreamTrackSetVolume : (nonnull NSNumber *)pcId : (nonnull NSString *)trackID : (double)volume) {
-    RTCMediaStreamTrack *track = [self trackForId:trackID pcId:pcId];
+RCT_EXPORT_METHOD(mediaStreamTrackSetVolume : (nonnull NSNumber *)peerConnectionId : (nonnull NSString *)trackID : (double)volume) {
+    RTCMediaStreamTrack *track = [self trackForId:trackID peerConnectionId:peerConnectionId];
     if (track && [track.kind isEqualToString:@"audio"]) {
         RTCAudioTrack *audioTrack = (RTCAudioTrack *)track;
         audioTrack.source.volume = volume;
     }
 }
 
+RCT_EXPORT_METHOD(mediaStreamTrackSetVideoEffects:(nonnull NSString *)trackID names:(nonnull NSArray<NSString *> *)names)
+{
+  RTCMediaStreamTrack *track = self.localTracks[trackID];
+  if (track) {
+    RTCVideoTrack *videoTrack = (RTCVideoTrack *)track;
+    RTCVideoSource *videoSource = videoTrack.source;
+    
+    NSMutableArray *processors = [[NSMutableArray alloc] init];
+    for (NSString *name in names) {
+      NSObject<VideoFrameProcessorDelegate> *processor = [ProcessorProvider getProcessor:name];
+      if (processor != nil) {
+        [processors addObject:processor];
+      }
+    }
+    
+    self.videoEffectProcessor = [[VideoEffectProcessor alloc] initWithProcessors:processors
+                                                                     videoSource:videoSource];
+    
+    VideoCaptureController *vcc = (VideoCaptureController *)videoTrack.captureController;
+    RTCVideoCapturer *capturer = vcc.capturer;
+    
+    capturer.delegate = self.videoEffectProcessor;
+  }
+}
+
 #pragma mark - Helpers
 
-- (RTCMediaStreamTrack *)trackForId:(nonnull NSString *)trackId pcId:(nonnull NSNumber *)pcId {
-    if ([pcId isEqualToNumber:[NSNumber numberWithInt:-1]]) {
+- (RTCMediaStreamTrack *)trackForId:(nonnull NSString *)trackId peerConnectionId:(nonnull NSNumber *)peerConnectionId {
+    if ([peerConnectionId isEqualToNumber:[NSNumber numberWithInt:-1]]) {
         return self.localTracks[trackId];
     }
 
-    RTCPeerConnection *peerConnection = self.peerConnections[pcId];
+    RTCPeerConnection *peerConnection = self.peerConnections[peerConnectionId];
     if (peerConnection == nil) {
         return nil;
     }

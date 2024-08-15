@@ -1,4 +1,3 @@
-
 export default class RTCRtpCodecCapability {
     _mimeType: string;
 

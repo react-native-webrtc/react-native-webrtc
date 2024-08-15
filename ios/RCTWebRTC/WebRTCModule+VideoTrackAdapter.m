@@ -67,7 +67,7 @@ static const NSTimeInterval MUTE_DELAY = 1.5;
 
 - (void)emitMuteEvent:(BOOL)muted {
     [self.module sendEventWithName:kEventMediaStreamTrackMuteChanged
-                              body:@{@"pcId" : self.peerConnectionId, @"trackId" : self.trackId, @"muted" : @(muted)}];
+                              body:@{@"peerConnectionId" : self.peerConnectionId, @"trackId" : self.trackId, @"muted" : @(muted)}];
     RCTLog(@"[VideoTrackAdapter] %@ event for pc %@ track %@",
            muted ? @"Mute" : @"Unmute",
            self.peerConnectionId,

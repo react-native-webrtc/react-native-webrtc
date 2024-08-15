@@ -1,4 +1,3 @@
-
 import type MediaStreamError from './MediaStreamError';
 
 export default class MediaStreamErrorEvent {

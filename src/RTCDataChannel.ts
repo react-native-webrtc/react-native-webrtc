@@ -1,12 +1,11 @@
+import WebRTC from './wrapper';
+
 import * as base64 from 'base64-js';
 import { EventTarget, defineEventAttribute } from 'event-target-shim/index';
-import { NativeModules } from 'react-native';
 
 import { addListener, removeListener } from './EventEmitter';
 import MessageEvent from './MessageEvent';
 import RTCDataChannelEvent from './RTCDataChannelEvent';
-
-const { WebRTCModule } = NativeModules;
 
 type RTCDataChannelState = 'connecting' | 'open' | 'closing' | 'closed';
 
@@ -96,7 +95,7 @@ export default class RTCDataChannel extends EventTarget<DataChannelEventMap> {
     send(data: ArrayBufferView): void;
     send(data: string | ArrayBuffer | ArrayBufferView): void {
         if (typeof data === 'string') {
-            WebRTCModule.dataChannelSend(this._peerConnectionId, this._reactTag, data, 'text');
+            WebRTC.dataChannelSend(this._peerConnectionId, this._reactTag, data, 'text');
 
             return;
         }
@@ -112,7 +111,7 @@ export default class RTCDataChannel extends EventTarget<DataChannelEventMap> {
 
         const base64data = base64.fromByteArray(data as Uint8Array);
 
-        WebRTCModule.dataChannelSend(this._peerConnectionId, this._reactTag, base64data, 'binary');
+        WebRTC.dataChannelSend(this._peerConnectionId, this._reactTag, base64data, 'binary');
     }
 
     close(): void {
@@ -120,7 +119,7 @@ export default class RTCDataChannel extends EventTarget<DataChannelEventMap> {
             return;
         }
 
-        WebRTCModule.dataChannelClose(this._peerConnectionId, this._reactTag);
+        WebRTC.dataChannelClose(this._peerConnectionId, this._reactTag);
     }
 
     _registerEvents(): void {
@@ -145,7 +144,7 @@ export default class RTCDataChannel extends EventTarget<DataChannelEventMap> {
                 // This DataChannel is done, clean up event handlers.
                 removeListener(this);
 
-                WebRTCModule.dataChannelDispose(this._peerConnectionId, this._reactTag);
+                WebRTC.dataChannelDispose(this._peerConnectionId, this._reactTag);
             }
         });
 
