@@ -1,13 +1,22 @@
 package com.oney.rnwebrtc;
 
+import android.content.Context;
+import android.hardware.camera2.CameraManager;
 import android.util.Log;
+import android.util.Pair;
+import androidx.annotation.Nullable;
 
 import com.facebook.react.bridge.ReadableMap;
 
 import com.oney.rnwebrtc.utils.ReactBridgeUtil;
 
+import org.webrtc.Camera1Capturer;
+import org.webrtc.Camera1Helper;
+import org.webrtc.Camera2Capturer;
+import org.webrtc.Camera2Helper;
 import org.webrtc.CameraEnumerator;
 import org.webrtc.CameraVideoCapturer;
+import org.webrtc.Size;
 import org.webrtc.VideoCapturer;
 
 import java.util.ArrayList;
@@ -21,6 +30,7 @@ public class CameraCaptureController extends AbstractVideoCaptureController {
 
     private boolean isFrontFacing;
 
+    private final Context context;
     private final CameraEnumerator cameraEnumerator;
     private final ReadableMap constraints;
 
@@ -32,9 +42,10 @@ public class CameraCaptureController extends AbstractVideoCaptureController {
      */
     private final CameraEventsHandler cameraEventsHandler = new CameraEventsHandler();
 
-    public CameraCaptureController(CameraEnumerator cameraEnumerator, ReadableMap constraints) {
+    public CameraCaptureController(Context context, CameraEnumerator cameraEnumerator, ReadableMap constraints) {
         super(constraints.getInt("width"), constraints.getInt("height"), constraints.getInt("frameRate"));
 
+        this.context = context;
         this.cameraEnumerator = cameraEnumerator;
         this.constraints = constraints;
     }
@@ -77,7 +88,30 @@ public class CameraCaptureController extends AbstractVideoCaptureController {
         String deviceId = ReactBridgeUtil.getMapStrValue(this.constraints, "deviceId");
         String facingMode = ReactBridgeUtil.getMapStrValue(this.constraints, "facingMode");
 
-        return createVideoCapturer(deviceId, facingMode);
+        Pair<String, VideoCapturer> result = createVideoCapturer(deviceId, facingMode);
+        if(result == null) {
+            return null;
+        }
+
+        String cameraName = result.first;
+        VideoCapturer videoCapturer = result.second;
+
+        // Find actual capture format.
+        Size actualSize = null;
+        if (videoCapturer instanceof Camera1Capturer) {
+            int cameraId = Camera1Helper.getCameraId(cameraName);
+            actualSize = Camera1Helper.findClosestCaptureFormat(cameraId, targetWidth, targetHeight);
+        } else if (videoCapturer instanceof Camera2Capturer) {
+            CameraManager cameraManager = (CameraManager) context.getSystemService(Context.CAMERA_SERVICE);
+            actualSize = Camera2Helper.findClosestCaptureFormat(cameraManager, cameraName, targetWidth, targetHeight);
+        }
+
+        if (actualSize != null) {
+            actualWidth = actualSize.width;
+            actualHeight = actualSize.height;
+        }
+
+        return videoCapturer;
     }
 
     /**
@@ -119,10 +153,11 @@ public class CameraCaptureController extends AbstractVideoCaptureController {
      * @param facingMode the facing of the requested video source such as
      * {@code user} and {@code environment}. If {@code null}, "user" is
      * presumed.
-     * @return a {@code VideoCapturer} satisfying the {@code facingMode} or
-     * {@code deviceId} constraint
+     * @return a pair containing the deviceId and {@code VideoCapturer} satisfying the {@code facingMode} or
+     * {@code deviceId} constraint, or null.
      */
-    private VideoCapturer createVideoCapturer(String deviceId, String facingMode) {
+    @Nullable
+    private Pair<String, VideoCapturer> createVideoCapturer(String deviceId, String facingMode) {
         String[] deviceNames = cameraEnumerator.getDeviceNames();
         List<String> failedDevices = new ArrayList<>();
 
@@ -141,7 +176,7 @@ public class CameraCaptureController extends AbstractVideoCaptureController {
             if (videoCapturer != null) {
                 Log.d(TAG, message + " succeeded");
                 this.isFrontFacing = cameraEnumerator.isFrontFacing(cameraName);
-                return videoCapturer;
+                return new Pair(cameraName, videoCapturer);
             } else {
                 // fallback to facingMode
                 Log.d(TAG, message + " failed");
@@ -163,7 +198,7 @@ public class CameraCaptureController extends AbstractVideoCaptureController {
             if (videoCapturer != null) {
                 Log.d(TAG, message + " succeeded");
                 this.isFrontFacing = cameraEnumerator.isFrontFacing(name);
-                return videoCapturer;
+                return new Pair(name, videoCapturer);
             } else {
                 Log.d(TAG, message + " failed");
                 failedDevices.add(name);
@@ -178,7 +213,7 @@ public class CameraCaptureController extends AbstractVideoCaptureController {
                 if (videoCapturer != null) {
                     Log.d(TAG, message + " succeeded");
                     this.isFrontFacing = cameraEnumerator.isFrontFacing(name);
-                    return videoCapturer;
+                    return new Pair(name, videoCapturer);
                 } else {
                     Log.d(TAG, message + " failed");
                     failedDevices.add(name);

@@ -342,7 +342,7 @@ export default class RTCPeerConnection extends EventTarget<RTCPeerConnectionEven
 
         const newSdp = await WebRTC.peerConnectionAddICECandidate(
             this._id,
-            candidate.toJSON ? candidate.toJSON() : candidate
+            RTCUtil.deepClone(candidate)
         );
 
         this.remoteDescription = new RTCSessionDescription(newSdp);
@@ -739,6 +739,10 @@ export default class RTCPeerConnection extends EventTarget<RTCPeerConnectionEven
      * instance such as id
      */
     createDataChannel(label: string, dataChannelDict?: RTCDataChannelInit): RTCDataChannel {
+        if (arguments.length === 0) {
+            throw new TypeError('1 argument required, but 0 present');
+        }
+
         if (dataChannelDict && 'id' in dataChannelDict) {
             const id = dataChannelDict.id;
 
@@ -747,7 +751,7 @@ export default class RTCPeerConnection extends EventTarget<RTCPeerConnectionEven
             }
         }
 
-        const channelInfo = WebRTC.createDataChannel(this._id, label, dataChannelDict);
+        const channelInfo = WebRTC.createDataChannel(this._id, String(label), dataChannelDict);
 
         if (channelInfo === null) {
             throw new TypeError('Failed to create new DataChannel');

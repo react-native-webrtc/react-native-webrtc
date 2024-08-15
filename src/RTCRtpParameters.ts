@@ -1,6 +1,7 @@
 import RTCRtcpParameters, { RTCRtcpParametersInit } from './RTCRtcpParameters';
 import RTCRtpCodecParameters, { RTCRtpCodecParametersInit } from './RTCRtpCodecParameters';
 import RTCRtpHeaderExtension, { RTCRtpHeaderExtensionInit } from './RTCRtpHeaderExtension';
+import { deepClone } from './RTCUtil';
 
 export interface RTCRtpParametersInit {
     codecs: RTCRtpCodecParametersInit[],
@@ -9,7 +10,7 @@ export interface RTCRtpParametersInit {
 }
 
 export default class RTCRtpParameters {
-    readonly codecs: RTCRtpCodecParameters[] = [];
+    codecs: (RTCRtpCodecParameters | RTCRtpCodecParametersInit)[] = [];
     readonly headerExtensions: RTCRtpHeaderExtension[] = [];
     readonly rtcp: RTCRtcpParameters;
 
@@ -25,11 +26,11 @@ export default class RTCRtpParameters {
         this.rtcp = new RTCRtcpParameters(init.rtcp);
     }
 
-    toJSON(): RTCRtpParametersInit {
+    toJSON() {
         return {
-            codecs: this.codecs.map(c => c.toJSON()),
-            headerExtensions: this.headerExtensions.map(he => he.toJSON()),
-            rtcp: this.rtcp.toJSON()
+            codecs: this.codecs.map(c => deepClone(c)),
+            headerExtensions: this.headerExtensions.map(he => deepClone(he)),
+            rtcp: deepClone(this.rtcp)
         };
     }
 }
