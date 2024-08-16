@@ -26,6 +26,33 @@ Navigate to `<ProjectFolder>/ios/<ProjectName>/` and edit `Info.plist`, add the 
 <string>Microphone permission description</string>
 ```
 
+## CallKit
+
+If your app uses a CallKit integration to handle incoming calls, then your
+CXProviderDelegate should call through to `RTCAudioSession.sharedInstance.audioSessionDidActivate/Deactivate` accordingly.
+
+```
+#import <WebRTC/RTCAudioSession.h>
+
+- (void) provider:(CXProvider *) provider didActivateAudioSession:(AVAudioSession *) audioSession {
+    [[RTCAudioSession sharedInstance] audioSessionDidActivate:[AVAudioSession sharedInstance]];
+}
+
+- (void) provider:(CXProvider *) provider didDeactivateAudioSession:(AVAudioSession *) audioSession {
+    [[RTCAudioSession sharedInstance] audioSessionDidDeactivate:[AVAudioSession sharedInstance]];
+}
+```
+
+Javascript methods are also provided to call these methods:
+
+```
+import { RTCAudioSession } from 'react-native-webrtc'
+
+// Call as needed.
+RTCAudioSession.audioSessionDidActivate();
+RTCAudioSession.audioSessionDidDeactivate();
+```
+
 ## Library not loaded/Code signature invalid
 
 This is an issue with iOS 13.3.1.  
