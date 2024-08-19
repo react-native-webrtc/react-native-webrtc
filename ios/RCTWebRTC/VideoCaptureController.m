@@ -9,7 +9,6 @@
 @property(nonatomic, strong) RTCCameraVideoCapturer *capturer;
 @property(nonatomic, strong) AVCaptureDeviceFormat *selectedFormat;
 @property(nonatomic, strong) AVCaptureDevice *device;
-@property(nonatomic, copy) NSString *deviceId;
 @property(nonatomic, assign) BOOL running;
 @property(nonatomic, assign) BOOL usingFrontCamera;
 @property(nonatomic, assign) int width;
@@ -67,6 +66,7 @@
         AVCaptureDevicePosition position =
             self.usingFrontCamera ? AVCaptureDevicePositionFront : AVCaptureDevicePositionBack;
         self.device = [self findDeviceForPosition:position];
+        self.deviceId = self.device.uniqueID;
     }
 
     if (!self.device) {

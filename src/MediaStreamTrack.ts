@@ -98,7 +98,7 @@ export default class MediaStreamTrack extends EventTarget<MediaStreamTrackEventM
      * This is how the reference application (AppRTCMobile) implements camera
      * switching.
      */
-    _switchCamera(): void {
+    async _switchCamera(): Promise<void> {
         if (this.remote) {
             throw new Error('Not implemented for remote tracks');
         }
@@ -107,7 +107,7 @@ export default class MediaStreamTrack extends EventTarget<MediaStreamTrackEventM
             throw new Error('Only implemented for video tracks');
         }
 
-        WebRTCModule.mediaStreamTrackSwitchCamera(this.id);
+        this._settings = await WebRTCModule.mediaStreamTrackSwitchCamera(this.id);
     }
 
     _setVideoEffect(name:string) {

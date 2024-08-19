@@ -1,5 +1,7 @@
 package com.oney.WebRTCModule;
 
+import androidx.annotation.Nullable;
+
 import org.webrtc.VideoCapturer;
 
 public abstract class AbstractVideoCaptureController {
@@ -30,6 +32,9 @@ public abstract class AbstractVideoCaptureController {
     public void initializeVideoCapturer() {
         videoCapturer = createVideoCapturer();
     }
+
+    @Nullable
+    public abstract String getDeviceId();
 
     public void dispose() {
         if (videoCapturer != null) {

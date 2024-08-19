@@ -29,6 +29,7 @@ NSString *const kRTCAppGroupIdentifier = @"RTCAppGroupIdentifier";
     self = [super init];
     if (self) {
         self.capturer = capturer;
+        self.deviceId = @"screen-capture";
     }
 
     return self;

@@ -6,6 +6,9 @@ import android.util.Log;
 import android.util.Pair;
 import androidx.annotation.Nullable;
 
+import androidx.annotation.Nullable;
+import androidx.core.util.Consumer;
+
 import com.facebook.react.bridge.ReadableMap;
 
 import org.webrtc.Camera1Capturer;
@@ -19,6 +22,7 @@ import org.webrtc.VideoCapturer;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 public class CameraCaptureController extends AbstractVideoCaptureController {
     /**
@@ -27,6 +31,8 @@ public class CameraCaptureController extends AbstractVideoCaptureController {
     private static final String TAG = CameraCaptureController.class.getSimpleName();
 
     private boolean isFrontFacing;
+    @Nullable
+    private String currentDeviceId = null;
 
     private final Context context;
     private final CameraEnumerator cameraEnumerator;
@@ -38,7 +44,21 @@ public class CameraCaptureController extends AbstractVideoCaptureController {
      * implementation does not do anything but logging unspecific to the camera
      * device's name anyway.
      */
-    private final CameraEventsHandler cameraEventsHandler = new CameraEventsHandler();
+    private final CameraEventsHandler cameraEventsHandler = new CameraEventsHandler() {
+
+        @Override
+        public void onCameraOpening(String cameraName) {
+            super.onCameraOpening(cameraName);
+            String[] deviceNames = cameraEnumerator.getDeviceNames();
+            CameraCaptureController.this.currentDeviceId = null;
+            for (int i = 0; i < deviceNames.length; i++) {
+                if (Objects.equals(deviceNames[i], cameraName)) {
+                    CameraCaptureController.this.currentDeviceId = String.valueOf(i);
+                    break;
+                }
+            }
+        }
+    };
 
     public CameraCaptureController(Context context, CameraEnumerator cameraEnumerator, ReadableMap constraints) {
         super(constraints.getInt("width"), constraints.getInt("height"), constraints.getInt("frameRate"));
@@ -48,7 +68,13 @@ public class CameraCaptureController extends AbstractVideoCaptureController {
         this.constraints = constraints;
     }
 
-    public void switchCamera() {
+    @Nullable
+    @Override
+    public String getDeviceId() {
+        return currentDeviceId;
+    }
+
+    public void switchCamera(Consumer<Exception> onFinishedCallback) {
         if (videoCapturer instanceof CameraVideoCapturer) {
             CameraVideoCapturer capturer = (CameraVideoCapturer) videoCapturer;
             String[] deviceNames = cameraEnumerator.getDeviceNames();
@@ -63,13 +89,20 @@ public class CameraCaptureController extends AbstractVideoCaptureController {
             if (deviceCount == 2) {
                 capturer.switchCamera(new CameraVideoCapturer.CameraSwitchHandler() {
                     @Override
-                    public void onCameraSwitchDone(boolean b) {
-                        isFrontFacing = b;
+                    public void onCameraSwitchDone(boolean isFrontCamera) {
+                        isFrontFacing = isFrontCamera;
+                        if(onFinishedCallback != null) {
+                            onFinishedCallback.accept(null);
+                        }
                     }
 
                     @Override
                     public void onCameraSwitchError(String s) {
-                        Log.e(TAG, "Error switching camera: " + s);
+                        Exception e = new Exception("Error switching camera: " + s);
+                        Log.e(TAG, "OnCameraSwitchError", e);
+                        if(onFinishedCallback != null) {
+                            onFinishedCallback.accept(e);
+                        }
                     }
                 });
                 return;
@@ -77,7 +110,7 @@ public class CameraCaptureController extends AbstractVideoCaptureController {
 
             // If we are here the device has more than 2 cameras. Cycle through them
             // and switch to the first one of the desired facing mode.
-            switchCamera(!isFrontFacing, deviceCount);
+            switchCamera(!isFrontFacing, deviceCount, onFinishedCallback);
         }
     }
 
@@ -118,7 +151,7 @@ public class CameraCaptureController extends AbstractVideoCaptureController {
      * @param desiredFrontFacing - The desired front facing value.
      * @param tries - How many times to try switching.
      */
-    private void switchCamera(boolean desiredFrontFacing, int tries) {
+    private void switchCamera(boolean desiredFrontFacing, int tries, Consumer<Exception> onFinishedCallback) {
         CameraVideoCapturer capturer = (CameraVideoCapturer) videoCapturer;
 
         capturer.switchCamera(new CameraVideoCapturer.CameraSwitchHandler() {
@@ -127,16 +160,23 @@ public class CameraCaptureController extends AbstractVideoCaptureController {
                 if (b != desiredFrontFacing) {
                     int newTries = tries - 1;
                     if (newTries > 0) {
-                        switchCamera(desiredFrontFacing, newTries);
+                        switchCamera(desiredFrontFacing, newTries, onFinishedCallback);
                     }
                 } else {
                     isFrontFacing = desiredFrontFacing;
+                    if(onFinishedCallback != null) {
+                        onFinishedCallback.accept(null);
+                    }
                 }
             }
 
             @Override
             public void onCameraSwitchError(String s) {
-                Log.e(TAG, "Error switching camera: " + s);
+                Exception e = new Exception("Error switching camera: " + s);
+                Log.e(TAG, "OnCameraSwitchError", e);
+                if(onFinishedCallback != null) {
+                    onFinishedCallback.accept(e);
+                }
             }
         });
     }
@@ -160,9 +200,10 @@ public class CameraCaptureController extends AbstractVideoCaptureController {
         List<String> failedDevices = new ArrayList<>();
 
         String cameraName = null;
+        int cameraIndex = 0;
         try {
-            int index = Integer.parseInt(deviceId);
-            cameraName = deviceNames[index];
+            cameraIndex = Integer.parseInt(deviceId);
+            cameraName = deviceNames[cameraIndex];
         } catch (Exception e) {
             Log.d(TAG, "failed to find device with id: " + deviceId);
         }
@@ -174,6 +215,7 @@ public class CameraCaptureController extends AbstractVideoCaptureController {
             if (videoCapturer != null) {
                 Log.d(TAG, message + " succeeded");
                 this.isFrontFacing = cameraEnumerator.isFrontFacing(cameraName);
+                this.currentDeviceId = String.valueOf(cameraIndex);
                 return new Pair(cameraName, videoCapturer);
             } else {
                 // fallback to facingMode
@@ -184,7 +226,9 @@ public class CameraCaptureController extends AbstractVideoCaptureController {
 
         // Otherwise, use facingMode (defaulting to front/user facing).
         final boolean isFrontFacing = facingMode == null || !facingMode.equals("environment");
+        cameraIndex = -1;
         for (String name : deviceNames) {
+            cameraIndex++;
             if (failedDevices.contains(name)) {
                 continue;
             }
@@ -196,6 +240,7 @@ public class CameraCaptureController extends AbstractVideoCaptureController {
             if (videoCapturer != null) {
                 Log.d(TAG, message + " succeeded");
                 this.isFrontFacing = cameraEnumerator.isFrontFacing(name);
+                this.currentDeviceId = String.valueOf(cameraIndex);
                 return new Pair(name, videoCapturer);
             } else {
                 Log.d(TAG, message + " failed");
@@ -203,22 +248,24 @@ public class CameraCaptureController extends AbstractVideoCaptureController {
             }
         }
 
+        cameraIndex = -1;
         // Fallback to any available camera.
         for (String name : deviceNames) {
+            cameraIndex++;
             if (!failedDevices.contains(name)) {
                 VideoCapturer videoCapturer = cameraEnumerator.createCapturer(name, cameraEventsHandler);
                 String message = "Create fallback camera " + name;
                 if (videoCapturer != null) {
                     Log.d(TAG, message + " succeeded");
                     this.isFrontFacing = cameraEnumerator.isFrontFacing(name);
+                    this.currentDeviceId = String.valueOf(cameraIndex);
                     return new Pair(name, videoCapturer);
                 } else {
-                    Log.d(TAG, message + " failed");
                     failedDevices.add(name);
                 }
-            }
         }
 
+        currentDeviceId = null;
         Log.w(TAG, "Unable to identify a suitable camera.");
 
         return null;

@@ -81,8 +81,19 @@
                 VideoCaptureController *vcc = (VideoCaptureController *)videoTrack.captureController;
                 AVCaptureDeviceFormat *format = vcc.selectedFormat;
                 CMVideoDimensions dimensions = CMVideoFormatDescriptionGetDimensions(format.formatDescription);
-                settings = @{@"height" : @(dimensions.height), @"width" : @(dimensions.width), @"frameRate" : @(30)};
+                settings = @{
+                    @"deviceId": vcc.deviceId,
+                    @"groupId": @"",
+                    @"height" : @(dimensions.height),
+                    @"width" : @(dimensions.width),
+                    @"frameRate" : @(30)
+                };
             }
+        } else if ([track.kind isEqualToString:@"audio"]) {
+            settings = @{
+                @"deviceId": @"",
+                @"groupId": @"",
+            };
         }
 
         [trackInfos addObject:@{
@@ -237,7 +248,18 @@ RCT_EXPORT_METHOD(getUserMedia
             VideoCaptureController *vcc = (VideoCaptureController *)videoTrack.captureController;
             AVCaptureDeviceFormat *format = vcc.selectedFormat;
             CMVideoDimensions dimensions = CMVideoFormatDescriptionGetDimensions(format.formatDescription);
-            settings = @{@"height" : @(dimensions.height), @"width" : @(dimensions.width), @"frameRate" : @(30)};
+            settings = @{
+                @"deviceId": vcc.deviceId,
+                @"groupId": @"",
+                @"height" : @(dimensions.height),
+                @"width" : @(dimensions.width),
+                @"frameRate" : @(30)
+            };
+        } else if ([track.kind isEqualToString:@"audio"]) {
+            settings = @{
+                @"deviceId": @"",
+                @"groupId": @"",
+            };
         }
 
         [tracks addObject:@{
@@ -267,11 +289,11 @@ RCT_EXPORT_METHOD(enumerateDevices : (RCTResponseSenderBlock)callback) {
     if (@available(macos 14.0, ios 17.0, tvos 17.0, *)) {
         [deviceTypes addObject:AVCaptureDeviceTypeExternal];
     }
-    AVCaptureDeviceDiscoverySession *videoevicesSession =
+    AVCaptureDeviceDiscoverySession *videoDevicesSession =
         [AVCaptureDeviceDiscoverySession discoverySessionWithDeviceTypes:deviceTypes
                                                                mediaType:AVMediaTypeVideo
                                                                 position:AVCaptureDevicePositionUnspecified];
-    for (AVCaptureDevice *device in videoevicesSession.devices) {
+    for (AVCaptureDevice *device in videoDevicesSession.devices) {
         NSString *position = @"unknown";
         if (device.position == AVCaptureDevicePositionBack) {
             position = @"environment";
@@ -397,14 +419,35 @@ RCT_EXPORT_METHOD(mediaStreamTrackSetEnabled : (nonnull NSNumber *)pcId : (nonnu
 #endif
 }
 
-RCT_EXPORT_METHOD(mediaStreamTrackSwitchCamera : (nonnull NSString *)trackID) {
+RCT_EXPORT_METHOD(mediaStreamTrackSwitchCamera : (nonnull NSString *)trackID resolver: (RCTPromiseResolveBlock)resolve rejecter : (RCTPromiseRejectBlock)reject) {
 #if TARGET_OS_TV
+    reject(@"unsupported_platform", @"tvOS is not supported", nil);
     return;
 #else
     RTCMediaStreamTrack *track = self.localTracks[trackID];
     if (track) {
-        RTCVideoTrack *videoTrack = (RTCVideoTrack *)track;
-        [(VideoCaptureController *)videoTrack.captureController switchCamera];
+        if ([track.kind isEqualToString:@"video"]) {
+            RTCVideoTrack *videoTrack = (RTCVideoTrack *)track;
+            VideoCaptureController *vcc = (VideoCaptureController *)videoTrack.captureController;
+            [vcc switchCamera];
+            AVCaptureDeviceFormat *format = vcc.selectedFormat;
+            CMVideoDimensions dimensions = CMVideoFormatDescriptionGetDimensions(format.formatDescription);
+
+            NSDictionary *settings = @{
+                @"deviceId": vcc.deviceId,
+                @"groupId": @"",
+                @"height" : @(dimensions.height),
+                @"width" : @(dimensions.width),
+                @"frameRate" : @(30)
+            };
+            resolve(settings);
+        } else {
+            RCTLogWarn(@"mediaStreamTrackSwitchCamera() track is not video");
+            reject(@"E_INVALID", @"Can't switch camera on audio tracks", nil);
+        }
+    } else {
+        RCTLogWarn(@"mediaStreamTrackSwitchCamera() track is null");
+        reject(@"E_INVALID", @"Could not get track", nil);
     }
 #endif
 }
