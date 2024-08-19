@@ -10,6 +10,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 - (void)startCapture;
 - (void)stopCapture;
+- (NSDictionary *)getSettings;
 
 @end
 

@@ -165,11 +165,8 @@ export default class MediaStreamTrack extends EventTarget<MediaStreamTrackEventM
             video = constraints;
         }
 
-        let normalized = normalizeConstraints({
-            video
-        });
+        let normalized = normalizeConstraints({ video });
 
-        console.log("apply constraints normalized: ", normalized.video);
         this._settings = await WebRTCModule.mediaStreamTrackApplyConstraints(this.id, normalized.video);
     }
 

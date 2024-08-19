@@ -77,21 +77,12 @@
         NSDictionary *settings = @{};
         if ([track.kind isEqualToString:@"video"]) {
             RTCVideoTrack *videoTrack = (RTCVideoTrack *)track;
-            if ([videoTrack.captureController isKindOfClass:[VideoCaptureController class]]) {
-                VideoCaptureController *vcc = (VideoCaptureController *)videoTrack.captureController;
-                AVCaptureDeviceFormat *format = vcc.selectedFormat;
-                CMVideoDimensions dimensions = CMVideoFormatDescriptionGetDimensions(format.formatDescription);
-                settings = @{
-                    @"deviceId": vcc.deviceId,
-                    @"groupId": @"",
-                    @"height" : @(dimensions.height),
-                    @"width" : @(dimensions.width),
-                    @"frameRate" : @(30)
-                };
+            if ([videoTrack.captureController isKindOfClass:[CaptureController class]]) {
+                settings = [vcc getSettings];
             }
         } else if ([track.kind isEqualToString:@"audio"]) {
             settings = @{
-                @"deviceId": @"",
+                @"deviceId": @"audio",
                 @"groupId": @"",
             };
         }
@@ -245,19 +236,12 @@ RCT_EXPORT_METHOD(getUserMedia
         NSDictionary *settings = @{};
         if ([track.kind isEqualToString:@"video"]) {
             RTCVideoTrack *videoTrack = (RTCVideoTrack *)track;
-            VideoCaptureController *vcc = (VideoCaptureController *)videoTrack.captureController;
-            AVCaptureDeviceFormat *format = vcc.selectedFormat;
-            CMVideoDimensions dimensions = CMVideoFormatDescriptionGetDimensions(format.formatDescription);
-            settings = @{
-                @"deviceId": vcc.deviceId,
-                @"groupId": @"",
-                @"height" : @(dimensions.height),
-                @"width" : @(dimensions.width),
-                @"frameRate" : @(30)
-            };
+            if ([videoTrack.captureController isKindOfClass:[CaptureController class]]) {
+                settings = [vcc getSettings];
+            }
         } else if ([track.kind isEqualToString:@"audio"]) {
             settings = @{
-                @"deviceId": @"",
+                @"deviceId": @"audio",
                 @"groupId": @"",
             };
         }
@@ -420,6 +404,39 @@ RCT_EXPORT_METHOD(mediaStreamTrackSetEnabled : (nonnull NSNumber *)pcId : (nonnu
 }
 
 RCT_EXPORT_METHOD(mediaStreamTrackSwitchCamera : (nonnull NSString *)trackID resolver: (RCTPromiseResolveBlock)resolve rejecter : (RCTPromiseRejectBlock)reject) {
+#if TARGET_OS_TV
+    reject(@"unsupported_platform", @"tvOS is not supported", nil);
+    return;
+#else
+    RTCMediaStreamTrack *track = self.localTracks[trackID];
+    if (track) {
+        if ([track.kind isEqualToString:@"video"]) {
+            RTCVideoTrack *videoTrack = (RTCVideoTrack *)track;
+            VideoCaptureController *vcc = (VideoCaptureController *)videoTrack.captureController;
+            [vcc switchCamera];
+            AVCaptureDeviceFormat *format = vcc.selectedFormat;
+            CMVideoDimensions dimensions = CMVideoFormatDescriptionGetDimensions(format.formatDescription);
+
+            NSDictionary *settings = @{
+                @"deviceId": vcc.deviceId,
+                @"groupId": @"",
+                @"height" : @(dimensions.height),
+                @"width" : @(dimensions.width),
+                @"frameRate" : @(30)
+            };
+            resolve(settings);
+        } else {
+            RCTLogWarn(@"mediaStreamTrackSwitchCamera() track is not video");
+            reject(@"E_INVALID", @"Can't switch camera on audio tracks", nil);
+        }
+    } else {
+        RCTLogWarn(@"mediaStreamTrackSwitchCamera() track is null");
+        reject(@"E_INVALID", @"Could not get track", nil);
+    }
+#endif
+}
+
+RCT_EXPORT_METHOD(mediaStreamTrackApplyConstraints : (nonnull NSString *)trackID : (NSDictionary *)constraints : (RCTPromiseResolveBlock)resolve : (RCTPromiseRejectBlock)reject) {
 #if TARGET_OS_TV
     reject(@"unsupported_platform", @"tvOS is not supported", nil);
     return;

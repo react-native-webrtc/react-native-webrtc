@@ -12,6 +12,13 @@
     // subclasses needs to override
 }
 
+- (NSDictionary *) getSettings {
+    // subclasses needs to override
+    return @{
+        @"deviceId": self.deviceId
+    };
+}
+
 @end
 
 #endif

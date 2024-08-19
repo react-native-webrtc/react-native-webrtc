@@ -24,31 +24,7 @@
     if (self) {
         self.capturer = capturer;
         self.running = NO;
-
-        // Default to the front camera.
-        self.usingFrontCamera = YES;
-
-        self.deviceId = constraints[@"deviceId"];
-        self.width = [constraints[@"width"] intValue];
-        self.height = [constraints[@"height"] intValue];
-        self.frameRate = [constraints[@"frameRate"] intValue];
-
-        id facingMode = constraints[@"facingMode"];
-
-        if (facingMode && [facingMode isKindOfClass:[NSString class]]) {
-            AVCaptureDevicePosition position;
-            if ([facingMode isEqualToString:@"environment"]) {
-                position = AVCaptureDevicePositionBack;
-            } else if ([facingMode isEqualToString:@"user"]) {
-                position = AVCaptureDevicePositionFront;
-            } else {
-                // If the specified facingMode value is not supported, fall back
-                // to the front camera.
-                position = AVCaptureDevicePositionFront;
-            }
-
-            self.usingFrontCamera = position == AVCaptureDevicePositionFront;
-        }
+        [self applyConstraints:constraints];
     }
 
     return self;
@@ -136,6 +112,48 @@
     [self startCapture];
 }
 
+- (void)applyConstraints:(NSDictionary *)constraints {
+    // Default to the front camera.
+    self.usingFrontCamera = YES;
+
+    self.deviceId = constraints[@"deviceId"];
+    self.width = [constraints[@"width"] intValue];
+    self.height = [constraints[@"height"] intValue];
+    self.frameRate = [constraints[@"frameRate"] intValue];
+
+    id facingMode = constraints[@"facingMode"];
+
+    if (facingMode && [facingMode isKindOfClass:[NSString class]]) {
+        AVCaptureDevicePosition position;
+        if ([facingMode isEqualToString:@"environment"]) {
+            position = AVCaptureDevicePositionBack;
+        } else if ([facingMode isEqualToString:@"user"]) {
+            position = AVCaptureDevicePositionFront;
+        } else {
+            // If the specified facingMode value is not supported, fall back
+            // to the front camera.
+            position = AVCaptureDevicePositionFront;
+        }
+
+        self.usingFrontCamera = position == AVCaptureDevicePositionFront;
+    }
+
+    if (self.running) {
+        [self startCapture];
+    }
+}
+
+- (NSDictionary *)getSettings {
+    AVCaptureDeviceFormat *format = vcc.selectedFormat;
+    CMVideoDimensions dimensions = CMVideoFormatDescriptionGetDimensions(format.formatDescription);
+    return @{
+        @"deviceId": self.deviceId,
+        @"groupId": @"",
+        @"height" : @(dimensions.height),
+        @"width" : @(dimensions.width),
+        @"frameRate" : @(30)
+    };
+}
 #pragma mark NSKeyValueObserving
 
 - (void)observeValueForKeyPath:(NSString *)keyPath
