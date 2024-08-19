@@ -113,15 +113,37 @@
 }
 
 - (void)applyConstraints:(NSDictionary *)constraints {
-    // Default to the front camera.
-    self.usingFrontCamera = YES;
+    // Clear device to prepare for starting camera with new constraints.
+    self.device = nil;
 
-    self.deviceId = constraints[@"deviceId"];
-    self.width = [constraints[@"width"] intValue];
-    self.height = [constraints[@"height"] intValue];
-    self.frameRate = [constraints[@"frameRate"] intValue];
+    BOOL hasChanged = NO;
+    
+    NSString *deviceId = constraints[@"deviceId"];
+    int width = [constraints[@"width"] intValue];
+    int height = [constraints[@"height"] intValue];
+    int frameRate = [constraints[@"frameRate"] intValue];
+
+    if (self.width != width) {
+        hasChanged = YES;
+        self.width = width;
+    }
+    
+    if (self.height != height) {
+        hasChanged = YES;
+        self.height = height;
+    }
+    
+    if (self.frameRate != frameRate) {
+        hasChanged = YES;
+        self.frameRate = frameRate;
+    }
 
     id facingMode = constraints[@"facingMode"];
+
+    if (!facingMode && !deviceId) {
+        // Default to front camera.
+        facingMode = @"user";
+    }
 
     if (facingMode && [facingMode isKindOfClass:[NSString class]]) {
         AVCaptureDevicePosition position;
@@ -135,24 +157,44 @@
             position = AVCaptureDevicePositionFront;
         }
 
-        self.usingFrontCamera = position == AVCaptureDevicePositionFront;
+        BOOL usingFrontCamera = position == AVCaptureDevicePositionFront;
+        if (self.usingFrontCamera != usingFrontCamera) {
+            hasChanged = YES;
+            self.usingFrontCamera = usingFrontCamera;
+        }
     }
 
-    if (self.running) {
+    if (!deviceId) {
+        AVCaptureDevicePosition position =
+            self.usingFrontCamera ? AVCaptureDevicePositionFront : AVCaptureDevicePositionBack;
+        deviceId = [self findDeviceForPosition:position].uniqueID;
+    }
+    
+    if (self.deviceId != deviceId && ![self.deviceId isEqualToString:deviceId]) {
+        hasChanged = YES;
+        self.deviceId = deviceId;
+    }
+
+
+    if (self.running && hasChanged) {
         [self startCapture];
     }
 }
 
 - (NSDictionary *)getSettings {
-    AVCaptureDeviceFormat *format = vcc.selectedFormat;
+    AVCaptureDeviceFormat *format = self.selectedFormat;
     CMVideoDimensions dimensions = CMVideoFormatDescriptionGetDimensions(format.formatDescription);
-    return @{
-        @"deviceId": self.deviceId,
+    NSMutableDictionary *settings = [[NSMutableDictionary alloc] initWithDictionary:@{
         @"groupId": @"",
         @"height" : @(dimensions.height),
         @"width" : @(dimensions.width),
         @"frameRate" : @(30)
-    };
+    }];
+
+    if (self.deviceId) {
+        settings[@"deviceId"] = self.deviceId;
+    }
+    return settings;
 }
 #pragma mark NSKeyValueObserving
 

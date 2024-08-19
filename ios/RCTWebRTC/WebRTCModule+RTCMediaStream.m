@@ -78,7 +78,7 @@
         if ([track.kind isEqualToString:@"video"]) {
             RTCVideoTrack *videoTrack = (RTCVideoTrack *)track;
             if ([videoTrack.captureController isKindOfClass:[CaptureController class]]) {
-                settings = [vcc getSettings];
+                settings = [videoTrack.captureController getSettings];
             }
         } else if ([track.kind isEqualToString:@"audio"]) {
             settings = @{
@@ -237,7 +237,7 @@ RCT_EXPORT_METHOD(getUserMedia
         if ([track.kind isEqualToString:@"video"]) {
             RTCVideoTrack *videoTrack = (RTCVideoTrack *)track;
             if ([videoTrack.captureController isKindOfClass:[CaptureController class]]) {
-                settings = [vcc getSettings];
+                settings = [videoTrack.captureController getSettings];
             }
         } else if ([track.kind isEqualToString:@"audio"]) {
             settings = @{
@@ -414,17 +414,8 @@ RCT_EXPORT_METHOD(mediaStreamTrackSwitchCamera : (nonnull NSString *)trackID res
             RTCVideoTrack *videoTrack = (RTCVideoTrack *)track;
             VideoCaptureController *vcc = (VideoCaptureController *)videoTrack.captureController;
             [vcc switchCamera];
-            AVCaptureDeviceFormat *format = vcc.selectedFormat;
-            CMVideoDimensions dimensions = CMVideoFormatDescriptionGetDimensions(format.formatDescription);
 
-            NSDictionary *settings = @{
-                @"deviceId": vcc.deviceId,
-                @"groupId": @"",
-                @"height" : @(dimensions.height),
-                @"width" : @(dimensions.width),
-                @"frameRate" : @(30)
-            };
-            resolve(settings);
+            resolve([vcc getSettings]);
         } else {
             RCTLogWarn(@"mediaStreamTrackSwitchCamera() track is not video");
             reject(@"E_INVALID", @"Can't switch camera on audio tracks", nil);
@@ -446,18 +437,9 @@ RCT_EXPORT_METHOD(mediaStreamTrackApplyConstraints : (nonnull NSString *)trackID
         if ([track.kind isEqualToString:@"video"]) {
             RTCVideoTrack *videoTrack = (RTCVideoTrack *)track;
             VideoCaptureController *vcc = (VideoCaptureController *)videoTrack.captureController;
-            [vcc switchCamera];
-            AVCaptureDeviceFormat *format = vcc.selectedFormat;
-            CMVideoDimensions dimensions = CMVideoFormatDescriptionGetDimensions(format.formatDescription);
+            [vcc applyConstraints:constraints];
 
-            NSDictionary *settings = @{
-                @"deviceId": vcc.deviceId,
-                @"groupId": @"",
-                @"height" : @(dimensions.height),
-                @"width" : @(dimensions.width),
-                @"frameRate" : @(30)
-            };
-            resolve(settings);
+            resolve([vcc getSettings]);
         } else {
             RCTLogWarn(@"mediaStreamTrackSwitchCamera() track is not video");
             reject(@"E_INVALID", @"Can't switch camera on audio tracks", nil);

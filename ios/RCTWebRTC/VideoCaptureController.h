@@ -13,6 +13,7 @@
 - (void)startCapture;
 - (void)stopCapture;
 - (void)switchCamera;
+- (void)applyConstraints:(NSDictionary *)constraints;
 
 @end
 #endif
