@@ -107,9 +107,10 @@ export default class MediaStreamTrack extends EventTarget<MediaStreamTrackEventM
             throw new Error('Only implemented for video tracks');
         }
 
-        let switchImpl = async () => {
+        const switchImpl = async () => {
             this._settings = await WebRTCModule.mediaStreamTrackSwitchCamera(this.id);
         };
+
         switchImpl();
     }
 
@@ -159,13 +160,14 @@ export default class MediaStreamTrack extends EventTarget<MediaStreamTrackEventM
         }
 
         let video: boolean | object;
-        if(constraints === undefined) {
+
+        if (constraints === undefined) {
             video = true;
         } else {
             video = constraints;
         }
 
-        let normalized = normalizeConstraints({ video });
+        const normalized = normalizeConstraints({ video });
 
         this._settings = await WebRTCModule.mediaStreamTrackApplyConstraints(this.id, normalized.video);
     }
