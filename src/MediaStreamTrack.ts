@@ -97,6 +97,8 @@ export default class MediaStreamTrack extends EventTarget<MediaStreamTrackEventM
      *
      * This is how the reference application (AppRTCMobile) implements camera
      * switching.
+     * 
+     * @deprecated Use applyConstraints instead.
      */
     _switchCamera(): void {
         if (this.remote) {
@@ -154,6 +156,16 @@ export default class MediaStreamTrack extends EventTarget<MediaStreamTrackEventM
         WebRTCModule.mediaStreamTrackSetVolume(this.remote ? this._peerConnectionId : -1, this.id, volume);
     }
 
+    /**
+     * Applies a new set of constraints to the track.
+     * 
+     * @param constraints An object listing the constraints
+     * to apply to the track's constrainable properties; any existing 
+     * constraints are replaced with the new values specified, and any 
+     * constrainable properties not included are restored to their default 
+     * constraints. If this parameter is omitted, all currently set custom 
+     * constraints are cleared.
+     */
     async applyConstraints(constraints?: object): Promise<void> {
         if (this.kind !== 'video') {
             throw new Error('Only implemented for video tracks');
