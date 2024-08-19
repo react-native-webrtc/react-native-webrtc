@@ -263,6 +263,7 @@ public class CameraCaptureController extends AbstractVideoCaptureController {
                 } else {
                     failedDevices.add(name);
                 }
+            }
         }
 
         currentDeviceId = null;
