@@ -36,27 +36,19 @@ public class CameraCaptureController extends AbstractVideoCaptureController {
 
     private final Context context;
     private final CameraEnumerator cameraEnumerator;
-    private final ReadableMap constraints;
+    private ReadableMap constraints;
 
     /**
      * The {@link CameraEventsHandler} used with
-     * {@link CameraEnumerator#createCapturer}. Cached because the
-     * implementation does not do anything but logging unspecific to the camera
-     * device's name anyway.
+     * {@link CameraEnumerator#createCapturer}.
      */
     private final CameraEventsHandler cameraEventsHandler = new CameraEventsHandler() {
 
         @Override
         public void onCameraOpening(String cameraName) {
             super.onCameraOpening(cameraName);
-            String[] deviceNames = cameraEnumerator.getDeviceNames();
-            CameraCaptureController.this.currentDeviceId = null;
-            for (int i = 0; i < deviceNames.length; i++) {
-                if (Objects.equals(deviceNames[i], cameraName)) {
-                    CameraCaptureController.this.currentDeviceId = String.valueOf(i);
-                    break;
-                }
-            }
+            updateActualSize(cameraName, videoCapturer);
+            CameraCaptureController.this.currentDeviceId = findDeviceId(cameraName);
         }
     };
 
@@ -74,6 +66,125 @@ public class CameraCaptureController extends AbstractVideoCaptureController {
         return currentDeviceId;
     }
 
+    private String findDeviceId(String cameraName) {
+        String[] deviceNames = cameraEnumerator.getDeviceNames();
+        for (int i = 0; i < deviceNames.length; i++) {
+            if (Objects.equals(deviceNames[i], cameraName)) {
+                return String.valueOf(i);
+            }
+        }
+        return null;
+    }
+
+    public void applyConstraints(ReadableMap constraints, Consumer<Exception> onFinishedCallback) {
+        ReadableMap oldConstraints = this.constraints;
+        int oldTargetWidth = this.targetWidth;
+        int oldTargetHeight = this.targetHeight;
+        int oldTargetFps = this.targetFps;
+
+        // Don't save constraints yet, since we may fail to find a fit.
+        Runnable saveConstraints = () -> {
+            this.constraints = constraints;
+            this.targetWidth = constraints.getInt("width");
+            this.targetHeight = constraints.getInt("height");
+            this.targetFps = constraints.getInt("frameRate");
+        };
+
+        if (videoCapturer == null) {
+            // No existing capturer, just let it initialize normally.
+            saveConstraints.run();
+            onFinishedCallback.accept(null);
+            return;
+        }
+
+        // Find target camera to switch to.
+        String[] deviceNames = cameraEnumerator.getDeviceNames();
+        final String deviceId = ReactBridgeUtil.getMapStrValue(constraints, "deviceId");
+        final String facingMode = ReactBridgeUtil.getMapStrValue(constraints, "facingMode");
+        final boolean isFrontFacing = facingMode == null || !facingMode.equals("environment");
+        int cameraIndex = -1;
+        String cameraName = null;
+
+        // If deviceId is specified, then it takes precedence over facingMode.
+        if (deviceId != null) {
+            try {
+                cameraIndex = Integer.parseInt(deviceId);
+                cameraName = deviceNames[cameraIndex];
+            } catch (Exception e) {
+                Log.d(TAG, "failed to find device with id: " + deviceId);
+            }
+        }
+
+
+        // Otherwise, use facingMode (defaulting to front/user facing).
+        if (cameraName == null) {
+            cameraIndex = -1;
+            for (String name : deviceNames) {
+                cameraIndex++;
+                if (cameraEnumerator.isFrontFacing(name) == isFrontFacing) {
+                    cameraName = name;
+                    break;
+                }
+            }
+        }
+
+        if (cameraName == null) {
+            onFinishedCallback.accept(new Exception("OverconstrainedError: could not find camera with deviceId: " + deviceId + " or facingMode: " + facingMode));
+            return;
+        }
+        
+        final String finalCameraName = cameraName; // For lambda reference
+        boolean shouldSwitchCamera = false;
+        try {
+            int currentCameraIndex = Integer.parseInt(currentDeviceId);
+            shouldSwitchCamera = cameraIndex != currentCameraIndex;
+        } catch (Exception e) {
+            shouldSwitchCamera = true;
+            Log.d(TAG, "Forcing camera switch, couldn't parse current device id: " + currentDeviceId);
+        }
+
+        CameraVideoCapturer capturer = (CameraVideoCapturer) videoCapturer;
+        Runnable changeFormatIfNeededAndFinish = () -> {
+            saveConstraints.run();
+            if (targetWidth != oldTargetWidth ||
+                    targetHeight != oldTargetHeight ||
+                    targetFps != oldTargetFps) {
+                updateActualSize(finalCameraName, videoCapturer);
+                capturer.changeCaptureFormat(targetWidth, targetHeight, targetFps);
+            }
+            if (onFinishedCallback != null) {
+                onFinishedCallback.accept(null);
+            }
+        };
+
+        if (shouldSwitchCamera) {
+            capturer.switchCamera(new CameraVideoCapturer.CameraSwitchHandler() {
+                @Override
+                public void onCameraSwitchDone(boolean isFrontCamera) {
+                    CameraCaptureController.this.isFrontFacing = isFrontCamera;
+                    changeFormatIfNeededAndFinish.run();
+                }
+
+                @Override
+                public void onCameraSwitchError(String s) {
+                    Exception e = new Exception("Error switching camera: " + s);
+                    Log.e(TAG, "OnCameraSwitchError", e);
+                    if(onFinishedCallback != null) {
+                        onFinishedCallback.accept(e);
+                    }
+                }
+            }, cameraName);
+        } else {
+            // No camera switch needed, just change format if needed.
+            changeFormatIfNeededAndFinish.run();
+        }
+    }
+
+    /**
+     * Use applyConstraints instead.
+     * @deprecated
+     */
+    @Deprecated
     public void switchCamera(Consumer<Exception> onFinishedCallback) {
         if (videoCapturer instanceof CameraVideoCapturer) {
             CameraVideoCapturer capturer = (CameraVideoCapturer) videoCapturer;
@@ -127,6 +238,12 @@ public class CameraCaptureController extends AbstractVideoCaptureController {
         String cameraName = result.first;
         VideoCapturer videoCapturer = result.second;
 
+        updateActualSize(cameraName, videoCapturer);
+
+        return videoCapturer;
+    }
+
+    private void updateActualSize(String cameraName, VideoCapturer videoCapturer) {
         // Find actual capture format.
         Size actualSize = null;
         if (videoCapturer instanceof Camera1Capturer) {
@@ -141,8 +258,6 @@ public class CameraCaptureController extends AbstractVideoCaptureController {
             actualWidth = actualSize.width;
             actualHeight = actualSize.height;
         }
-
-        return videoCapturer;
     }
 
     /**

@@ -2,12 +2,15 @@ package com.oney.WebRTCModule;
 
 import androidx.annotation.Nullable;
 
+import com.facebook.react.bridge.Arguments;
+import com.facebook.react.bridge.WritableMap;
+
 import org.webrtc.VideoCapturer;
 
 public abstract class AbstractVideoCaptureController {
-    protected final int targetWidth;
-    protected final int targetHeight;
-    protected final int targetFps;
+    protected int targetWidth;
+    protected int targetHeight;
+    protected int targetFps;
 
     protected int actualWidth;
     protected int actualHeight;
@@ -53,6 +56,16 @@ public abstract class AbstractVideoCaptureController {
 
     public int getFrameRate() {
         return actualFps;
+    }
+
+    public WritableMap getSettings() {
+        WritableMap settings = Arguments.createMap();
+        settings.putString("deviceId", getDeviceId());
+        settings.putString("groupId", "");
+        settings.putInt("height", getHeight());
+        settings.putInt("width", getWidth());
+        settings.putInt("frameRate", getFrameRate());
+        return settings;
     }
 
     public VideoCapturer getVideoCapturer() {

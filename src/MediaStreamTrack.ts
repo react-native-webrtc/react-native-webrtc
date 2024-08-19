@@ -3,7 +3,7 @@ import { NativeModules } from 'react-native';
 
 import { addListener, removeListener } from './EventEmitter';
 import Logger from './Logger';
-import { deepClone } from './RTCUtil';
+import { deepClone, normalizeConstraints } from './RTCUtil';
 
 const log = new Logger('pc');
 const { WebRTCModule } = NativeModules;
@@ -153,8 +153,24 @@ export default class MediaStreamTrack extends EventTarget<MediaStreamTrackEventM
         WebRTCModule.mediaStreamTrackSetVolume(this.remote ? this._peerConnectionId : -1, this.id, volume);
     }
 
-    applyConstraints(): never {
-        throw new Error('Not implemented.');
+    async applyConstraints(constraints?: object): Promise<void> {
+        if (this.kind !== 'video') {
+            throw new Error('Only implemented for video tracks');
+        }
+
+        let video: boolean | object;
+        if(constraints === undefined) {
+            video = true;
+        } else {
+            video = constraints;
+        }
+
+        let normalized = normalizeConstraints({
+            video
+        });
+
+        console.log("apply constraints normalized: ", normalized.video);
+        this._settings = await WebRTCModule.mediaStreamTrackApplyConstraints(this.id, normalized.video);
     }
 
     clone(): never {

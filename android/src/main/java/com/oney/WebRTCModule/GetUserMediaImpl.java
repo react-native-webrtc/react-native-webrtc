@@ -245,13 +245,7 @@ class GetUserMediaImpl {
                         return;
                     }
 
-                    WritableMap settings = Arguments.createMap();
-                    settings.putString("deviceId", cameraCaptureController.getDeviceId());
-                    settings.putString("groupId", "");
-                    settings.putInt("height", cameraCaptureController.getHeight());
-                    settings.putInt("width", cameraCaptureController.getWidth());
-                    settings.putInt("frameRate", cameraCaptureController.getFrameRate());
-                    promise.resolve(settings);
+                    promise.resolve(cameraCaptureController.getSettings());
                 }
             });
         } else {
@@ -259,6 +253,24 @@ class GetUserMediaImpl {
         }
     }
 
+    void applyConstraints(String trackId, ReadableMap constraints, Promise promise) {
+        TrackPrivate track = tracks.get(trackId);
+        if (track != null && track.videoCaptureController instanceof CameraCaptureController) {
+            CameraCaptureController cameraCaptureController = (CameraCaptureController) track.videoCaptureController;
+            cameraCaptureController.applyConstraints(constraints, new Consumer<Exception>() {
+                public void accept(Exception e) {
+                    if(e != null) {
+                        promise.reject(e);
+                        return;
+                    }
+
+                    promise.resolve(cameraCaptureController.getSettings());
+                }
+            });
+        } else {
+            promise.reject(new Exception("Camera track not found!"));
+        }
+    }
     void getDisplayMedia(Promise promise) {
         if (this.displayMediaPromise != null) {
             promise.reject(new RuntimeException("Another operation is pending."));
@@ -345,13 +357,7 @@ class GetUserMediaImpl {
             if (track instanceof VideoTrack) {
                 TrackPrivate tp = this.tracks.get(trackId);
                 AbstractVideoCaptureController vcc = tp.videoCaptureController;
-                WritableMap settings = Arguments.createMap();
-                settings.putString("deviceId", vcc.getDeviceId());
-                settings.putString("groupId", "");
-                settings.putInt("height", vcc.getHeight());
-                settings.putInt("width", vcc.getWidth());
-                settings.putInt("frameRate", vcc.getFrameRate());
-                trackInfo.putMap("settings", settings);
+                trackInfo.putMap("settings", vcc.getSettings());
             }
 
             if (track instanceof AudioTrack) {
