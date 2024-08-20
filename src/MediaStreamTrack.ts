@@ -171,15 +171,7 @@ export default class MediaStreamTrack extends EventTarget<MediaStreamTrackEventM
             throw new Error('Only implemented for video tracks');
         }
 
-        let video: boolean | object;
-
-        if (constraints === undefined) {
-            video = true;
-        } else {
-            video = constraints;
-        }
-
-        const normalized = normalizeConstraints({ video });
+        const normalized = normalizeConstraints({ video: constraints ?? true });
 
         this._settings = await WebRTCModule.mediaStreamTrackApplyConstraints(this.id, normalized.video);
     }

@@ -5,8 +5,6 @@ import android.hardware.camera2.CameraManager;
 import android.util.Log;
 import android.util.Pair;
 import androidx.annotation.Nullable;
-
-import androidx.annotation.Nullable;
 import androidx.core.util.Consumer;
 
 import com.facebook.react.bridge.ReadableMap;
@@ -32,7 +30,7 @@ public class CameraCaptureController extends AbstractVideoCaptureController {
 
     private boolean isFrontFacing;
     @Nullable
-    private String currentDeviceId = null;
+    private String currentDeviceId;
 
     private final Context context;
     private final CameraEnumerator cameraEnumerator;
@@ -315,7 +313,7 @@ public class CameraCaptureController extends AbstractVideoCaptureController {
         List<String> failedDevices = new ArrayList<>();
 
         String cameraName = null;
-        int cameraIndex = 0;
+        int cameraIndex = -1;
         try {
             cameraIndex = Integer.parseInt(deviceId);
             cameraName = deviceNames[cameraIndex];
@@ -376,6 +374,7 @@ public class CameraCaptureController extends AbstractVideoCaptureController {
                     this.currentDeviceId = String.valueOf(cameraIndex);
                     return new Pair(name, videoCapturer);
                 } else {
+                    Log.d(TAG, message + " failed");
                     failedDevices.add(name);
                 }
             }
