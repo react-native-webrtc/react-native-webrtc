@@ -30,6 +30,10 @@ public class CameraCaptureController extends AbstractVideoCaptureController {
     private static final String TAG = CameraCaptureController.class.getSimpleName();
 
     private boolean isFrontFacing;
+
+    /**
+     * Equivalent to the camera index as a String
+     */
     @Nullable
     private String currentDeviceId;
 
@@ -46,8 +50,9 @@ public class CameraCaptureController extends AbstractVideoCaptureController {
         @Override
         public void onCameraOpening(String cameraName) {
             super.onCameraOpening(cameraName);
-            updateActualSize(cameraName, videoCapturer);
-            CameraCaptureController.this.currentDeviceId = findDeviceId(cameraName);
+            int cameraIndex = findCameraIndex(cameraName);
+            updateActualSize(cameraIndex, cameraName, videoCapturer);
+            CameraCaptureController.this.currentDeviceId = cameraIndex == -1 ? null : String.valueOf(cameraIndex);
         }
     };
 
@@ -65,14 +70,14 @@ public class CameraCaptureController extends AbstractVideoCaptureController {
         return currentDeviceId;
     }
 
-    private String findDeviceId(String cameraName) {
+    private int findCameraIndex(String cameraName) {
         String[] deviceNames = cameraEnumerator.getDeviceNames();
         for (int i = 0; i < deviceNames.length; i++) {
             if (Objects.equals(deviceNames[i], cameraName)) {
-                return String.valueOf(i);
+                return i;
             }
         }
-        return null;
+        return -1;
     }
 
     @Override
@@ -144,7 +149,9 @@ public class CameraCaptureController extends AbstractVideoCaptureController {
             return;
         }
         
-        final String finalCameraName = cameraName; // For lambda reference
+        // For lambda reference
+        final int finalCameraIndex = cameraIndex;
+        final String finalCameraName = cameraName;
         boolean shouldSwitchCamera = false;
         try {
             int currentCameraIndex = Integer.parseInt(currentDeviceId);
@@ -160,7 +167,7 @@ public class CameraCaptureController extends AbstractVideoCaptureController {
             if (targetWidth != oldTargetWidth ||
                     targetHeight != oldTargetHeight ||
                     targetFps != oldTargetFps) {
-                updateActualSize(finalCameraName, videoCapturer);
+                updateActualSize(finalCameraIndex, finalCameraName, videoCapturer);
                 capturer.changeCaptureFormat(targetWidth, targetHeight, targetFps);
             }
             if (onFinishedCallback != null) {
@@ -196,25 +203,21 @@ public class CameraCaptureController extends AbstractVideoCaptureController {
         String deviceId = ReactBridgeUtil.getMapStrValue(this.constraints, "deviceId");
         String facingMode = ReactBridgeUtil.getMapStrValue(this.constraints, "facingMode");
 
-        Pair<String, VideoCapturer> result = createVideoCapturer(deviceId, facingMode);
+        CreateCapturerResult result = createVideoCapturer(deviceId, facingMode);
         if(result == null) {
             return null;
         }
 
-        String cameraName = result.first;
-        VideoCapturer videoCapturer = result.second;
+        updateActualSize(result.cameraIndex, result.cameraName, result.videoCapturer);
 
-        updateActualSize(cameraName, videoCapturer);
-
-        return videoCapturer;
+        return result.videoCapturer;
     }
 
-    private void updateActualSize(String cameraName, VideoCapturer videoCapturer) {
+    private void updateActualSize(int cameraIndex, String cameraName, VideoCapturer videoCapturer) {
         // Find actual capture format.
         Size actualSize = null;
         if (videoCapturer instanceof Camera1Capturer) {
-            int cameraId = Camera1Helper.getCameraId(cameraName);
-            actualSize = Camera1Helper.findClosestCaptureFormat(cameraId, targetWidth, targetHeight);
+            actualSize = Camera1Helper.findClosestCaptureFormat(cameraIndex, targetWidth, targetHeight);
         } else if (videoCapturer instanceof Camera2Capturer) {
             CameraManager cameraManager = (CameraManager) context.getSystemService(Context.CAMERA_SERVICE);
             actualSize = Camera2Helper.findClosestCaptureFormat(cameraManager, cameraName, targetWidth, targetHeight);
@@ -240,7 +243,7 @@ public class CameraCaptureController extends AbstractVideoCaptureController {
      * {@code deviceId} constraint, or null.
      */
     @Nullable
-    private Pair<String, VideoCapturer> createVideoCapturer(String deviceId, String facingMode) {
+    private CreateCapturerResult createVideoCapturer(String deviceId, String facingMode) {
         String[] deviceNames = cameraEnumerator.getDeviceNames();
         List<String> failedDevices = new ArrayList<>();
 
@@ -261,7 +264,7 @@ public class CameraCaptureController extends AbstractVideoCaptureController {
                 Log.d(TAG, message + " succeeded");
                 this.isFrontFacing = cameraEnumerator.isFrontFacing(cameraName);
                 this.currentDeviceId = String.valueOf(cameraIndex);
-                return new Pair(cameraName, videoCapturer);
+                return new CreateCapturerResult(cameraIndex, cameraName, videoCapturer);
             } else {
                 // fallback to facingMode
                 Log.d(TAG, message + " failed");
@@ -286,7 +289,7 @@ public class CameraCaptureController extends AbstractVideoCaptureController {
                 Log.d(TAG, message + " succeeded");
                 this.isFrontFacing = cameraEnumerator.isFrontFacing(name);
                 this.currentDeviceId = String.valueOf(cameraIndex);
-                return new Pair(name, videoCapturer);
+                return new CreateCapturerResult(cameraIndex, name, videoCapturer);
             } else {
                 Log.d(TAG, message + " failed");
                 failedDevices.add(name);
@@ -304,7 +307,7 @@ public class CameraCaptureController extends AbstractVideoCaptureController {
                     Log.d(TAG, message + " succeeded");
                     this.isFrontFacing = cameraEnumerator.isFrontFacing(name);
                     this.currentDeviceId = String.valueOf(cameraIndex);
-                    return new Pair(name, videoCapturer);
+                    return new CreateCapturerResult(cameraIndex, name, videoCapturer);
                 } else {
                     Log.d(TAG, message + " failed");
                     failedDevices.add(name);
@@ -316,5 +319,17 @@ public class CameraCaptureController extends AbstractVideoCaptureController {
         Log.w(TAG, "Unable to identify a suitable camera.");
 
         return null;
+    }
+
+    private static class CreateCapturerResult {
+        public final int cameraIndex;
+        public final String cameraName;
+        public final VideoCapturer videoCapturer;
+    
+        public CreateCapturerResult(int cameraIndex, String cameraName, VideoCapturer videoCapturer) {
+            this.cameraIndex = cameraIndex;
+            this.cameraName = cameraName;
+            this.videoCapturer = videoCapturer;
+        }
     }
 }
