@@ -8,6 +8,7 @@ import androidx.annotation.Nullable;
 import androidx.core.util.Consumer;
 
 import com.facebook.react.bridge.ReadableMap;
+import com.facebook.react.bridge.WritableMap;
 
 import org.webrtc.Camera1Capturer;
 import org.webrtc.Camera1Helper;
@@ -74,7 +75,14 @@ public class CameraCaptureController extends AbstractVideoCaptureController {
         return null;
     }
 
-    public void applyConstraints(ReadableMap constraints, Consumer<Exception> onFinishedCallback) {
+    @Override
+    public WritableMap getSettings() {
+        WritableMap settings = super.getSettings();
+        settings.putString("facingMode", isFrontFacing ? "user" : "environment");
+        return settings;
+    }
+
+    public void applyConstraints(ReadableMap constraints, @Nullable Consumer<Exception> onFinishedCallback) {
         ReadableMap oldConstraints = this.constraints;
         int oldTargetWidth = this.targetWidth;
         int oldTargetHeight = this.targetHeight;
@@ -91,7 +99,9 @@ public class CameraCaptureController extends AbstractVideoCaptureController {
         if (videoCapturer == null) {
             // No existing capturer, just let it initialize normally.
             saveConstraints.run();
-            onFinishedCallback.accept(null);
+            if (onFinishedCallback != null) {
+                onFinishedCallback.accept(null);
+            }
             return;
         }
 
@@ -127,7 +137,9 @@ public class CameraCaptureController extends AbstractVideoCaptureController {
         }
 
         if (cameraName == null) {
-            onFinishedCallback.accept(new Exception("OverconstrainedError: could not find camera with deviceId: " + deviceId + " or facingMode: " + facingMode));
+            if (onFinishedCallback != null) {
+                onFinishedCallback.accept(new Exception("OverconstrainedError: could not find camera with deviceId: " + deviceId + " or facingMode: " + facingMode));
+            }
             return;
         }
         
@@ -167,7 +179,7 @@ public class CameraCaptureController extends AbstractVideoCaptureController {
                 public void onCameraSwitchError(String s) {
                     Exception e = new Exception("Error switching camera: " + s);
                     Log.e(TAG, "OnCameraSwitchError", e);
-                    if(onFinishedCallback != null) {
+                    if (onFinishedCallback != null) {
                         onFinishedCallback.accept(e);
                     }
                 }
@@ -175,51 +187,6 @@ public class CameraCaptureController extends AbstractVideoCaptureController {
         } else {
             // No camera switch needed, just change format if needed.
             changeFormatIfNeededAndFinish.run();
-        }
-    }
-
-    /**
-     * Use applyConstraints instead.
-     * @deprecated
-     */
-    @Deprecated
-    public void switchCamera(Consumer<Exception> onFinishedCallback) {
-        if (videoCapturer instanceof CameraVideoCapturer) {
-            CameraVideoCapturer capturer = (CameraVideoCapturer) videoCapturer;
-            String[] deviceNames = cameraEnumerator.getDeviceNames();
-            int deviceCount = deviceNames.length;
-
-            // Nothing to switch to.
-            if (deviceCount < 2) {
-                return;
-            }
-
-            // The usual case.
-            if (deviceCount == 2) {
-                capturer.switchCamera(new CameraVideoCapturer.CameraSwitchHandler() {
-                    @Override
-                    public void onCameraSwitchDone(boolean isFrontCamera) {
-                        isFrontFacing = isFrontCamera;
-                        if(onFinishedCallback != null) {
-                            onFinishedCallback.accept(null);
-                        }
-                    }
-
-                    @Override
-                    public void onCameraSwitchError(String s) {
-                        Exception e = new Exception("Error switching camera: " + s);
-                        Log.e(TAG, "OnCameraSwitchError", e);
-                        if(onFinishedCallback != null) {
-                            onFinishedCallback.accept(e);
-                        }
-                    }
-                });
-                return;
-            }
-
-            // If we are here the device has more than 2 cameras. Cycle through them
-            // and switch to the first one of the desired facing mode.
-            switchCamera(!isFrontFacing, deviceCount, onFinishedCallback);
         }
     }
 
@@ -256,42 +223,6 @@ public class CameraCaptureController extends AbstractVideoCaptureController {
             actualWidth = actualSize.width;
             actualHeight = actualSize.height;
         }
-    }
-
-    /**
-     * Helper function which tries to switch cameras until the desired facing mode is found.
-     *
-     * @param desiredFrontFacing - The desired front facing value.
-     * @param tries - How many times to try switching.
-     */
-    private void switchCamera(boolean desiredFrontFacing, int tries, Consumer<Exception> onFinishedCallback) {
-        CameraVideoCapturer capturer = (CameraVideoCapturer) videoCapturer;
-
-        capturer.switchCamera(new CameraVideoCapturer.CameraSwitchHandler() {
-            @Override
-            public void onCameraSwitchDone(boolean b) {
-                if (b != desiredFrontFacing) {
-                    int newTries = tries - 1;
-                    if (newTries > 0) {
-                        switchCamera(desiredFrontFacing, newTries, onFinishedCallback);
-                    }
-                } else {
-                    isFrontFacing = desiredFrontFacing;
-                    if(onFinishedCallback != null) {
-                        onFinishedCallback.accept(null);
-                    }
-                }
-            }
-
-            @Override
-            public void onCameraSwitchError(String s) {
-                Exception e = new Exception("Error switching camera: " + s);
-                Log.e(TAG, "OnCameraSwitchError", e);
-                if(onFinishedCallback != null) {
-                    onFinishedCallback.accept(e);
-                }
-            }
-        });
     }
 
     /**

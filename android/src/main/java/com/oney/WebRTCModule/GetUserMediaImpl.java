@@ -234,25 +234,6 @@ class GetUserMediaImpl {
         }
     }
 
-    void switchCamera(String trackId, Promise promise) {
-        TrackPrivate track = tracks.get(trackId);
-        if (track != null && track.videoCaptureController instanceof CameraCaptureController) {
-            CameraCaptureController cameraCaptureController = (CameraCaptureController) track.videoCaptureController;
-            cameraCaptureController.switchCamera(new Consumer<Exception>() {
-                public void accept(Exception e) {
-                    if(e != null) {
-                        promise.reject(e);
-                        return;
-                    }
-
-                    promise.resolve(cameraCaptureController.getSettings());
-                }
-            });
-        } else {
-            promise.reject(new Exception("Camera track not found!"));
-        }
-    }
-
     void applyConstraints(String trackId, ReadableMap constraints, Promise promise) {
         TrackPrivate track = tracks.get(trackId);
         if (track != null && track.videoCaptureController instanceof CameraCaptureController) {
@@ -271,6 +252,7 @@ class GetUserMediaImpl {
             promise.reject(new Exception("Camera track not found!"));
         }
     }
+
     void getDisplayMedia(Promise promise) {
         if (this.displayMediaPromise != null) {
             promise.reject(new RuntimeException("Another operation is pending."));

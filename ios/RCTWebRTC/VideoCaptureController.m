@@ -104,14 +104,6 @@
     dispatch_semaphore_wait(semaphore, DISPATCH_TIME_FOREVER);
 }
 
-- (void)switchCamera {
-    self.usingFrontCamera = !self.usingFrontCamera;
-    self.deviceId = nil;
-    self.device = nil;
-
-    [self startCapture];
-}
-
 - (void)applyConstraints:(NSDictionary *)constraints {
     // Clear device to prepare for starting camera with new constraints.
     self.device = nil;
@@ -188,7 +180,8 @@
         @"groupId": @"",
         @"height" : @(dimensions.height),
         @"width" : @(dimensions.width),
-        @"frameRate" : @(30)
+        @"frameRate" : @(30),
+        @"facingMode" : self.usingFrontCamera ? @"user" : @"environment"; 
     }];
 
     if (self.deviceId) {

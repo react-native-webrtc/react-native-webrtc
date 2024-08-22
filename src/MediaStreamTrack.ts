@@ -4,6 +4,7 @@ import { NativeModules } from 'react-native';
 import { addListener, removeListener } from './EventEmitter';
 import Logger from './Logger';
 import { deepClone, normalizeConstraints } from './RTCUtil';
+import { MediaTrackConstraints } from './Constraints';
 
 const log = new Logger('pc');
 const { WebRTCModule } = NativeModules;
@@ -22,6 +23,15 @@ export type MediaStreamTrackInfo = {
     readyState: MediaStreamTrackState;
 }
 
+export type MediaTrackSettings = {
+    width?: number;
+    height?: number;
+    frameRate?: number;
+    facingMode?: string;
+    deviceId?: string;
+    groupId?: string;
+}
+
 type MediaStreamTrackEventMap = {
     ended: Event<'ended'>;
     mute: Event<'mute'>;
@@ -29,9 +39,9 @@ type MediaStreamTrackEventMap = {
 }
 
 export default class MediaStreamTrack extends EventTarget<MediaStreamTrackEventMap> {
-    _constraints: object;
+    _constraints: MediaTrackConstraints;
     _enabled: boolean;
-    _settings: object;
+    _settings: MediaTrackSettings;
     _muted: boolean;
     _peerConnectionId: number;
     _readyState: MediaStreamTrackState;
@@ -109,8 +119,12 @@ export default class MediaStreamTrack extends EventTarget<MediaStreamTrackEventM
             throw new Error('Only implemented for video tracks');
         }
 
+        let constraints = deepClone(this._settings)
+        delete constraints.deviceId;
+        constraints.facingMode = this._settings.facingMode == "user" ? "environment" : "user";
+
         const switchImpl = async () => {
-            this._settings = await WebRTCModule.mediaStreamTrackSwitchCamera(this.id);
+            await this.applyConstraints(constraints);
         };
 
         switchImpl();
@@ -166,7 +180,7 @@ export default class MediaStreamTrack extends EventTarget<MediaStreamTrackEventM
      * constraints. If this parameter is omitted, all currently set custom
      * constraints are cleared.
      */
-    async applyConstraints(constraints?: object): Promise<void> {
+    async applyConstraints(constraints?: MediaTrackConstraints): Promise<void> {
         if (this.kind !== 'video') {
             throw new Error('Only implemented for video tracks');
         }
@@ -174,6 +188,7 @@ export default class MediaStreamTrack extends EventTarget<MediaStreamTrackEventM
         const normalized = normalizeConstraints({ video: constraints ?? true });
 
         this._settings = await WebRTCModule.mediaStreamTrackApplyConstraints(this.id, normalized.video);
+        this._constraints = constraints ?? {}
     }
 
     clone(): never {
@@ -188,7 +203,7 @@ export default class MediaStreamTrack extends EventTarget<MediaStreamTrackEventM
         return deepClone(this._constraints);
     }
 
-    getSettings() {
+    getSettings(): MediaTrackSettings {
         return deepClone(this._settings);
     }
 

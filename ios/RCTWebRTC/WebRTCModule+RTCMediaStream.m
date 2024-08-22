@@ -403,30 +403,6 @@ RCT_EXPORT_METHOD(mediaStreamTrackSetEnabled : (nonnull NSNumber *)pcId : (nonnu
 #endif
 }
 
-RCT_EXPORT_METHOD(mediaStreamTrackSwitchCamera : (nonnull NSString *)trackID resolver: (RCTPromiseResolveBlock)resolve rejecter : (RCTPromiseRejectBlock)reject) {
-#if TARGET_OS_TV
-    reject(@"unsupported_platform", @"tvOS is not supported", nil);
-    return;
-#else
-    RTCMediaStreamTrack *track = self.localTracks[trackID];
-    if (track) {
-        if ([track.kind isEqualToString:@"video"]) {
-            RTCVideoTrack *videoTrack = (RTCVideoTrack *)track;
-            VideoCaptureController *vcc = (VideoCaptureController *)videoTrack.captureController;
-            [vcc switchCamera];
-
-            resolve([vcc getSettings]);
-        } else {
-            RCTLogWarn(@"mediaStreamTrackSwitchCamera() track is not video");
-            reject(@"E_INVALID", @"Can't switch camera on audio tracks", nil);
-        }
-    } else {
-        RCTLogWarn(@"mediaStreamTrackSwitchCamera() track is null");
-        reject(@"E_INVALID", @"Could not get track", nil);
-    }
-#endif
-}
-
 RCT_EXPORT_METHOD(mediaStreamTrackApplyConstraints : (nonnull NSString *)trackID : (NSDictionary *)constraints : (RCTPromiseResolveBlock)resolve : (RCTPromiseRejectBlock)reject) {
 #if TARGET_OS_TV
     reject(@"unsupported_platform", @"tvOS is not supported", nil);
@@ -441,11 +417,11 @@ RCT_EXPORT_METHOD(mediaStreamTrackApplyConstraints : (nonnull NSString *)trackID
 
             resolve([vcc getSettings]);
         } else {
-            RCTLogWarn(@"mediaStreamTrackSwitchCamera() track is not video");
-            reject(@"E_INVALID", @"Can't switch camera on audio tracks", nil);
+            RCTLogWarn(@"mediaStreamTrackApplyConstraints() track is not video");
+            reject(@"E_INVALID", @"Can't apply constraints on audio tracks", nil);
         }
     } else {
-        RCTLogWarn(@"mediaStreamTrackSwitchCamera() track is null");
+        RCTLogWarn(@"mediaStreamTrackApplyConstraints() track is null");
         reject(@"E_INVALID", @"Could not get track", nil);
     }
 #endif
