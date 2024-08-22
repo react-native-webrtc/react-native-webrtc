@@ -82,6 +82,7 @@ public class CameraCaptureController extends AbstractVideoCaptureController {
         return settings;
     }
 
+    @Override
     public void applyConstraints(ReadableMap constraints, @Nullable Consumer<Exception> onFinishedCallback) {
         ReadableMap oldConstraints = this.constraints;
         int oldTargetWidth = this.targetWidth;
@@ -109,7 +110,6 @@ public class CameraCaptureController extends AbstractVideoCaptureController {
         String[] deviceNames = cameraEnumerator.getDeviceNames();
         final String deviceId = ReactBridgeUtil.getMapStrValue(constraints, "deviceId");
         final String facingMode = ReactBridgeUtil.getMapStrValue(constraints, "facingMode");
-        final boolean isFrontFacing = facingMode == null || !facingMode.equals("environment");
         int cameraIndex = -1;
         String cameraName = null;
 
@@ -127,6 +127,7 @@ public class CameraCaptureController extends AbstractVideoCaptureController {
         // Otherwise, use facingMode (defaulting to front/user facing).
         if (cameraName == null) {
             cameraIndex = -1;
+            final boolean isFrontFacing = facingMode == null || facingMode.equals("user");
             for (String name : deviceNames) {
                 cameraIndex++;
                 if (cameraEnumerator.isFrontFacing(name) == isFrontFacing) {
@@ -269,7 +270,7 @@ public class CameraCaptureController extends AbstractVideoCaptureController {
         }
 
         // Otherwise, use facingMode (defaulting to front/user facing).
-        final boolean isFrontFacing = facingMode == null || !facingMode.equals("environment");
+        final boolean isFrontFacing = facingMode == null || facingMode.equals("user");
         cameraIndex = -1;
         for (String name : deviceNames) {
             cameraIndex++;

@@ -104,7 +104,7 @@
     dispatch_semaphore_wait(semaphore, DISPATCH_TIME_FOREVER);
 }
 
-- (void)applyConstraints:(NSDictionary *)constraints {
+- (void)applyConstraints:(NSDictionary *)constraints error:(NSError *)outError {
     // Clear device to prepare for starting camera with new constraints.
     self.device = nil;
 
@@ -181,7 +181,7 @@
         @"height" : @(dimensions.height),
         @"width" : @(dimensions.width),
         @"frameRate" : @(30),
-        @"facingMode" : self.usingFrontCamera ? @"user" : @"environment"; 
+        @"facingMode" : self.usingFrontCamera ? @"user" : @"environment"
     }];
 
     if (self.deviceId) {

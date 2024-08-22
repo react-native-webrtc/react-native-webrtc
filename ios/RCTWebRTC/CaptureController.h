@@ -11,6 +11,7 @@ NS_ASSUME_NONNULL_BEGIN
 - (void)startCapture;
 - (void)stopCapture;
 - (NSDictionary *)getSettings;
+- (void)applyConstraints:(NSDictionary *)constraints error:(NSError **)outError;
 
 @end
 

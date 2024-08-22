@@ -1,8 +1,10 @@
 package com.oney.WebRTCModule;
 
 import androidx.annotation.Nullable;
+import androidx.core.util.Consumer;
 
 import com.facebook.react.bridge.Arguments;
+import com.facebook.react.bridge.ReadableMap;
 import com.facebook.react.bridge.WritableMap;
 
 import org.webrtc.VideoCapturer;
@@ -88,6 +90,12 @@ public abstract class AbstractVideoCaptureController {
             return true;
         } catch (InterruptedException e) {
             return false;
+        }
+    }
+
+    public void applyConstraints(ReadableMap constraints, @Nullable Consumer<Exception> onFinishedCallback) {
+        if (onFinishedCallback != null) {
+            onFinishedCallback.accept(new UnsupportedOperationException("This video track does not support applyConstraints."));
         }
     }
 

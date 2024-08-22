@@ -413,9 +413,13 @@ RCT_EXPORT_METHOD(mediaStreamTrackApplyConstraints : (nonnull NSString *)trackID
         if ([track.kind isEqualToString:@"video"]) {
             RTCVideoTrack *videoTrack = (RTCVideoTrack *)track;
             VideoCaptureController *vcc = (VideoCaptureController *)videoTrack.captureController;
-            [vcc applyConstraints:constraints];
-
-            resolve([vcc getSettings]);
+            NSError* error = nil;
+            [vcc applyConstraints:constraints error:&error];
+            if (error) {
+                reject(@"E_INVALID", error.localizedDescription, error);
+            } else {
+                resolve([vcc getSettings]);
+            }
         } else {
             RCTLogWarn(@"mediaStreamTrackApplyConstraints() track is not video");
             reject(@"E_INVALID", @"Can't apply constraints on audio tracks", nil);
