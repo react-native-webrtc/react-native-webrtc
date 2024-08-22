@@ -236,16 +236,16 @@ class GetUserMediaImpl {
 
     void applyConstraints(String trackId, ReadableMap constraints, Promise promise) {
         TrackPrivate track = tracks.get(trackId);
-        if (track != null && track.videoCaptureController instanceof CameraCaptureController) {
-            CameraCaptureController cameraCaptureController = (CameraCaptureController) track.videoCaptureController;
-            cameraCaptureController.applyConstraints(constraints, new Consumer<Exception>() {
+        if (track != null && track.videoCaptureController instanceof AbstractVideoCaptureController) {
+            AbstractVideoCaptureController captureController = (AbstractVideoCaptureController) track.videoCaptureController;
+            captureController.applyConstraints(constraints, new Consumer<Exception>() {
                 public void accept(Exception e) {
                     if(e != null) {
                         promise.reject(e);
                         return;
                     }
 
-                    promise.resolve(cameraCaptureController.getSettings());
+                    promise.resolve(captureController.getSettings());
                 }
             });
         } else {

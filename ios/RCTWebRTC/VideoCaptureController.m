@@ -24,7 +24,7 @@
     if (self) {
         self.capturer = capturer;
         self.running = NO;
-        [self applyConstraints:constraints];
+        [self applyConstraints:constraints error:nil];
     }
 
     return self;
@@ -104,7 +104,7 @@
     dispatch_semaphore_wait(semaphore, DISPATCH_TIME_FOREVER);
 }
 
-- (void)applyConstraints:(NSDictionary *)constraints error:(NSError *)outError {
+- (void)applyConstraints:(NSDictionary *)constraints error:(NSError **)outError {
     // Clear device to prepare for starting camera with new constraints.
     self.device = nil;
 
