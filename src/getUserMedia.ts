@@ -2,11 +2,11 @@
 import { NativeModules } from 'react-native';
 
 
+import { MediaTrackConstraints } from './Constraints';
 import MediaStream from './MediaStream';
 import MediaStreamError from './MediaStreamError';
 import permissions from './Permissions';
 import * as RTCUtil from './RTCUtil';
-import { MediaTrackConstraints } from './Constraints';
 
 const { WebRTCModule } = NativeModules;
 

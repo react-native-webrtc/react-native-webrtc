@@ -1,10 +1,10 @@
 import { EventTarget, Event, defineEventAttribute } from 'event-target-shim/index';
 import { NativeModules } from 'react-native';
 
+import { MediaTrackConstraints } from './Constraints';
 import { addListener, removeListener } from './EventEmitter';
 import Logger from './Logger';
 import { deepClone, normalizeConstraints } from './RTCUtil';
-import { MediaTrackConstraints } from './Constraints';
 
 const log = new Logger('pc');
 const { WebRTCModule } = NativeModules;
@@ -119,9 +119,10 @@ export default class MediaStreamTrack extends EventTarget<MediaStreamTrackEventM
             throw new Error('Only implemented for video tracks');
         }
 
-        let constraints = deepClone(this._settings)
+        const constraints = deepClone(this._settings);
+
         delete constraints.deviceId;
-        constraints.facingMode = this._settings.facingMode == "user" ? "environment" : "user";
+        constraints.facingMode = this._settings.facingMode === 'user' ? 'environment' : 'user';
 
         const switchImpl = async () => {
             await this.applyConstraints(constraints);
@@ -188,7 +189,7 @@ export default class MediaStreamTrack extends EventTarget<MediaStreamTrackEventM
         const normalized = normalizeConstraints({ video: constraints ?? true });
 
         this._settings = await WebRTCModule.mediaStreamTrackApplyConstraints(this.id, normalized.video);
-        this._constraints = constraints ?? {}
+        this._constraints = constraints ?? {};
     }
 
     clone(): never {
