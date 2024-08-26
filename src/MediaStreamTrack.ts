@@ -120,15 +120,10 @@ export default class MediaStreamTrack extends EventTarget<MediaStreamTrackEventM
         }
 
         const constraints = deepClone(this._settings);
-
         delete constraints.deviceId;
         constraints.facingMode = this._settings.facingMode === 'user' ? 'environment' : 'user';
 
-        const switchImpl = async () => {
-            await this.applyConstraints(constraints);
-        };
-
-        switchImpl();
+        this.applyConstraints(constraints);
     }
 
     _setVideoEffect(name:string) {
