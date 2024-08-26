@@ -1,11 +1,18 @@
 package com.oney.WebRTCModule;
 
+import androidx.annotation.Nullable;
+import androidx.core.util.Consumer;
+
+import com.facebook.react.bridge.Arguments;
+import com.facebook.react.bridge.ReadableMap;
+import com.facebook.react.bridge.WritableMap;
+
 import org.webrtc.VideoCapturer;
 
 public abstract class AbstractVideoCaptureController {
-    protected final int targetWidth;
-    protected final int targetHeight;
-    protected final int targetFps;
+    protected int targetWidth;
+    protected int targetHeight;
+    protected int targetFps;
 
     protected int actualWidth;
     protected int actualHeight;
@@ -31,6 +38,9 @@ public abstract class AbstractVideoCaptureController {
         videoCapturer = createVideoCapturer();
     }
 
+    @Nullable
+    public abstract String getDeviceId();
+
     public void dispose() {
         if (videoCapturer != null) {
             videoCapturer.dispose();
@@ -48,6 +58,16 @@ public abstract class AbstractVideoCaptureController {
 
     public int getFrameRate() {
         return actualFps;
+    }
+
+    public WritableMap getSettings() {
+        WritableMap settings = Arguments.createMap();
+        settings.putString("deviceId", getDeviceId());
+        settings.putString("groupId", "");
+        settings.putInt("height", getHeight());
+        settings.putInt("width", getWidth());
+        settings.putInt("frameRate", getFrameRate());
+        return settings;
     }
 
     public VideoCapturer getVideoCapturer() {
@@ -70,6 +90,12 @@ public abstract class AbstractVideoCaptureController {
             return true;
         } catch (InterruptedException e) {
             return false;
+        }
+    }
+
+    public void applyConstraints(ReadableMap constraints, @Nullable Consumer<Exception> onFinishedCallback) {
+        if (onFinishedCallback != null) {
+            onFinishedCallback.accept(new UnsupportedOperationException("This video track does not support applyConstraints."));
         }
     }
 

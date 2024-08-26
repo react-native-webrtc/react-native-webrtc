@@ -61,6 +61,11 @@ public class ScreenCaptureController extends AbstractVideoCaptureController {
     }
 
     @Override
+    public String getDeviceId() {
+        return "screen-capture";
+    }
+
+    @Override
     public void dispose() {
         MediaProjectionService.abort(context);
         super.dispose();
