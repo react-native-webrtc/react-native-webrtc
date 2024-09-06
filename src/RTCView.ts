@@ -59,6 +59,48 @@ interface RTCVideoViewProps extends ViewProps {
    * zOrder: number
    */
   zOrder?: number;
+
+  /**
+   * Picture in picture options for this view. Disabled if not supplied.
+   * 
+   * Note: this should only be generally only used with remote video tracks,
+   * as the local camera may stop while in the background.
+   * 
+   * iOS only. Requires iOS 15.0 or above, and the PIP background mode capability.
+   */
+  iosPIP?: {
+
+    /**
+     * Whether PIP is enabled for this view.
+     */
+    enabled?: boolean,
+    /**
+     * The preferred size of the PIP window.
+     */
+    preferredSize?: {
+      width: number,
+      height: number,
+    },
+
+    /**
+     * Indicates whether Picture in Picture starts automatically 
+     * when the controller embeds its content inline and the app
+     * transitions to the background.
+     * 
+     * Defaults to true.
+     * 
+     * See: https://developer.apple.com/documentation/avkit/avpictureinpicturecontroller/canstartpictureinpictureautomaticallyfrominline
+     */
+    startAutomatically?: boolean,
+
+    /**
+     * Indicates whether Picture in Picture should stop automatically
+     * when the app returns to the foreground.
+     * 
+     * Defaults to true.
+     */
+    stopAutomatically?: boolean,
+  };
 }
 
 export default requireNativeComponent<RTCVideoViewProps>('RTCVideoView');
