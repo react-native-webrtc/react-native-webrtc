@@ -73,18 +73,7 @@
     }
     
     CVPixelBufferRef pixelBuffer = NULL;
-    NSDictionary *pixelBufferAttributes = [NSDictionary dictionaryWithObjectsAndKeys:
-                                           [NSDictionary dictionary],
-                                           (id)kCVPixelBufferIOSurfacePropertiesKey,
-                                           nil
-    ];
-
-    CVReturn status = CVPixelBufferCreate(kCFAllocatorDefault,
-                                          buffer.width,
-                                          buffer.height,
-                                          kCVPixelFormatType_32BGRA,
-                                          (__bridge CFDictionaryRef)pixelBufferAttributes,
-                                          &pixelBuffer);
+    CVReturn status = CVPixelBufferPoolCreatePixelBuffer(kCFAllocatorDefault, _pixelBufferPool, &pixelBuffer);
     
     if (status != kCVReturnSuccess) {
         return NULL;
