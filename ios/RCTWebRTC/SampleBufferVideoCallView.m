@@ -148,6 +148,9 @@
 
 -(void)dealloc {
     [_i420Converter unprepareForAccelerateConversion];
+    if (_pixelBufferPool) {
+        CVPixelBufferPoolRelease(_pixelBufferPool);
+    }
 }
 
 @end
