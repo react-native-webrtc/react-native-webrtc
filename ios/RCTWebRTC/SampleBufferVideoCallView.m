@@ -90,20 +90,26 @@
     CFMutableDictionaryRef dict = (CFMutableDictionaryRef)CFArrayGetValueAtIndex(attachments, 0);
 
     CFDictionarySetValue(dict, kCMSampleAttachmentKey_DisplayImmediately, kCFBooleanTrue);
-    
+    CVPixelBufferRelease(pixelBuffer);
     return sampleBuffer;
 }
 
-
+/**
+  * The CVPixelBufferRef returned from this function must be released when finished using it.
+  */
 -(CVPixelBufferRef)pixelBufferFrom:(RTCVideoFrame *)videoFrame {
     if ([videoFrame.buffer isKindOfClass:[RTCCVPixelBuffer class]]) {
+        CVPixelBufferRef pixelBuffer = [((RTCCVPixelBuffer *) videoFrame.buffer) pixelBuffer];
+        CVPixelBufferRetain(pixelBuffer);
         return [((RTCCVPixelBuffer *) videoFrame.buffer) pixelBuffer];
     } else {
         return [self pixelBufferFromI420:[videoFrame.buffer toI420]];
     }
 }
 
-
+/**
+  * The CVPixelBufferRef returned from this function must be released when finished using it.
+  */
 -(CVPixelBufferRef)pixelBufferFromI420:(RTCI420Buffer *)i420Buffer {
     if (_i420Converter == nil) {
         I420Converter * converter = [[I420Converter alloc] init];
