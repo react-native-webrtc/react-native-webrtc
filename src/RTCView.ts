@@ -1,3 +1,4 @@
+import { Component } from 'react';
 import { requireNativeComponent, ViewProps } from 'react-native';
 
 /**
@@ -6,8 +7,7 @@ import { requireNativeComponent, ViewProps } from 'react-native';
  *
  * So we list them here for documentation purposes.
  */
-
-interface RTCVideoViewProps extends ViewProps {
+export interface RTCVideoViewProps extends ViewProps {
   /**
    * Indicates whether the video specified by {@link #streamURL} should be
    * mirrored during rendering. Commonly, applications choose to mirror the
@@ -60,6 +60,7 @@ interface RTCVideoViewProps extends ViewProps {
    */
   zOrder?: number;
 
+
   /**
    * Picture in picture options for this view. Disabled if not supplied.
    *
@@ -68,39 +69,40 @@ interface RTCVideoViewProps extends ViewProps {
    *
    * iOS only. Requires iOS 15.0 or above, and the PIP background mode capability.
    */
-  iosPIP?: {
-
-    /**
-     * Whether PIP is enabled for this view.
-     */
-    enabled?: boolean,
-    /**
-     * The preferred size of the PIP window.
-     */
-    preferredSize?: {
-      width: number,
-      height: number,
-    },
-
-    /**
-     * Indicates whether Picture in Picture starts automatically
-     * when the controller embeds its content inline and the app
-     * transitions to the background.
-     *
-     * Defaults to true.
-     *
-     * See: AVPictureInPictureController.canStartPictureInPictureAutomaticallyFromInline
-     */
-    startAutomatically?: boolean,
-
-    /**
-     * Indicates whether Picture in Picture should stop automatically
-     * when the app returns to the foreground.
-     *
-     * Defaults to true.
-     */
-    stopAutomatically?: boolean,
-  };
+  iosPIP?: RTCIOSPIPOptions
 }
 
+export interface RTCIOSPIPOptions {
+
+  /**
+   * Whether PIP is enabled for this view.
+   */
+  enabled?: boolean;
+  /**
+   * The preferred size of the PIP window.
+   */
+  preferredSize?: {
+    width: number;
+    height: number;
+  },
+
+  /**
+   * Indicates whether Picture in Picture starts automatically
+   * when the controller embeds its content inline and the app
+   * transitions to the background.
+   *
+   * Defaults to true.
+   *
+   * See: AVPictureInPictureController.canStartPictureInPictureAutomaticallyFromInline
+   */
+  startAutomatically?: boolean;
+
+  /**
+   * Indicates whether Picture in Picture should stop automatically
+   * when the app returns to the foreground.
+   *
+   * Defaults to true.
+   */
+  stopAutomatically?: boolean;
+};
 export default requireNativeComponent<RTCVideoViewProps>('RTCVideoView');

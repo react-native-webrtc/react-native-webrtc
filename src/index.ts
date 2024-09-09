@@ -24,6 +24,7 @@ import RTCRtpSender from './RTCRtpSender';
 import RTCRtpTransceiver from './RTCRtpTransceiver';
 import RTCSessionDescription from './RTCSessionDescription';
 import RTCView from './RTCView';
+import RTCPIPView from './RTCPIPView';
 import ScreenCapturePickerView from './ScreenCapturePickerView';
 
 Logger.enable(`${Logger.ROOT_PREFIX}:*`);
@@ -36,6 +37,7 @@ export {
     RTCPeerConnection,
     RTCSessionDescription,
     RTCView,
+    RTCPIPView,
     ScreenCapturePickerView,
     RTCRtpTransceiver,
     RTCRtpReceiver,
