@@ -12,7 +12,7 @@
 @interface I420Converter()
 
 @property (nonatomic, assign) vImage_YpCbCrToARGB *conversionInfo;
-
+@property (nonatomic, assign) CVPixelBufferPoolRef pixelBufferPool;
 @end
 
 @implementation I420Converter
