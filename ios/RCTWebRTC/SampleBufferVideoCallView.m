@@ -2,11 +2,23 @@
 #import "SampleBufferVideoCallView.h"
 #import <WebRTC/WebRTC.h>
 #import <Accelerate/Accelerate.h>
+@protocol SampleBufferRendering <AVQueuedSampleBufferRendering>
 
+-(BOOL)requiresFlushToResumeDecoding;
+
+@end
+
+/** These classes already implement the required methods. */
+@interface AVSampleBufferDisplayLayer () <SampleBufferRendering>
+@end
+@interface AVSampleBufferVideoRenderer () <SampleBufferRendering>
+@end
 
 @interface SampleBufferVideoCallView ()
 
 @property (nonatomic, retain) I420Converter *i420Converter;
+@property (nonatomic, strong) id<SampleBufferRendering> renderer;
+
 @end
 
 @implementation SampleBufferVideoCallView
@@ -18,6 +30,11 @@
 - (instancetype)initWithFrame:(CGRect)frame {
     if (self = [super initWithFrame:frame]) {
         [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(layerFailedToDecode:) name:AVSampleBufferDisplayLayerFailedToDecodeNotification object:self.sampleBufferLayer];
+        if (@available(iOS 17.0, *)) {
+            _renderer = self.sampleBufferLayer.sampleBufferRenderer;
+        } else {
+            _renderer = self.sampleBufferLayer;
+        }
     }
     return self;
 }
@@ -50,14 +67,17 @@
         return;
     }
 
-    // TODO: handle overflows
     dispatch_async(dispatch_get_main_queue(), ^{
-        if (!self.sampleBufferLayer.readyForMoreMediaData) {
+        if (self.renderer.requiresFlushToResumeDecoding) {
+            [self.renderer flush];
+        }
+
+        if (!self.renderer.readyForMoreMediaData) {
             return;
         }
 
         // Display the CMSampleBuffer using AVSampleBufferDisplayLayer
-        [self.sampleBufferLayer enqueueSampleBuffer:sampleBuffer];
+        [self.renderer enqueueSampleBuffer:sampleBuffer];
         CFRelease(sampleBuffer);
     });
 }
