@@ -72,6 +72,10 @@
         return NULL;
     }
     
+    if (_pixelBufferPool == NULL) {
+        [self createPixelBufferPoolWithWidth:buffer.width height:buffer.height];
+    }
+    
     CVPixelBufferRef pixelBuffer = NULL;
     CVReturn status = CVPixelBufferPoolCreatePixelBuffer(kCFAllocatorDefault, _pixelBufferPool, &pixelBuffer);
     
