@@ -6,5 +6,6 @@
 @interface SampleBufferVideoCallView : UIView <RTCVideoRenderer>
 
 @property(nonnull, nonatomic, readonly) AVSampleBufferDisplayLayer *sampleBufferLayer;
+@property(nonatomic, assign) BOOL shouldRender;
 
 @end

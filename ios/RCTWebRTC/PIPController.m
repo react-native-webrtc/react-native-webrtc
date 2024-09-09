@@ -38,9 +38,24 @@
         _pipController = [[AVPictureInPictureController alloc] initWithContentSource:_contentSource];
         _pipController.canStartPictureInPictureAutomaticallyFromInline = YES;
         _pipController.delegate = self;
+
+        [_pipController addObserver:self
+                         forKeyPath:@"pictureInPictureActive"
+                            options:NSKeyValueObservingOptionInitial|NSKeyValueObservingOptionNew
+                            context:nil];
     }
     
     return self;
+}
+
+- (void)observeValueForKeyPath:(NSString *)keyPath
+                      ofObject:(id)object
+                        change:(NSDictionary *)change
+                       context:(void *)context
+{
+    if(keyPath == @"pictureInPictureActive") {
+        _sampleView.shouldRender = [change[NSKeyValueChangeNewKey] boolValue];
+    }
 }
 
 - (void)setVideoTrack:(RTCVideoTrack *)videoTrack {
@@ -68,6 +83,7 @@
 
 - (void)dealloc {
     [_videoTrack removeRenderer:_sampleView];
+    [_pipController removeObserver:self forKeyPath:@"pictureInPictureActive"]
 }
 
 @end

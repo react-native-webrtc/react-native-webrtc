@@ -53,6 +53,10 @@
 /** The frame to be displayed. */
 - (void)renderFrame:(nullable RTC_OBJC_TYPE(RTCVideoFrame) *)frame {
 
+    if (!_shouldRender) {
+        return;
+    }
+
     // Convert RTCVideoFrame to CMSampleBuffer
     CMSampleBufferRef sampleBuffer = [self sampleBufferFrom:frame];
     if (sampleBuffer == nil) {
