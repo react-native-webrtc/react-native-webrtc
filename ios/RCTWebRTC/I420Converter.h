@@ -16,5 +16,6 @@
 - (vImage_Error)prepareForAccelerateConversion;
 - (void)unprepareForAccelerateConversion;
 - (CVPixelBufferRef)convertI420ToPixelBuffer:(RTCI420Buffer *)buffer;
+- (void)createPixelBufferPoolWithWidth:(size_t)width height:(size_t)height;
 
 @end
