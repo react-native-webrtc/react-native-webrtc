@@ -1,4 +1,3 @@
-import { Component } from 'react';
 import { requireNativeComponent, ViewProps } from 'react-native';
 
 /**
@@ -104,5 +103,5 @@ export interface RTCIOSPIPOptions {
    * Defaults to true.
    */
   stopAutomatically?: boolean;
-};
+}
 export default requireNativeComponent<RTCVideoViewProps>('RTCVideoView');
