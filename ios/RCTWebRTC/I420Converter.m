@@ -50,6 +50,21 @@
     }
 }
 
+- (void)createPixelBufferPoolWithWidth:(size_t)width height:(size_t)height {
+    if (_pixelBufferPool != NULL) {
+        CVPixelBufferPoolRelease(_pixelBufferPool);
+    }
+    
+    NSDictionary *pixelBufferAttributes = @{
+        (id)kCVPixelBufferPixelFormatTypeKey: @(kCVPixelFormatType_32BGRA),
+        (id)kCVPixelBufferWidthKey: @(width),
+        (id)kCVPixelBufferHeightKey: @(height),
+        (id)kCVPixelBufferIOSurfacePropertiesKey: @{}
+    };
+    
+    CVPixelBufferPoolCreate(kCFAllocatorDefault, NULL, (__bridge CFDictionaryRef)pixelBufferAttributes, &_pixelBufferPool);
+}
+
 - (CVPixelBufferRef)convertI420ToPixelBuffer:(RTCI420Buffer *)buffer
 {
     if (_conversionInfo == nil) {
