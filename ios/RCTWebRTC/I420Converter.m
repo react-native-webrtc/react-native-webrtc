@@ -131,4 +131,8 @@
     return convertError;
 }
 
+- (void)dealloc {
+    [self unprepareForAccelerateConversion];
+}
+
 @end
