@@ -128,7 +128,22 @@
         _i420Converter = converter;
     }
     
-    return [_i420Converter convertI420ToPixelBuffer:i420Buffer];
+    if (_pixelBufferPool == NULL) {
+        [self createPixelBufferPool];
+    }
+    
+    CVPixelBufferRef pixelBuffer;
+    CVReturn status = CVPixelBufferPoolCreatePixelBuffer(kCFAllocatorDefault, _pixelBufferPool, &pixelBuffer);
+    
+    if (status != kCVReturnSuccess) {
+        NSLog(@"Error creating pixel buffer from pool: %d", status);
+        return NULL;
+    }
+    
+    CVPixelBufferRef convertedPixelBuffer = [_i420Converter convertI420ToPixelBuffer:i420Buffer];
+    CVPixelBufferRelease(pixelBuffer); // Release the pixel buffer back to the pool
+    
+    return convertedPixelBuffer;
 }
 
 -(void)dealloc {
