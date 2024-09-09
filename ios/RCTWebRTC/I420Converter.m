@@ -48,6 +48,10 @@
         free(_conversionInfo);
         _conversionInfo = NULL;
     }
+    if (_pixelBufferPool != NULL) {
+        CVPixelBufferPoolRelease(_pixelBufferPool);
+        _pixelBufferPool = NULL;
+    }
 }
 
 - (void)createPixelBufferPoolWithWidth:(size_t)width height:(size_t)height {
