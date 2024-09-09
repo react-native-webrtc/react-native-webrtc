@@ -83,7 +83,7 @@
 
 - (void)dealloc {
     [_videoTrack removeRenderer:_sampleView];
-    [_pipController removeObserver:self forKeyPath:@"pictureInPictureActive"]
+    [_pipController removeObserver:self forKeyPath:@"pictureInPictureActive"];
 }
 
 @end
