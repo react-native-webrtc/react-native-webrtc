@@ -7,7 +7,7 @@
 @interface SampleBufferVideoCallView ()
 
 @property (nonatomic, retain) I420Converter *i420Converter;
-
+@property (nonatomic, assign) CVPixelBufferPoolRef pixelBufferPool;
 @end
 
 @implementation SampleBufferVideoCallView
