@@ -39,6 +39,17 @@
     
 }
 
+- (void)createPixelBufferPool {
+    NSDictionary *pixelBufferAttributes = @{
+        (id)kCVPixelBufferPixelFormatTypeKey: @(kCVPixelFormatType_32BGRA),
+        (id)kCVPixelBufferWidthKey: @(1000),
+        (id)kCVPixelBufferHeightKey: @(1000),
+        (id)kCVPixelBufferIOSurfacePropertiesKey: @{}
+    };
+    
+    CVPixelBufferPoolCreate(kCFAllocatorDefault, NULL, (__bridge CFDictionaryRef)pixelBufferAttributes, &_pixelBufferPool);
+}
+
 /** The frame to be displayed. */
 - (void)renderFrame:(nullable RTC_OBJC_TYPE(RTCVideoFrame) *)frame {
 
