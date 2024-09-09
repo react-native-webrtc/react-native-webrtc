@@ -7,7 +7,6 @@
 @interface SampleBufferVideoCallView ()
 
 @property (nonatomic, retain) I420Converter *i420Converter;
-@property (nonatomic, assign) CVPixelBufferPoolRef pixelBufferPool;
 @end
 
 @implementation SampleBufferVideoCallView
@@ -19,7 +18,6 @@
 - (instancetype)initWithFrame:(CGRect)frame {
     if (self = [super initWithFrame:frame]) {
         [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(layerFailedToDecode:) name:AVSampleBufferDisplayLayerFailedToDecodeNotification object:self.sampleBufferLayer];
-        [self createPixelBufferPool];
     }
     return self;
 }
@@ -37,17 +35,6 @@
 /** The size of the video frame. */
 - (void)setSize : (CGSize)size{
     
-}
-
-- (void)createPixelBufferPool {
-    NSDictionary *pixelBufferAttributes = @{
-        (id)kCVPixelBufferPixelFormatTypeKey: @(kCVPixelFormatType_32BGRA),
-        (id)kCVPixelBufferWidthKey: @(1000),
-        (id)kCVPixelBufferHeightKey: @(1000),
-        (id)kCVPixelBufferIOSurfacePropertiesKey: @{}
-    };
-    
-    CVPixelBufferPoolCreate(kCFAllocatorDefault, NULL, (__bridge CFDictionaryRef)pixelBufferAttributes, &_pixelBufferPool);
 }
 
 /** The frame to be displayed. */
@@ -132,29 +119,13 @@
         _i420Converter = converter;
     }
     
-    if (_pixelBufferPool == NULL) {
-        [self createPixelBufferPool];
-    }
-    
-    CVPixelBufferRef pixelBuffer;
-    CVReturn status = CVPixelBufferPoolCreatePixelBuffer(kCFAllocatorDefault, _pixelBufferPool, &pixelBuffer);
-    
-    if (status != kCVReturnSuccess) {
-        NSLog(@"Error creating pixel buffer from pool: %d", status);
-        return NULL;
-    }
-    
     CVPixelBufferRef convertedPixelBuffer = [_i420Converter convertI420ToPixelBuffer:i420Buffer];
-    CVPixelBufferRelease(pixelBuffer); // Release the pixel buffer back to the pool
     
     return convertedPixelBuffer;
 }
 
 -(void)dealloc {
     [_i420Converter unprepareForAccelerateConversion];
-    if (_pixelBufferPool) {
-        CVPixelBufferPoolRelease(_pixelBufferPool);
-    }
 }
 
 @end
