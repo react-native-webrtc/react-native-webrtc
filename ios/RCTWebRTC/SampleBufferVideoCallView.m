@@ -88,6 +88,8 @@
 
     CFDictionarySetValue(dict, kCMSampleAttachmentKey_DisplayImmediately, kCFBooleanTrue);
     
+    CVPixelBufferRelease(pixelBuffer); // Release the pixel buffer back to the pool
+    
     return sampleBuffer;
 }
 
