@@ -9,8 +9,6 @@ API_AVAILABLE(ios(15.0))
 @property(nonatomic, strong) RTCVideoTrack *videoTrack;
 
 @property(nonatomic, assign) BOOL startAutomatically;
-
-// TODO implement
 @property(nonatomic, assign) BOOL stopAutomatically;
 
 - (instancetype)initWithSourceView:(UIView *)sourceView;

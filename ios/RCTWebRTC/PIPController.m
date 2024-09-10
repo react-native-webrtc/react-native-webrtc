@@ -41,6 +41,11 @@
                          forKeyPath:@"pictureInPictureActive"
                             options:NSKeyValueObservingOptionInitial|NSKeyValueObservingOptionNew
                             context:nil];
+
+        [[NSNotificationCenter defaultCenter] addObserver:self
+                                                 selector:@selector(applicationWillEnterForeground:)
+                                                     name:UIApplicationWillEnterForegroundNotification
+                                                   object:nil];
     }
     
     return self;
@@ -51,8 +56,16 @@
                         change:(NSDictionary *)change
                        context:(void *)context
 {
-    if(keyPath == @"pictureInPictureActive") {
+    if([keyPath isEqualToString:@"pictureInPictureActive"]) {
         _sampleView.shouldRender = [change[NSKeyValueChangeNewKey] boolValue];
+    }
+}
+
+- (void)applicationWillEnterForeground:(NSNotification *)notification {
+    if (_stopAutomatically) {
+        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 0.5 * NSEC_PER_SEC), dispatch_get_main_queue(), ^{
+            [self.pipController stopPictureInPicture];
+        });
     }
 }
 
@@ -115,6 +128,9 @@
 - (void)dealloc {
     [_videoTrack removeRenderer:_sampleView];
     [_pipController removeObserver:self forKeyPath:@"pictureInPictureActive"];
+    [[NSNotificationCenter defaultCenter] removeObserver:self 
+                                            name:UIApplicationDidBecomeActiveNotification
+                                          object:nil];
 }
 
 @end
