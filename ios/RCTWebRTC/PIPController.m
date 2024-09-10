@@ -9,6 +9,8 @@
 @property(nonatomic, strong) AVPictureInPictureController *pipController;
 @property(nonnull, nonatomic, strong) SampleBufferVideoCallView *sampleView;
 
+@property(nonnull, nonatomic, strong) UIView *fallbackView;
+
 @end
 
 @implementation PIPController
@@ -18,20 +20,16 @@
     if (self = [super init]) {
         self.sourceView = sourceView;
         
+        _fallbackView = [[UIView alloc] initWithFrame:CGRectMake(0, 0, 1000, 1000)];
+        _fallbackView.translatesAutoresizingMaskIntoConstraints = false;
+
         SampleBufferVideoCallView * subview = [[SampleBufferVideoCallView alloc] initWithFrame:CGRectMake(0, 0, 1000, 1000)];
         _sampleView = subview;
+        _sampleView.translatesAutoresizingMaskIntoConstraints = false;
         _pipCallViewController = [[AVPictureInPictureVideoCallViewController alloc] init];
         [_pipCallViewController setPreferredContentSize:CGSizeMake(1000, 1000)];
-        [_pipCallViewController.view addSubview:subview];
-        
-        subview.translatesAutoresizingMaskIntoConstraints = false;
-        NSArray *constraints = @[
-            [subview.leadingAnchor constraintEqualToAnchor:_pipCallViewController.view.leadingAnchor],
-            [subview.trailingAnchor constraintEqualToAnchor: _pipCallViewController.view.trailingAnchor],
-            [subview.topAnchor constraintEqualToAnchor: _pipCallViewController.view.topAnchor],
-            [subview.bottomAnchor constraintEqualToAnchor: _pipCallViewController.view.bottomAnchor]
-        ];
-        [NSLayoutConstraint activateConstraints:constraints];
+
+        [self addToCallViewController:_fallbackView];
         
         _contentSource = [[AVPictureInPictureControllerContentSource alloc] initWithActiveVideoCallSourceView:sourceView contentViewController:_pipCallViewController];
         
@@ -58,11 +56,44 @@
     }
 }
 
+- (void)addToCallViewController:(UIView *)view {
+    [_pipCallViewController.view addSubview:view];
+    NSArray *constraints = @[
+        [view.leadingAnchor constraintEqualToAnchor:_pipCallViewController.view.leadingAnchor],
+        [view.trailingAnchor constraintEqualToAnchor: _pipCallViewController.view.trailingAnchor],
+        [view.topAnchor constraintEqualToAnchor: _pipCallViewController.view.topAnchor],
+        [view.bottomAnchor constraintEqualToAnchor: _pipCallViewController.view.bottomAnchor]
+    ];
+    [NSLayoutConstraint activateConstraints:constraints];
+}
+
 - (void)setVideoTrack:(RTCVideoTrack *)videoTrack {
-    if(self.videoTrack != videoTrack) {
-        [self.videoTrack removeRenderer:_sampleView];
+    if (_videoTrack != videoTrack) {
+        [_videoTrack removeRenderer:_sampleView];
     }
+
+    _videoTrack = videoTrack;
     [videoTrack addRenderer:_sampleView];
+
+    if (_videoTrack) {
+        if (!_sampleView.superview) {
+            [self addToCallViewController:_sampleView];
+        }
+        if (_fallbackView.superview) {
+            [_fallbackView removeFromSuperview];
+        }
+    } else {
+        if (!_fallbackView.superview) {
+            [self addToCallViewController:_fallbackView];
+        }
+        if (_sampleView.superview) {
+            [_sampleView removeFromSuperview];
+        }
+    }
+}
+
+- (void)insertFallbackView:(UIView *)view {
+    [self.fallbackView addSubview:view];
 }
 
 - (BOOL)startAutomatically {

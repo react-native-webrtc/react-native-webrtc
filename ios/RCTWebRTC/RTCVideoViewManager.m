@@ -166,6 +166,10 @@ typedef NS_ENUM(NSInteger, RTCVideoViewObjectFit) {
     }
 }
 
+- (void)insertReactSubview:(UIView *)subview atIndex:(NSInteger)atIndex {
+    // All subviews are treated as fallback views
+    [_pipController insertFallbackView:subview];
+}
 
 - (void) API_AVAILABLE(ios(15.0)) setPIPOptions:(NSDictionary *)pipOptions {
     if (!pipOptions) {
