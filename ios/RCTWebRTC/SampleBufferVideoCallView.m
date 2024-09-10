@@ -79,8 +79,8 @@
         }
 
         // Handle rotation
-        if (self.lastRotation != frame.rotation) {
-            self.lastRotation = frame.rotation;
+        if (self.currentRotation != frame.rotation) {
+            self.currentRotation = frame.rotation;
             
             CGFloat scale = 1;
             if(frame.rotation == 90 || frame.rotation == 270) {
