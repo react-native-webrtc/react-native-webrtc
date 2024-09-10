@@ -125,6 +125,18 @@
     }
 }
 
+- (void)startPIP {
+    if (_pipController.isPictureInPicturePossible) {
+        [_pipController startPictureInPicture];
+    }
+}
+
+- (void)stopPIP {
+    if(_pipController.isPictureInPictureActive) {
+        [_pipController stopPictureInPicture];
+    }
+}
+
 - (void)dealloc {
     [_videoTrack removeRenderer:_sampleView];
     [_pipController removeObserver:self forKeyPath:@"pictureInPictureActive"];

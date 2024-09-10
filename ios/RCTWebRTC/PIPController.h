@@ -13,5 +13,7 @@ API_AVAILABLE(ios(15.0))
 
 - (instancetype)initWithSourceView:(UIView *)sourceView;
 - (void)togglePIP;
+- (void)startPIP;
+- (void)stopPIP;
 - (void)insertFallbackView:(UIView *)subview;
 @end

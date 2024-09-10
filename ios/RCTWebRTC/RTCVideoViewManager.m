@@ -2,6 +2,7 @@
 #import <objc/runtime.h>
 
 #import <React/RCTLog.h>
+#import <React/RCTUIManager.h>
 #import <React/RCTView.h>
 
 #import <WebRTC/RTCMediaStream.h>
@@ -205,6 +206,14 @@ typedef NS_ENUM(NSInteger, RTCVideoViewObjectFit) {
     _pipController.stopAutomatically = stopAutomatically;
 }
 
+- (void) API_AVAILABLE(ios(15.0)) startPIP {
+    [_pipController startPIP];
+}
+
+- (void) API_AVAILABLE(ios(15.0)) stopPIP {
+    [_pipController stopPIP];
+}
+
 // DEBUG ONLY, nocommit
 - (void)touchesEnded:(NSSet *)touches withEvent:(UIEvent *)event {
     [_pipController togglePIP];
@@ -358,6 +367,33 @@ RCT_CUSTOM_VIEW_PROPERTY(iosPIP, NSDictionary *, RTCVideoView) {
     }
 }
 
+RCT_EXPORT_METHOD(startIOSPIP:(nonnull NSNumber *)reactTag) {
+    if (@available(iOS 15.0, *)) {
+        RCTUIManager *uiManager = [self.bridge moduleForClass:[RCTUIManager class]];
+        [uiManager addUIBlock:^(RCTUIManager *uiManager, NSDictionary<NSNumber *,UIView *> *viewRegistry) {
+            UIView *view = viewRegistry[reactTag];
+            if (!view || ![view isKindOfClass:[RTCVideoView class]]) {
+                RCTLogError(@"Cannot find RTCVideoView with tag #%@", reactTag);
+                return;
+            }
+            [(RTCVideoView *)view startPIP];
+        }];
+    }
+}
+
+RCT_EXPORT_METHOD(stopIOSPIP:(nonnull NSNumber *)reactTag) {
+    if (@available(iOS 15.0, *)) {
+        RCTUIManager *uiManager = [self.bridge moduleForClass:[RCTUIManager class]];
+        [uiManager addUIBlock:^(RCTUIManager *uiManager, NSDictionary<NSNumber *,UIView *> *viewRegistry) {
+            UIView *view = viewRegistry[reactTag];
+            if (!view || ![view isKindOfClass:[RTCVideoView class]]) {
+                RCTLogError(@"Cannot find RTCVideoView with tag #%@", reactTag);
+                return;
+            }
+            [(RTCVideoView *)view stopPIP];
+        }];
+    }
+}
 + (BOOL)requiresMainQueueSetup {
     return NO;
 }

@@ -18,7 +18,7 @@ import permissions from './Permissions';
 import RTCAudioSession from './RTCAudioSession';
 import RTCErrorEvent from './RTCErrorEvent';
 import RTCIceCandidate from './RTCIceCandidate';
-import RTCPIPView from './RTCPIPView';
+import RTCPIPView, { startIOSPIP, stopIOSPIP } from './RTCPIPView';
 import RTCPeerConnection from './RTCPeerConnection';
 import RTCRtpReceiver from './RTCRtpReceiver';
 import RTCRtpSender from './RTCRtpSender';
@@ -49,7 +49,9 @@ export {
     type MediaTrackSettings,
     mediaDevices,
     permissions,
-    registerGlobals
+    registerGlobals,
+    startIOSPIP,
+    stopIOSPIP,
 };
 
 declare const global: any;
