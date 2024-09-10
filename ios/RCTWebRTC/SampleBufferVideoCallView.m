@@ -18,6 +18,7 @@
 
 @property (nonatomic, retain) I420Converter *i420Converter;
 @property (nonatomic, strong) id<SampleBufferRendering> renderer;
+@property (nonatomic, assign) NSInteger currentRotation;
 
 @end
 
@@ -68,12 +69,29 @@
     }
 
     dispatch_async(dispatch_get_main_queue(), ^{
+
         if (self.renderer.requiresFlushToResumeDecoding) {
             [self.renderer flush];
         }
 
         if (!self.renderer.readyForMoreMediaData) {
             return;
+        }
+
+        // Handle rotation
+        if (self.lastRotation != frame.rotation) {
+            self.lastRotation = frame.rotation;
+            
+            CGFloat scale = 1;
+            if(frame.rotation == 90 || frame.rotation == 270) {
+                CGSize size = self.sampleBufferLayer.bounds.size;
+                scale = size.height / size.width;
+            }
+            
+            self.sampleBufferLayer.transform = CATransform3DConcat(
+                CATransform3DMakeRotation(frame.rotation / 180.0 * M_PI, 0.0, 0.0, 1.0),
+                CATransform3DMakeScale(scale, scale, 1)
+            );
         }
 
         // Display the CMSampleBuffer using AVSampleBufferDisplayLayer
