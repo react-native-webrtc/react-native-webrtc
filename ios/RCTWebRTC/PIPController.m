@@ -121,7 +121,10 @@
 }
 
 - (void)setPreferredSize:(CGSize)size {
-    _pipCallViewController.preferredContentSize = size;
+    if (!CGSizeEqualToSize(size, _pipCallViewController.preferredContentSize)) {
+        _pipCallViewController.preferredContentSize = size;
+        [_sampleView requestScaleRecalculation];
+    }
 }
 
 - (BOOL)startAutomatically {

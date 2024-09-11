@@ -2,6 +2,7 @@
 #import "SampleBufferVideoCallView.h"
 #import <WebRTC/WebRTC.h>
 #import <Accelerate/Accelerate.h>
+
 @protocol SampleBufferRendering <AVQueuedSampleBufferRendering>
 
 -(BOOL)requiresFlushToResumeDecoding;
@@ -50,6 +51,27 @@
     return (AVSampleBufferDisplayLayer *)self.layer;
 }
 
+- (void)requestScaleRecalculation {
+    _currentRotation = -1;
+}
+
+- (void)recalculateScale:(RTCVideoRotation)rotation {
+    if (self.currentRotation != rotation) {
+        self.currentRotation = rotation;
+        
+        CGFloat scale = 1;
+        if(rotation == 90 || rotation == 270) {
+            CGSize size = self.sampleBufferLayer.bounds.size;
+            scale = size.height / size.width;
+        }
+        
+        self.sampleBufferLayer.transform = CATransform3DConcat(
+            CATransform3DMakeRotation(rotation / 180.0 * M_PI, 0.0, 0.0, 1.0),
+            CATransform3DMakeScale(scale, scale, 1)
+        );
+    }
+}
+
 /** The size of the video frame. */
 - (void)setSize : (CGSize)size{
     
@@ -78,21 +100,7 @@
             return;
         }
 
-        // Handle rotation
-        if (self.currentRotation != frame.rotation) {
-            self.currentRotation = frame.rotation;
-            
-            CGFloat scale = 1;
-            if(frame.rotation == 90 || frame.rotation == 270) {
-                CGSize size = self.sampleBufferLayer.bounds.size;
-                scale = size.height / size.width;
-            }
-            
-            self.sampleBufferLayer.transform = CATransform3DConcat(
-                CATransform3DMakeRotation(frame.rotation / 180.0 * M_PI, 0.0, 0.0, 1.0),
-                CATransform3DMakeScale(scale, scale, 1)
-            );
-        }
+        [self recalculateScale:frame.rotation];
 
         // Display the CMSampleBuffer using AVSampleBufferDisplayLayer
         [self.renderer enqueueSampleBuffer:sampleBuffer];
@@ -108,7 +116,7 @@
     if (!pixelBuffer) {
         return nil;
     }
-    
+
     // Create a CMVideoFormatDescription
     CMVideoFormatDescriptionRef formatDescription;
     CMVideoFormatDescriptionCreateForImageBuffer(kCFAllocatorDefault, pixelBuffer, &formatDescription);
@@ -119,7 +127,6 @@
     timingInfo.presentationTimeStamp = CMTimeMake(rtcVideoFrame.timeStamp, 90000);
     timingInfo.decodeTimeStamp = CMTimeMake(rtcVideoFrame.timeStamp, 90000);
     
-    // TODO: handle rotations
     // Create CMSampleBuffer
     CMSampleBufferRef sampleBuffer;
     CMSampleBufferCreateForImageBuffer(kCFAllocatorDefault, pixelBuffer, true, nil, nil, formatDescription, &timingInfo, &sampleBuffer);
@@ -171,4 +178,3 @@
 }
 
 @end
-
