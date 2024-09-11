@@ -159,7 +159,9 @@
     BOOL enabled = YES;
     BOOL startAutomatically = YES;
     BOOL stopAutomatically = YES;
-    
+
+    CGSize preferredSize = CGSizeZero;
+
     if ([pipOptions objectForKey:@"enabled"]) {
         enabled = [pipOptions[@"enabled"] boolValue];
     }
@@ -168,6 +170,15 @@
     }
     if ([pipOptions objectForKey:@"stopAutomatically"]) {
         stopAutomatically = [pipOptions[@"stopAutomatically"] boolValue];
+    }
+    if ([pipOptions objectForKey:@"preferredSize"]) {
+        NSDictionary *sizeDict = pipOptions[@"preferredSize"];
+        id width = sizeDict[@"width"];
+        id height = sizeDict[@"height"];
+        
+        if ([width isKindOfClass:[NSNumber class]] && [height isKindOfClass:[NSNumber class]]) {
+            preferredSize = CGSizeMake([width doubleValue], [height doubleValue]);
+        }
     }
     
     if (!enabled) {
@@ -183,6 +194,7 @@
     _pipController.startAutomatically = startAutomatically;
     _pipController.stopAutomatically = stopAutomatically;
     _pipController.objectFit = _objectFit;
+    _pipController.preferredSize = preferredSize;
 }
 
 - (void) API_AVAILABLE(ios(15.0)) startPIP {

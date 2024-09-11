@@ -24,7 +24,7 @@ import RTCRtpReceiver from './RTCRtpReceiver';
 import RTCRtpSender from './RTCRtpSender';
 import RTCRtpTransceiver from './RTCRtpTransceiver';
 import RTCSessionDescription from './RTCSessionDescription';
-import RTCView from './RTCView';
+import RTCView, { type RTCVideoViewProps, type RTCIOSPIPOptions } from './RTCView';
 import ScreenCapturePickerView from './ScreenCapturePickerView';
 
 Logger.enable(`${Logger.ROOT_PREFIX}:*`);
@@ -47,6 +47,8 @@ export {
     MediaStream,
     MediaStreamTrack,
     type MediaTrackSettings,
+    type RTCVideoViewProps,
+    type RTCIOSPIPOptions,
     mediaDevices,
     permissions,
     registerGlobals,

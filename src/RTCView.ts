@@ -79,6 +79,7 @@ export interface RTCIOSPIPOptions {
    * Whether PIP is enabled for this view.
    */
   enabled?: boolean;
+
   /**
    * The preferred size of the PIP window.
    */

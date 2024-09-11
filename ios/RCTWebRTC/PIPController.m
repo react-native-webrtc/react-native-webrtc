@@ -20,14 +20,13 @@
     if (self = [super init]) {
         self.sourceView = sourceView;
         
-        _fallbackView = [[UIView alloc] initWithFrame:CGRectMake(0, 0, 1000, 1000)];
+        _fallbackView = [[UIView alloc] initWithFrame:CGRectZero];
         _fallbackView.translatesAutoresizingMaskIntoConstraints = false;
 
-        SampleBufferVideoCallView * subview = [[SampleBufferVideoCallView alloc] initWithFrame:CGRectMake(0, 0, 1000, 1000)];
+        SampleBufferVideoCallView * subview = [[SampleBufferVideoCallView alloc] initWithFrame:CGRectZero];
         _sampleView = subview;
         _sampleView.translatesAutoresizingMaskIntoConstraints = false;
         _pipCallViewController = [[AVPictureInPictureVideoCallViewController alloc] init];
-        [_pipCallViewController setPreferredContentSize:CGSizeMake(1000, 1000)];
 
         [self addToCallViewController:_fallbackView];
         
@@ -115,6 +114,14 @@
     } else {
         self.sampleView.sampleBufferLayer.videoGravity = AVLayerVideoGravityResizeAspect;
     }
+}
+
+- (CGSize)preferredSize {
+    return _pipCallViewController.preferredContentSize;
+}
+
+- (void)setPreferredSize:(CGSize)size {
+    _pipCallViewController.preferredContentSize = size;
 }
 
 - (BOOL)startAutomatically {
