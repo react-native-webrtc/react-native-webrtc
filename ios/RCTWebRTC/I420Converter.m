@@ -13,6 +13,8 @@
 
 @property (nonatomic, assign) vImage_YpCbCrToARGB *conversionInfo;
 @property (nonatomic, assign) CVPixelBufferPoolRef pixelBufferPool;
+@property (nonatomic, assign) size_t poolWidth;
+@property (nonatomic, assign) size_t poolHeight;
 @end
 
 @implementation I420Converter
@@ -59,6 +61,8 @@
         CVPixelBufferPoolRelease(_pixelBufferPool);
     }
     
+    _poolWidth = width;
+    _poolHeight = height;
     NSDictionary *pixelBufferAttributes = @{
         (id)kCVPixelBufferPixelFormatTypeKey: @(kCVPixelFormatType_32BGRA),
         (id)kCVPixelBufferWidthKey: @(width),
@@ -66,7 +70,12 @@
         (id)kCVPixelBufferIOSurfacePropertiesKey: @{}
     };
     
-    CVPixelBufferPoolCreate(kCFAllocatorDefault, NULL, (__bridge CFDictionaryRef)pixelBufferAttributes, &_pixelBufferPool);
+    CVReturn ret = CVPixelBufferPoolCreate(kCFAllocatorDefault, NULL, (__bridge CFDictionaryRef)pixelBufferAttributes, &_pixelBufferPool);
+
+    if (ret != kCVReturnSuccess) {
+        NSLog(@"Error creating pixel buffer pool: %d", ret);
+        _pixelBufferPool = NULL;
+    }
 }
 
 - (CVPixelBufferRef)convertI420ToPixelBuffer:(RTCI420Buffer *)buffer
@@ -76,7 +85,7 @@
         return NULL;
     }
     
-    if (_pixelBufferPool == NULL) {
+    if (_pixelBufferPool == NULL || _poolWidth != buffer.width || _poolHeight != buffer.height) {
         [self createPixelBufferPoolWithWidth:buffer.width height:buffer.height];
     }
     
@@ -141,6 +150,7 @@
 
 - (void)dealloc {
     [self unprepareForAccelerateConversion];
+    CVPixelBufferPoolRelease(_pixelBufferPool);
 }
 
 @end
