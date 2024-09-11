@@ -23,6 +23,8 @@ export interface RTCVideoViewProps extends ViewProps {
    * resembles the CSS style object-fit.
    *
    * objectFit: 'contain' | 'cover'
+   * 
+   * Defaults to 'cover'.
    */
   objectFit?: 'contain' | 'cover';
 

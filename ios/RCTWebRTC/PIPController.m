@@ -109,6 +109,14 @@
     [self.fallbackView addSubview:view];
 }
 
+- (void)setObjectFit:(RTCVideoViewObjectFit)fit {
+    if (fit == RTCVideoViewObjectFitCover) {
+        self.sampleView.sampleBufferLayer.videoGravity = AVLayerVideoGravityResizeAspectFill;
+    } else {
+        self.sampleView.sampleBufferLayer.videoGravity = AVLayerVideoGravityResizeAspect;
+    }
+}
+
 - (BOOL)startAutomatically {
     return _pipController.canStartPictureInPictureAutomaticallyFromInline;
 }

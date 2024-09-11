@@ -2,6 +2,8 @@
 #import <WebRTC/RTCVideoTrack.h>
 #import <AVKit/AVKit.h>
 
+#import "RTCVideoViewManager.h"
+
 API_AVAILABLE(ios(15.0))
 @interface PIPController : NSObject <AVPictureInPictureControllerDelegate>
 
@@ -16,4 +18,6 @@ API_AVAILABLE(ios(15.0))
 - (void)startPIP;
 - (void)stopPIP;
 - (void)insertFallbackView:(UIView *)subview;
+- (void)setObjectFit:(RTCVideoViewObjectFit)fit;
+
 @end

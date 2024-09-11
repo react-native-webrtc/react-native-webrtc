@@ -20,29 +20,6 @@
 #import "WebRTCModule.h"
 
 /**
- * In the fashion of
- * https://www.w3.org/TR/html5/embedded-content-0.html#dom-video-videowidth
- * and https://www.w3.org/TR/html5/rendering.html#video-object-fit, resembles
- * the CSS style {@code object-fit}.
- */
-typedef NS_ENUM(NSInteger, RTCVideoViewObjectFit) {
-    /**
-     * The contain value defined by https://www.w3.org/TR/css3-images/#object-fit:
-     *
-     * The replaced content is sized to maintain its aspect ratio while fitting
-     * within the element's content box.
-     */
-    RTCVideoViewObjectFitContain = 1,
-    /**
-     * The cover value defined by https://www.w3.org/TR/css3-images/#object-fit:
-     *
-     * The replaced content is sized to maintain its aspect ratio while filling
-     * the element's entire content box.
-     */
-    RTCVideoViewObjectFitCover
-};
-
-/**
  * Implements an equivalent of {@code HTMLVideoElement} i.e. Web's video
  * element.
  */
@@ -134,6 +111,7 @@ typedef NS_ENUM(NSInteger, RTCVideoViewObjectFit) {
         RTCMTLVideoView *subview = [[RTCMTLVideoView alloc] initWithFrame:CGRectZero];
         _videoView = subview;
 #endif
+        _objectFit = RTCVideoViewObjectFitCover;
         [self addSubview:self.videoView];
     }
 
@@ -204,6 +182,7 @@ typedef NS_ENUM(NSInteger, RTCVideoViewObjectFit) {
     
     _pipController.startAutomatically = startAutomatically;
     _pipController.stopAutomatically = stopAutomatically;
+    _pipController.objectFit = _objectFit;
 }
 
 - (void) API_AVAILABLE(ios(15.0)) startPIP {
@@ -237,6 +216,9 @@ typedef NS_ENUM(NSInteger, RTCVideoViewObjectFit) {
             self.videoView.videoContentMode = UIViewContentModeScaleAspectFit;
         }
 #endif
+        if (@available(iOS 15.0, *)) {
+            _pipController.objectFit = fit;
+        }
     }
 }
 
