@@ -61,7 +61,7 @@
         
         CGFloat scale = 1;
         if(rotation == 90 || rotation == 270) {
-            CGSize size = self.sampleBufferLayer.bounds.size;
+            CGSize size = self.bounds.size;
             scale = size.height / size.width;
         }
         
