@@ -7,7 +7,7 @@ module.exports = {
     root: true,
     overrides: [
         {
-            files: [ '*.ts' ],
+            files: [ '*.ts', '*.tsx' ],
             rules: {
                 '@typescript-eslint/ban-ts-comment': 'off',
                 '@typescript-eslint/no-explicit-any': 'off',
