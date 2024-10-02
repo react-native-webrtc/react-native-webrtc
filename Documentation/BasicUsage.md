@@ -342,6 +342,13 @@ Don't forget, the user facing camera is usually mirrored.
 | streamURL | string | 'streamURL' | Required to have an actual video stream rendering. |
 | zOrder | number | 0 | Similar to zIndex. |
 
+> [!NOTE]  
+> If for some reason you don't see the rendered video element, you might want to try adding the `style` parameter to the `RTCView` component. This can help ensure the component has the correct dimensions and positioning. For example:
+> ```javascript
+> <RTCView style={{ width: '100%', height: '100%' }} ...
+> ```
+
+
 ## Controlling remote audio tracks
 
 Remote audio tracks are automatically handled and played through your audio output.
