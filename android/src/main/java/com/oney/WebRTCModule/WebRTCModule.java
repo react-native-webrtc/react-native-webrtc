@@ -966,7 +966,7 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
     public void peerConnectionCreateOffer(int id, ReadableMap options, Promise promise) {
         ThreadUtils.runOnExecutor(() -> {
             PeerConnectionObserver pco = mPeerConnectionObservers.get(id);
-            PeerConnection peerConnection = pco.getPeerConnection();
+            PeerConnection peerConnection = pco == null ? null : pco.getPeerConnection();
 
             if (peerConnection == null) {
                 Log.d(TAG, "peerConnectionCreateOffer() peerConnection is null");
@@ -1128,7 +1128,7 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
     public void peerConnectionSetRemoteDescription(int id, ReadableMap desc, Promise promise) {
         ThreadUtils.runOnExecutor(() -> {
             PeerConnectionObserver pco = mPeerConnectionObservers.get(id);
-            PeerConnection peerConnection = pco.getPeerConnection();
+            PeerConnection peerConnection = pco == null ? null : pco.getPeerConnection();
 
             if (peerConnection == null) {
                 Log.d(TAG, "peerConnectionSetRemoteDescription() peerConnection is null");
