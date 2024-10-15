@@ -274,7 +274,7 @@ RCT_EXPORT_METHOD(enumerateDevices : (RCTResponseSenderBlock)callback) {
 #else
     NSMutableArray *devices = [NSMutableArray array];
     AVCaptureDeviceDiscoverySession *videoevicesSession =
-        [AVCaptureDeviceDiscoverySession discoverySessionWithDeviceTypes:@[ AVCaptureDeviceTypeBuiltInWideAngleCamera ]
+        [AVCaptureDeviceDiscoverySession discoverySessionWithDeviceTypes:@[ AVCaptureDeviceTypeBuiltInWideAngleCamera, AVCaptureDeviceTypeBuiltInUltraWideCamera, AVCaptureDeviceTypeBuiltInTelephotoCamera, AVCaptureDeviceTypeBuiltInDualCamera, AVCaptureDeviceTypeBuiltInDualWideCamera, AVCaptureDeviceTypeBuiltInTripleCamera]
                                                                mediaType:AVMediaTypeVideo
                                                                 position:AVCaptureDevicePositionUnspecified];
     for (AVCaptureDevice *device in videoevicesSession.devices) {
