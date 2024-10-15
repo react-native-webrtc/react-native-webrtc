@@ -12,9 +12,10 @@ import { setupNativeEvents } from './EventEmitter';
 import Logger from './Logger';
 import mediaDevices from './MediaDevices';
 import MediaStream from './MediaStream';
-import MediaStreamTrack from './MediaStreamTrack';
+import MediaStreamTrack, { type MediaTrackSettings } from './MediaStreamTrack';
 import MediaStreamTrackEvent from './MediaStreamTrackEvent';
 import permissions from './Permissions';
+import RTCAudioSession from './RTCAudioSession';
 import RTCErrorEvent from './RTCErrorEvent';
 import RTCIceCandidate from './RTCIceCandidate';
 import RTCPeerConnection from './RTCPeerConnection';
@@ -40,8 +41,10 @@ export {
     RTCRtpReceiver,
     RTCRtpSender,
     RTCErrorEvent,
+    RTCAudioSession,
     MediaStream,
     MediaStreamTrack,
+    type MediaTrackSettings,
     mediaDevices,
     permissions,
     registerGlobals

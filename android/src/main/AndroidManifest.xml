@@ -8,9 +8,4 @@
                 android:foregroundServiceType="mediaProjection">
         </service>
     </application>
-    <uses-feature
-        android:name="android.hardware.usb.host"
-        android:required="false"
-        tools:node="replace"
-    />
 </manifest>

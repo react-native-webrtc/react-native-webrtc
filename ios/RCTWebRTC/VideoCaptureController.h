@@ -15,6 +15,7 @@
 - (void)startCapture;
 - (void)stopCapture;
 - (void)switchCamera;
+- (void)applyConstraints:(NSDictionary *)constraints error:(NSError **)outError;
 
 @end
 #endif
