@@ -259,6 +259,13 @@
     int currentDiff = INT_MAX;
 
     for (AVCaptureDeviceFormat *format in formats) {
+        // Only use multi cam formats when on multi cam supported devices.
+        if (@available(iOS 13.0, macOS 14.0, tvOS 17.0, *)) {
+            if (AVCaptureMultiCamSession.multiCamSupported && !format.multiCamSupported) {
+                continue;
+            }
+        }
+
         CMVideoDimensions dimension = CMVideoFormatDescriptionGetDimensions(format.formatDescription);
         FourCharCode pixelFormat = CMFormatDescriptionGetMediaSubType(format.formatDescription);
         int diff = abs(targetWidth - dimension.width) + abs(targetHeight - dimension.height);
