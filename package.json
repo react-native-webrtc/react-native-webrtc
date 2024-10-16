@@ -1,6 +1,6 @@
 {
   "name": "@stream-io/react-native-webrtc",
-  "version": "124.0.0-rc.1",
+  "version": "124.0.0",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/GetStream/react-native-webrtc.git"
