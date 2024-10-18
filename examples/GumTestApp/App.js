@@ -6,7 +6,7 @@
  * @flow strict-local
  */
 
-import React, {useState} from 'react';
+import React, {useState, useRef} from 'react';
 import {
   Button,
   SafeAreaView,
@@ -15,10 +15,11 @@ import {
   StatusBar,
 } from 'react-native';
 import { Colors } from 'react-native/Libraries/NewAppScreen';
-import { mediaDevices, RTCView } from 'react-native-webrtc';
+import { mediaDevices, startIOSPIP, stopIOSPIP, RTCPIPView } from 'react-native-webrtc';
 
 
 const App = () => {
+  const view = useRef()
   const [stream, setStream] = useState(null);
   const start = async () => {
     console.log('start');
@@ -31,6 +32,12 @@ const App = () => {
       }
     }
   };
+  const startPIP = () => {
+    startIOSPIP(view);
+  };
+  const stopPIP = () => {
+    stopIOSPIP(view);
+  };
   const stop = () => {
     console.log('stop');
     if (stream) {
@@ -38,21 +45,34 @@ const App = () => {
       setStream(null);
     }
   };
+  const pipOptions = {
+    startAutomatically: true,
+    fallbackView: (<View style={{ height: 800, width: 400, backgroundColor: 'red' }} />),
+    preferredSize: {
+      width: 400,
+      height: 800,
+    }
+  }
   return (
     <>
       <StatusBar barStyle="dark-content" />
       <SafeAreaView style={styles.body}>
-      {
-        stream &&
-          <RTCView
-            streamURL={stream.toURL()}
-            style={styles.stream} />
-      }
+        <RTCPIPView
+            ref={view}
+            streamURL={stream && stream.toURL()}
+            style={styles.stream}
+            iosPIP={pipOptions} />
         <View
           style={styles.footer}>
           <Button
             title = "Start"
             onPress = {start} />
+          <Button
+            title = "Start PIP"
+            onPress = {startPIP} />
+          <Button
+            title = "Stop PIP"
+            onPress = {stopPIP} />
           <Button
             title = "Stop"
             onPress = {stop} />
