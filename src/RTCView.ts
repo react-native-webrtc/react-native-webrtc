@@ -77,7 +77,7 @@ export interface RTCIOSPIPOptions {
 
   /**
    * Whether PIP can be launched from this view.
-   * 
+   *
    * Defaults to true.
    */
   enabled?: boolean;
