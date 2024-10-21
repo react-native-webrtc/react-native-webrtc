@@ -205,11 +205,6 @@
     [_pipController stopPIP];
 }
 
-// DEBUG ONLY, nocommit
-- (void)touchesEnded:(NSSet *)touches withEvent:(UIEvent *)event {
-    [_pipController togglePIP];
-}
-
 /**
  * Implements the setter of the {@link #objectFit} property of this
  * {@code RTCVideoView}.
