@@ -1,4 +1,4 @@
-import { EventTarget, Event, defineEventAttribute } from 'event-target-shim/index';
+import { EventTarget, Event, defineEventAttribute } from 'event-target-shim';
 import { NativeModules } from 'react-native';
 
 import { addListener, removeListener } from './EventEmitter';
