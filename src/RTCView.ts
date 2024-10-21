@@ -76,7 +76,9 @@ export interface RTCVideoViewProps extends ViewProps {
 export interface RTCIOSPIPOptions {
 
   /**
-   * Whether PIP is enabled for this view.
+   * Whether PIP can be launched from this view.
+   * 
+   * Defaults to true.
    */
   enabled?: boolean;
 
