@@ -1,4 +1,4 @@
-import { Event } from 'event-target-shim';
+import { Event } from 'event-target-shim/index';
 
 export type MessageEventData = string | ArrayBuffer | Blob;
 
