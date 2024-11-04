@@ -6,8 +6,7 @@ import { requireNativeComponent, ViewProps } from 'react-native';
  *
  * So we list them here for documentation purposes.
  */
-
-interface RTCVideoViewProps extends ViewProps {
+export interface RTCVideoViewProps extends ViewProps {
   /**
    * Indicates whether the video specified by {@link #streamURL} should be
    * mirrored during rendering. Commonly, applications choose to mirror the
@@ -24,6 +23,8 @@ interface RTCVideoViewProps extends ViewProps {
    * resembles the CSS style object-fit.
    *
    * objectFit: 'contain' | 'cover'
+   *
+   * Defaults to 'cover'.
    */
   objectFit?: 'contain' | 'cover';
 
@@ -59,6 +60,53 @@ interface RTCVideoViewProps extends ViewProps {
    * zOrder: number
    */
   zOrder?: number;
+
+
+  /**
+   * Picture in picture options for this view. Disabled if not supplied.
+   *
+   * Note: this should only be generally only used with remote video tracks,
+   * as the local camera may stop while in the background.
+   *
+   * iOS only. Requires iOS 15.0 or above, and the PIP background mode capability.
+   */
+  iosPIP?: RTCIOSPIPOptions
 }
 
+export interface RTCIOSPIPOptions {
+
+  /**
+   * Whether PIP can be launched from this view.
+   *
+   * Defaults to true.
+   */
+  enabled?: boolean;
+
+  /**
+   * The preferred size of the PIP window.
+   */
+  preferredSize?: {
+    width: number;
+    height: number;
+  },
+
+  /**
+   * Indicates whether Picture in Picture starts automatically
+   * when the controller embeds its content inline and the app
+   * transitions to the background.
+   *
+   * Defaults to true.
+   *
+   * See: AVPictureInPictureController.canStartPictureInPictureAutomaticallyFromInline
+   */
+  startAutomatically?: boolean;
+
+  /**
+   * Indicates whether Picture in Picture should stop automatically
+   * when the app returns to the foreground.
+   *
+   * Defaults to true.
+   */
+  stopAutomatically?: boolean;
+}
 export default requireNativeComponent<RTCVideoViewProps>('RTCVideoView');
