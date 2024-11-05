@@ -29,7 +29,6 @@ NSString *const kRTCAppGroupIdentifier = @"RTCAppGroupIdentifier";
     self = [super init];
     if (self) {
         self.capturer = capturer;
-        self.deviceId = @"screen-capture";
     }
 
     return self;
@@ -54,13 +53,6 @@ NSString *const kRTCAppGroupIdentifier = @"RTCAppGroupIdentifier";
     [self.capturer stopCapture];
 }
 
-- (NSDictionary *)getSettings {
-    return @{
-        @"deviceId": self.deviceId,
-        @"groupId": @"",
-        @"frameRate" : @(30)
-    };
-}
 // MARK: CapturerEventsDelegate Methods
 
 - (void)capturerDidEnd:(RTCVideoCapturer *)capturer {

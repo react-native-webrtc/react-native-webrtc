@@ -2,7 +2,6 @@
 import { NativeModules } from 'react-native';
 
 
-import { MediaTrackConstraints } from './Constraints';
 import MediaStream from './MediaStream';
 import MediaStreamError from './MediaStreamError';
 import permissions from './Permissions';
@@ -10,9 +9,9 @@ import * as RTCUtil from './RTCUtil';
 
 const { WebRTCModule } = NativeModules;
 
-export interface Constraints {
-    audio?: boolean | MediaTrackConstraints;
-    video?: boolean | MediaTrackConstraints;
+interface Constraints {
+    audio?: boolean | object;
+    video?: boolean | object;
 }
 
 export default function getUserMedia(constraints: Constraints = {}): Promise<MediaStream> {

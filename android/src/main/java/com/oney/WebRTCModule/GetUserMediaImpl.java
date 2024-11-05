@@ -6,7 +6,6 @@ import android.content.Intent;
 import android.media.projection.MediaProjectionManager;
 import android.util.DisplayMetrics;
 import android.util.Log;
-import androidx.core.util.Consumer;
 
 import com.facebook.react.bridge.Arguments;
 import com.facebook.react.bridge.BaseActivityEventListener;
@@ -237,22 +236,11 @@ class GetUserMediaImpl {
         }
     }
 
-    void applyConstraints(String trackId, ReadableMap constraints, Promise promise) {
+    void switchCamera(String trackId) {
         TrackPrivate track = tracks.get(trackId);
-        if (track != null && track.videoCaptureController instanceof AbstractVideoCaptureController) {
-            AbstractVideoCaptureController captureController = (AbstractVideoCaptureController) track.videoCaptureController;
-            captureController.applyConstraints(constraints, new Consumer<Exception>() {
-                public void accept(Exception e) {
-                    if(e != null) {
-                        promise.reject(e);
-                        return;
-                    }
-
-                    promise.resolve(captureController.getSettings());
-                }
-            });
-        } else {
-            promise.reject(new Exception("Camera track not found!"));
+        if (track != null && track.videoCaptureController instanceof CameraCaptureController) {
+            CameraCaptureController cameraCaptureController = (CameraCaptureController) track.videoCaptureController;
+            cameraCaptureController.switchCamera();
         }
     }
 
@@ -342,13 +330,10 @@ class GetUserMediaImpl {
             if (track instanceof VideoTrack) {
                 TrackPrivate tp = this.tracks.get(trackId);
                 AbstractVideoCaptureController vcc = tp.videoCaptureController;
-                trackInfo.putMap("settings", vcc.getSettings());
-            }
-
-            if (track instanceof AudioTrack) {
                 WritableMap settings = Arguments.createMap();
-                settings.putString("deviceId", "audio-1");
-                settings.putString("groupId", "");
+                settings.putInt("height", vcc.getHeight());
+                settings.putInt("width", vcc.getWidth());
+                settings.putInt("frameRate", vcc.getFrameRate());
                 trackInfo.putMap("settings", settings);
             }
 

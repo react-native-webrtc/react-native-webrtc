@@ -88,14 +88,12 @@
         NSDictionary *settings = @{};
         if ([track.kind isEqualToString:@"video"]) {
             RTCVideoTrack *videoTrack = (RTCVideoTrack *)track;
-            if ([videoTrack.captureController isKindOfClass:[CaptureController class]]) {
-                settings = [videoTrack.captureController getSettings];
+            if ([videoTrack.captureController isKindOfClass:[VideoCaptureController class]]) {
+                VideoCaptureController *vcc = (VideoCaptureController *)videoTrack.captureController;
+                AVCaptureDeviceFormat *format = vcc.selectedFormat;
+                CMVideoDimensions dimensions = CMVideoFormatDescriptionGetDimensions(format.formatDescription);
+                settings = @{@"height" : @(dimensions.height), @"width" : @(dimensions.width), @"frameRate" : @(30)};
             }
-        } else if ([track.kind isEqualToString:@"audio"]) {
-            settings = @{
-                @"deviceId": @"audio",
-                @"groupId": @"",
-            };
         }
 
         [trackInfos addObject:@{
@@ -247,14 +245,10 @@ RCT_EXPORT_METHOD(getUserMedia
         NSDictionary *settings = @{};
         if ([track.kind isEqualToString:@"video"]) {
             RTCVideoTrack *videoTrack = (RTCVideoTrack *)track;
-            if ([videoTrack.captureController isKindOfClass:[CaptureController class]]) {
-                settings = [videoTrack.captureController getSettings];
-            }
-        } else if ([track.kind isEqualToString:@"audio"]) {
-            settings = @{
-                @"deviceId": @"audio",
-                @"groupId": @"",
-            };
+            VideoCaptureController *vcc = (VideoCaptureController *)videoTrack.captureController;
+            AVCaptureDeviceFormat *format = vcc.selectedFormat;
+            CMVideoDimensions dimensions = CMVideoFormatDescriptionGetDimensions(format.formatDescription);
+            settings = @{@"height" : @(dimensions.height), @"width" : @(dimensions.width), @"frameRate" : @(30)};
         }
 
         [tracks addObject:@{
@@ -284,11 +278,11 @@ RCT_EXPORT_METHOD(enumerateDevices : (RCTResponseSenderBlock)callback) {
     if (@available(macos 14.0, ios 17.0, tvos 17.0, *)) {
         [deviceTypes addObject:AVCaptureDeviceTypeExternal];
     }
-    AVCaptureDeviceDiscoverySession *videoDevicesSession =
+    AVCaptureDeviceDiscoverySession *videoevicesSession =
         [AVCaptureDeviceDiscoverySession discoverySessionWithDeviceTypes:deviceTypes
                                                                mediaType:AVMediaTypeVideo
                                                                 position:AVCaptureDevicePositionUnspecified];
-    for (AVCaptureDevice *device in videoDevicesSession.devices) {
+    for (AVCaptureDevice *device in videoevicesSession.devices) {
         NSString *position = @"unknown";
         if (device.position == AVCaptureDevicePositionBack) {
             position = @"environment";
@@ -414,32 +408,14 @@ RCT_EXPORT_METHOD(mediaStreamTrackSetEnabled : (nonnull NSNumber *)pcId : (nonnu
 #endif
 }
 
-RCT_EXPORT_METHOD(mediaStreamTrackApplyConstraints : (nonnull NSString *)trackID : (NSDictionary *)constraints : (RCTPromiseResolveBlock)resolve : (RCTPromiseRejectBlock)reject) {
+RCT_EXPORT_METHOD(mediaStreamTrackSwitchCamera : (nonnull NSString *)trackID) {
 #if TARGET_OS_TV
-    reject(@"unsupported_platform", @"tvOS is not supported", nil);
     return;
 #else
     RTCMediaStreamTrack *track = self.localTracks[trackID];
     if (track) {
-        if ([track.kind isEqualToString:@"video"]) {
-            RTCVideoTrack *videoTrack = (RTCVideoTrack *)track;
-            if ([videoTrack.captureController isKindOfClass:[CaptureController class]]) {
-                CaptureController *vcc = (CaptureController *)videoTrack.captureController;
-                NSError* error = nil;
-                [vcc applyConstraints:constraints error:&error];
-                if (error) {
-                    reject(@"E_INVALID", error.localizedDescription, error);
-                } else {
-                    resolve([vcc getSettings]);
-                }
-            }
-        } else {
-            RCTLogWarn(@"mediaStreamTrackApplyConstraints() track is not video");
-            reject(@"E_INVALID", @"Can't apply constraints on audio tracks", nil);
-        }
-    } else {
-        RCTLogWarn(@"mediaStreamTrackApplyConstraints() track is null");
-        reject(@"E_INVALID", @"Could not get track", nil);
+        RTCVideoTrack *videoTrack = (RTCVideoTrack *)track;
+        [(VideoCaptureController *)videoTrack.captureController switchCamera];
     }
 #endif
 }

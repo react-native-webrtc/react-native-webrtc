@@ -882,13 +882,11 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
     }
 
     @ReactMethod
-    public void mediaStreamTrackApplyConstraints(String id, ReadableMap constraints, Promise promise) {
+    public void mediaStreamTrackSwitchCamera(String id) {
         ThreadUtils.runOnExecutor(() -> {
             MediaStreamTrack track = getLocalTrack(id);
             if (track != null) {
-                getUserMediaImpl.applyConstraints(id, constraints, promise);
-            } else {
-                promise.reject(new Exception("mediaStreamTrackApplyConstraints() could not find track " + id));
+                getUserMediaImpl.switchCamera(id);
             }
         });
     }
