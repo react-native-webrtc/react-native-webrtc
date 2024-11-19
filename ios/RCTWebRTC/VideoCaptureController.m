@@ -62,6 +62,19 @@
 
     self.selectedFormat = format;
 
+    AVCaptureSession * session = self.capturer.captureSession;
+    if (@available(iOS 16.0, *)) {
+        if(session.multitaskingCameraAccessEnabled != self.enableMultitaskingCameraAccess) {
+            [session beginConfiguration];
+            if(self.enableMultitaskingCameraAccess && session.isMultitaskingCameraAccessSupported) {
+                [session setMultitaskingCameraAccessEnabled:YES];
+            } else {
+                [session setMultitaskingCameraAccessEnabled:NO];
+            }
+            [session commitConfiguration];
+        }
+    }
+
     RCTLog(@"[VideoCaptureController] Capture will start");
 
     // Starting the capture happens on another thread. Wait for it.
