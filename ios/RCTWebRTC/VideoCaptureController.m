@@ -62,15 +62,15 @@
 
     self.selectedFormat = format;
 
-    AVCaptureSession * session = self.capturer.captureSession;
+    AVCaptureSession *session = self.capturer.captureSession;
     if (@available(iOS 16.0, *)) {
-        if(session.multitaskingCameraAccessEnabled != self.enableMultitaskingCameraAccess) {
+        BOOL enable = self.enableMultitaskingCameraAccess;
+        BOOL shouldChange = session.multitaskingCameraAccessEnabled != enable;
+        BOOL canChange = !enable || (enable && session.isMultitaskingCameraAccessSupported);
+
+        if(shouldChange && canChange) {
             [session beginConfiguration];
-            if(self.enableMultitaskingCameraAccess && session.isMultitaskingCameraAccessSupported) {
-                [session setMultitaskingCameraAccessEnabled:YES];
-            } else {
-                [session setMultitaskingCameraAccessEnabled:NO];
-            }
+            [session setMultitaskingCameraAccessEnabled:enable];
             [session commitConfiguration];
         }
     }
