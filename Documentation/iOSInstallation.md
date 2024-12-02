@@ -53,6 +53,21 @@ RTCAudioSession.audioSessionDidActivate();
 RTCAudioSession.audioSessionDidDeactivate();
 ```
 
+## Background Camera Access
+
+Background camera access on supported devices can be enabled through setting the `enableMultitaskingCameraAccess` flag on WebRTCModuleOptions. This will require
+the `voip` background mode capability on iOS 18 or later devices.
+
+In your AppDelegate.m file:
+```
+- (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions
+{
+  [WebRTCModuleOptions sharedInstance].enableMultitaskingCameraAccess = YES;
+  
+  // ...
+}
+```
+
 ## Library not loaded/Code signature invalid
 
 This is an issue with iOS 13.3.1.  

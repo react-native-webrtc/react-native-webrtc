@@ -6,6 +6,7 @@
 #import <WebRTC/RTCVideoTrack.h>
 
 #import "RTCMediaStreamTrack+React.h"
+#import "WebRTCModuleOptions.h"
 #import "WebRTCModule+RTCMediaStream.h"
 #import "WebRTCModule+RTCPeerConnection.h"
 
@@ -118,6 +119,7 @@
     RTCCameraVideoCapturer *videoCapturer = [[RTCCameraVideoCapturer alloc] initWithDelegate:videoSource];
     VideoCaptureController *videoCaptureController =
         [[VideoCaptureController alloc] initWithCapturer:videoCapturer andConstraints:constraints[@"video"]];
+    videoCaptureController.enableMultitaskingCameraAccess = [WebRTCModuleOptions sharedInstance].enableMultitaskingCameraAccess;
     videoTrack.captureController = videoCaptureController;
     [videoCaptureController startCapture];
 #endif
