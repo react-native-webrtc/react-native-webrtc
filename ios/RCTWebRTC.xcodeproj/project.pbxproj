@@ -22,6 +22,9 @@
 		4EE3A8D225B841DD00FAA24A /* CaptureController.m in Sources */ = {isa = PBXBuildFile; fileRef = 4EE3A8C925B841DD00FAA24A /* CaptureController.m */; };
 		4EE3A8D325B841DD00FAA24A /* ScreenCaptureController.m in Sources */ = {isa = PBXBuildFile; fileRef = 4EE3A8CC25B841DD00FAA24A /* ScreenCaptureController.m */; };
 		4EE3A8D425B841DD00FAA24A /* ScreenCapturer.m in Sources */ = {isa = PBXBuildFile; fileRef = 4EE3A8CD25B841DD00FAA24A /* ScreenCapturer.m */; };
+		92EC774C2D0061F10066021F /* PortNameHelper.m in Sources */ = {isa = PBXBuildFile; fileRef = 92EC77472D0061F10066021F /* PortNameHelper.m */; };
+		92EC774D2D0061F10066021F /* WebRTCAudioInput.m in Sources */ = {isa = PBXBuildFile; fileRef = 92EC77492D0061F10066021F /* WebRTCAudioInput.m */; };
+		92EC774E2D0061F10066021F /* WebRTCAudioSession.m in Sources */ = {isa = PBXBuildFile; fileRef = 92EC774B2D0061F10066021F /* WebRTCAudioSession.m */; };
 		D3FF699919D2664B25C9D458 /* Pods_RCTWebRTC.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A20F721AD842563B66292D5B /* Pods_RCTWebRTC.framework */; };
 		D74EF94829652169000742E1 /* TrackCapturerEventsEmitter.m in Sources */ = {isa = PBXBuildFile; fileRef = D74EF94629652169000742E1 /* TrackCapturerEventsEmitter.m */; };
 		D7F0711E2C6DC91F0031F594 /* WebRTCModule+RTCAudioSession.m in Sources */ = {isa = PBXBuildFile; fileRef = D7F0711D2C6DC91F0031F594 /* WebRTCModule+RTCAudioSession.m */; };
@@ -72,6 +75,12 @@
 		4EE3A8CC25B841DD00FAA24A /* ScreenCaptureController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = ScreenCaptureController.m; path = RCTWebRTC/ScreenCaptureController.m; sourceTree = SOURCE_ROOT; };
 		4EE3A8CD25B841DD00FAA24A /* ScreenCapturer.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = ScreenCapturer.m; path = RCTWebRTC/ScreenCapturer.m; sourceTree = SOURCE_ROOT; };
 		4EE3A8CE25B841DD00FAA24A /* SocketConnection.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = SocketConnection.h; path = RCTWebRTC/SocketConnection.h; sourceTree = SOURCE_ROOT; };
+		92EC77462D0061F10066021F /* PortNameHelper.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = PortNameHelper.h; path = RCTWebRTC/PortNameHelper.h; sourceTree = SOURCE_ROOT; };
+		92EC77472D0061F10066021F /* PortNameHelper.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = PortNameHelper.m; path = RCTWebRTC/PortNameHelper.m; sourceTree = SOURCE_ROOT; };
+		92EC77482D0061F10066021F /* WebRTCAudioInput.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = WebRTCAudioInput.h; path = RCTWebRTC/WebRTCAudioInput.h; sourceTree = SOURCE_ROOT; };
+		92EC77492D0061F10066021F /* WebRTCAudioInput.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = WebRTCAudioInput.m; path = RCTWebRTC/WebRTCAudioInput.m; sourceTree = SOURCE_ROOT; };
+		92EC774A2D0061F10066021F /* WebRTCAudioSession.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = WebRTCAudioSession.h; path = RCTWebRTC/WebRTCAudioSession.h; sourceTree = SOURCE_ROOT; };
+		92EC774B2D0061F10066021F /* WebRTCAudioSession.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = WebRTCAudioSession.m; path = RCTWebRTC/WebRTCAudioSession.m; sourceTree = SOURCE_ROOT; };
 		A20F721AD842563B66292D5B /* Pods_RCTWebRTC.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_RCTWebRTC.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		D74EF94529652148000742E1 /* CapturerEventsDelegate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = CapturerEventsDelegate.h; path = RCTWebRTC/CapturerEventsDelegate.h; sourceTree = SOURCE_ROOT; };
 		D74EF94629652169000742E1 /* TrackCapturerEventsEmitter.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = TrackCapturerEventsEmitter.m; path = RCTWebRTC/TrackCapturerEventsEmitter.m; sourceTree = SOURCE_ROOT; };
@@ -124,6 +133,12 @@
 		35A222311CB493C00015FD5C /* RCTWebRTC */ = {
 			isa = PBXGroup;
 			children = (
+				92EC77462D0061F10066021F /* PortNameHelper.h */,
+				92EC77472D0061F10066021F /* PortNameHelper.m */,
+				92EC77482D0061F10066021F /* WebRTCAudioInput.h */,
+				92EC77492D0061F10066021F /* WebRTCAudioInput.m */,
+				92EC774A2D0061F10066021F /* WebRTCAudioSession.h */,
+				92EC774B2D0061F10066021F /* WebRTCAudioSession.m */,
 				4EE3A8A225B840DA00FAA24A /* RCTConvert+WebRTC.h */,
 				4EE3A8A125B840DA00FAA24A /* RCTConvert+WebRTC.m */,
 				4EE3A8A525B8411400FAA24A /* RTCMediaStreamTrack+React.h */,
@@ -272,6 +287,9 @@
 				4EE3A8D325B841DD00FAA24A /* ScreenCaptureController.m in Sources */,
 				4EE3A8AC25B8412700FAA24A /* RTCVideoViewManager.m in Sources */,
 				4EE3A8C125B8416F00FAA24A /* WebRTCModule+RTCPeerConnection.m in Sources */,
+				92EC774C2D0061F10066021F /* PortNameHelper.m in Sources */,
+				92EC774D2D0061F10066021F /* WebRTCAudioInput.m in Sources */,
+				92EC774E2D0061F10066021F /* WebRTCAudioSession.m in Sources */,
 				4EE3A8A325B840DA00FAA24A /* RCTConvert+WebRTC.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

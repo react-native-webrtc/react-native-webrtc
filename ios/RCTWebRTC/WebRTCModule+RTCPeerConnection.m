@@ -20,6 +20,7 @@
 #import "WebRTCModule+RTCPeerConnection.h"
 #import "WebRTCModule+VideoTrackAdapter.h"
 #import "WebRTCModule.h"
+#import "WebRTCAudioSession.h"
 
 @implementation RTCPeerConnection (React)
 
@@ -315,7 +316,11 @@ RCT_EXPORT_METHOD(peerConnectionClose : (nonnull NSNumber *)objectID) {
         return;
     }
 
+  WebRTCAudioSession* session = [WebRTCAudioSession shared];
+
+  [session closeConnection:^{
     [peerConnection close];
+  }];
 }
 
 RCT_EXPORT_METHOD(peerConnectionDispose : (nonnull NSNumber *)objectID) {
