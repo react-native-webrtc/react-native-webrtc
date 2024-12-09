@@ -29,7 +29,7 @@ android {
 }
 
 dependencies {
+    api(project(":stream-libwebrtc"))
     implementation 'com.facebook.react:react-native:+'
-    api(files("libs/stream_libwebrtc_m125.3.aar"))
     implementation "androidx.core:core:1.7.0"
 }
