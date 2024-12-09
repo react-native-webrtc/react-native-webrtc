@@ -28,14 +28,14 @@ android {
     }
 }
 
-repositories {
-    flatDir {
-        dirs 'src/main/libs'
-    }
-}
-
 dependencies {
     api(name: 'stream_libwebrtc_m125.3', ext: 'aar')
     implementation 'com.facebook.react:react-native:+'
     implementation "androidx.core:core:1.7.0"
+}
+
+repositories {
+    flatDir {
+        dirs('/libs')
+    }
 }
