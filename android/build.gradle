@@ -1,7 +1,35 @@
+import java.nio.file.Paths
+
 apply plugin: 'com.android.library'
 
 def safeExtGet(prop, fallback) {
     rootProject.ext.has(prop) ? rootProject.ext.get(prop) : fallback
+}
+
+// https://github.com/facebook/react-native/blob/a70354df12ef71aec08583cca4f1fed5fb77d874/ReactAndroid/build.gradle#L168-L201
+def findNodeModulePath(baseDir, packageName) {
+  def basePath = baseDir.toPath().normalize()
+  // Node's module resolution algorithm searches up to the root directory,
+  // after which the base path will be null
+  while (basePath) {
+    def candidatePath = Paths.get(basePath.toString(), "node_modules", packageName)
+    if (candidatePath.toFile().exists()) {
+      return candidatePath.toString()
+    }
+    basePath = basePath.getParent()
+  }
+  return null
+}
+
+def moduleDir = findNodeModulePath(projectDir, "@stream-io/react-native-webrtc") ?: "$rootDir/../node_modules/@stream-io/react-native-webrtc"
+println ":${project.name} found at $moduleDir"
+
+rootProject.allprojects {
+  repositories {
+    flatDir {
+      dirs "$moduleDir/android/libs"
+    }
+  }
 }
 
 android {
@@ -29,7 +57,7 @@ android {
 }
 
 dependencies {
-    api(files("libs/stream_libwebrtc_m125.3.aar"))
+    api(name: 'stream_libwebrtc_m125.3', ext: 'aar')
     implementation 'com.facebook.react:react-native:+'
     implementation "androidx.core:core:1.7.0"
 }
