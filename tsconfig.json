@@ -1,5 +1,5 @@
 {
-    "include": ["src/**/*.ts"],
+    "include": ["src/**/*.ts", "src/**/*.tsx"],
     "compilerOptions": {
       "target": "es6",
       "module": "commonjs",
@@ -9,6 +9,8 @@
       "jsx": "react-native",
       "resolveJsonModule": true,
       "noImplicitAny": false,
+      "allowSyntheticDefaultImports": true,
+      "esModuleInterop": true,
     },
     "exclude": ["node_modules"]
 }
