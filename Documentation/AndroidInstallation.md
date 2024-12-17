@@ -64,14 +64,6 @@ compileOptions {
 }
 ```
 
-## R8/ProGuard Support
-
-In `android/app/proguard-rules.pro` add the following on a new line.
-
-```proguard
--keep class org.webrtc.** { *; }
-```
-
 ## Fatal Exception: java.lang.UnsatisfiedLinkError
 
 ```
