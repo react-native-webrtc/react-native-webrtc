@@ -18,6 +18,7 @@ android {
         targetSdkVersion safeExtGet('targetSdkVersion', 24)
         versionCode 1
         versionName "1.0"
+        consumerProguardFiles 'consumer-rules.pro'
     }
 
     // WebRTC requires Java 8 features
