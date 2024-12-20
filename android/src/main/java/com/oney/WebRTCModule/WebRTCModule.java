@@ -911,6 +911,26 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
         });
     }
 
+    @ReactMethod(isBlockingSynchronousMethod = true)
+    public String mediaStreamTrackClone(String id) {
+        try {
+            return (String) ThreadUtils
+                    .submitToExecutor((Callable<Object>) () -> {
+                        MediaStreamTrack track = getLocalTrack(id);
+                        if (track == null) {
+                            Log.d(TAG, "mediaStreamTrackClone() could not find track " + id);
+                            return null;
+                        }
+                        MediaStreamTrack clonedTrack = getUserMediaImpl.cloneTrack(id);
+                        return clonedTrack.id();
+                    })
+                    .get();
+        } catch (ExecutionException | InterruptedException e) {
+            Log.d(TAG, "mediaStreamTrackClone() " + e.getMessage());
+            return null;
+        }
+    }
+
     /**
      * This serializes the transceivers current direction and mid and returns them
      * for update when an sdp negotiation/renegotiation happens

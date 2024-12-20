@@ -405,6 +405,25 @@ class GetUserMediaImpl {
         return track;
     }
 
+    MediaStreamTrack cloneTrack(String trackId) {
+        TrackPrivate track = tracks.get(trackId);
+        if (track == null) {
+            throw new IllegalArgumentException("No track found for id: " + trackId);
+        }
+        PeerConnectionFactory pcFactory = webRTCModule.mFactory;
+        String id = UUID.randomUUID().toString();
+        MediaStreamTrack nativeTrack = track.track;
+        MediaStreamTrack clonedNativeTrack;
+        if (nativeTrack instanceof VideoTrack) {
+            clonedNativeTrack = pcFactory.createVideoTrack(id, (VideoSource) track.mediaSource);
+        } else {
+            clonedNativeTrack = pcFactory.createAudioTrack(id, (AudioSource) track.mediaSource);
+        }
+        clonedNativeTrack.setEnabled(nativeTrack.enabled());
+        tracks.put(id, new TrackPrivate(clonedNativeTrack, track.mediaSource, track.videoCaptureController, track.surfaceTextureHelper));
+        return clonedNativeTrack;
+    }
+
     /**
      * Set video effects to the TrackPrivate corresponding to the trackId with the help of VideoEffectProcessor
      * corresponding to the names.

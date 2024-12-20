@@ -398,6 +398,30 @@ RCT_EXPORT_METHOD(mediaStreamTrackRelease : (nonnull NSString *)trackID) {
 #endif
 }
 
+RCT_EXPORT_BLOCKING_SYNCHRONOUS_METHOD(mediaStreamTrackClone : (nonnull NSString *)trackID) {
+#if TARGET_OS_TV
+    return;
+#else
+
+    RTCMediaStreamTrack *originalTrack = self.localTracks[trackID];
+    if (originalTrack) {
+        NSString *trackUUID = [[NSUUID UUID] UUIDString];
+        if ([originalTrack.kind isEqualToString:@"audio"]) {
+            RTCAudioTrack *audioTrack = [self.peerConnectionFactory audioTrackWithTrackId:trackUUID];
+            [self.localTracks setObject:audioTrack forKey:trackUUID];
+            return trackUUID;
+        } else {
+            RTCVideoTrack *originalVideoTrack = (RTCVideoTrack *)originalTrack;
+            RTCVideoSource *videoSource = originalVideoTrack.source;
+            RTCVideoTrack *videoTrack = [self.peerConnectionFactory videoTrackWithSource:videoSource trackId:trackUUID];
+            [self.localTracks setObject:videoTrack forKey:trackUUID];
+            return trackUUID;
+        }
+    }
+    return @"";
+#endif
+}
+
 RCT_EXPORT_METHOD(mediaStreamTrackSetEnabled : (nonnull NSNumber *)pcId : (nonnull NSString *)trackID : (BOOL)enabled) {
     RTCMediaStreamTrack *track = [self trackForId:trackID pcId:pcId];
     if (track == nil) {

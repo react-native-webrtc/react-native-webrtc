@@ -198,8 +198,23 @@ export default class MediaStreamTrack extends EventTarget<MediaStreamTrackEventM
         this._constraints = constraints ?? {};
     }
 
-    clone(): never {
-        throw new Error('Not implemented.');
+    clone(): MediaStreamTrack {
+        if (this.remote) {
+            throw new Error('clone is not implemented for remote tracks');
+        }
+
+        const id = WebRTCModule.mediaStreamTrackClone(this.id);
+
+        return new MediaStreamTrack({
+            id,
+            kind: this.kind,
+            remote: this.remote,
+            constraints: deepClone(this._constraints),
+            enabled: this._enabled,
+            settings: deepClone(this._settings),
+            peerConnectionId: this._peerConnectionId,
+            readyState: this._readyState,
+        });
     }
 
     getCapabilities(): never {

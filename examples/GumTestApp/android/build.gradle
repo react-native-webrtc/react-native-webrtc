@@ -2,23 +2,23 @@
 
 buildscript {
     ext {
-        buildToolsVersion = "33.0.2"
+        buildToolsVersion = "35.0.0"
         minSdkVersion = 24
-        compileSdkVersion = 33
-        targetSdkVersion = 33
+        compileSdkVersion = 35
+        targetSdkVersion = 34
 
-        // We use NDK 23 which has both M1 support and is the side-by-side NDK version from AGP.
+        ndkVersion = "26.1.10909125"
         ndkVersion = "23.1.7779620"
+        kotlinVersion = "1.9.24"
     }
     repositories {
         google()
         mavenCentral()
     }
     dependencies {
-        classpath("com.android.tools.build:gradle:7.3.1")
+        classpath("com.android.tools.build:gradle")
         classpath("com.facebook.react:react-native-gradle-plugin")
-        // NOTE: Do not place your application dependencies here; they belong
-        // in the individual module build.gradle files
+        classpath("org.jetbrains.kotlin:kotlin-gradle-plugin")
     }
 }
 
@@ -27,3 +27,5 @@ allprojects {
         maven { url 'https://www.jitpack.io' }
     }
 }
+
+apply plugin: "com.facebook.react.rootproject"

@@ -15,7 +15,7 @@ import {
   StatusBar,
 } from 'react-native';
 import { Colors } from 'react-native/Libraries/NewAppScreen';
-import { mediaDevices, RTCView } from 'react-native-webrtc';
+import { mediaDevices, RTCView } from '@stream-io/react-native-webrtc';
 
 
 const App = () => {
@@ -25,6 +25,7 @@ const App = () => {
     if (!stream) {
       try {
         const s = await mediaDevices.getUserMedia({ video: true });
+        
         setStream(s);
       } catch(e) {
         console.error(e);
@@ -38,6 +39,17 @@ const App = () => {
       setStream(null);
     }
   };
+
+  const clone = () => {
+    console.log('clone');
+    if (stream) {
+      const originalTrack = stream.getTracks()[0];
+      const track = originalTrack.clone();
+      console.log("original track id:", originalTrack.id)
+      console.log("cloned track id:", track.id)
+    }
+  };
+
   return (
     <>
       <StatusBar barStyle="dark-content" />
@@ -56,6 +68,9 @@ const App = () => {
           <Button
             title = "Stop"
             onPress = {stop} />
+          <Button
+            title = "Clone"
+            onPress = {clone} />
         </View>
       </SafeAreaView>
     </>
