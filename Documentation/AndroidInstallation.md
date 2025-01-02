@@ -64,6 +64,55 @@ compileOptions {
 }
 ```
 
+## Set audio category (output) to media
+
+By default, the audio is considered calls and it's not possible to hear it through the phone’s speakers, if you want to change this behavior you need to set the audio category to media so that the audio is not treated as a call stream. To do this:
+
+if your Android files are written in Java, modify `MainApplication.java`:
+```java
+// add imports
+import com.oney.WebRTCModule.WebRTCModuleOptions;
+import android.media.AudioAttributes;
+import org.webrtc.audio.JavaAudioDeviceModule;
+
+public class MainApplication extends Application implements ReactApplication {
+	@Override
+	public void onCreate() {
+		// append this before WebRTCModule initializes
+		WebRTCModuleOptions options = WebRTCModuleOptions.getInstance();
+		AudioAttributes audioAttributes = AudioAttributes.Builder()
+		    .setUsage(AudioAttributes.USAGE_MEDIA)
+		    .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH)
+		    .build();
+		options.audioDeviceModule = JavaAudioDeviceModule.builder(this)
+		.setAudioAttributes(audioAttributes)
+		.createAudioDeviceModule();
+	}
+}
+```
+
+if your Android files are written in Kotlin, modify `MainApplication.kt`:
+```kt
+// add imports
+import com.oney.WebRTCModule.WebRTCModuleOptions;
+import android.media.AudioAttributes
+import org.webrtc.audio.JavaAudioDeviceModule;
+
+class MainApplication : Application(), ReactApplication {
+	override fun onCreate() {
+		// append this before WebRTCModule initializes
+		val options = WebRTCModuleOptions.getInstance()
+		val audioAttributes = AudioAttributes.Builder()
+			.setUsage(AudioAttributes.USAGE_MEDIA)
+			.setContentType(AudioAttributes.CONTENT_TYPE_SPEECH)
+			.build()
+		options.audioDeviceModule = JavaAudioDeviceModule.builder(this)
+			.setAudioAttributes(audioAttributes)
+			.createAudioDeviceModule()
+	}
+}
+```
+
 ## Fatal Exception: java.lang.UnsatisfiedLinkError
 
 ```
