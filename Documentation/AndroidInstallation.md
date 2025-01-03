@@ -66,7 +66,7 @@ compileOptions {
 
 ## Set audio category (output) to media
 
-By default, the audio is considered calls and it's not possible to hear it through the phone’s speakers, if you want to change this behavior you need to set the audio category to media so that the audio is not treated as a call stream. To do this:
+The audio is considered calls by default. If you don't want your audio to be treated as a call stream you need to change the category. To set the category:
 
 if your Android files are written in Java, modify `MainApplication.java`:
 ```java
