@@ -33,7 +33,7 @@ git_log_cmd='git log '$last_version'..HEAD --no-merges --pretty=format:%h%x20%s%
 
 # --- commit with change logs
 git add package.json package-lock.json
-git commit -m "release ${version}" -m "$($git_log_cmd)"
+git commit -m "release: ${version}" -m "$($git_log_cmd)"
 git tag -a "$version" -m "$($git_log_cmd)"
 
 # --- success messages
