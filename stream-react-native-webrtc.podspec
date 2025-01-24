@@ -19,7 +19,7 @@ Pod::Spec.new do |s|
   s.libraries           = 'c', 'sqlite3', 'stdc++'
   s.framework           = 'AudioToolbox','AVFoundation', 'CoreAudio', 'CoreGraphics', 'CoreVideo', 'GLKit', 'VideoToolbox'
   s.dependency          'React-Core'
-  s.dependency          'WebRTC-SDK', '~>125.6422.05'
+  s.dependency          'WebRTC-SDK', '~>125.6422.07'
   # Swift/Objective-C compatibility #https://blog.cocoapods.org/CocoaPods-1.5.0/
   s.pod_target_xcconfig = {
     'DEFINES_MODULE' => 'YES'

@@ -4,6 +4,7 @@
 #import <WebRTC/RTCMediaConstraints.h>
 #import <WebRTC/RTCMediaStreamTrack.h>
 #import <WebRTC/RTCVideoTrack.h>
+#import <WebRTC/WebRTC.h>
 
 #import "RTCMediaStreamTrack+React.h"
 #import "WebRTCModuleOptions.h"
@@ -214,6 +215,7 @@ RCT_EXPORT_METHOD(getUserMedia
 
     if (constraints[@"audio"]) {
         audioTrack = [self createAudioTrack:constraints];
+        [self ensureAudioSessionWithRecording];
     }
     if (constraints[@"video"]) {
         videoTrack = [self createVideoTrack:constraints];
@@ -408,15 +410,32 @@ RCT_EXPORT_BLOCKING_SYNCHRONOUS_METHOD(mediaStreamTrackClone : (nonnull NSString
         NSString *trackUUID = [[NSUUID UUID] UUIDString];
         if ([originalTrack.kind isEqualToString:@"audio"]) {
             RTCAudioTrack *audioTrack = [self.peerConnectionFactory audioTrackWithTrackId:trackUUID];
+            audioTrack.isEnabled = originalTrack.isEnabled;
             [self.localTracks setObject:audioTrack forKey:trackUUID];
-            return trackUUID;
+            for (NSString* streamId in self.localStreams) {
+                RTCMediaStream* stream = [self.localStreams objectForKey:streamId];
+                for (RTCAudioTrack* track in stream.audioTracks) {
+                    if ([trackID isEqualToString:track.trackId]) {
+                        [stream addAudioTrack:audioTrack];
+                    }
+                }
+            }
         } else {
             RTCVideoTrack *originalVideoTrack = (RTCVideoTrack *)originalTrack;
             RTCVideoSource *videoSource = originalVideoTrack.source;
             RTCVideoTrack *videoTrack = [self.peerConnectionFactory videoTrackWithSource:videoSource trackId:trackUUID];
+            videoTrack.isEnabled = originalTrack.isEnabled;
             [self.localTracks setObject:videoTrack forKey:trackUUID];
-            return trackUUID;
+            for (NSString* streamId in self.localStreams) {
+                RTCMediaStream* stream = [self.localStreams objectForKey:streamId];
+                for (RTCVideoTrack* track in stream.videoTracks) {
+                    if ([trackID isEqualToString:track.trackId]) {
+                        [stream addVideoTrack:videoTrack];
+                    }
+                }
+            }
         }
+        return trackUUID;
     }
     return @"";
 #endif
@@ -516,6 +535,35 @@ RCT_EXPORT_METHOD(mediaStreamTrackSetVideoEffects:(nonnull NSString *)trackID na
     }
 
     return peerConnection.remoteTracks[trackId];
+}
+
+- (void)ensureAudioSessionWithRecording {
+  RTCAudioSession* session = [RTCAudioSession sharedInstance];
+
+  // we also need to set default WebRTC audio configuration, since it may be activated after
+  // this method is called
+  RTCAudioSessionConfiguration* config = [RTCAudioSessionConfiguration webRTCConfiguration];
+  // require audio session to be either PlayAndRecord or MultiRoute
+  if (session.category != AVAudioSessionCategoryPlayAndRecord) {
+    [session lockForConfiguration];
+    config.category = AVAudioSessionCategoryPlayAndRecord;
+    config.categoryOptions =
+             AVAudioSessionCategoryOptionAllowAirPlay|
+             AVAudioSessionCategoryOptionAllowBluetooth|
+             AVAudioSessionCategoryOptionAllowBluetoothA2DP|
+             AVAudioSessionCategoryOptionDefaultToSpeaker;
+    config.mode = AVAudioSessionModeVideoChat;
+    NSError* error = nil;
+    bool success = [session setCategory:config.category withOptions:config.categoryOptions error:&error];
+    if (!success) {
+      NSLog(@"ensureAudioSessionWithRecording: setCategory failed due to: %@", [error localizedDescription]);
+    }
+    success = [session setMode:config.mode error:&error];
+    if (!success) {
+      NSLog(@"ensureAudioSessionWithRecording: Error setting category: %@", [error localizedDescription]);
+    }
+    [session unlockForConfiguration];
+  }
 }
 
 @end
