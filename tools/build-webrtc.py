@@ -28,7 +28,8 @@ ANDROID_BUILD_CPUS = [
 IOS_BUILD_ARCHS = [
     'device:arm64',
     'simulator:arm64',
-    'simulator:x64'
+    'simulator:x64',
+    "catalyst:arm64"
 ]
 MACOS_BUILD_ARCHS = [
     'x64'
@@ -188,6 +189,8 @@ def build(target_dir, platform, debug):
             tenv, arch = item.split(':')
             gn_out_dir = 'out/%s-ios-%s-%s' % (build_type, tenv, arch)
             gn_args = GN_IOS_ARGS % (str(debug).lower(), arch, tenv)
+            if tenv == 'catalyst':
+                gn_args = gn_args.replace('12.0', '14.0')
             gn_cmd = 'gn gen %s %s' % (gn_out_dir, gn_args)
             sh(gn_cmd, env)
         #for arch in MACOS_BUILD_ARCHS:
