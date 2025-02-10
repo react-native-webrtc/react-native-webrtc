@@ -182,6 +182,7 @@
 
 
     if (self.running && hasChanged) {
+        [self stopCapture];
         [self startCapture];
     }
 }
