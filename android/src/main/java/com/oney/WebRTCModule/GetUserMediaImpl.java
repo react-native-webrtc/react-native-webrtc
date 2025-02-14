@@ -195,8 +195,17 @@ class GetUserMediaImpl {
 
             Log.d(TAG, "getUserMedia(video): " + videoConstraintsMap);
 
+            Activity currentActivity = reactContext.getCurrentActivity();
+
+            if (currentActivity == null) {
+                // Fail with DOMException with name InvalidStateError as per:
+                // https://www.w3.org/TR/mediacapture-streams/#dom-mediadevices-getusermedia
+                errorCallback.invoke("DOMException", "InvalidStateError");
+                return;
+            }
+
             CameraCaptureController cameraCaptureController =
-                    new CameraCaptureController(reactContext.getCurrentActivity(), getCameraEnumerator(), videoConstraintsMap);
+                    new CameraCaptureController(currentActivity, getCameraEnumerator(), videoConstraintsMap);
 
             videoTrack = createVideoTrack(cameraCaptureController);
         }
