@@ -44,6 +44,12 @@ public class VideoEffectProcessor implements VideoProcessor {
         VideoFrame outputFrame = frame;
         for (VideoFrameProcessor processor : this.videoFrameProcessors) {
             outputFrame = processor.process(outputFrame, textureHelper);
+
+            if (outputFrame == null) {
+                mSink.onFrame(frame);
+                frame.release();
+                return;
+            }
         }
 
         mSink.onFrame(outputFrame);

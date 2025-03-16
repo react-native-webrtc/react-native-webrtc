@@ -456,27 +456,28 @@ RCT_EXPORT_METHOD(mediaStreamTrackSetVolume : (nonnull NSNumber *)pcId : (nonnul
 
 RCT_EXPORT_METHOD(mediaStreamTrackSetVideoEffects:(nonnull NSString *)trackID names:(nonnull NSArray<NSString *> *)names)
 {
-  RTCMediaStreamTrack *track = self.localTracks[trackID];
-  if (track) {
+    RTCMediaStreamTrack *track = self.localTracks[trackID];
+    if (track == nil) {
+        return;
+    }
+
     RTCVideoTrack *videoTrack = (RTCVideoTrack *)track;
     RTCVideoSource *videoSource = videoTrack.source;
-    
+
     NSMutableArray *processors = [[NSMutableArray alloc] init];
     for (NSString *name in names) {
-      NSObject<VideoFrameProcessorDelegate> *processor = [ProcessorProvider getProcessor:name];
-      if (processor != nil) {
-        [processors addObject:processor];
-      }
+        NSObject<VideoFrameProcessorDelegate> *processor = [ProcessorProvider getProcessor:name];
+        if (processor != nil) {
+            [processors addObject:processor];
+        }
     }
-    
-    self.videoEffectProcessor = [[VideoEffectProcessor alloc] initWithProcessors:processors
-                                                                     videoSource:videoSource];
-    
+
+    self.videoEffectProcessor = [[VideoEffectProcessor alloc] initWithProcessors:processors videoSource:videoSource];
+
     VideoCaptureController *vcc = (VideoCaptureController *)videoTrack.captureController;
     RTCVideoCapturer *capturer = vcc.capturer;
-    
+
     capturer.delegate = self.videoEffectProcessor;
-  }
 }
 
 #pragma mark - Helpers
