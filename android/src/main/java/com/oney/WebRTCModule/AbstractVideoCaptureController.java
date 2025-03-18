@@ -86,7 +86,9 @@ public abstract class AbstractVideoCaptureController {
 
     public boolean stopCapture() {
         try {
-            videoCapturer.stopCapture();
+            if (videoCapturer != null) {
+                videoCapturer.stopCapture();
+            }
             return true;
         } catch (InterruptedException e) {
             return false;

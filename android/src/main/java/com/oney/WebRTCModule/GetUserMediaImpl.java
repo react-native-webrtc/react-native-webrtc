@@ -234,7 +234,9 @@ class GetUserMediaImpl {
             if (enabled) {
                 track.videoCaptureController.startCapture();
             } else {
-                track.videoCaptureController.stopCapture();
+                if (!track.isClone()) {
+                    track.videoCaptureController.stopCapture();
+                }
             }
         }
     }
@@ -419,17 +421,28 @@ class GetUserMediaImpl {
         if (track == null) {
             throw new IllegalArgumentException("No track found for id: " + trackId);
         }
+
         PeerConnectionFactory pcFactory = webRTCModule.mFactory;
+
         String id = UUID.randomUUID().toString();
         MediaStreamTrack nativeTrack = track.track;
-        MediaStreamTrack clonedNativeTrack;
+        final MediaStreamTrack clonedNativeTrack;
         if (nativeTrack instanceof VideoTrack) {
             clonedNativeTrack = pcFactory.createVideoTrack(id, (VideoSource) track.mediaSource);
         } else {
             clonedNativeTrack = pcFactory.createAudioTrack(id, (AudioSource) track.mediaSource);
         }
         clonedNativeTrack.setEnabled(nativeTrack.enabled());
-        tracks.put(id, new TrackPrivate(clonedNativeTrack, track.mediaSource, track.videoCaptureController, track.surfaceTextureHelper));
+
+        final TrackPrivate clone = new TrackPrivate(
+            clonedNativeTrack,
+            track.mediaSource,
+            track.videoCaptureController,
+            track.surfaceTextureHelper
+        );
+        clone.setParent(track);
+        tracks.put(id, clone);
+
         return clonedNativeTrack;
     }
 
@@ -495,6 +508,11 @@ class GetUserMediaImpl {
         private boolean disposed;
 
         /**
+         * Whether this object is a clone of another object.
+         */
+        private TrackPrivate parent = null;
+
+        /**
          * Initializes a new {@code TrackPrivate} instance.
          *
          * @param track
@@ -514,8 +532,9 @@ class GetUserMediaImpl {
         }
 
         public void dispose() {
+            final boolean isClone = this.isClone();
             if (!disposed) {
-                if (videoCaptureController != null) {
+                if (!isClone && videoCaptureController != null) {
                     if (videoCaptureController.stopCapture()) {
                         videoCaptureController.dispose();
                     }
@@ -527,15 +546,27 @@ class GetUserMediaImpl {
                  * called. This also means that the caller can reuse the SurfaceTextureHelper to initialize a new
                  * VideoCapturer once the previous VideoCapturer has been disposed. */
 
-                if (surfaceTextureHelper != null) {
+                if (!isClone && surfaceTextureHelper != null) {
                     surfaceTextureHelper.stopListening();
                     surfaceTextureHelper.dispose();
                 }
 
-                mediaSource.dispose();
+                // clones should not dispose the mediaSource as that will affect the original track
+                // and other clones as well (since they share the same mediaSource).
+                if (!isClone) {
+                    mediaSource.dispose();
+                }
                 track.dispose();
                 disposed = true;
             }
+        }
+
+        public void setParent(TrackPrivate parent) {
+            this.parent = parent;
+        }
+
+        public boolean isClone() {
+            return this.parent != null;
         }
     }
 
