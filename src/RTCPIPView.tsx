@@ -9,17 +9,18 @@ export interface RTCPIPViewProps extends RTCVideoViewProps {
   };
 }
 
+type RTCViewInstance = InstanceType<typeof RTCView>;
+
 /**
  * A convenience wrapper around RTCView to handle the fallback view as a prop.
  */
-const RTCPIPView = forwardRef<Component, RTCPIPViewProps>((props, ref) => {
+const RTCPIPView = forwardRef<RTCViewInstance, RTCPIPViewProps>((props, ref) => {
     const rtcViewProps = { ...props };
     const fallbackView = rtcViewProps.iosPIP?.fallbackView;
 
     delete rtcViewProps.iosPIP?.fallbackView;
 
     return (
-        // @ts-ignore
         <RTCView ref={ref}
             {...rtcViewProps}>
             {fallbackView}
