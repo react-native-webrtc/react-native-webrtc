@@ -395,7 +395,7 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
         }
     }
 
-    MediaStream getStreamForReactTag(String streamReactTag) {
+    public MediaStream getStreamForReactTag(String streamReactTag) {
         // This function _only_ gets called from WebRTCView, in the UI thread.
         // Hence make sure we run this code in the executor or we run at the risk
         // of being out of sync.
