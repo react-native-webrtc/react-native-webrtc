@@ -143,11 +143,9 @@ So you can now start creating an offer which then needs sending send off to the 
 
 ```javascript
 let sessionConstraints = {
-	mandatory: {
-		OfferToReceiveAudio: true,
-		OfferToReceiveVideo: true,
-		VoiceActivityDetection: true
-	}
+	offerToReceiveAudio: true,
+	offerToReceiveVideo: true,
+	voiceActivityDetection: true
 };
 
 try {
