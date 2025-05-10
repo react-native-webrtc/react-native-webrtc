@@ -12,6 +12,13 @@ const FACING_MODES = [ 'user', 'environment' ];
 
 const ASPECT_RATIO = 16 / 9;
 
+export type RTCOfferOptions  = {
+    iceRestart?:boolean;
+    offerToReceiveAudio?: boolean;
+    offerToReceiveVideo?: boolean;
+    voiceActivityDetection?:boolean
+};
+
 const STANDARD_OFFER_OPTIONS = {
     icerestart: 'IceRestart',
     offertoreceiveaudio: 'OfferToReceiveAudio',
@@ -157,10 +164,10 @@ export function isSdpTypeValid(type: string): boolean {
  * @param options - user supplied options
  * @return Normalized options
  */
-export function normalizeOfferOptions(options: object = {}): object {
-    const newOptions = {};
+export function normalizeOfferOptions(options?: RTCOfferOptions) {
+    const newOptions: Record<string,string> = {};
 
-    if (!options) {
+    if (typeof options !== 'object') {
         return newOptions;
     }
 
