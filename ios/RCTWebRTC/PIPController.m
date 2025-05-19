@@ -155,6 +155,12 @@
     }
 }
 
+- (void)didChangePictureInPicture:(BOOL)isInPictureInPicture {
+    if ([self.delegate respondsToSelector:@selector(didChangePictureInPicture:)]) {
+        [self.delegate didChangePictureInPicture:isInPictureInPicture];
+    }
+}
+
 - (void)dealloc {
     [_videoTrack removeRenderer:_sampleView];
     [_pipController removeObserver:self forKeyPath:@"pictureInPictureActive"];
@@ -175,7 +181,7 @@
     @abstract    Delegate can implement this method to be notified when Picture in Picture will start.
  */
 - (void)pictureInPictureControllerWillStartPictureInPicture:(AVPictureInPictureController *)pictureInPictureController {
-    
+   
     NSLog(@"%@", NSStringFromSelector(_cmd)); // Objective-C
 }
 
@@ -186,7 +192,7 @@
     @abstract    Delegate can implement this method to be notified when Picture in Picture did start.
  */
 - (void)pictureInPictureControllerDidStartPictureInPicture:(AVPictureInPictureController *)pictureInPictureController {
-    
+    [self didChangePictureInPicture:YES];
     NSLog(@"%@", NSStringFromSelector(_cmd)); // Objective-C
 }
 
@@ -221,7 +227,7 @@
     @abstract    Delegate can implement this method to be notified when Picture in Picture did stop.
  */
 - (void)pictureInPictureControllerDidStopPictureInPicture:(AVPictureInPictureController *)pictureInPictureController {
-    
+    [self didChangePictureInPicture:NO];
     NSLog(@"%@", NSStringFromSelector(_cmd)); // Objective-C
 }
 

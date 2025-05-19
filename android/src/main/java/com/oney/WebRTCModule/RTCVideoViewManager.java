@@ -1,16 +1,27 @@
 package com.oney.WebRTCModule;
 
-import com.facebook.react.uimanager.SimpleViewManager;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+
+import com.facebook.react.bridge.ReadableArray;
+import com.facebook.react.bridge.ReadableMap;
+import com.facebook.react.common.MapBuilder;
 import com.facebook.react.uimanager.ThemedReactContext;
+import com.facebook.react.uimanager.ViewGroupManager;
 import com.facebook.react.uimanager.annotations.ReactProp;
 
-public class RTCVideoViewManager extends SimpleViewManager<WebRTCView> {
+import java.util.Map;
+
+public class RTCVideoViewManager extends ViewGroupManager<WebRTCView> {
     private static final String REACT_CLASS = "RTCVideoView";
 
     @Override
     public String getName() {
         return REACT_CLASS;
     }
+
+    public final int COMMAND_ENTER_PIP = 1;
+    public final int COMMAND_EXIT_PIP = 2;
 
     @Override
     public WebRTCView createViewInstance(ThemedReactContext context) {
@@ -69,5 +80,79 @@ public class RTCVideoViewManager extends SimpleViewManager<WebRTCView> {
     @ReactProp(name = "zOrder")
     public void setZOrder(WebRTCView view, int zOrder) {
         view.setZOrder(zOrder);
+    }
+
+
+    /**
+     * Sets whether Picture-in-Picture (PiP) will be handled by this {@code WebRTCView}.
+     *
+     * This corresponds to the {@code pictureInPictureEnabled} prop in the JavaScript
+     * counterpart of {@code WebRTCView} (i.e. {@code RTCView}).
+     *
+     * @param view The {@code WebRTCView} on which the {@code pictureInPictureEnabled} flag is to be set.
+     * @param pictureInPictureEnabled Whether this view should handle platform Picture-In-Picture API.
+     */
+    @ReactProp(name = "pictureInPictureEnabled", defaultBoolean = false)
+    public void setPictureInPictureEnabled(WebRTCView view, Boolean pictureInPictureEnabled) {
+        view.setPictureInPictureEnabled(pictureInPictureEnabled);
+    }
+    /**
+     * Sets whether Picture-in-Picture (PiP) mode should automatically be entered
+     * when certain conditions are met (e.g., user navigates away or app goes to background).
+     *
+     * This corresponds to the {@code isAutoEnterEnabled} prop in the JavaScript
+     * counterpart of {@code WebRTCView} (i.e. {@code RTCView}).
+     *
+     * @param view The {@code WebRTCView} on which the {@code isAutoEnterEnabled} flag is to be set.
+     * @param autoStartPictureInPicture Whether PiP should auto-enter on supported platforms.
+     */
+    @ReactProp(name = "autoStartPictureInPicture", defaultBoolean = true)
+    public void setAutoStartPictureInPicture(WebRTCView view, Boolean autoStartPictureInPicture) {
+        view.setAutoStartPictureInPicture(autoStartPictureInPicture);
+    }
+
+    @ReactProp(name = "pictureInPicturePreferredSize")
+    public void setPictureInPicturePreferredSize(WebRTCView view, @Nullable ReadableMap size) {
+        view.setPictureInPicturePreferredSize(size);
+    }
+
+    @Nullable
+    @Override
+    public Map<String, Integer> getCommandsMap() {
+        return MapBuilder.of(
+                "startPictureInPicture", COMMAND_ENTER_PIP,
+                "stopPictureInPicture", COMMAND_EXIT_PIP
+                );
+    }
+
+    @Override
+    public void receiveCommand(
+            @NonNull WebRTCView view,
+            String commandId,
+            @Nullable ReadableArray args
+    ) {
+        super.receiveCommand(view, commandId, args);
+        int commandIdInt = Integer.parseInt(commandId);
+
+        switch (commandIdInt) {
+            case COMMAND_ENTER_PIP:
+                view.enterPictureInPicture();
+                break;
+            case COMMAND_EXIT_PIP:
+                // Not supported in android
+                break;
+            default: {}
+        }
+    }
+
+    @Override
+    public Map getExportedCustomBubblingEventTypeConstants() {
+        return MapBuilder.builder().put(
+                WebRTCView.onPictureInPictureChangeEventName,
+                MapBuilder.of(
+                        "phasedRegistrationNames",
+                        MapBuilder.of("bubbled", WebRTCView.onPictureInPictureChangeEventName)
+                )
+        ).build();
     }
 }
