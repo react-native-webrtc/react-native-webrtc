@@ -1,5 +1,7 @@
 package com.oney.WebRTCModule;
 
+import com.oney.WebRTCModule.audio.AudioProcessingFactoryProvider;
+
 import org.webrtc.Loggable;
 import org.webrtc.Logging;
 import org.webrtc.VideoDecoderFactory;
@@ -16,6 +18,7 @@ public class WebRTCModuleOptions {
     public Logging.Severity loggingSeverity;
     public String fieldTrials;
     public boolean enableMediaProjectionService;
+    public AudioProcessingFactoryProvider audioProcessingFactoryProvider;
 
     public static WebRTCModuleOptions getInstance() {
         if (instance == null) {
