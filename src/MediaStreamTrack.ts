@@ -1,4 +1,4 @@
-import { EventTarget, Event, defineEventAttribute } from 'event-target-shim/index';
+import { EventTarget, Event, getEventAttributeValue, setEventAttributeValue } from 'event-target-shim';
 import { NativeModules } from 'react-native';
 
 import { MediaTrackConstraints } from './Constraints';
@@ -225,13 +225,29 @@ export default class MediaStreamTrack extends EventTarget<MediaStreamTrackEventM
         removeListener(this);
         WebRTCModule.mediaStreamTrackRelease(this.id);
     }
+
+    /**
+     * Define the `onxxx` event handlers.
+     */
+
+    get onended() {
+        return getEventAttributeValue<MediaStreamTrackEventMap['ended']>(this, 'ended');
+    }
+    set onended(value) {
+        setEventAttributeValue<MediaStreamTrackEventMap['ended']>(this, 'ended', value);
+    }
+
+    get onmute() {
+        return getEventAttributeValue<MediaStreamTrackEventMap['mute']>(this, 'mute');
+    }
+    set onmute(value) {
+        setEventAttributeValue<MediaStreamTrackEventMap['mute']>(this, 'mute', value);
+    }
+
+    get onunmute() {
+        return getEventAttributeValue<MediaStreamTrackEventMap['unmute']>(this, 'unmute');
+    }
+    set onunmute(value) {
+        setEventAttributeValue<MediaStreamTrackEventMap['unmute']>(this, 'unmute', value);
+    }
 }
-
-/**
- * Define the `onxxx` event handlers.
- */
-const proto = MediaStreamTrack.prototype;
-
-defineEventAttribute(proto, 'ended');
-defineEventAttribute(proto, 'mute');
-defineEventAttribute(proto, 'unmute');
