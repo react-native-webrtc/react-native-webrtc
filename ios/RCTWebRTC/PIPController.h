@@ -4,6 +4,11 @@
 
 #import "RTCVideoViewManager.h"
 
+@protocol PIPControllerDelegate <NSObject>
+- (void)didChangePictureInPicture:(BOOL)isInPictureInPicture;
+@end
+
+
 API_AVAILABLE(ios(15.0))
 @interface PIPController : NSObject <AVPictureInPictureControllerDelegate>
 
@@ -13,6 +18,8 @@ API_AVAILABLE(ios(15.0))
 @property(nonatomic, assign) BOOL startAutomatically;
 @property(nonatomic, assign) BOOL stopAutomatically;
 @property(nonatomic, assign) CGSize preferredSize;
+
+@property (nonatomic, weak) id<PIPControllerDelegate> delegate;
 
 - (instancetype)initWithSourceView:(UIView *)sourceView;
 - (void)togglePIP;
