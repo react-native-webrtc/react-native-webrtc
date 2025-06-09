@@ -1,14 +1,19 @@
-
 import { NativeModules } from 'react-native';
 
 import MediaStream from './MediaStream';
 import MediaStreamError from './MediaStreamError';
+import * as RTCUtil from './RTCUtil';
+import { Constraints } from './getUserMedia';
 
 const { WebRTCModule } = NativeModules;
 
-export default function getDisplayMedia(): Promise<MediaStream> {
+export default function getDisplayMedia(
+    constraints: Constraints = {}
+): Promise<MediaStream> {
+    constraints = RTCUtil.normalizeScreenSharingConstraints(constraints);
+
     return new Promise((resolve, reject) => {
-        WebRTCModule.getDisplayMedia().then(
+        WebRTCModule.getDisplayMedia(constraints).then(
             data => {
                 const { streamId, track } = data;
 
