@@ -1,11 +1,14 @@
 package com.oney.WebRTCModule;
 
+import android.app.Activity;
 import android.app.Notification;
 import android.app.Service;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
+import android.content.ServiceConnection;
 import android.content.pm.ServiceInfo;
+import android.os.Binder;
 import android.os.Build;
 import android.os.IBinder;
 import android.util.Log;
@@ -23,22 +26,30 @@ import java.util.Random;
 public class MediaProjectionService extends Service {
     private static final String TAG = MediaProjectionService.class.getSimpleName();
 
-    static final int NOTIFICATION_ID = new Random().nextInt(99999) + 10000;
+    private final IBinder binder = new LocalBinder();
 
-    public static void launch(Context context) {
+    public class LocalBinder extends Binder {
+        public MediaProjectionService getService() {
+            // Return this instance of MediaProjectionService so clients can call public methods
+            return MediaProjectionService.this;
+        }
+    }
+
+    public static void launch(Activity activity, ServiceConnection serviceConnection) {
         if (!WebRTCModuleOptions.getInstance().enableMediaProjectionService) {
             return;
         }
 
-        MediaProjectionNotification.createNotificationChannel(context);
-        Intent intent = new Intent(context, MediaProjectionService.class);
+        MediaProjectionNotification.createNotificationChannel(activity);
+        Intent intent = new Intent(activity, MediaProjectionService.class);
+        activity.bindService(intent, serviceConnection, Context.BIND_IMPORTANT);
         ComponentName componentName;
 
         try {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                componentName = context.startForegroundService(intent);
+                componentName = activity.startForegroundService(intent);
             } else {
-                componentName = context.startService(intent);
+                componentName = activity.startService(intent);
             }
         } catch (RuntimeException e) {
             // Avoid crashing due to ForegroundServiceStartNotAllowedException (API level 31).
@@ -65,7 +76,7 @@ public class MediaProjectionService extends Service {
 
     @Override
     public IBinder onBind(Intent intent) {
-        return null;
+        return binder;
     }
 
     @Override
@@ -73,10 +84,13 @@ public class MediaProjectionService extends Service {
 
         Notification notification = MediaProjectionNotification.buildMediaProjectionNotification(this);
 
+        final Random random = new Random();
+        final int id = random.nextInt(Integer.MAX_VALUE);
+
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            startForeground(NOTIFICATION_ID, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PROJECTION);
+            startForeground(id, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PROJECTION);
         } else {
-            startForeground(NOTIFICATION_ID, notification);
+            startForeground(id, notification);
         }
 
         return START_NOT_STICKY;

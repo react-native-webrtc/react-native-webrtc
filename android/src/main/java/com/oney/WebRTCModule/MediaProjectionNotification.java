@@ -61,13 +61,12 @@ class MediaProjectionNotification {
         NotificationCompat.Builder builder = new NotificationCompat.Builder(context, ONGOING_CONFERENCE_CHANNEL_ID);
 
         builder
-                .setCategory(NotificationCompat.CATEGORY_CALL)
                 .setContentTitle(context.getString(R.string.media_projection_notification_title))
                 .setContentText(context.getString(R.string.media_projection_notification_text))
-                .setPriority(NotificationCompat.PRIORITY_LOW)
-                .setOngoing(false)
-                .setUsesChronometer(false)
-                .setAutoCancel(true)
+                .setOngoing(true)
+                .setSilent(true)
+                .setWhen(System.currentTimeMillis())
+                .setAutoCancel(false)
                 .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
                 .setOnlyAlertOnce(true)
                 .setSmallIcon(context.getResources().getIdentifier("ic_notification", "drawable", context.getPackageName()))

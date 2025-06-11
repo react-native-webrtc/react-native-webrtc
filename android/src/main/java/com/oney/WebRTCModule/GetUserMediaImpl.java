@@ -1,9 +1,12 @@
 package com.oney.WebRTCModule;
 
 import android.app.Activity;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
+import android.content.ServiceConnection;
 import android.media.projection.MediaProjectionManager;
+import android.os.IBinder;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import androidx.core.util.Consumer;
@@ -59,6 +62,22 @@ class GetUserMediaImpl {
     private Promise displayMediaPromise;
     private Intent mediaProjectionPermissionResultData;
 
+    private final ServiceConnection mediaProjectionServiceConnection = new ServiceConnection() {
+        @Override
+        public void onServiceConnected(ComponentName name, IBinder service) {
+            // Service is now bound, you can call createScreenStream()
+            Log.d(TAG, "MediaProjectionService bound, creating screen stream.");
+            ThreadUtils.runOnExecutor(() -> {
+                createScreenStream();
+            });
+        }
+
+        @Override
+        public void onServiceDisconnected(ComponentName name) {
+            Log.d(TAG, "MediaProjectionService disconnected.");
+        }
+    };
+
     GetUserMediaImpl(WebRTCModule webRTCModule, ReactApplicationContext reactContext) {
         this.webRTCModule = webRTCModule;
         this.reactContext = reactContext;
@@ -76,10 +95,8 @@ class GetUserMediaImpl {
 
                     mediaProjectionPermissionResultData = data;
 
-                    ThreadUtils.runOnExecutor(() -> {
-                        MediaProjectionService.launch(activity);
-                        createScreenStream();
-                    });
+                    MediaProjectionService.launch(activity, mediaProjectionServiceConnection);
+
                 }
             }
         });
