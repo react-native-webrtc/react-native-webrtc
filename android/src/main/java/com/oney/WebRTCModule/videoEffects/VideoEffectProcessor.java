@@ -54,5 +54,6 @@ public class VideoEffectProcessor implements VideoProcessor {
 
         mSink.onFrame(outputFrame);
         outputFrame.release();
+        frame.release();
     }
 }
