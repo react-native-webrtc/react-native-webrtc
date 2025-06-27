@@ -1,5 +1,5 @@
 import * as base64 from 'base64-js';
-import { EventTarget, defineEventAttribute } from 'event-target-shim/index';
+import { EventTarget, getEventAttributeValue, setEventAttributeValue } from 'event-target-shim';
 import { NativeModules } from 'react-native';
 
 import { addListener, removeListener } from './EventEmitter';
@@ -175,16 +175,50 @@ export default class RTCDataChannel extends EventTarget<DataChannelEventMap> {
             }
         });
     }
+
+    /**
+     * Define the `onxxx` event handlers.
+     */
+
+    get onbufferedamountlow() {
+        return getEventAttributeValue<DataChannelEventMap['bufferedamountlow']>(this, 'bufferedamountlow');
+    }
+    set onbufferedamountlow(value) {
+        setEventAttributeValue<DataChannelEventMap['bufferedamountlow']>(this, 'bufferedamountlow', value);
+    }
+
+    get onclose() {
+        return getEventAttributeValue<DataChannelEventMap['close']>(this, 'close');
+    }
+    set onclose(value) {
+        setEventAttributeValue<DataChannelEventMap['close']>(this, 'close', value);
+    }
+
+    get onclosing() {
+        return getEventAttributeValue<DataChannelEventMap['closing']>(this, 'closing');
+    }
+    set onclosing(value) {
+        setEventAttributeValue<DataChannelEventMap['closing']>(this, 'closing', value);
+    }
+
+    get onerror() {
+        return getEventAttributeValue<DataChannelEventMap['error']>(this, 'error');
+    }
+    set onerror(value) {
+        setEventAttributeValue<DataChannelEventMap['error']>(this, 'error', value);
+    }
+
+    get onmessage() {
+        return getEventAttributeValue<DataChannelEventMap['message']>(this, 'message');
+    }
+    set onmessage(value) {
+        setEventAttributeValue<DataChannelEventMap['message']>(this, 'message', value);
+    }
+
+    get onopen() {
+        return getEventAttributeValue<DataChannelEventMap['open']>(this, 'open');
+    }
+    set onopen(value) {
+        setEventAttributeValue<DataChannelEventMap['open']>(this, 'open', value);
+    }
 }
-
-/**
- * Define the `onxxx` event handlers.
- */
-const proto = RTCDataChannel.prototype;
-
-defineEventAttribute(proto, 'bufferedamountlow');
-defineEventAttribute(proto, 'close');
-defineEventAttribute(proto, 'closing');
-defineEventAttribute(proto, 'error');
-defineEventAttribute(proto, 'message');
-defineEventAttribute(proto, 'open');
