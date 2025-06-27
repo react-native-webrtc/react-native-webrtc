@@ -30,13 +30,14 @@ import java.util.List;
  * by [CameraManager.getCameraIdList].
  */
 public class Camera2Helper {
-
     @Nullable
-    public static List<CameraEnumerationAndroid.CaptureFormat> getSupportedFormats(CameraManager cameraManager, @Nullable String cameraId) {
+    public static List<CameraEnumerationAndroid.CaptureFormat> getSupportedFormats(
+            CameraManager cameraManager, @Nullable String cameraId) {
         return Camera2Enumerator.getSupportedFormats(cameraManager, cameraId);
     }
 
-    public static Size findClosestCaptureFormat(CameraManager cameraManager, @Nullable String cameraId, int width, int height) {
+    public static Size findClosestCaptureFormat(
+            CameraManager cameraManager, @Nullable String cameraId, int width, int height) {
         List<CameraEnumerationAndroid.CaptureFormat> formats = getSupportedFormats(cameraManager, cameraId);
 
         List<Size> sizes = new ArrayList<>();

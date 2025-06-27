@@ -25,10 +25,7 @@ public class ScreenCaptureController extends AbstractVideoCaptureController {
 
     private final Context context;
 
-    public ScreenCaptureController(Context context,
-                                   int width,
-                                   int height,
-                                   Intent mediaProjectionPermissionResultData) {
+    public ScreenCaptureController(Context context, int width, int height, Intent mediaProjectionPermissionResultData) {
         super(width, height, DEFAULT_FPS);
 
         this.mediaProjectionPermissionResultData = mediaProjectionPermissionResultData;

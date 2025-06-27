@@ -19,10 +19,8 @@ static NSString *const PERMISSION_PROMPT = @"prompt";
     }
 }
 
-RCT_EXPORT_METHOD(checkPermission
-                  : (NSString *)mediaType resolver
-                  : (RCTPromiseResolveBlock)resolve rejecter
-                  : (RCTPromiseRejectBlock)reject) {
+RCT_EXPORT_METHOD(checkPermission : (NSString *)mediaType resolver : (RCTPromiseResolveBlock)
+                      resolve rejecter : (RCTPromiseRejectBlock)reject) {
 #if TARGET_OS_TV
     resolve(@"tvOS is not supported");
     return;
@@ -50,10 +48,8 @@ RCT_EXPORT_METHOD(checkPermission
 #endif
 }
 
-RCT_EXPORT_METHOD(requestPermission
-                  : (NSString *)mediaType resolver
-                  : (RCTPromiseResolveBlock)resolve rejecter
-                  : (RCTPromiseRejectBlock)reject) {
+RCT_EXPORT_METHOD(requestPermission : (NSString *)mediaType resolver : (RCTPromiseResolveBlock)
+                      resolve rejecter : (RCTPromiseRejectBlock)reject) {
 #if TARGET_OS_TV
     resolve(@"tvOS is not supported");
     return;

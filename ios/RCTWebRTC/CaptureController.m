@@ -12,17 +12,16 @@
     // subclasses needs to override
 }
 
-- (NSDictionary *) getSettings {
+- (NSDictionary *)getSettings {
     // subclasses needs to override
-    return @{
-        @"deviceId": self.deviceId
-    };
+    return @{@"deviceId" : self.deviceId};
 }
 
 - (void)applyConstraints:(NSDictionary *)constraints error:(NSError **)outError {
-    *outError = [NSError errorWithDomain:@"react-native-webrtc"
-                                    code:0
-                                userInfo:@{ NSLocalizedDescriptionKey: @"This video track does not support applyConstraints."}];
+    *outError =
+        [NSError errorWithDomain:@"react-native-webrtc"
+                            code:0
+                        userInfo:@{NSLocalizedDescriptionKey : @"This video track does not support applyConstraints."}];
 }
 
 @end
