@@ -1,10 +1,10 @@
 #import "CaptureController.h"
-#import "WebRTCModule.h"
 #import "VideoEffectProcessor.h"
+#import "WebRTCModule.h"
 
 @interface WebRTCModule (RTCMediaStream)
 
-@property (nonatomic, strong) VideoEffectProcessor *videoEffectProcessor;
+@property(nonatomic, strong) VideoEffectProcessor *videoEffectProcessor;
 
 - (RTCVideoTrack *)createVideoTrackWithCaptureController:
     (CaptureController * (^)(RTCVideoSource *))captureControllerCreator;

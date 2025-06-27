@@ -55,11 +55,7 @@ NSString *const kRTCAppGroupIdentifier = @"RTCAppGroupIdentifier";
 }
 
 - (NSDictionary *)getSettings {
-    return @{
-        @"deviceId": self.deviceId,
-        @"groupId": @"",
-        @"frameRate" : @(30)
-    };
+    return @{@"deviceId" : self.deviceId, @"groupId" : @"", @"frameRate" : @(30)};
 }
 // MARK: CapturerEventsDelegate Methods
 

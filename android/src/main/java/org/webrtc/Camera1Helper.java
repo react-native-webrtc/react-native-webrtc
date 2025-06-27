@@ -30,7 +30,6 @@ import java.util.List;
  */
 
 public class Camera1Helper {
-
     public static int getCameraId(String deviceName) {
         return Camera1Enumerator.getCameraIndex(deviceName);
     }

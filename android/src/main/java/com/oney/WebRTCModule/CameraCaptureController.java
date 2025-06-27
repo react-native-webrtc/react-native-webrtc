@@ -4,6 +4,7 @@ import android.content.Context;
 import android.hardware.camera2.CameraManager;
 import android.util.Log;
 import android.util.Pair;
+
 import androidx.annotation.Nullable;
 import androidx.core.util.Consumer;
 
@@ -46,7 +47,6 @@ public class CameraCaptureController extends AbstractVideoCaptureController {
      * {@link CameraEnumerator#createCapturer}.
      */
     private final CameraEventsHandler cameraEventsHandler = new CameraEventsHandler() {
-
         @Override
         public void onCameraOpening(String cameraName) {
             super.onCameraOpening(cameraName);
@@ -128,7 +128,6 @@ public class CameraCaptureController extends AbstractVideoCaptureController {
             }
         }
 
-
         // Otherwise, use facingMode (defaulting to front/user facing).
         if (cameraName == null) {
             cameraIndex = -1;
@@ -144,11 +143,12 @@ public class CameraCaptureController extends AbstractVideoCaptureController {
 
         if (cameraName == null) {
             if (onFinishedCallback != null) {
-                onFinishedCallback.accept(new Exception("OverconstrainedError: could not find camera with deviceId: " + deviceId + " or facingMode: " + facingMode));
+                onFinishedCallback.accept(new Exception("OverconstrainedError: could not find camera with deviceId: "
+                        + deviceId + " or facingMode: " + facingMode));
             }
             return;
         }
-        
+
         // For lambda reference
         final int finalCameraIndex = cameraIndex;
         final String finalCameraName = cameraName;
@@ -164,9 +164,7 @@ public class CameraCaptureController extends AbstractVideoCaptureController {
         CameraVideoCapturer capturer = (CameraVideoCapturer) videoCapturer;
         Runnable changeFormatIfNeededAndFinish = () -> {
             saveConstraints.run();
-            if (targetWidth != oldTargetWidth ||
-                    targetHeight != oldTargetHeight ||
-                    targetFps != oldTargetFps) {
+            if (targetWidth != oldTargetWidth || targetHeight != oldTargetHeight || targetFps != oldTargetFps) {
                 updateActualSize(finalCameraIndex, finalCameraName, videoCapturer);
                 capturer.changeCaptureFormat(targetWidth, targetHeight, targetFps);
             }
@@ -204,7 +202,7 @@ public class CameraCaptureController extends AbstractVideoCaptureController {
         String facingMode = ReactBridgeUtil.getMapStrValue(this.constraints, "facingMode");
 
         CreateCapturerResult result = createVideoCapturer(deviceId, facingMode);
-        if(result == null) {
+        if (result == null) {
             return null;
         }
 
@@ -325,7 +323,7 @@ public class CameraCaptureController extends AbstractVideoCaptureController {
         public final int cameraIndex;
         public final String cameraName;
         public final VideoCapturer videoCapturer;
-    
+
         public CreateCapturerResult(int cameraIndex, String cameraName, VideoCapturer videoCapturer) {
             this.cameraIndex = cameraIndex;
             this.cameraName = cameraName;

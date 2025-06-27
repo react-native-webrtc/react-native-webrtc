@@ -67,10 +67,10 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
         String fieldTrials = options.fieldTrials;
 
         PeerConnectionFactory.initialize(PeerConnectionFactory.InitializationOptions.builder(reactContext)
-                                                 .setFieldTrials(fieldTrials)
-                                                 .setNativeLibraryLoader(new LibraryLoader())
-                                                 .setInjectableLogger(injectableLogger, loggingSeverity)
-                                                 .createInitializationOptions());
+                        .setFieldTrials(fieldTrials)
+                        .setNativeLibraryLoader(new LibraryLoader())
+                        .setInjectableLogger(injectableLogger, loggingSeverity)
+                        .createInitializationOptions());
 
         if (injectableLogger == null && loggingSeverity != null) {
             Logging.enableLogToDebugOutput(loggingSeverity);
@@ -939,12 +939,9 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
         return transceiverUpdates;
     }
 
-
     @ReactMethod
     public void mediaStreamTrackSetVideoEffects(String id, ReadableArray names) {
-        ThreadUtils.runOnExecutor(() -> {
-            getUserMediaImpl.setVideoEffects(id, names);
-        });
+        ThreadUtils.runOnExecutor(() -> { getUserMediaImpl.setVideoEffects(id, names); });
     }
 
     @ReactMethod
@@ -1280,11 +1277,14 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
                 return;
             }
 
-            IceCandidate candidate = new IceCandidate(
-                candidateMap.hasKey("sdpMid") && !candidateMap.isNull("sdpMid") ? candidateMap.getString("sdpMid")  : "",
-                candidateMap.hasKey("sdpMLineIndex") && !candidateMap.isNull("sdpMLineIndex")  ? candidateMap.getInt("sdpMLineIndex") : 0,
-                candidateMap.getString("candidate"));
-            
+            IceCandidate candidate = new IceCandidate(candidateMap.hasKey("sdpMid") && !candidateMap.isNull("sdpMid")
+                            ? candidateMap.getString("sdpMid")
+                            : "",
+                    candidateMap.hasKey("sdpMLineIndex") && !candidateMap.isNull("sdpMLineIndex")
+                            ? candidateMap.getInt("sdpMLineIndex")
+                            : 0,
+                    candidateMap.getString("candidate"));
+
             peerConnection.addIceCandidate(candidate, new AddIceObserver() {
                 @Override
                 public void onAddSuccess() {

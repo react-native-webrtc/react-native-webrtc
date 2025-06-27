@@ -3,7 +3,6 @@
 
 @protocol VideoFrameProcessorDelegate
 
-- (RTCVideoFrame *)capturer:(RTCVideoCapturer *)capturer
-      didCaptureVideoFrame:(RTCVideoFrame *)frame;
+- (RTCVideoFrame *)capturer:(RTCVideoCapturer *)capturer didCaptureVideoFrame:(RTCVideoFrame *)frame;
 
 @end
