@@ -232,11 +232,9 @@ That will allow you to enable and disable video streams on demand while a call i
 
 ```javascript
 let sessionConstraints = {
-	mandatory: {
-		OfferToReceiveAudio: true,
-		OfferToReceiveVideo: true,
-		VoiceActivityDetection: true
-	}
+	offerToReceiveAudio: true,
+	offerToReceiveVideo: true,
+	voiceActivityDetection: true
 };
 ```
 
