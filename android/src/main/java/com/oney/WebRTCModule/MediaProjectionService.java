@@ -12,7 +12,6 @@ import android.util.Log;
 
 import java.util.Random;
 
-
 /**
  * This class implements an Android {@link Service}, a foreground one specifically, and it's
  * responsible for presenting an ongoing notification when a conference is in progress.
@@ -70,7 +69,6 @@ public class MediaProjectionService extends Service {
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-
         Notification notification = MediaProjectionNotification.buildMediaProjectionNotification(this);
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {

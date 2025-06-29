@@ -1,6 +1,6 @@
+#import <AVKit/AVKit.h>
 #import <UIKit/UIKit.h>
 #import <WebRTC/RTCVideoTrack.h>
-#import <AVKit/AVKit.h>
 
 #import "RTCVideoViewManager.h"
 
@@ -10,7 +10,7 @@
 
 
 API_AVAILABLE(ios(15.0))
-@interface PIPController : NSObject <AVPictureInPictureControllerDelegate>
+@interface PIPController : NSObject<AVPictureInPictureControllerDelegate>
 
 @property(nonatomic, weak) UIView *sourceView;
 @property(nonatomic, strong) RTCVideoTrack *videoTrack;

@@ -127,7 +127,7 @@ export default class MediaStreamTrack extends EventTarget<MediaStreamTrackEventM
         this.applyConstraints(constraints);
     }
 
-    _setVideoEffect(name:string) {
+    _setVideoEffects(names: string[]) {
         if (this.remote) {
             throw new Error('Not implemented for remote tracks');
         }
@@ -136,7 +136,11 @@ export default class MediaStreamTrack extends EventTarget<MediaStreamTrackEventM
             throw new Error('Only implemented for video tracks');
         }
 
-        WebRTCModule.mediaStreamTrackSetVideoEffect(this.id, name);
+        WebRTCModule.mediaStreamTrackSetVideoEffects(this.id, names);
+    }
+
+    _setVideoEffect(name: string) {
+        this._setVideoEffects([ name ]);
     }
 
     /**

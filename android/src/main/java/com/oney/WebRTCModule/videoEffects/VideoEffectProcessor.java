@@ -5,6 +5,8 @@ import org.webrtc.VideoFrame;
 import org.webrtc.VideoProcessor;
 import org.webrtc.VideoSink;
 
+import java.util.List;
+
 /**
  * Lightweight abstraction for an object that can receive video frames, process and add effects in
  * them, and pass them on to another object.
@@ -12,11 +14,11 @@ import org.webrtc.VideoSink;
 public class VideoEffectProcessor implements VideoProcessor {
     private VideoSink mSink;
     final private SurfaceTextureHelper textureHelper;
-    final private VideoFrameProcessor videoFrameProcessor;
+    final private List<VideoFrameProcessor> videoFrameProcessors;
 
-    public VideoEffectProcessor(VideoFrameProcessor processor, SurfaceTextureHelper textureHelper) {
+    public VideoEffectProcessor(List<VideoFrameProcessor> processors, SurfaceTextureHelper textureHelper) {
         this.textureHelper = textureHelper;
-        this.videoFrameProcessor = processor;
+        this.videoFrameProcessors = processors;
     }
 
     @Override
@@ -39,13 +41,17 @@ public class VideoEffectProcessor implements VideoProcessor {
     @Override
     public void onFrameCaptured(VideoFrame frame) {
         frame.retain();
-        VideoFrame outputFrame = videoFrameProcessor.process(frame, textureHelper);
+        VideoFrame outputFrame = frame;
+        for (VideoFrameProcessor processor : this.videoFrameProcessors) {
+            outputFrame = processor.process(outputFrame, textureHelper);
 
-        if (outputFrame == null) {
-            mSink.onFrame(frame);
-            frame.release();
-            return;
+            if (outputFrame == null) {
+                mSink.onFrame(frame);
+                frame.release();
+                return;
+            }
         }
+
         mSink.onFrame(outputFrame);
         outputFrame.release();
         frame.release();
