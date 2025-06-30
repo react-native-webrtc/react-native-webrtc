@@ -4,14 +4,11 @@
 #import "AppCaptureController.h"
 #import "AppCapturer.h"
 
-
 @interface AppCaptureController ()
 
 @property(nonatomic, retain) AppCapturer *capturer;
 
 @end
-
-
 
 @implementation AppCaptureController
 
@@ -29,7 +26,7 @@
     [self.capturer stopCapture];
 }
 
-- (void)startCaptureWithCompletionHandler:(void (^)(NSError * _Nullable error))completionHandler {
+- (void)startCaptureWithCompletionHandler:(void (^)(NSError *_Nullable error))completionHandler {
     [self.capturer startCaptureWithCompletionHandler:completionHandler];
 }
 

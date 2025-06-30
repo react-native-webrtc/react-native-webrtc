@@ -1,5 +1,5 @@
-#import <objc/runtime.h>
 #import <ReplayKit/ReplayKit.h>
+#import <objc/runtime.h>
 
 #import <WebRTC/RTCCameraVideoCapturer.h>
 #import <WebRTC/RTCMediaConstraints.h>
@@ -11,11 +11,11 @@
 #import "WebRTCModule+RTCPeerConnection.h"
 #import "WebRTCModuleOptions.h"
 
-#import "ProcessorProvider.h"
-#import "ScreenCapturer.h"
-#import "ScreenCaptureController.h"
-#import "AppCapturer.h"
 #import "AppCaptureController.h"
+#import "AppCapturer.h"
+#import "ProcessorProvider.h"
+#import "ScreenCaptureController.h"
+#import "ScreenCapturer.h"
 #import "TrackCapturerEventsEmitter.h"
 #import "VideoCaptureController.h"
 
@@ -164,7 +164,7 @@
     return videoTrack;
 }
 
-- (void)createAppCaptureVideoTrackWithCompletion:(void (^)(RTCVideoTrack * _Nullable videoTrack))completion {
+- (void)createAppCaptureVideoTrackWithCompletion:(void (^)(RTCVideoTrack *_Nullable videoTrack))completion {
 #if TARGET_IPHONE_SIMULATOR || TARGET_OS_OSX || TARGET_OS_TV
     completion(nil);
     return nil;
@@ -176,13 +176,12 @@
     RTCVideoTrack *videoTrack = [self.peerConnectionFactory videoTrackWithSource:videoSource trackId:trackUUID];
 
     AppCapturer *appCapturer = [[AppCapturer alloc] initWithDelegate:videoSource];
-    AppCaptureController *appCaptureController =
-        [[AppCaptureController alloc] initWithCapturer:appCapturer];
+    AppCaptureController *appCaptureController = [[AppCaptureController alloc] initWithCapturer:appCapturer];
 
     videoTrack.captureController = appCaptureController;
-    
-    [appCaptureController startCaptureWithCompletionHandler:^(NSError * _Nullable error) {
-        if(error){
+
+    [appCaptureController startCaptureWithCompletionHandler:^(NSError *_Nullable error) {
+        if (error) {
             completion(nil);
         } else {
             completion(videoTrack);
@@ -190,49 +189,62 @@
     }];
 }
 
-RCT_EXPORT_METHOD(getDisplayMedia:(NSDictionary *)constraints
-                         resolver:(RCTPromiseResolveBlock)resolve
-                         rejecter:(RCTPromiseRejectBlock)reject) {
+RCT_EXPORT_METHOD(getDisplayMedia : (NSDictionary *)constraints resolver : (RCTPromiseResolveBlock)
+                      resolve rejecter : (RCTPromiseRejectBlock)reject) {
 #if TARGET_OS_TV
     reject(@"unsupported_platform", @"tvOS is not supported", nil);
     return;
 #else
 
+    __weak __typeof__(self) weakSelf = self;
 
-    BOOL broadcastExtension = NO;
-    BOOL presentBroadcastPicker = NO;
-    
-    id videoConstraints = constraints[@"video"];
-    
-    // screen-capture-auto uses Broadcast Extension + RPSystemBroadcastPickerView
-    // screen-capture-manual uses Broadcast Extension
-    // app-capture uses RPScreenRecorder
- 
-    if ([videoConstraints isKindOfClass:[NSDictionary class]]) {
-        // constraints.video.deviceId
-        broadcastExtension =
-            [((NSDictionary*)videoConstraints)[@"deviceId"] hasPrefix:@"screen-capture"];
-        
-        presentBroadcastPicker =
-        broadcastExtension &&
-            ![((NSDictionary*)videoConstraints)[@"deviceId"] hasSuffix:@"-manual"];
-      }
-    
-    if (broadcastExtension){
-        RTCVideoTrack *videoTrack = [self createScreenCaptureVideoTrack:presentBroadcastPicker];
+    dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+        if (!weakSelf) {
+            reject(@"DOMException", @"AbortError", nil);
+            return;
+        }
 
-     
-        if (videoTrack == nil) {
+        BOOL broadcastExtension = NO;
+        BOOL presentBroadcastPicker = NO;
+
+        id videoConstraints = constraints[@"video"];
+
+        // screen-capture-auto uses Broadcast Extension + RPSystemBroadcastPickerView
+        // screen-capture-manual uses Broadcast Extension
+        // app-capture uses RPScreenRecorder
+
+        if ([videoConstraints isKindOfClass:[NSDictionary class]]) {
+            // constraints.video.deviceId
+            broadcastExtension = [((NSDictionary *)videoConstraints)[@"deviceId"] hasPrefix:@"screen-capture"];
+
+            presentBroadcastPicker =
+                broadcastExtension && ![((NSDictionary *)videoConstraints)[@"deviceId"] hasSuffix:@"-manual"];
+        }
+
+        __block RTCVideoTrack *videoTrack = nil;
+
+        if (broadcastExtension) {
+            videoTrack = [weakSelf createScreenCaptureVideoTrack:presentBroadcastPicker];
+        } else {
+            dispatch_semaphore_t semaphore = dispatch_semaphore_create(0);
+            [weakSelf createAppCaptureVideoTrackWithCompletion:^(RTCVideoTrack *_Nullable _videoTrack) {
+                videoTrack = _videoTrack;
+                dispatch_semaphore_signal(semaphore);
+            }];
+            dispatch_semaphore_wait(semaphore, DISPATCH_TIME_FOREVER);
+        }
+
+        if (videoTrack == nil || !weakSelf) {
             reject(@"DOMException", @"AbortError", nil);
             return;
         }
 
         NSString *mediaStreamId = [[NSUUID UUID] UUIDString];
-        RTCMediaStream *mediaStream = [self.peerConnectionFactory mediaStreamWithStreamId:mediaStreamId];
+        RTCMediaStream *mediaStream = [weakSelf.peerConnectionFactory mediaStreamWithStreamId:mediaStreamId];
         [mediaStream addVideoTrack:videoTrack];
 
         NSString *trackId = videoTrack.trackId;
-        self.localTracks[trackId] = videoTrack;
+        weakSelf.localTracks[trackId] = videoTrack;
 
         NSDictionary *trackInfo = @{
             @"enabled" : @(videoTrack.isEnabled),
@@ -242,38 +254,10 @@ RCT_EXPORT_METHOD(getDisplayMedia:(NSDictionary *)constraints
             @"remote" : @(NO)
         };
 
-        self.localStreams[mediaStreamId] = mediaStream;
+        weakSelf.localStreams[mediaStreamId] = mediaStream;
         resolve(@{@"streamId" : mediaStreamId, @"track" : trackInfo});
-        
-    } else {
-        // Capable of throwing AbortError if user cancelled
-        [self createAppCaptureVideoTrackWithCompletion:^(RTCVideoTrack * _Nullable videoTrack) {
-            
-            if (videoTrack == nil) {
-                reject(@"DOMException", @"AbortError", nil);
-                return;
-            }
-            
-            NSString *mediaStreamId = [[NSUUID UUID] UUIDString];
-            RTCMediaStream *mediaStream = [self.peerConnectionFactory mediaStreamWithStreamId:mediaStreamId];
-            [mediaStream addVideoTrack:videoTrack];
+    });
 
-            NSString *trackId = videoTrack.trackId;
-            self.localTracks[trackId] = videoTrack;
-
-            NSDictionary *trackInfo = @{
-                @"enabled" : @(videoTrack.isEnabled),
-                @"id" : videoTrack.trackId,
-                @"kind" : videoTrack.kind,
-                @"readyState" : @"live",
-                @"remote" : @(NO)
-            };
-
-            self.localStreams[mediaStreamId] = mediaStream;
-            resolve(@{@"streamId" : mediaStreamId, @"track" : trackInfo});
-        }];
-    }
-    
 #endif
 }
 

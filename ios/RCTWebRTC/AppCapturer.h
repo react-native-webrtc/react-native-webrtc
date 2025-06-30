@@ -4,9 +4,9 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
-@interface AppCapturer: RTCVideoCapturer
+@interface AppCapturer : RTCVideoCapturer
 
-- (void)startCaptureWithCompletionHandler:(void (^)(NSError * _Nullable error))completionHandler;
+- (void)startCaptureWithCompletionHandler:(void (^)(NSError *_Nullable error))completionHandler;
 - (void)stopCapture;
 
 @end

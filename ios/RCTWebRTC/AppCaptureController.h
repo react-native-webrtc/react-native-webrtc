@@ -4,13 +4,12 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
-
 @class AppCapturer;
 
 @interface AppCaptureController : CaptureController
 
 - (instancetype)initWithCapturer:(nonnull AppCapturer *)capturer;
-- (void)startCaptureWithCompletionHandler:(void (^)(NSError * _Nullable error))completionHandler;
+- (void)startCaptureWithCompletionHandler:(void (^)(NSError *_Nullable error))completionHandler;
 - (void)stopCapture;
 
 @end
