@@ -202,3 +202,33 @@ export function normalizeConstraints(constraints) {
 
     return c;
 }
+
+
+const DEFAULT_SCREEN_SHARE_CONSTRAINTS = {
+    deviceId: 'screen-capture-manual'
+};
+
+/**
+ * Normalize the given constraints in something we can work with.
+ */
+export function normalizeScreenSharingConstraints(constraints) {
+    const c = deepClone(constraints);
+
+    const mediaType = 'video';
+    const mediaTypeConstraints = c[mediaType];
+    const typeofMediaTypeConstraints = typeof mediaTypeConstraints;
+
+    if (typeofMediaTypeConstraints !== 'undefined') {
+        if (typeofMediaTypeConstraints === 'boolean') {
+            if (mediaTypeConstraints) {
+                c[mediaType] = DEFAULT_SCREEN_SHARE_CONSTRAINTS;
+            }
+        } else if (typeofMediaTypeConstraints === 'object') {
+            c[mediaType] = normalizeMediaConstraints(mediaTypeConstraints, mediaType);
+        } else {
+            throw new TypeError(`constraints.${mediaType} is neither a boolean nor a dictionary`);
+        }
+    }
+
+    return c;
+}

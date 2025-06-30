@@ -768,7 +768,7 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
     }
 
     @ReactMethod
-    public void getDisplayMedia(Promise promise) {
+    public void getDisplayMedia(ReadableMap constraints, Promise promise) {
         ThreadUtils.runOnExecutor(() -> getUserMediaImpl.getDisplayMedia(promise));
     }
 
