@@ -82,7 +82,6 @@ public class RTCVideoViewManager extends ViewGroupManager<WebRTCView> {
         view.setZOrder(zOrder);
     }
 
-
     /**
      * Sets whether Picture-in-Picture (PiP) will be handled by this {@code WebRTCView}.
      *
@@ -119,18 +118,11 @@ public class RTCVideoViewManager extends ViewGroupManager<WebRTCView> {
     @Nullable
     @Override
     public Map<String, Integer> getCommandsMap() {
-        return MapBuilder.of(
-                "startPictureInPicture", COMMAND_ENTER_PIP,
-                "stopPictureInPicture", COMMAND_EXIT_PIP
-                );
+        return MapBuilder.of("startPictureInPicture", COMMAND_ENTER_PIP, "stopPictureInPicture", COMMAND_EXIT_PIP);
     }
 
     @Override
-    public void receiveCommand(
-            @NonNull WebRTCView view,
-            String commandId,
-            @Nullable ReadableArray args
-    ) {
+    public void receiveCommand(@NonNull WebRTCView view, String commandId, @Nullable ReadableArray args) {
         super.receiveCommand(view, commandId, args);
         int commandIdInt = Integer.parseInt(commandId);
 
@@ -141,18 +133,17 @@ public class RTCVideoViewManager extends ViewGroupManager<WebRTCView> {
             case COMMAND_EXIT_PIP:
                 // Not supported in android
                 break;
-            default: {}
+            default: {
+            }
         }
     }
 
     @Override
     public Map getExportedCustomBubblingEventTypeConstants() {
-        return MapBuilder.builder().put(
-                WebRTCView.onPictureInPictureChangeEventName,
-                MapBuilder.of(
-                        "phasedRegistrationNames",
-                        MapBuilder.of("bubbled", WebRTCView.onPictureInPictureChangeEventName)
-                )
-        ).build();
+        return MapBuilder.builder()
+                .put(WebRTCView.onPictureInPictureChangeEventName,
+                        MapBuilder.of("phasedRegistrationNames",
+                                MapBuilder.of("bubbled", WebRTCView.onPictureInPictureChangeEventName)))
+                .build();
     }
 }

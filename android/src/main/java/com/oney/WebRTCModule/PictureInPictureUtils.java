@@ -12,10 +12,8 @@ import android.view.View;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
-// Big shootout for expo-video developers
-
 final public class PictureInPictureUtils {
-    static Rect calculateRectHint(View view){
+    static Rect calculateRectHint(View view) {
         Rect hint = new Rect();
         view.getGlobalVisibleRect(hint);
         int[] location = new int[2];
@@ -31,48 +29,52 @@ final public class PictureInPictureUtils {
         // because there will be no offset on the home screen
         // there is no way to check the orientation support of the home screen, so we make the bet that
         // it won't support landscape (as most android home screens do by default)
-        // This doesn't have any serious consequences if we are wrong with the guess, the transition will be a bit off though
+        // This doesn't have any serious consequences if we are wrong with the guess, the transition will be a bit off
+        // though
         int height = hint.bottom - hint.top;
         hint.top = location[1];
         hint.bottom = hint.top + height;
         return hint;
     }
 
-    static void applySourceRectHint(@Nullable Activity activity, View view){
+    static void applySourceRectHint(@Nullable Activity activity, View view) {
         if (Build.VERSION.SDK_INT >= 31 && isPictureInPictureSupported(activity)) {
             Rect hint = calculateRectHint(view);
-            runWithPiPMisconfigurationSoftHandling(()->{
-                activity.setPictureInPictureParams(new PictureInPictureParams.Builder().setSourceRectHint(hint).build());
+            runWithPiPMisconfigurationSoftHandling(() -> {
+                activity.setPictureInPictureParams(
+                        new PictureInPictureParams.Builder().setSourceRectHint(hint).build());
             });
         }
     }
 
-    static void applyAutoEnter(@Nullable Activity activity, Boolean autoEnterPiP){
+    static void applyAutoEnter(@Nullable Activity activity, Boolean autoEnterPiP) {
         if (Build.VERSION.SDK_INT >= 31 && isPictureInPictureSupported(activity)) {
-            runWithPiPMisconfigurationSoftHandling(()->{
-                activity.setPictureInPictureParams(new PictureInPictureParams.Builder().setAutoEnterEnabled(autoEnterPiP).build());
+            runWithPiPMisconfigurationSoftHandling(() -> {
+                activity.setPictureInPictureParams(
+                        new PictureInPictureParams.Builder().setAutoEnterEnabled(autoEnterPiP).build());
             });
         }
     }
 
     public static boolean isPictureInPictureSupported(Activity currentActivity) {
-        if(currentActivity == null) return false;
-        return Build.VERSION.SDK_INT >= Build.VERSION_CODES.O &&
-                currentActivity.getPackageManager().hasSystemFeature(PackageManager.FEATURE_PICTURE_IN_PICTURE);
+        if (currentActivity == null) return false;
+        return Build.VERSION.SDK_INT >= Build.VERSION_CODES.O
+                && currentActivity.getPackageManager().hasSystemFeature(PackageManager.FEATURE_PICTURE_IN_PICTURE);
     }
 
-    static void applyAspectRatio(Activity currentActivity, Rational rational){
+    static void applyAspectRatio(Activity currentActivity, Rational rational) {
         Rational finalAspectRatio = getFinalAspectRatio(rational);
-        runWithPiPMisconfigurationSoftHandling(()->{
+        runWithPiPMisconfigurationSoftHandling(() -> {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && isPictureInPictureSupported(currentActivity)) {
-                currentActivity.setPictureInPictureParams(new PictureInPictureParams.Builder().setAspectRatio(finalAspectRatio).build());
+                currentActivity.setPictureInPictureParams(
+                        new PictureInPictureParams.Builder().setAspectRatio(finalAspectRatio).build());
             }
         });
     }
 
-    static void safeEnterPictureInPicture(@Nullable Activity currentActivity){
-        runWithPiPMisconfigurationSoftHandling(()->{
-            if(!isPictureInPictureSupported(currentActivity)) return;
+    static void safeEnterPictureInPicture(@Nullable Activity currentActivity) {
+        runWithPiPMisconfigurationSoftHandling(() -> {
+            if (!isPictureInPictureSupported(currentActivity)) return;
             currentActivity.enterPictureInPictureMode();
         });
     }
@@ -80,8 +82,8 @@ final public class PictureInPictureUtils {
     private static @NonNull Rational getFinalAspectRatio(Rational rational) {
         Rational aspectRatio = rational;
 
-        if(aspectRatio.isNaN()){
-            aspectRatio = new Rational(150,200);
+        if (aspectRatio.isNaN()) {
+            aspectRatio = new Rational(150, 200);
         }
         Rational maximumRatio = new Rational(239, 100);
         Rational minimumRatio = new Rational(100, 239);

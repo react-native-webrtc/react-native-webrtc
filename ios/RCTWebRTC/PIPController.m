@@ -189,7 +189,7 @@
  */
 - (void)pictureInPictureControllerDidStartPictureInPicture:(AVPictureInPictureController *)pictureInPictureController {
     [self didChangePictureInPicture:YES];
-    NSLog(@"%@", NSStringFromSelector(_cmd)); // Objective-C
+    NSLog(@"%@", NSStringFromSelector(_cmd));  // Objective-C
 }
 
 /*!
@@ -223,7 +223,7 @@
  */
 - (void)pictureInPictureControllerDidStopPictureInPicture:(AVPictureInPictureController *)pictureInPictureController {
     [self didChangePictureInPicture:NO];
-    NSLog(@"%@", NSStringFromSelector(_cmd)); // Objective-C
+    NSLog(@"%@", NSStringFromSelector(_cmd));  // Objective-C
 }
 
 /*!
