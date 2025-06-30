@@ -70,7 +70,16 @@ export interface RTCVideoViewProps extends ViewProps {
    *
    * iOS only. Requires iOS 15.0 or above, and the PIP background mode capability.
    */
-  iosPIP?: RTCIOSPIPOptions
+  iosPIP?: RTCIOSPIPOptions;
+
+  /**
+   * Callback function that is called when the dimensions of the video change.
+   *
+   * @param {Object} dimensions - The new dimensions of the video.
+   * @param {number} dimensions.width - The width of the video.
+   * @param {number} dimensions.height - The height of the video.
+   */
+  onDimensionsChange?: ({ width, height }: { width: number; height: number }) => void;
 }
 
 export interface RTCIOSPIPOptions {
