@@ -120,14 +120,14 @@
 
 #if TARGET_OS_OSX
 - (void)layout {
-  [super layout];
+    [super layout];
 #else
 - (void)layoutSubviews {
-  [super layoutSubviews];
+    [super layoutSubviews];
 #endif
 
-  CGRect bounds = self.bounds;
-  self.videoView.frame = bounds;
+    CGRect bounds = self.bounds;
+    self.videoView.frame = bounds;
 }
 
 /**
@@ -150,12 +150,12 @@
     [_pipController insertFallbackView:subview];
 }
 
-- (void) API_AVAILABLE(ios(15.0)) setPIPOptions:(NSDictionary *)pipOptions {
+- (void)API_AVAILABLE(ios(15.0))setPIPOptions:(NSDictionary *)pipOptions {
     if (!pipOptions) {
         _pipController = nil;
         return;
     }
-    
+
     BOOL enabled = YES;
     BOOL startAutomatically = YES;
     BOOL stopAutomatically = YES;
@@ -175,33 +175,33 @@
         NSDictionary *sizeDict = pipOptions[@"preferredSize"];
         id width = sizeDict[@"width"];
         id height = sizeDict[@"height"];
-        
+
         if ([width isKindOfClass:[NSNumber class]] && [height isKindOfClass:[NSNumber class]]) {
             preferredSize = CGSizeMake([width doubleValue], [height doubleValue]);
         }
     }
-    
+
     if (!enabled) {
         _pipController = nil;
         return;
     }
-    
+
     if (!_pipController) {
         _pipController = [[PIPController alloc] initWithSourceView:self];
         _pipController.videoTrack = _videoTrack;
     }
-    
+
     _pipController.startAutomatically = startAutomatically;
     _pipController.stopAutomatically = stopAutomatically;
     _pipController.objectFit = _objectFit;
     _pipController.preferredSize = preferredSize;
 }
 
-- (void) API_AVAILABLE(ios(15.0)) startPIP {
+- (void)API_AVAILABLE(ios(15.0))startPIP {
     [_pipController startPIP];
 }
 
-- (void) API_AVAILABLE(ios(15.0)) stopPIP {
+- (void)API_AVAILABLE(ios(15.0))stopPIP {
     [_pipController stopPIP];
 }
 
@@ -356,10 +356,10 @@ RCT_CUSTOM_VIEW_PROPERTY(iosPIP, NSDictionary *, RTCVideoView) {
     }
 }
 
-RCT_EXPORT_METHOD(startIOSPIP:(nonnull NSNumber *)reactTag) {
+RCT_EXPORT_METHOD(startIOSPIP : (nonnull NSNumber *)reactTag) {
     if (@available(iOS 15.0, *)) {
         RCTUIManager *uiManager = [self.bridge moduleForClass:[RCTUIManager class]];
-        [uiManager addUIBlock:^(RCTUIManager *uiManager, NSDictionary<NSNumber *,UIView *> *viewRegistry) {
+        [uiManager addUIBlock:^(RCTUIManager *uiManager, NSDictionary<NSNumber *, UIView *> *viewRegistry) {
             UIView *view = viewRegistry[reactTag];
             if (!view || ![view isKindOfClass:[RTCVideoView class]]) {
                 RCTLogError(@"Cannot find RTCVideoView with tag #%@", reactTag);
@@ -370,10 +370,10 @@ RCT_EXPORT_METHOD(startIOSPIP:(nonnull NSNumber *)reactTag) {
     }
 }
 
-RCT_EXPORT_METHOD(stopIOSPIP:(nonnull NSNumber *)reactTag) {
+RCT_EXPORT_METHOD(stopIOSPIP : (nonnull NSNumber *)reactTag) {
     if (@available(iOS 15.0, *)) {
         RCTUIManager *uiManager = [self.bridge moduleForClass:[RCTUIManager class]];
-        [uiManager addUIBlock:^(RCTUIManager *uiManager, NSDictionary<NSNumber *,UIView *> *viewRegistry) {
+        [uiManager addUIBlock:^(RCTUIManager *uiManager, NSDictionary<NSNumber *, UIView *> *viewRegistry) {
             UIView *view = viewRegistry[reactTag];
             if (!view || ![view isKindOfClass:[RTCVideoView class]]) {
                 RCTLogError(@"Cannot find RTCVideoView with tag #%@", reactTag);

@@ -95,7 +95,8 @@ public abstract class AbstractVideoCaptureController {
 
     public void applyConstraints(ReadableMap constraints, @Nullable Consumer<Exception> onFinishedCallback) {
         if (onFinishedCallback != null) {
-            onFinishedCallback.accept(new UnsupportedOperationException("This video track does not support applyConstraints."));
+            onFinishedCallback.accept(
+                    new UnsupportedOperationException("This video track does not support applyConstraints."));
         }
     }
 

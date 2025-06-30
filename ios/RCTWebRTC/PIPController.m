@@ -1,5 +1,5 @@
-#import <AVKit/AVKit.h>
 #import "PIPController.h"
+#import <AVKit/AVKit.h>
 #import "SampleBufferVideoCallView.h"
 
 @interface PIPController ()
@@ -16,29 +16,30 @@
 @implementation PIPController
 
 - (instancetype)initWithSourceView:(UIView *)sourceView {
-
     if (self = [super init]) {
         self.sourceView = sourceView;
-        
+
         _fallbackView = [[UIView alloc] initWithFrame:CGRectZero];
         _fallbackView.translatesAutoresizingMaskIntoConstraints = false;
 
-        SampleBufferVideoCallView * subview = [[SampleBufferVideoCallView alloc] initWithFrame:CGRectZero];
+        SampleBufferVideoCallView *subview = [[SampleBufferVideoCallView alloc] initWithFrame:CGRectZero];
         _sampleView = subview;
         _sampleView.translatesAutoresizingMaskIntoConstraints = false;
         _pipCallViewController = [[AVPictureInPictureVideoCallViewController alloc] init];
 
         [self addToCallViewController:_fallbackView];
-        
-        _contentSource = [[AVPictureInPictureControllerContentSource alloc] initWithActiveVideoCallSourceView:sourceView contentViewController:_pipCallViewController];
-        
+
+        _contentSource = [[AVPictureInPictureControllerContentSource alloc]
+            initWithActiveVideoCallSourceView:sourceView
+                        contentViewController:_pipCallViewController];
+
         _pipController = [[AVPictureInPictureController alloc] initWithContentSource:_contentSource];
         _pipController.canStartPictureInPictureAutomaticallyFromInline = YES;
         _pipController.delegate = self;
 
         [_pipController addObserver:self
                          forKeyPath:@"pictureInPictureActive"
-                            options:NSKeyValueObservingOptionInitial|NSKeyValueObservingOptionNew
+                            options:NSKeyValueObservingOptionInitial | NSKeyValueObservingOptionNew
                             context:nil];
 
         [[NSNotificationCenter defaultCenter] addObserver:self
@@ -46,16 +47,15 @@
                                                      name:UIApplicationWillEnterForegroundNotification
                                                    object:nil];
     }
-    
+
     return self;
 }
 
 - (void)observeValueForKeyPath:(NSString *)keyPath
                       ofObject:(id)object
                         change:(NSDictionary *)change
-                       context:(void *)context
-{
-    if([keyPath isEqualToString:@"pictureInPictureActive"]) {
+                       context:(void *)context {
+    if ([keyPath isEqualToString:@"pictureInPictureActive"]) {
         _sampleView.shouldRender = [change[NSKeyValueChangeNewKey] boolValue];
     }
 }
@@ -72,9 +72,9 @@
     [_pipCallViewController.view addSubview:view];
     NSArray *constraints = @[
         [view.leadingAnchor constraintEqualToAnchor:_pipCallViewController.view.leadingAnchor],
-        [view.trailingAnchor constraintEqualToAnchor: _pipCallViewController.view.trailingAnchor],
-        [view.topAnchor constraintEqualToAnchor: _pipCallViewController.view.topAnchor],
-        [view.bottomAnchor constraintEqualToAnchor: _pipCallViewController.view.bottomAnchor]
+        [view.trailingAnchor constraintEqualToAnchor:_pipCallViewController.view.trailingAnchor],
+        [view.topAnchor constraintEqualToAnchor:_pipCallViewController.view.topAnchor],
+        [view.bottomAnchor constraintEqualToAnchor:_pipCallViewController.view.bottomAnchor]
     ];
     [NSLayoutConstraint activateConstraints:constraints];
 }
@@ -136,9 +136,9 @@
 }
 
 - (void)togglePIP {
-    if(_pipController.isPictureInPictureActive) {
+    if (_pipController.isPictureInPictureActive) {
         [_pipController stopPictureInPicture];
-    } else if(_pipController.isPictureInPicturePossible){
+    } else if (_pipController.isPictureInPicturePossible) {
         [_pipController startPictureInPicture];
     }
 }
@@ -150,7 +150,7 @@
 }
 
 - (void)stopPIP {
-    if(_pipController.isPictureInPictureActive) {
+    if (_pipController.isPictureInPictureActive) {
         [_pipController stopPictureInPicture];
     }
 }
@@ -158,15 +158,12 @@
 - (void)dealloc {
     [_videoTrack removeRenderer:_sampleView];
     [_pipController removeObserver:self forKeyPath:@"pictureInPictureActive"];
-    [[NSNotificationCenter defaultCenter] removeObserver:self 
-                                            name:UIApplicationDidBecomeActiveNotification
-                                          object:nil];
+    [[NSNotificationCenter defaultCenter] removeObserver:self name:UIApplicationDidBecomeActiveNotification object:nil];
 }
 
 @end
 
 @implementation PIPController (AVPictureInPictureControllerDelegate)
-
 
 /*!
     @method        pictureInPictureControllerWillStartPictureInPicture:
@@ -175,8 +172,7 @@
     @abstract    Delegate can implement this method to be notified when Picture in Picture will start.
  */
 - (void)pictureInPictureControllerWillStartPictureInPicture:(AVPictureInPictureController *)pictureInPictureController {
-    
-    NSLog(@"%@", NSStringFromSelector(_cmd)); // Objective-C
+    NSLog(@"%@", NSStringFromSelector(_cmd));  // Objective-C
 }
 
 /*!
@@ -186,8 +182,7 @@
     @abstract    Delegate can implement this method to be notified when Picture in Picture did start.
  */
 - (void)pictureInPictureControllerDidStartPictureInPicture:(AVPictureInPictureController *)pictureInPictureController {
-    
-    NSLog(@"%@", NSStringFromSelector(_cmd)); // Objective-C
+    NSLog(@"%@", NSStringFromSelector(_cmd));  // Objective-C
 }
 
 /*!
@@ -198,9 +193,9 @@
                 An error describing why it failed.
     @abstract    Delegate can implement this method to be notified when Picture in Picture failed to start.
  */
-- (void)pictureInPictureController:(AVPictureInPictureController *)pictureInPictureController failedToStartPictureInPictureWithError:(NSError *)error{
-    
-    NSLog(@"%@: %@", NSStringFromSelector(_cmd), [error localizedDescription]); // Objective-C
+- (void)pictureInPictureController:(AVPictureInPictureController *)pictureInPictureController
+    failedToStartPictureInPictureWithError:(NSError *)error {
+    NSLog(@"%@: %@", NSStringFromSelector(_cmd), [error localizedDescription]);  // Objective-C
 }
 
 /*!
@@ -210,8 +205,7 @@
     @abstract    Delegate can implement this method to be notified when Picture in Picture will stop.
  */
 - (void)pictureInPictureControllerWillStopPictureInPicture:(AVPictureInPictureController *)pictureInPictureController {
-    
-    NSLog(@"%@", NSStringFromSelector(_cmd)); // Objective-C
+    NSLog(@"%@", NSStringFromSelector(_cmd));  // Objective-C
 }
 
 /*!
@@ -221,8 +215,7 @@
     @abstract    Delegate can implement this method to be notified when Picture in Picture did stop.
  */
 - (void)pictureInPictureControllerDidStopPictureInPicture:(AVPictureInPictureController *)pictureInPictureController {
-    
-    NSLog(@"%@", NSStringFromSelector(_cmd)); // Objective-C
+    NSLog(@"%@", NSStringFromSelector(_cmd));  // Objective-C
 }
 
 /*!
@@ -233,10 +226,9 @@
                 The completion handler the delegate needs to call after restore.
     @abstract    Delegate can implement this method to restore the user interface before Picture in Picture stops.
  */
-- (void)pictureInPictureController:(AVPictureInPictureController *)pictureInPictureController restoreUserInterfaceForPictureInPictureStopWithCompletionHandler:(void (^)(BOOL restored))completionHandler {
-    
-    NSLog(@"%@", NSStringFromSelector(_cmd)); // Objective-C
+- (void)pictureInPictureController:(AVPictureInPictureController *)pictureInPictureController
+    restoreUserInterfaceForPictureInPictureStopWithCompletionHandler:(void (^)(BOOL restored))completionHandler {
+    NSLog(@"%@", NSStringFromSelector(_cmd));  // Objective-C
 }
-
 
 @end
