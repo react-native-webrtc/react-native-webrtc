@@ -341,6 +341,30 @@ Don't forget, the user facing camera is usually mirrored.
 | objectFit | string | 'contain' | Can be `'contain'` or `'cover'` nothing more or less. | 
 | streamURL | string | 'streamURL' | Required to have an actual video stream rendering. |
 | zOrder | number | 0 | Similar to zIndex. |
+| onDimensionsChange | function | undefined | Callback fired when video dimensions change. Receives event with nativeEvent containing width and height. |
+
+## Handling Video Dimension Changes
+
+You can listen for changes in video dimensions using the onDimensionsChange callback.  
+This is useful for adapting your UI based on the video's aspect ratio or for analytics.
+
+```javascript
+import React, { useState } from 'react';
+
+const [videoDimensions, setVideoDimensions] = useState({ width: 0, height: 0 });
+
+<RTCView
+	mirror={true}
+	objectFit={'cover'}
+	streamURL={localMediaStream.toURL()}
+	zOrder={0}
+	onDimensionsChange={(event) => {
+		const { width, height } = event.nativeEvent;
+		setVideoDimensions({ width, height });
+		console.log(`Video dimensions changed: ${width}x${height}`);
+	}}
+/>
+```
 
 ## Controlling remote audio tracks
 
