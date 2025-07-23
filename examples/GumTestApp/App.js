@@ -3,9 +3,7 @@
  * https://github.com/facebook/react-native
  *
  * @format
- * @flow strict-local
  */
-
 import React, {useState} from 'react';
 import {
   Button,
@@ -14,9 +12,7 @@ import {
   View,
   StatusBar,
 } from 'react-native';
-import { Colors } from 'react-native/Libraries/NewAppScreen';
 import { mediaDevices, RTCView } from '@stream-io/react-native-webrtc';
-
 
 const App = () => {
   const [stream, setStream] = useState(null);
@@ -25,7 +21,6 @@ const App = () => {
     if (!stream) {
       try {
         const s = await mediaDevices.getUserMedia({ video: true });
-        
         setStream(s);
       } catch(e) {
         console.error(e);
@@ -79,14 +74,14 @@ const App = () => {
 
 const styles = StyleSheet.create({
   body: {
-    backgroundColor: Colors.white,
+    backgroundColor: '#fff',
     ...StyleSheet.absoluteFill
   },
   stream: {
     flex: 1
   },
   footer: {
-    backgroundColor: Colors.lighter,
+    backgroundColor: '#f8f8f8',
     position: 'absolute',
     bottom: 0,
     left: 0,
