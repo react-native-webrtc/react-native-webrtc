@@ -308,13 +308,9 @@
             @"height": @(size.height)
         };
         
-        if ([NSThread isMainThread]) {
+        dispatch_async(dispatch_get_main_queue(), ^{
             callback(eventData);
-        } else {
-            dispatch_async(dispatch_get_main_queue(), ^{
-                callback(eventData);
-            });
-        }
+        });
     }
 }
 
