@@ -9,6 +9,11 @@ import com.facebook.react.common.MapBuilder;
 import com.facebook.react.uimanager.ThemedReactContext;
 import com.facebook.react.uimanager.ViewGroupManager;
 import com.facebook.react.uimanager.annotations.ReactProp;
+import com.facebook.react.bridge.ReadableMap;
+import com.facebook.react.uimanager.events.RCTEventEmitter;
+
+import java.util.Map;
+import java.util.HashMap;
 
 import java.util.Map;
 
@@ -145,5 +150,24 @@ public class RTCVideoViewManager extends ViewGroupManager<WebRTCView> {
                         MapBuilder.of("phasedRegistrationNames",
                                 MapBuilder.of("bubbled", WebRTCView.onPictureInPictureChangeEventName)))
                 .build();
+    }
+    /**
+     * Sets the callback for when video dimensions change.
+     *
+     * @param view The {@code WebRTCView} on which the callback is to be set.
+     * @param onDimensionsChange The callback to be called when video dimensions change.
+     */
+    @ReactProp(name = "onDimensionsChange")
+    public void setOnDimensionsChange(WebRTCView view, boolean onDimensionsChange) {
+        view.setOnDimensionsChange(onDimensionsChange);
+    }
+
+    @Override
+    public Map<String, Object> getExportedCustomDirectEventTypeConstants() {
+        Map<String, Object> eventTypeConstants = new HashMap<>();
+        Map<String, String> dimensionsChangeEvent = new HashMap<>();
+        dimensionsChangeEvent.put("registrationName", "onDimensionsChange");
+        eventTypeConstants.put("onDimensionsChange", dimensionsChangeEvent);
+        return eventTypeConstants;
     }
 }

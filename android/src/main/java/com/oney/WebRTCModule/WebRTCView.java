@@ -20,7 +20,9 @@ import com.facebook.react.bridge.Arguments;
 import com.facebook.react.bridge.ReactContext;
 import com.facebook.react.bridge.ReadableMap;
 import com.facebook.react.bridge.WritableMap;
+import com.facebook.react.bridge.Arguments;
 import com.facebook.react.uimanager.events.RCTEventEmitter;
+import com.facebook.react.bridge.Callback;
 
 import org.webrtc.EglBase;
 import org.webrtc.Logging;
@@ -204,6 +206,11 @@ public class WebRTCView extends ViewGroup implements PictureInPictureHelperListe
      */
     @Nullable
     private Rational preferredAspectRatio;
+    
+    /**
+     * The callback to be called when video dimensions change.
+     */
+    private boolean onDimensionsChangeEnabled = false;
 
     public WebRTCView(Context context) {
         super(context);
@@ -328,6 +335,24 @@ public class WebRTCView extends ViewGroup implements PictureInPictureHelperListe
             // The onFrameResolutionChanged method call executes on the
             // surfaceViewRenderer's render Thread.
             post(requestSurfaceViewRendererLayoutRunnable);
+            
+            // Call the onDimensionsChange callback if it's enabled
+            if (onDimensionsChangeEnabled) {
+                post(() -> {
+                    try {
+                        ReactContext reactContext = (ReactContext) getContext();
+                        WritableMap params = Arguments.createMap();
+                        params.putInt("width", videoWidth);
+                        params.putInt("height", videoHeight);
+                        
+                        // Send the event through React Native's event system  
+                        reactContext.getJSModule(RCTEventEmitter.class)
+                                .receiveEvent(getId(), "onDimensionsChange", params);
+                    } catch (Exception e) {
+                        Log.e(TAG, "Error calling onDimensionsChange callback", e);
+                    }
+                });
+            }
         }
     }
 
@@ -768,5 +793,13 @@ public class WebRTCView extends ViewGroup implements PictureInPictureHelperListe
         } else {
             layoutForPipExit();
         }
+    }
+    /**
+     * Sets whether the onDimensionsChange callback should be called.
+     *
+     * @param enabled Whether the callback should be enabled.
+     */
+    public void setOnDimensionsChange(boolean enabled) {
+        this.onDimensionsChangeEnabled = enabled;
     }
 }

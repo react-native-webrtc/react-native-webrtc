@@ -23,7 +23,7 @@
  * Implements an equivalent of {@code HTMLVideoElement} i.e. Web's video
  * element.
  */
-@interface RTCVideoView : RCTView<PIPControllerDelegate>
+@interface RTCVideoView : RCTView<PIPControllerDelegate, RTCVideoViewDelegate>
 
 /**
  * The indicator which determines whether this {@code RTCVideoView} is to mirror
@@ -61,6 +61,9 @@
 @property(nonatomic, readonly) RTCMTLVideoView *videoView;
 #endif
 
+// Add a reference to the view manager
+@property (nonatomic, weak) RTCVideoViewManager *viewManager;
+
 /**
  * The {@link RTCVideoTrack}, if any, which this instance renders.
  */
@@ -70,6 +73,8 @@
  * Reference to the main WebRTC RN module.
  */
 @property(nonatomic, weak) WebRTCModule *module;
+
+@property (nonatomic, copy) RCTDirectEventBlock onDimensionsChange;
 
 @end
 
@@ -123,6 +128,7 @@
         _autoStartPictureInPicture = YES;
         _autoStopPictureInPicture = YES;
         [self addSubview:self.videoView];
+        self.videoView.delegate = self;
     }
 
     return self;
@@ -367,11 +373,28 @@
     }
 }
 
-#pragma PIPControllerDelegate
+#pragma mark PIPControllerDelegate
 
 - (void)didChangePictureInPicture:(BOOL)isInPictureInPicture {
     if (self.onPictureInPictureChange) {
         self.onPictureInPictureChange(@{@"isInPictureInPicture" : @(isInPictureInPicture)});
+    }
+}
+
+#pragma mark RTCVideoViewDelegate
+- (void)videoView:(id)videoView didChangeVideoSize:(CGSize)size
+{
+    // Capture the callback block to avoid accessing it across threads
+    RCTDirectEventBlock callback = self.onDimensionsChange;
+    if (callback) {
+        NSDictionary *eventData = @{
+            @"width": @(size.width),
+            @"height": @(size.height)
+        };
+        
+        dispatch_async(dispatch_get_main_queue(), ^{
+            callback(eventData);
+        });
     }
 }
 
@@ -384,6 +407,7 @@ RCT_EXPORT_MODULE()
 - (RCTView *)view {
     RTCVideoView *v = [[RTCVideoView alloc] init];
     v.module = [self.bridge moduleForName:@"WebRTCModule"];
+    v.viewManager = self;
     v.clipsToBounds = YES;
     return v;
 }
@@ -409,6 +433,8 @@ RCT_CUSTOM_VIEW_PROPERTY(objectFit, NSString *, RTCVideoView) {
 
     view.objectFit = fit;
 }
+
+RCT_EXPORT_VIEW_PROPERTY(onDimensionsChange, RCTDirectEventBlock)
 
 RCT_CUSTOM_VIEW_PROPERTY(streamURL, NSString *, RTCVideoView) {
     if (!json) {

@@ -706,7 +706,7 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
     }
 
     @ReactMethod(isBlockingSynchronousMethod = true)
-    public void transceiverSetCodecPreferences(int id, String senderId, ReadableArray codecPreferences) {
+    public boolean transceiverSetCodecPreferences(int id, String senderId, ReadableArray codecPreferences) {
         ThreadUtils.runOnExecutor(() -> {
             WritableMap identifier = Arguments.createMap();
             WritableMap params = Arguments.createMap();
@@ -765,6 +765,7 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
                 Log.d(TAG, "transceiverSetCodecPreferences(): " + e.getMessage());
             }
         });
+        return true;
     }
 
     @ReactMethod
