@@ -94,6 +94,7 @@ RCT_EXPORT_BLOCKING_SYNCHRONOUS_METHOD(peerConnectionInit
         peerConnection.remoteStreams = [NSMutableDictionary new];
         peerConnection.remoteTracks = [NSMutableDictionary new];
         peerConnection.videoTrackAdapters = [NSMutableDictionary new];
+        peerConnection.videoDimensionDetectors = [NSMutableDictionary new];
         peerConnection.webRTCModule = self;
 
         self.peerConnections[objectID] = peerConnection;
@@ -329,6 +330,16 @@ RCT_EXPORT_METHOD(peerConnectionDispose : (nonnull NSNumber *)objectID) {
         RTCMediaStreamTrack *track = peerConnection.remoteTracks[key];
         if (track.kind == kRTCMediaStreamTrackKindVideo) {
             [peerConnection removeVideoTrackAdapter:(RTCVideoTrack *)track];
+            [peerConnection removeVideoDimensionDetector:(RTCVideoTrack *)track];
+        }
+    }
+
+    // Remove video track adapters for local tracks (from senders)
+    for (RTCRtpSender *sender in peerConnection.senders) {
+        RTCMediaStreamTrack *track = sender.track;
+        if (track && track.kind == kRTCMediaStreamTrackKindVideo) {
+            [peerConnection removeVideoTrackAdapter:(RTCVideoTrack *)track];
+            // Note: dimension detection for local tracks cleaned up at track release
         }
     }
 
@@ -454,6 +465,13 @@ RCT_EXPORT_BLOCKING_SYNCHRONOUS_METHOD(peerConnectionAddTrack
 
         NSArray *streamIds = [options objectForKey:@"streamIds"];
         RTCRtpSender *sender = [peerConnection addTrack:track streamIds:streamIds];
+        
+        // Add mute detection for local video tracks (dimension detection handled at track creation)
+        if (track.kind == kRTCMediaStreamTrackKindVideo) {
+            RTCVideoTrack *videoTrack = (RTCVideoTrack *)track;
+            [peerConnection addVideoTrackAdapter:videoTrack];
+        }
+        
         RTCRtpTransceiver *transceiver = nil;
 
         for (RTCRtpTransceiver *t in peerConnection.transceivers) {
@@ -517,6 +535,12 @@ RCT_EXPORT_BLOCKING_SYNCHRONOUS_METHOD(peerConnectionAddTransceiver
             RTCRtpTransceiverInit *transceiverInit = [SerializeUtils parseTransceiverOptions:initOptions];
 
             transceiver = [peerConnection addTransceiverWithTrack:track init:transceiverInit];
+            
+            // Add mute detection for local video tracks (dimension detection handled at track creation)
+            if (track && track.kind == kRTCMediaStreamTrackKindVideo && self.localTracks[trackId]) {
+                RTCVideoTrack *videoTrack = (RTCVideoTrack *)track;
+                [peerConnection addVideoTrackAdapter:videoTrack];
+            }
         } else {
             RCTLogWarn(@"peerConnectionAddTransceiver() no type nor trackId provided in options");
             return;
@@ -560,6 +584,13 @@ RCT_EXPORT_BLOCKING_SYNCHRONOUS_METHOD(peerConnectionRemoveTrack
         if (!sender) {
             RCTLogWarn(@"Sender not found in peerConnectionRemoveTrack()");
             return;
+        }
+
+        // Remove mute detection for local tracks (dimension detection cleaned up at track release)
+        RTCMediaStreamTrack *track = sender.track;
+        if (track && track.kind == kRTCMediaStreamTrackKindVideo) {
+            RTCVideoTrack *videoTrack = (RTCVideoTrack *)track;
+            [peerConnection removeVideoTrackAdapter:videoTrack];
         }
 
         ret = [peerConnection removeTrack:sender];
@@ -877,6 +908,7 @@ RCT_EXPORT_BLOCKING_SYNCHRONOUS_METHOD(peerConnectionRemoveTrack
             if (track.kind == kRTCMediaStreamTrackKindVideo) {
                 RTCVideoTrack *videoTrack = (RTCVideoTrack *)track;
                 [peerConnection addVideoTrackAdapter:videoTrack];
+                [peerConnection addVideoDimensionDetector:videoTrack];
             }
 
             peerConnection.remoteTracks[track.trackId] = track;

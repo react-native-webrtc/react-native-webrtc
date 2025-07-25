@@ -504,6 +504,11 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
                             MediaStreamTrack track = getLocalTrack(trackId);
                             transceiver = pco.addTransceiver(
                                     track, SerializeUtils.parseTransceiverOptions(options.getMap("init")));
+                            
+                            // Add mute detection for local video tracks (dimension detection is handled at track creation)
+                            if (track instanceof VideoTrack) {
+                                pco.videoTrackAdapters.addAdapter((VideoTrack) track);
+                            }
 
                         } else {
                             // This should technically never happen as the JS side checks for that.
@@ -556,6 +561,11 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
                             }
                         }
                         RtpSender sender = pco.getPeerConnection().addTrack(track, streamIds);
+                        
+                        // Add mute detection for local video tracks (dimension detection is handled at track creation)
+                        if (track instanceof VideoTrack) {
+                            pco.videoTrackAdapters.addAdapter((VideoTrack) track);
+                        }
 
                         // Need to get the corresponding transceiver as well
                         RtpTransceiver transceiver = pco.getTransceiver(sender.id());
@@ -589,6 +599,13 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
                         if (sender == null) {
                             Log.w(TAG, "peerConnectionRemoveTrack() sender is null");
                             return false;
+                        }
+
+                        // Remove video track adapters for local tracks
+                        MediaStreamTrack track = sender.track();
+                        if (track instanceof VideoTrack) {
+                            pco.videoTrackAdapters.removeAdapter((VideoTrack) track);
+                            // Note: dimension detection for local tracks is cleaned up when track is disposed
                         }
 
                         return pco.getPeerConnection().removeTrack(sender);

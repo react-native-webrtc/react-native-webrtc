@@ -23,6 +23,7 @@ public class VideoTrackAdapter {
     static final long MUTE_DELAY = 1500;
 
     private Map<String, TrackMuteUnmuteImpl> muteImplMap = new HashMap<>();
+    private Map<String, VideoDimensionDetectorImpl> dimensionDetectorMap = new HashMap<>();
 
     private Timer timer = new Timer("VideoTrackMutedTimer");
 
@@ -60,6 +61,32 @@ public class VideoTrackAdapter {
         videoTrack.removeSink(onMuteImpl);
         onMuteImpl.dispose();
         Log.d(TAG, "Deleted adapter for " + trackId);
+    }
+
+    public void addDimensionDetector(VideoTrack videoTrack) {
+        String trackId = videoTrack.id();
+        if (dimensionDetectorMap.containsKey(trackId)) {
+            Log.w(TAG, "Attempted to add dimension detector twice for track ID: " + trackId);
+            return;
+        }
+
+        VideoDimensionDetectorImpl dimensionDetector = new VideoDimensionDetectorImpl(trackId);
+        Log.d(TAG, "Created dimension detector for " + trackId);
+        dimensionDetectorMap.put(trackId, dimensionDetector);
+        videoTrack.addSink(dimensionDetector);
+    }
+
+    public void removeDimensionDetector(VideoTrack videoTrack) {
+        String trackId = videoTrack.id();
+        VideoDimensionDetectorImpl dimensionDetector = dimensionDetectorMap.remove(trackId);
+        if (dimensionDetector == null) {
+            Log.w(TAG, "removeDimensionDetector - no detector for " + trackId);
+            return;
+        }
+
+        videoTrack.removeSink(dimensionDetector);
+        dimensionDetector.dispose();
+        Log.d(TAG, "Deleted dimension detector for " + trackId);
     }
 
     /**
@@ -132,6 +159,60 @@ public class VideoTrackAdapter {
                     emitMuteTask = null;
                 }
             }
+        }
+    }
+
+    /**
+     * Implements dimension change events for remote video tracks through
+     * the {@link VideoSink} interface.
+     */
+    private class VideoDimensionDetectorImpl implements VideoSink {
+        private volatile boolean disposed;
+        private int currentWidth = 0;
+        private int currentHeight = 0;
+        private boolean hasInitialSize = false;
+        private final String trackId;
+
+        VideoDimensionDetectorImpl(String trackId) {
+            this.trackId = trackId;
+        }
+
+        @Override
+        public void onFrame(VideoFrame frame) {
+            if (disposed) {
+                return;
+            }
+
+            int width = frame.getBuffer().getWidth();
+            int height = frame.getBuffer().getHeight();
+
+            // Check if this is a meaningful size change
+            if (!hasInitialSize) {
+                currentWidth = width;
+                currentHeight = height;
+                hasInitialSize = true;
+                emitDimensionChangeEvent(width, height);
+            } else if (currentWidth != width || currentHeight != height) {
+                currentWidth = width;
+                currentHeight = height;
+                emitDimensionChangeEvent(width, height);
+            }
+        }
+
+        private void emitDimensionChangeEvent(int width, int height) {
+            WritableMap params = Arguments.createMap();
+            params.putInt("pcId", peerConnectionId);
+            params.putString("trackId", trackId);
+            params.putInt("width", width);
+            params.putInt("height", height);
+
+            Log.d(TAG, "Dimension change event pcId: " + peerConnectionId + " trackId: " + trackId + " dimensions: " + width + "x" + height);
+
+            VideoTrackAdapter.this.webRTCModule.sendEvent("videoTrackDimensionChanged", params);
+        }
+
+        void dispose() {
+            disposed = true;
         }
     }
 }

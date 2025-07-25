@@ -10,4 +10,7 @@
     (CaptureController * (^)(RTCVideoSource *))captureControllerCreator;
 - (NSArray *)createMediaStream:(NSArray<RTCMediaStreamTrack *> *)tracks;
 
+- (void)addLocalVideoTrackDimensionDetection:(RTCVideoTrack *)videoTrack;
+- (void)removeLocalVideoTrackDimensionDetection:(RTCVideoTrack *)videoTrack;
+
 @end

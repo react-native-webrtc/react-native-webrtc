@@ -725,6 +725,22 @@ export default class RTCPeerConnection extends EventTarget<RTCPeerConnectionEven
                 track._setMutedInternal(ev.muted);
             }
         });
+
+        // Handle dimension changes for remote tracks only (local tracks handled by MediaStreamTrack)
+        addListener(this, 'videoTrackDimensionChanged', (ev: any) => {
+            // Only handle remote tracks (pcId !== -1) and only for this peer connection
+            if (ev.pcId === -1 || ev.pcId !== this._pcId) {
+                return;
+            }
+
+            const [
+                track
+            ] = this.getReceivers().map(r => r.track).filter(t => t?.id === ev.trackId);
+
+            if (track) {
+                track._setVideoTrackDimensions(ev.width, ev.height);
+            }
+        });
     }
 
     /**

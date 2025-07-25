@@ -10,6 +10,7 @@
 #import "WebRTCModuleOptions.h"
 #import "WebRTCModule+RTCMediaStream.h"
 #import "WebRTCModule+RTCPeerConnection.h"
+#import "WebRTCModule+VideoTrackAdapter.h"
 
 #import "ProcessorProvider.h"
 #import "ScreenCaptureController.h"
@@ -59,6 +60,9 @@
     CaptureController *captureController = captureControllerCreator(videoSource);
     videoTrack.captureController = captureController;
     [captureController startCapture];
+
+    // Add dimension detection for local video tracks immediately
+    [self addLocalVideoTrackDimensionDetection:videoTrack];
 
     return videoTrack;
 #endif
@@ -136,6 +140,9 @@
     [videoCaptureController startCapture];
 #endif
 
+    // Add dimension detection for local video tracks immediately
+    [self addLocalVideoTrackDimensionDetection:videoTrack];
+
     return videoTrack;
 #endif
 }
@@ -158,6 +165,9 @@
     screenCaptureController.eventsDelegate = emitter;
     videoTrack.captureController = screenCaptureController;
     [screenCaptureController startCapture];
+
+    // Add dimension detection for local video tracks immediately
+    [self addLocalVideoTrackDimensionDetection:videoTrack];
 
     return videoTrack;
 }
@@ -276,7 +286,7 @@ RCT_EXPORT_METHOD(getUserMedia
 #endif
 }
 
-#pragma mark - Other stream related APIs
+#pragma mark - enumerateDevices
 
 RCT_EXPORT_METHOD(enumerateDevices : (RCTResponseSenderBlock)callback) {
 #if TARGET_OS_TV
@@ -331,6 +341,45 @@ RCT_EXPORT_METHOD(enumerateDevices : (RCTResponseSenderBlock)callback) {
     callback(@[ devices ]);
 #endif
 }
+
+#pragma mark - Local Video Track Dimension Detection
+
+- (void)addLocalVideoTrackDimensionDetection:(RTCVideoTrack *)videoTrack {
+    if (!videoTrack) {
+        return;
+    }
+    
+    // Create a dimension detector for this local track
+    VideoDimensionDetector *detector = [[VideoDimensionDetector alloc] initWith:@(-1) // -1 for local tracks
+                                                                        trackId:videoTrack.trackId
+                                                                   webRTCModule:self];
+    
+    // Store the detector using associated objects on the track itself
+    objc_setAssociatedObject(videoTrack, @selector(addLocalVideoTrackDimensionDetection:), detector, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+    
+    // Add the detector as a renderer to the track
+    [videoTrack addRenderer:detector];
+    
+    RCTLogTrace(@"[VideoTrackAdapter] Local dimension detector created for track %@", videoTrack.trackId);
+}
+
+- (void)removeLocalVideoTrackDimensionDetection:(RTCVideoTrack *)videoTrack {
+    if (!videoTrack) {
+        return;
+    }
+    
+    // Get the associated detector
+    VideoDimensionDetector *detector = objc_getAssociatedObject(videoTrack, @selector(addLocalVideoTrackDimensionDetection:));
+    
+    if (detector) {
+        [videoTrack removeRenderer:detector];
+        [detector dispose];
+        objc_setAssociatedObject(videoTrack, @selector(addLocalVideoTrackDimensionDetection:), nil, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+        RCTLogTrace(@"[VideoTrackAdapter] Local dimension detector removed for track %@", videoTrack.trackId);
+    }
+}
+
+#pragma mark - Other stream related APIs
 
 RCT_EXPORT_METHOD(mediaStreamCreate : (nonnull NSString *)streamID) {
     RTCMediaStream *mediaStream = [self.peerConnectionFactory mediaStreamWithStreamId:streamID];
@@ -393,6 +442,11 @@ RCT_EXPORT_METHOD(mediaStreamTrackRelease : (nonnull NSString *)trackID) {
 
     RTCMediaStreamTrack *track = self.localTracks[trackID];
     if (track) {
+        // Clean up dimension detection for local video tracks
+        if ([track.kind isEqualToString:@"video"]) {
+            [self removeLocalVideoTrackDimensionDetection:(RTCVideoTrack *)track];
+        }
+        
         track.isEnabled = NO;
         [track.captureController stopCapture];
         [self.localTracks removeObjectForKey:trackID];
@@ -425,6 +479,10 @@ RCT_EXPORT_BLOCKING_SYNCHRONOUS_METHOD(mediaStreamTrackClone : (nonnull NSString
             RTCVideoSource *videoSource = originalVideoTrack.source;
             RTCVideoTrack *videoTrack = [self.peerConnectionFactory videoTrackWithSource:videoSource trackId:trackUUID];
             videoTrack.isEnabled = originalTrack.isEnabled;
+            
+            // Add dimension detection for cloned local video tracks
+            [self addLocalVideoTrackDimensionDetection:videoTrack];
+            
             [self.localTracks setObject:videoTrack forKey:trackUUID];
             for (NSString* streamId in self.localStreams) {
                 RTCMediaStream* stream = [self.localStreams objectForKey:streamId];

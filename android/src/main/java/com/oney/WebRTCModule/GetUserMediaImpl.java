@@ -425,8 +425,12 @@ class GetUserMediaImpl {
 
         VideoTrack track = pcFactory.createVideoTrack(id, videoSource);
 
+        // Add dimension detection for local video tracks immediately when created
+        VideoTrackAdapter localTrackAdapter = new VideoTrackAdapter(webRTCModule, -1); // Use -1 for local tracks
+        localTrackAdapter.addDimensionDetector(track);
+
         track.setEnabled(true);
-        tracks.put(id, new TrackPrivate(track, videoSource, videoCaptureController, surfaceTextureHelper));
+        tracks.put(id, new TrackPrivate(track, videoSource, videoCaptureController, surfaceTextureHelper, localTrackAdapter));
 
         videoCaptureController.startCapture();
 
@@ -444,8 +448,14 @@ class GetUserMediaImpl {
         String id = UUID.randomUUID().toString();
         MediaStreamTrack nativeTrack = track.track;
         final MediaStreamTrack clonedNativeTrack;
+        VideoTrackAdapter clonedVideoTrackAdapter = null;
+        
         if (nativeTrack instanceof VideoTrack) {
             clonedNativeTrack = pcFactory.createVideoTrack(id, (VideoSource) track.mediaSource);
+            
+            // Create dimension detection for cloned video tracks
+            clonedVideoTrackAdapter = new VideoTrackAdapter(webRTCModule, -1);
+            clonedVideoTrackAdapter.addDimensionDetector((VideoTrack) clonedNativeTrack);
         } else {
             clonedNativeTrack = pcFactory.createAudioTrack(id, (AudioSource) track.mediaSource);
         }
@@ -455,7 +465,8 @@ class GetUserMediaImpl {
             clonedNativeTrack,
             track.mediaSource,
             track.videoCaptureController,
-            track.surfaceTextureHelper
+            track.surfaceTextureHelper,
+            clonedVideoTrackAdapter
         );
         clone.setParent(track);
         tracks.put(id, clone);
@@ -520,6 +531,11 @@ class GetUserMediaImpl {
         private final SurfaceTextureHelper surfaceTextureHelper;
 
         /**
+         * The {@code VideoTrackAdapter} for dimension detection if {@link #track} is a {@link VideoTrack}.
+         */
+        public final VideoTrackAdapter videoTrackAdapter;
+
+        /**
          * Whether this object has been disposed or not.
          */
         private boolean disposed;
@@ -538,14 +554,26 @@ class GetUserMediaImpl {
          * @param videoCaptureController the {@code AbstractVideoCaptureController} from which the
          *                               specified {@code mediaSource} was created if the specified
          *                               {@code track} is a {@link VideoTrack}
+         * @param surfaceTextureHelper   the {@code SurfaceTextureHelper} for video rendering
+         * @param videoTrackAdapter      the {@code VideoTrackAdapter} for dimension detection if video track
          */
         public TrackPrivate(MediaStreamTrack track, MediaSource mediaSource,
-                AbstractVideoCaptureController videoCaptureController, SurfaceTextureHelper surfaceTextureHelper) {
+                AbstractVideoCaptureController videoCaptureController, SurfaceTextureHelper surfaceTextureHelper,
+                VideoTrackAdapter videoTrackAdapter) {
             this.track = track;
             this.mediaSource = mediaSource;
             this.videoCaptureController = videoCaptureController;
             this.surfaceTextureHelper = surfaceTextureHelper;
+            this.videoTrackAdapter = videoTrackAdapter;
             this.disposed = false;
+        }
+
+        /**
+         * Backwards compatibility constructor for audio tracks
+         */
+        public TrackPrivate(MediaStreamTrack track, MediaSource mediaSource,
+                AbstractVideoCaptureController videoCaptureController, SurfaceTextureHelper surfaceTextureHelper) {
+            this(track, mediaSource, videoCaptureController, surfaceTextureHelper, null);
         }
 
         public void dispose() {
@@ -555,6 +583,11 @@ class GetUserMediaImpl {
                     if (videoCaptureController.stopCapture()) {
                         videoCaptureController.dispose();
                     }
+                }
+
+                // Clean up VideoTrackAdapter for video tracks
+                if (!isClone && videoTrackAdapter != null && track instanceof VideoTrack) {
+                    videoTrackAdapter.removeDimensionDetector((VideoTrack) track);
                 }
 
                 /*

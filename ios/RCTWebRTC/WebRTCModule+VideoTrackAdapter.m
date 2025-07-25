@@ -121,6 +121,74 @@ static const NSTimeInterval MUTE_DELAY = 1.5;
 
 @end
 
+/* Entity responsible for detecting video dimension changes. It's implemented
+ * as a video renderer, which monitors the setSize: method to detect when
+ * video dimensions change and emits events accordingly.
+ */
+
+@implementation VideoDimensionDetector {
+    BOOL _disposed;
+    CGSize _currentSize;
+    BOOL _hasInitialSize;
+}
+
+- (instancetype)initWith:(NSNumber *)peerConnectionId trackId:(NSString *)trackId webRTCModule:(WebRTCModule *)module {
+    self = [super init];
+    if (self) {
+        self.peerConnectionId = peerConnectionId;
+        self.trackId = trackId;
+        self.module = module;
+
+        _disposed = NO;
+        _currentSize = CGSizeZero;
+        _hasInitialSize = NO;
+    }
+
+    return self;
+}
+
+- (void)dispose {
+    _disposed = YES;
+}
+
+- (void)emitDimensionChangeEvent:(CGSize)newSize {
+    [self.module sendEventWithName:kEventVideoTrackDimensionChanged
+                              body:@{
+                                  @"pcId" : self.peerConnectionId,
+                                  @"trackId" : self.trackId,
+                                  @"width" : @(newSize.width),
+                                  @"height" : @(newSize.height)
+                              }];
+    RCTLog(@"[VideoDimensionDetector] Dimension change event for pc %@ track %@: %fx%f",
+           self.peerConnectionId,
+           self.trackId,
+           newSize.width,
+           newSize.height);
+}
+
+- (void)renderFrame:(nullable RTCVideoFrame *)frame {
+    // We don't need to do anything with frames for dimension detection
+    // The setSize: method will be called automatically when dimensions change
+}
+
+- (void)setSize:(CGSize)size {
+    if (_disposed) {
+        return;
+    }
+
+    // Check if this is a meaningful size change
+    if (!_hasInitialSize) {
+        _currentSize = size;
+        _hasInitialSize = YES;
+        [self emitDimensionChangeEvent:size];
+    } else if (!CGSizeEqualToSize(_currentSize, size)) {
+        _currentSize = size;
+        [self emitDimensionChangeEvent:size];
+    }
+}
+
+@end
+
 @implementation RTCPeerConnection (VideoTrackAdapter)
 
 - (NSMutableDictionary<NSString *, id> *)videoTrackAdapters {
@@ -130,6 +198,15 @@ static const NSTimeInterval MUTE_DELAY = 1.5;
 - (void)setVideoTrackAdapters:(NSMutableDictionary<NSString *, id> *)videoTrackAdapters {
     objc_setAssociatedObject(
         self, @selector(videoTrackAdapters), videoTrackAdapters, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+}
+
+- (NSMutableDictionary<NSString *, id> *)videoDimensionDetectors {
+    return objc_getAssociatedObject(self, _cmd);
+}
+
+- (void)setVideoDimensionDetectors:(NSMutableDictionary<NSString *, id> *)videoDimensionDetectors {
+    objc_setAssociatedObject(
+        self, @selector(videoDimensionDetectors), videoDimensionDetectors, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
 }
 
 - (void)addVideoTrackAdapter:(RTCVideoTrack *)track {
@@ -161,6 +238,36 @@ static const NSTimeInterval MUTE_DELAY = 1.5;
     [muteDetector dispose];
     [self.videoTrackAdapters removeObjectForKey:trackId];
     RCTLogTrace(@"[VideoTrackAdapter] Adapter removed for track %@", trackId);
+}
+
+- (void)addVideoDimensionDetector:(RTCVideoTrack *)track {
+    NSString *trackId = track.trackId;
+    if ([self.videoDimensionDetectors objectForKey:trackId] != nil) {
+        RCTLogWarn(@"[VideoDimensionDetector] Detector already exists for track %@", trackId);
+        return;
+    }
+
+    VideoDimensionDetector *dimensionDetector = [[VideoDimensionDetector alloc] initWith:self.reactTag
+                                                                                  trackId:trackId
+                                                                             webRTCModule:self.webRTCModule];
+    [self.videoDimensionDetectors setObject:dimensionDetector forKey:trackId];
+    [track addRenderer:dimensionDetector];
+
+    RCTLogTrace(@"[VideoDimensionDetector] Detector created for track %@", trackId);
+}
+
+- (void)removeVideoDimensionDetector:(RTCVideoTrack *)track {
+    NSString *trackId = track.trackId;
+    VideoDimensionDetector *dimensionDetector = [self.videoDimensionDetectors objectForKey:trackId];
+    if (dimensionDetector == nil) {
+        RCTLogWarn(@"[VideoDimensionDetector] Detector doesn't exist for track %@", trackId);
+        return;
+    }
+
+    [track removeRenderer:dimensionDetector];
+    [dimensionDetector dispose];
+    [self.videoDimensionDetectors removeObjectForKey:trackId];
+    RCTLogTrace(@"[VideoDimensionDetector] Detector removed for track %@", trackId);
 }
 
 @end

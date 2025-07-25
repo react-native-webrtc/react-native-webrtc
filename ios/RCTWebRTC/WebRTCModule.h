@@ -18,6 +18,7 @@ static NSString *const kEventDataChannelDidChangeBufferedAmount = @"dataChannelD
 static NSString *const kEventDataChannelStateChanged = @"dataChannelStateChanged";
 static NSString *const kEventDataChannelReceiveMessage = @"dataChannelReceiveMessage";
 static NSString *const kEventMediaStreamTrackMuteChanged = @"mediaStreamTrackMuteChanged";
+static NSString *const kEventVideoTrackDimensionChanged = @"videoTrackDimensionChanged";
 static NSString *const kEventMediaStreamTrackEnded = @"mediaStreamTrackEnded";
 static NSString *const kEventPeerConnectionOnRemoveTrack = @"peerConnectionOnRemoveTrack";
 static NSString *const kEventPeerConnectionOnTrack = @"peerConnectionOnTrack";
