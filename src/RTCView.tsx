@@ -105,10 +105,35 @@ interface NativeVideoViewProps extends RTCVideoViewBaseProps {
   onPictureInPictureChange?: (
     event: NativeSyntheticEvent<{ isInPictureInPicture: boolean }>
   ) => void;
+
+  /**
+  * Callback function that is called when the dimensions of the video change.
+  *
+  * @param {Object} event - The event object containing the new dimensions.
+  * @param {Object} event.nativeEvent - The native event data.
+  * @param {number} event.nativeEvent.width - The width of the video.
+  * @param {number} event.nativeEvent.height - The height of the video.
+  */
+  onDimensionsChange?: (
+    event: NativeSyntheticEvent<{ width: number; height: number }>
+  ) => void;
 }
 
 interface RTCVideoViewProps extends RTCVideoViewBaseProps {
+  /**
+  * Called when entering or exiting Picture-in-Picture mode.
+  *
+  * @param {Object} dimensions - The event object containing the new dimensions.
+  */
   onPictureInPictureChange?: (isInPictureInPicture: boolean) => void;
+  /**
+  * Callback function that is called when the dimensions of the video change.
+  *
+  * @param {Object} dimensions - The event object containing the new dimensions.
+  * @param {number} dimensions.width - The width of the video.
+  * @param {number} dimensions.height - The height of the video.
+  */
+  onDimensionsChange?: (dimensions:{ width: number; height: number }) => void;
 }
 
 const NativeRTCVideoView =
@@ -124,6 +149,7 @@ class RTCView extends React.PureComponent<RTCVideoViewProps> {
     constructor(props: RTCVideoViewProps) {
         super(props);
         this.onPictureInPictureChange = this.onPictureInPictureChange.bind(this);
+        this.onDimensionsChange = this.onDimensionsChange.bind(this);
         this.ref = React.createRef<RefType>();
     }
 
@@ -172,7 +198,7 @@ class RTCView extends React.PureComponent<RTCVideoViewProps> {
         const nodeHandle = findNodeHandle(this.ref.current);
 
         if (nodeHandle === null || nodeHandle === -1) {
-            throw new Error('RTCView not found in react three.');
+            throw new Error('RTCView not found in React tree.');
         }
 
         return nodeHandle;
@@ -186,6 +212,14 @@ class RTCView extends React.PureComponent<RTCVideoViewProps> {
         );
     }
 
+    private onDimensionsChange(
+        event: NativeSyntheticEvent<{ width: number; height: number }>
+    ) {
+        this.props.onDimensionsChange?.(
+            event.nativeEvent
+        );
+    }
+
     render(): React.ReactNode {
         const { ...props } = this.props;
 
@@ -194,6 +228,7 @@ class RTCView extends React.PureComponent<RTCVideoViewProps> {
                 {...props}
                 ref={this.ref}
                 onPictureInPictureChange={this.onPictureInPictureChange}
+                onDimensionsChange={this.onDimensionsChange}
             />
         );
     }
