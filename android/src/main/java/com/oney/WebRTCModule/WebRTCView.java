@@ -17,12 +17,11 @@ import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentActivity;
 
 import com.facebook.react.bridge.Arguments;
+import com.facebook.react.bridge.Callback;
 import com.facebook.react.bridge.ReactContext;
 import com.facebook.react.bridge.ReadableMap;
 import com.facebook.react.bridge.WritableMap;
-import com.facebook.react.bridge.Arguments;
 import com.facebook.react.uimanager.events.RCTEventEmitter;
-import com.facebook.react.bridge.Callback;
 
 import org.webrtc.EglBase;
 import org.webrtc.Logging;
@@ -191,7 +190,7 @@ public class WebRTCView extends ViewGroup implements PictureInPictureHelperListe
      */
     @Nullable
     private Rational preferredAspectRatio;
-    
+
     /**
      * The callback to be called when video dimensions change.
      */
@@ -205,7 +204,6 @@ public class WebRTCView extends ViewGroup implements PictureInPictureHelperListe
 
         setMirror(false);
         setScalingType(DEFAULT_SCALING_TYPE);
-
     }
 
     /**
@@ -313,7 +311,7 @@ public class WebRTCView extends ViewGroup implements PictureInPictureHelperListe
             // The onFrameResolutionChanged method call executes on the
             // surfaceViewRenderer's render Thread.
             post(requestSurfaceViewRendererLayoutRunnable);
-            
+
             // Call the onDimensionsChange callback if it's enabled
             if (onDimensionsChangeEnabled) {
                 post(() -> {
@@ -322,8 +320,8 @@ public class WebRTCView extends ViewGroup implements PictureInPictureHelperListe
                         WritableMap params = Arguments.createMap();
                         params.putInt("width", videoWidth);
                         params.putInt("height", videoHeight);
-                        
-                        // Send the event through React Native's event system  
+
+                        // Send the event through React Native's event system
                         reactContext.getJSModule(RCTEventEmitter.class)
                                 .receiveEvent(getId(), "onDimensionsChange", params);
                     } catch (Exception e) {
@@ -619,13 +617,13 @@ public class WebRTCView extends ViewGroup implements PictureInPictureHelperListe
     }
 
     @Nullable
-    private Activity getCurrentActivity(){
+    private Activity getCurrentActivity() {
         ReactContext reactContext = (ReactContext) getContext();
         return reactContext.getCurrentActivity();
     }
 
     @Nullable
-    private ViewGroup getRootViewGroup(){
+    private ViewGroup getRootViewGroup() {
         Activity currentActivity = getCurrentActivity();
         if (currentActivity == null) return null;
         return currentActivity.getWindow().getDecorView().findViewById(android.R.id.content);
@@ -706,7 +704,7 @@ public class WebRTCView extends ViewGroup implements PictureInPictureHelperListe
 
     protected void layoutForPipEnter() {
         ViewGroup rootViewGroup = getRootViewGroup();
-        if(rootViewGroup == null) return;
+        if (rootViewGroup == null) return;
 
         removeView(surfaceViewRenderer);
 
@@ -724,7 +722,7 @@ public class WebRTCView extends ViewGroup implements PictureInPictureHelperListe
 
     protected void layoutForPipExit() {
         ViewGroup rootViewGroup = getRootViewGroup();
-        if(rootViewGroup == null) return;
+        if (rootViewGroup == null) return;
 
         rootViewGroup.removeView(surfaceViewRenderer);
 
