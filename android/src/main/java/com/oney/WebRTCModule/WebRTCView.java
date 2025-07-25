@@ -156,25 +156,10 @@ public class WebRTCView extends ViewGroup implements PictureInPictureHelperListe
     private VideoTrack videoTrack;
 
     /**
-     * Holds the react context
-     */
-    @Nullable
-    private ReactContext reactContext;
-
-    @Nullable
-    private Activity currentActivity;
-
-    /**
      * Helper tag to safely attach and detach PictureInPictureHelperFragment
      */
     @Nullable
     private String pictureInPictureHelperTag;
-
-    /**
-     * Reference to root view
-     */
-    @Nullable
-    private ViewGroup rootView;
 
     /**
      * Save the rootView's children original visibility state.
@@ -221,13 +206,6 @@ public class WebRTCView extends ViewGroup implements PictureInPictureHelperListe
         setMirror(false);
         setScalingType(DEFAULT_SCALING_TYPE);
 
-        if (context instanceof ReactContext) {
-            reactContext = (ReactContext) context;
-            currentActivity = reactContext.getCurrentActivity();
-            if (currentActivity != null) {
-                rootView = currentActivity.getWindow().getDecorView().findViewById(android.R.id.content);
-            }
-        }
     }
 
     /**
@@ -640,7 +618,23 @@ public class WebRTCView extends ViewGroup implements PictureInPictureHelperListe
         }
     }
 
+    @Nullable
+    private Activity getCurrentActivity(){
+        ReactContext reactContext = (ReactContext) getContext();
+        return reactContext.getCurrentActivity();
+    }
+
+    @Nullable
+    private ViewGroup getRootViewGroup(){
+        Activity currentActivity = getCurrentActivity();
+        if (currentActivity == null) return null;
+        return currentActivity.getWindow().getDecorView().findViewById(android.R.id.content);
+    }
+
     void setPictureInPictureEnabled(Boolean pictureInPictureEnabled) {
+        Activity currentActivity = getCurrentActivity();
+        if (currentActivity == null) return;
+
         this.pictureInPictureEnabled = pictureInPictureEnabled;
         if (pictureInPictureEnabled) {
             werePictureInPictureEnabled = true;
@@ -651,6 +645,9 @@ public class WebRTCView extends ViewGroup implements PictureInPictureHelperListe
     }
 
     protected void applyPictureInPictureParams() {
+        Activity currentActivity = getCurrentActivity();
+        if (currentActivity == null) return;
+
         if (!pictureInPictureEnabled) {
             return;
         }
@@ -696,6 +693,9 @@ public class WebRTCView extends ViewGroup implements PictureInPictureHelperListe
     }
 
     void enterPictureInPicture() {
+        Activity currentActivity = getCurrentActivity();
+        if (currentActivity == null) return;
+
         if (!pictureInPictureEnabled) {
             Log.d(TAG, "pictureInPicture is disabled for this RTCView.");
             return;
@@ -705,31 +705,31 @@ public class WebRTCView extends ViewGroup implements PictureInPictureHelperListe
     }
 
     protected void layoutForPipEnter() {
-        if (currentActivity == null) return;
-        if (rootView == null) return;
+        ViewGroup rootViewGroup = getRootViewGroup();
+        if(rootViewGroup == null) return;
 
         removeView(surfaceViewRenderer);
 
-        for (int i = 0; i < rootView.getChildCount(); i++) {
-            View child = rootView.getChildAt(i);
+        for (int i = 0; i < rootViewGroup.getChildCount(); i++) {
+            View child = rootViewGroup.getChildAt(i);
             if (child != surfaceViewRenderer) {
                 rootViewChildrenOriginalVisibility.add(child.getVisibility());
                 child.setVisibility(View.GONE);
             }
         }
 
-        rootView.addView(surfaceViewRenderer,
+        rootViewGroup.addView(surfaceViewRenderer,
                 new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
     }
 
     protected void layoutForPipExit() {
-        if (currentActivity == null) return;
-        if (rootView == null) return;
+        ViewGroup rootViewGroup = getRootViewGroup();
+        if(rootViewGroup == null) return;
 
-        rootView.removeView(surfaceViewRenderer);
+        rootViewGroup.removeView(surfaceViewRenderer);
 
-        for (int i = 0; i < rootView.getChildCount(); i++) {
-            rootView.getChildAt(i).setVisibility(rootViewChildrenOriginalVisibility.get(i));
+        for (int i = 0; i < rootViewGroup.getChildCount(); i++) {
+            rootViewGroup.getChildAt(i).setVisibility(rootViewChildrenOriginalVisibility.get(i));
         }
 
         rootViewChildrenOriginalVisibility.clear();
@@ -740,7 +740,9 @@ public class WebRTCView extends ViewGroup implements PictureInPictureHelperListe
     }
 
     protected void attachPictureInPictureHelperFragment() {
+        Activity currentActivity = getCurrentActivity();
         if (currentActivity == null) return;
+
         if (currentActivity instanceof FragmentActivity) {
             FragmentActivity fragmentActivity = (FragmentActivity) currentActivity;
             PictureInPictureHelperFragment fragment = new PictureInPictureHelperFragment();
@@ -752,6 +754,7 @@ public class WebRTCView extends ViewGroup implements PictureInPictureHelperListe
     }
 
     void detachPictureInPictureHelperFragment() {
+        Activity currentActivity = getCurrentActivity();
         if (currentActivity == null) return;
 
         if (currentActivity instanceof FragmentActivity) {
@@ -772,8 +775,10 @@ public class WebRTCView extends ViewGroup implements PictureInPictureHelperListe
     }
 
     protected void sendPictureInPictureModeChangeEvent(Boolean isInPictureInPictureMode) {
-        if (!pictureInPictureEnabled) return;
+        ReactContext reactContext = (ReactContext) getContext();
         if (reactContext == null) return;
+
+        if (!pictureInPictureEnabled) return;
 
         WritableMap event = Arguments.createMap();
         event.putBoolean("isInPictureInPicture", isInPictureInPictureMode);
