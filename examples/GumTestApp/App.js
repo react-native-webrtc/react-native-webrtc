@@ -14,29 +14,33 @@ import {
   View,
   StatusBar,
 } from 'react-native';
-import { Colors } from 'react-native/Libraries/NewAppScreen';
-import { mediaDevices, startIOSPIP, stopIOSPIP, RTCPIPView } from 'react-native-webrtc';
-
+import {Colors} from 'react-native/Libraries/NewAppScreen';
+import {
+  mediaDevices,
+  RTCView,
+  startPIP,
+  stopPIP,
+} from 'react-native-webrtc';
 
 const App = () => {
-  const view = useRef()
+  const view = useRef();
   const [stream, setStream] = useState(null);
   const start = async () => {
     console.log('start');
     if (!stream) {
       try {
-        const s = await mediaDevices.getUserMedia({ video: true });
+        const s = await mediaDevices.getUserMedia({video: true});
         setStream(s);
-      } catch(e) {
+      } catch (e) {
         console.error(e);
       }
     }
   };
-  const startPIP = () => {
-    startIOSPIP(view);
+  const handleStartPIP = () => {
+    startPIP(view);
   };
-  const stopPIP = () => {
-    stopIOSPIP(view);
+  const handleStopPIP = () => {
+    stopPIP(view);
   };
   const stop = () => {
     console.log('stop');
@@ -45,41 +49,33 @@ const App = () => {
       setStream(null);
     }
   };
-  let pipOptions = {
-    startAutomatically: true,
-    fallbackView: (<View style={{ height: 50, width: 50, backgroundColor: 'red' }} />),
-    preferredSize: {
-      width: 400,
-      height: 800,
-    }
-  }
+  
   return (
     <>
       <StatusBar barStyle="dark-content" />
       <SafeAreaView style={styles.body}>
-      {
-        stream &&
-        <RTCPIPView
+        {stream && (
+          <RTCView
             ref={view}
             streamURL={stream.toURL()}
             style={styles.stream}
-            iosPIP={pipOptions} >
-        </RTCPIPView>
-      }
-        <View
-          style={styles.footer}>
-          <Button
-            title = "Start"
-            onPress = {start} />
-          <Button
-            title = "Start PIP"
-            onPress = {startPIP} />
-          <Button
-            title = "Stop PIP"
-            onPress = {stopPIP} />
-          <Button
-            title = "Stop"
-            onPress = {stop} />
+            pictureInPictureOptions={{
+              startAutomatically: true,
+              preferredSize: {
+                width: 400,
+                height: 800,
+              }
+            }}
+            onPictureInPictureChange={({nativeEvent}) =>console.log(nativeEvent)}
+          >
+              <View style={{height: 50, width: 50, backgroundColor: 'red'}} />
+          </RTCView>
+        )}
+        <View style={styles.footer}>
+          <Button title="Start" onPress={start} />
+          <Button title="Start PIP" onPress={handleStartPIP} />
+          <Button title="Stop PIP" onPress={handleStopPIP} />
+          <Button title="Stop" onPress={stop} />
         </View>
       </SafeAreaView>
     </>
@@ -89,17 +85,17 @@ const App = () => {
 const styles = StyleSheet.create({
   body: {
     backgroundColor: Colors.white,
-    ...StyleSheet.absoluteFill
+    ...StyleSheet.absoluteFill,
   },
   stream: {
-    flex: 1
+    flex: 1,
   },
   footer: {
     backgroundColor: Colors.lighter,
     position: 'absolute',
     bottom: 0,
     left: 0,
-    right: 0
+    right: 0,
   },
 });
 
