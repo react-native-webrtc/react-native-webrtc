@@ -23,7 +23,7 @@
  * Implements an equivalent of {@code HTMLVideoElement} i.e. Web's video
  * element.
  */
-@interface RTCVideoView : RCTView <RTCVideoViewDelegate>
+@interface RTCVideoView : RCTView<RTCVideoViewDelegate, PIPControllerDelegate>
 
 /**
  * The indicator which determines whether this {@code RTCVideoView} is to mirror
@@ -54,7 +54,7 @@
 #endif
 
 // Add a reference to the view manager
-@property (nonatomic, weak) RTCVideoViewManager *viewManager;
+@property(nonatomic, weak) RTCVideoViewManager *viewManager;
 
 /**
  * The {@link RTCVideoTrack}, if any, which this instance renders.
@@ -66,7 +66,9 @@
  */
 @property(nonatomic, weak) WebRTCModule *module;
 
-@property (nonatomic, copy) RCTDirectEventBlock onDimensionsChange;
+@property(nonatomic, copy) RCTDirectEventBlock onDimensionsChange;
+
+@property(nonatomic, copy) RCTBubblingEventBlock onPictureInPictureChange;
 
 @end
 
@@ -195,6 +197,7 @@
     if (!_pipController) {
         _pipController = [[PIPController alloc] initWithSourceView:self];
         _pipController.videoTrack = _videoTrack;
+        _pipController.delegate = self;
     }
 
     _pipController.startAutomatically = startAutomatically;
@@ -298,19 +301,22 @@
     }
 }
 
-- (void)videoView:(id)videoView didChangeVideoSize:(CGSize)size
-{
+- (void)videoView:(id)videoView didChangeVideoSize:(CGSize)size {
     // Capture the callback block to avoid accessing it across threads
     RCTDirectEventBlock callback = self.onDimensionsChange;
     if (callback) {
-        NSDictionary *eventData = @{
-            @"width": @(size.width),
-            @"height": @(size.height)
-        };
-        
+        NSDictionary *eventData = @{@"width" : @(size.width), @"height" : @(size.height)};
+
         dispatch_async(dispatch_get_main_queue(), ^{
             callback(eventData);
         });
+    }
+}
+
+#pragma mark PIPControllerDelegate
+- (void)didChangePictureInPicture:(BOOL)isInPictureInPicture {
+    if (self.onPictureInPictureChange) {
+        self.onPictureInPictureChange(@{@"isInPictureInPicture" : @(isInPictureInPicture)});
     }
 }
 
@@ -351,6 +357,7 @@ RCT_CUSTOM_VIEW_PROPERTY(objectFit, NSString *, RTCVideoView) {
 }
 
 RCT_EXPORT_VIEW_PROPERTY(onDimensionsChange, RCTDirectEventBlock)
+RCT_EXPORT_VIEW_PROPERTY(onPictureInPictureChange, RCTBubblingEventBlock)
 
 RCT_CUSTOM_VIEW_PROPERTY(streamURL, NSString *, RTCVideoView) {
     if (!json) {
@@ -376,6 +383,12 @@ RCT_CUSTOM_VIEW_PROPERTY(streamURL, NSString *, RTCVideoView) {
 }
 
 RCT_CUSTOM_VIEW_PROPERTY(iosPIP, NSDictionary *, RTCVideoView) {
+    if (@available(iOS 15.0, *)) {
+        [view setPIPOptions:json];
+    }
+}
+
+RCT_CUSTOM_VIEW_PROPERTY(pictureInPictureOptions, NSDictionary *, RTCVideoView) {
     if (@available(iOS 15.0, *)) {
         [view setPIPOptions:json];
     }

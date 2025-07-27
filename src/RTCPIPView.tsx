@@ -13,6 +13,7 @@ type RTCViewInstance = InstanceType<typeof RTCView>;
 
 /**
  * A convenience wrapper around RTCView to handle the fallback view as a prop.
+ * @deprecated use RTCView instead
  */
 const RTCPIPView = forwardRef<RTCViewInstance, RTCPIPViewProps>((props, ref) => {
     const rtcViewProps = { ...props };
@@ -28,6 +29,10 @@ const RTCPIPView = forwardRef<RTCViewInstance, RTCPIPViewProps>((props, ref) => 
     );
 });
 
+/**
+ *
+ * @deprecated use startPIP
+ */
 export function startIOSPIP(ref) {
     UIManager.dispatchViewManagerCommand(
         ReactNative.findNodeHandle(ref.current),
@@ -36,6 +41,10 @@ export function startIOSPIP(ref) {
     );
 }
 
+/**
+ *
+ * @deprecated use stopPIP
+ */
 export function stopIOSPIP(ref) {
     UIManager.dispatchViewManagerCommand(
         ReactNative.findNodeHandle(ref.current),

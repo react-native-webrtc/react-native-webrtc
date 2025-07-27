@@ -1,5 +1,11 @@
-import { requireNativeComponent, ViewProps } from 'react-native';
-
+import { Component } from 'react';
+import ReactNative, {
+    NativeSyntheticEvent,
+    Platform,
+    requireNativeComponent,
+    UIManager,
+    ViewProps
+} from 'react-native';
 /**
  * Native prop validation was removed from RN in:
  * https://github.com/facebook/react-native/commit/8dc3ba0444c94d9bbb66295b5af885bff9b9cd34
@@ -69,8 +75,29 @@ export interface RTCVideoViewProps extends ViewProps {
    * as the local camera may stop while in the background.
    *
    * iOS only. Requires iOS 15.0 or above, and the PIP background mode capability.
+   * @deprecated use pictureInPictureOptions
    */
   iosPIP?: RTCIOSPIPOptions;
+
+  /**
+   * Picture in picture options for this view. Disabled if not supplied.
+   *
+   * Note: this should only be generally only used with remote video tracks,
+   * as the local camera may stop while in the background.
+   */
+  pictureInPictureOptions?: RTCPictureInPictureOptions
+
+   /**
+   * Callback function that is called when the PIP mode changes.
+   *
+   * @param {Object} event - The event object containing the new dimensions.
+   * @param {Object} event.nativeEvent - The native event data.
+   * @param {number} event.nativeEvent.isInPictureInPicture - .
+   *
+   * Requires Android 8.0 or above.
+   * Requires iOS 15.0 or above.
+   */
+  onPictureInPictureChange?: (event: NativeSyntheticEvent<{ isInPictureInPicture: boolean }> ) => void;
 
   /**
    * Callback function that is called when the dimensions of the video change.
@@ -83,6 +110,9 @@ export interface RTCVideoViewProps extends ViewProps {
   onDimensionsChange?: (event: { nativeEvent: { width: number; height: number } }) => void;
 }
 
+/**
+ * @deprecated
+ */
 export interface RTCIOSPIPOptions {
 
   /**
@@ -119,4 +149,86 @@ export interface RTCIOSPIPOptions {
    */
   stopAutomatically?: boolean;
 }
+
+export interface RTCPictureInPictureOptions {
+  /**
+   * Whether PIP can be launched from this view.
+   *
+   * Defaults to true.
+   */
+  enabled?: boolean;
+
+  /**
+   * The preferredSize for PIP window
+   *
+   * Android defaults to { width: 150, height: 200 }
+   */
+  preferredSize?: {
+    width: number;
+    height: number;
+  },
+
+  /**
+   * Indicates whether Picture in Picture starts automatically
+   * when the controller embeds its content inline and the app
+   * transitions to the background.
+   *
+   * Defaults to true.
+   *
+   * See: AVPictureInPictureController.canStartPictureInPictureAutomaticallyFromInline
+   */
+  startAutomatically?: boolean;
+
+  /**
+   * Indicates whether Picture in Picture should stop automatically
+   * when the app returns to the foreground.
+   *
+   * Defaults to true.
+   * iOS Only.
+   */
+  stopAutomatically?: boolean;
+
+  /**
+   * Fallback to this view if video failed to load.
+   * iOS Only.
+   * @deprecated Pass it as one of RTCView's children instead.
+   */
+  fallbackView?: Component;
+}
+
+
+export function startPIP(ref) {
+    try {
+        const commands = UIManager.getViewManagerConfig('RTCVideoView').Commands;
+
+        const command = Platform.select<number|string>({
+            ios: commands.startIOSPIP,
+            android: commands.startAndroidPIP?.toString(),
+        });
+
+        if (command !== undefined) {
+            UIManager.dispatchViewManagerCommand(
+                ReactNative.findNodeHandle(ref.current),
+                command,
+                []
+            );
+        }
+    } catch (error) {
+        console.warn(error);
+    }
+}
+
+export function stopPIP(ref) {
+    try {
+        UIManager.dispatchViewManagerCommand(
+            ReactNative.findNodeHandle(ref.current),
+            UIManager.getViewManagerConfig('RTCVideoView').Commands.stopIOSPIP,
+            []
+        );
+    } catch (error) {
+        console.warn(error);
+    }
+}
+
+
 export default requireNativeComponent<RTCVideoViewProps>('RTCVideoView');

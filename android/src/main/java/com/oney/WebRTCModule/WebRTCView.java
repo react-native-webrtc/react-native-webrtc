@@ -8,14 +8,16 @@ import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
 
+import androidx.annotation.Nullable;
 import androidx.core.view.ViewCompat;
 
+import com.facebook.react.bridge.Arguments;
 import com.facebook.react.bridge.ReactContext;
 import com.facebook.react.bridge.ReadableMap;
 import com.facebook.react.bridge.WritableMap;
-import com.facebook.react.bridge.Arguments;
 import com.facebook.react.uimanager.events.RCTEventEmitter;
-import com.facebook.react.bridge.Callback;
+import com.oney.WebRTCModule.pictureInPicture.PictureInPictureController;
+import com.oney.WebRTCModule.pictureInPicture.PictureInPictureDelegate;
 
 import org.webrtc.EglBase;
 import org.webrtc.Logging;
@@ -26,12 +28,10 @@ import org.webrtc.RendererCommon.ScalingType;
 import org.webrtc.SurfaceViewRenderer;
 import org.webrtc.VideoTrack;
 
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.util.List;
 import java.util.Objects;
 
-public class WebRTCView extends ViewGroup {
+public class WebRTCView extends ViewGroup implements PictureInPictureDelegate {
     /**
      * The scaling type to be utilized by default.
      *
@@ -142,7 +142,7 @@ public class WebRTCView extends ViewGroup {
      * The {@link View} and {@link VideoSink} implementation which
      * actually renders {@link #videoTrack} on behalf of this instance.
      */
-    private final SurfaceViewRenderer surfaceViewRenderer;
+    final SurfaceViewRenderer surfaceViewRenderer;
 
     /**
      * The {@code VideoTrack}, if any, rendered by this {@code WebRTCView}.
@@ -153,6 +153,9 @@ public class WebRTCView extends ViewGroup {
      * The callback to be called when video dimensions change.
      */
     private boolean onDimensionsChangeEnabled = false;
+
+    @Nullable
+    PictureInPictureController pipController = null;
 
     public WebRTCView(Context context) {
         super(context);
@@ -220,6 +223,10 @@ public class WebRTCView extends ViewGroup {
             // window. Additionally, a memory leak was solved in a similar way
             // on iOS.
             removeRendererFromVideoTrack();
+
+            if (pipController != null) {
+                pipController.detachPictureInPictureHelperFragment();
+            }
         } finally {
             super.onDetachedFromWindow();
         }
@@ -267,7 +274,7 @@ public class WebRTCView extends ViewGroup {
             // The onFrameResolutionChanged method call executes on the
             // surfaceViewRenderer's render Thread.
             post(requestSurfaceViewRendererLayoutRunnable);
-            
+
             // Call the onDimensionsChange callback if it's enabled
             if (onDimensionsChangeEnabled) {
                 post(() -> {
@@ -276,8 +283,8 @@ public class WebRTCView extends ViewGroup {
                         WritableMap params = Arguments.createMap();
                         params.putInt("width", videoWidth);
                         params.putInt("height", videoHeight);
-                        
-                        // Send the event through React Native's event system  
+
+                        // Send the event through React Native's event system
                         reactContext.getJSModule(RCTEventEmitter.class)
                                 .receiveEvent(getId(), "onDimensionsChange", params);
                     } catch (Exception e) {
@@ -579,5 +586,53 @@ public class WebRTCView extends ViewGroup {
      */
     public void setOnDimensionsChange(boolean enabled) {
         this.onDimensionsChangeEnabled = enabled;
+    }
+
+    void enterPictureInPicture() {
+        if (pipController != null) {
+            pipController.enterPictureInPicture();
+        }
+    }
+
+    void setPIPOptions(@Nullable ReadableMap map) {
+        if (map == null || map.hasKey("enabled") && !map.getBoolean("enabled")) {
+            if (pipController != null) {
+                pipController.detachPictureInPictureHelperFragment();
+            }
+            pipController = null;
+            return;
+        }
+
+        if (pipController == null) {
+            pipController = new PictureInPictureController(this);
+        }
+        pipController.setPIPOptions(map);
+    }
+
+    /**
+     * Hides any child view that is not the {@link SurfaceViewRenderer},
+     * to prevent unwanted views passed as React children from being visible.
+     */
+    @Override
+    public void addView(View child, int index) {
+        super.addView(child, index);
+        if (child != surfaceViewRenderer) {
+            child.setVisibility(View.GONE);
+        }
+    }
+
+    @Override
+    public View getVideoRenderer() {
+        return surfaceViewRenderer;
+    }
+
+    @Override
+    public ViewGroup getVideoContainer() {
+        return this;
+    }
+
+    @Override
+    public void requestVideoRenderUpdate() {
+        post(requestSurfaceViewRendererLayoutRunnable);
     }
 }

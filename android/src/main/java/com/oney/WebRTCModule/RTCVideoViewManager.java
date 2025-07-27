@@ -1,16 +1,24 @@
 package com.oney.WebRTCModule;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+
+import com.facebook.react.bridge.ReadableArray;
+import com.facebook.react.bridge.ReadableMap;
+import com.facebook.react.common.MapBuilder;
 import com.facebook.react.uimanager.SimpleViewManager;
 import com.facebook.react.uimanager.ThemedReactContext;
+import com.facebook.react.uimanager.ViewGroupManager;
 import com.facebook.react.uimanager.annotations.ReactProp;
-import com.facebook.react.bridge.ReadableMap;
-import com.facebook.react.uimanager.events.RCTEventEmitter;
+import com.oney.WebRTCModule.pictureInPicture.PictureInPictureController;
 
-import java.util.Map;
 import java.util.HashMap;
+import java.util.Map;
 
-public class RTCVideoViewManager extends SimpleViewManager<WebRTCView> {
+public class RTCVideoViewManager extends ViewGroupManager<WebRTCView> {
     private static final String REACT_CLASS = "RTCVideoView";
+
+    public final int COMMAND_ENTER_PIP = 1;
 
     @Override
     public String getName() {
@@ -87,6 +95,17 @@ public class RTCVideoViewManager extends SimpleViewManager<WebRTCView> {
         view.setOnDimensionsChange(onDimensionsChange);
     }
 
+    /**
+     * Sets the desired PIP options.
+     *
+     * @param view The {@code WebRTCView} on which the callback is to be set.
+     * @param map The PIP options.
+     */
+    @ReactProp(name = "pictureInPictureOptions")
+    public void setPIPOptions(WebRTCView view, ReadableMap map) {
+        view.setPIPOptions(map);
+    }
+
     @Override
     public Map<String, Object> getExportedCustomDirectEventTypeConstants() {
         Map<String, Object> eventTypeConstants = new HashMap<>();
@@ -94,5 +113,30 @@ public class RTCVideoViewManager extends SimpleViewManager<WebRTCView> {
         dimensionsChangeEvent.put("registrationName", "onDimensionsChange");
         eventTypeConstants.put("onDimensionsChange", dimensionsChangeEvent);
         return eventTypeConstants;
+    }
+
+    @Nullable
+    @Override
+    public Map<String, Integer> getCommandsMap() {
+        return MapBuilder.of("startAndroidPIP", COMMAND_ENTER_PIP);
+    }
+
+    @Override
+    public void receiveCommand(@NonNull WebRTCView view, String commandId, @Nullable ReadableArray args) {
+        super.receiveCommand(view, commandId, args);
+        int commandIdInt = Integer.parseInt(commandId);
+
+        if (commandIdInt == COMMAND_ENTER_PIP) {
+            view.enterPictureInPicture();
+        }
+    }
+
+    @Override
+    public Map getExportedCustomBubblingEventTypeConstants() {
+        return MapBuilder.builder()
+                .put(PictureInPictureController.onPictureInPictureChangeEventName,
+                        MapBuilder.of("phasedRegistrationNames",
+                                MapBuilder.of("bubbled", PictureInPictureController.onPictureInPictureChangeEventName)))
+                .build();
     }
 }
