@@ -10,12 +10,12 @@ import android.view.ViewGroup;
 
 import androidx.core.view.ViewCompat;
 
+import com.facebook.react.bridge.Arguments;
+import com.facebook.react.bridge.Callback;
 import com.facebook.react.bridge.ReactContext;
 import com.facebook.react.bridge.ReadableMap;
 import com.facebook.react.bridge.WritableMap;
-import com.facebook.react.bridge.Arguments;
 import com.facebook.react.uimanager.events.RCTEventEmitter;
-import com.facebook.react.bridge.Callback;
 
 import org.webrtc.EglBase;
 import org.webrtc.Logging;
@@ -267,7 +267,7 @@ public class WebRTCView extends ViewGroup {
             // The onFrameResolutionChanged method call executes on the
             // surfaceViewRenderer's render Thread.
             post(requestSurfaceViewRendererLayoutRunnable);
-            
+
             // Call the onDimensionsChange callback if it's enabled
             if (onDimensionsChangeEnabled) {
                 post(() -> {
@@ -276,8 +276,8 @@ public class WebRTCView extends ViewGroup {
                         WritableMap params = Arguments.createMap();
                         params.putInt("width", videoWidth);
                         params.putInt("height", videoHeight);
-                        
-                        // Send the event through React Native's event system  
+
+                        // Send the event through React Native's event system
                         reactContext.getJSModule(RCTEventEmitter.class)
                                 .receiveEvent(getId(), "onDimensionsChange", params);
                     } catch (Exception e) {

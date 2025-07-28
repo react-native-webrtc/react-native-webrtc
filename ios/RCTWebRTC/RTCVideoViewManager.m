@@ -23,7 +23,7 @@
  * Implements an equivalent of {@code HTMLVideoElement} i.e. Web's video
  * element.
  */
-@interface RTCVideoView : RCTView <RTCVideoViewDelegate>
+@interface RTCVideoView : RCTView<RTCVideoViewDelegate>
 
 /**
  * The indicator which determines whether this {@code RTCVideoView} is to mirror
@@ -54,7 +54,7 @@
 #endif
 
 // Add a reference to the view manager
-@property (nonatomic, weak) RTCVideoViewManager *viewManager;
+@property(nonatomic, weak) RTCVideoViewManager *viewManager;
 
 /**
  * The {@link RTCVideoTrack}, if any, which this instance renders.
@@ -66,7 +66,7 @@
  */
 @property(nonatomic, weak) WebRTCModule *module;
 
-@property (nonatomic, copy) RCTDirectEventBlock onDimensionsChange;
+@property(nonatomic, copy) RCTDirectEventBlock onDimensionsChange;
 
 @end
 
@@ -298,16 +298,12 @@
     }
 }
 
-- (void)videoView:(id)videoView didChangeVideoSize:(CGSize)size
-{
+- (void)videoView:(id)videoView didChangeVideoSize:(CGSize)size {
     // Capture the callback block to avoid accessing it across threads
     RCTDirectEventBlock callback = self.onDimensionsChange;
     if (callback) {
-        NSDictionary *eventData = @{
-            @"width": @(size.width),
-            @"height": @(size.height)
-        };
-        
+        NSDictionary *eventData = @{@"width" : @(size.width), @"height" : @(size.height)};
+
         dispatch_async(dispatch_get_main_queue(), ^{
             callback(eventData);
         });
