@@ -12,7 +12,7 @@ extern NSString *const kRTCAppGroupIdentifier;
 @interface ScreenCaptureController : CaptureController
 
 - (instancetype)initWithCapturer:(nonnull ScreenCapturer *)capturer;
-- (void)startCapture;
+- (void)startCapture:(BOOL)presentBroadcastPicker;
 - (void)stopCapture;
 
 @end
