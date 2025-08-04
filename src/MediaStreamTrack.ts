@@ -4,6 +4,7 @@ import { NativeModules } from 'react-native';
 import { MediaTrackConstraints } from './Constraints';
 import { addListener, removeListener } from './EventEmitter';
 import Logger from './Logger';
+import { videoTrackDimensionChangedEventQueue } from './MediaDevices';
 import { deepClone, normalizeConstraints } from './RTCUtil';
 
 const log = new Logger('pc');
@@ -54,6 +55,9 @@ export default class MediaStreamTrack extends EventTarget<MediaStreamTrackEventM
     constructor(info: MediaStreamTrackInfo) {
         super();
 
+        this.id = info.id;
+        this.kind = info.kind;
+        this.remote = info.remote;
         this._constraints = info.constraints || {};
         this._enabled = info.enabled;
         this._settings = info.settings || {};
@@ -61,12 +65,12 @@ export default class MediaStreamTrack extends EventTarget<MediaStreamTrackEventM
         this._peerConnectionId = info.peerConnectionId;
         this._readyState = info.readyState;
 
-        this.id = info.id;
-        this.kind = info.kind;
-        this.remote = info.remote;
-
         if (!this.remote) {
             this._registerEvents();
+
+            if (this.kind === 'video') {
+                this._processVideoTrackDimensionChangedQueue();
+            }
         }
     }
 
@@ -272,6 +276,21 @@ export default class MediaStreamTrack extends EventTarget<MediaStreamTrackEventM
         }
     }
 
+    /**
+     * Processes any queued `videoTrackDimensionChanged` events for this track.
+     */
+    _processVideoTrackDimensionChangedQueue(): void {
+        const eventData = videoTrackDimensionChangedEventQueue.get(this.id);
+
+        if (!eventData) {
+            return;
+        }
+
+        this._setVideoTrackDimensions(eventData.width, eventData.height);
+
+        videoTrackDimensionChangedEventQueue.delete(this.id);
+    }
+
     release(): void {
         if (this.remote) {
             return;
@@ -279,6 +298,10 @@ export default class MediaStreamTrack extends EventTarget<MediaStreamTrackEventM
 
         removeListener(this);
         WebRTCModule.mediaStreamTrackRelease(this.id);
+
+        if (this.kind === 'video') {
+            videoTrackDimensionChangedEventQueue.delete(this.id);
+        }
     }
 }
 
