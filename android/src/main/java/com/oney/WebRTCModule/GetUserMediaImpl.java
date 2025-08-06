@@ -196,8 +196,14 @@ class GetUserMediaImpl {
 
             Log.d(TAG, "getUserMedia(video): " + videoConstraintsMap);
 
+            Activity currentActivity = this.reactContext.getCurrentActivity();
+            if (currentActivity == null) {
+                errorCallback.invoke("Error", "No current Activity.");
+                return;
+            }
+
             CameraCaptureController cameraCaptureController = new CameraCaptureController(
-                    reactContext.getCurrentActivity(), getCameraEnumerator(), videoConstraintsMap);
+                    currentActivity, getCameraEnumerator(), videoConstraintsMap);
 
             videoTrack = createVideoTrack(cameraCaptureController);
         }
