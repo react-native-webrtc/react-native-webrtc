@@ -1,6 +1,8 @@
 #if TARGET_OS_IOS
 
 #import "ScreenCaptureController.h"
+#import <ReplayKit/ReplayKit.h>
+#import "ScreenCapturePickerViewManager.h"
 #import "ScreenCapturer.h"
 #import "SocketConnection.h"
 
@@ -39,9 +41,13 @@ NSString *const kRTCAppGroupIdentifier = @"RTCAppGroupIdentifier";
     [self.capturer stopCapture];
 }
 
-- (void)startCapture {
+- (void)startCapture:(BOOL)presentBroadcastPicker {
     if (!self.appGroupIdentifier) {
         return;
+    }
+
+    if (presentBroadcastPicker) {
+        [self performRPSystemBroadcastPickerViewPressed];
     }
 
     self.capturer.eventsDelegate = self;
@@ -76,6 +82,32 @@ NSString *const kRTCAppGroupIdentifier = @"RTCAppGroupIdentifier";
     NSString *socketFilePath = [[sharedContainer URLByAppendingPathComponent:kRTCScreensharingSocketFD] path];
 
     return socketFilePath;
+}
+
+- (NSString *)preferredExtension {
+    NSDictionary *infoDictionary = [[NSBundle mainBundle] infoDictionary];
+    return infoDictionary[kRTCScreenSharingExtension];
+}
+
+- (void)performRPSystemBroadcastPickerViewPressed {
+    dispatch_async(dispatch_get_main_queue(), ^{
+        RPSystemBroadcastPickerView *picker = [[RPSystemBroadcastPickerView alloc] init];
+        picker.showsMicrophoneButton = NO;
+
+        NSString *extension = [self preferredExtension];
+
+        if (extension) {
+            picker.preferredExtension = extension;
+        } else {
+            NSLog(@"No RTCScreenSharingExtension found in Info.plist");
+        }
+
+        SEL selector = NSSelectorFromString(@"buttonPressed:");
+
+        if ([picker respondsToSelector:selector]) {
+            [picker performSelector:selector withObject:nil];
+        }
+    });
 }
 
 @end
