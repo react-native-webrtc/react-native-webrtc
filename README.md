@@ -51,9 +51,9 @@ Software encode/decode factories have been enabled by default.
 Use one of the following preferred package install methods to immediately get going.  
 Don't forget to follow platform guides below to cover any extra required steps.  
 
-**npm:** `npm install react-native-webrtc --save`  
-**yarn:** `yarn add react-native-webrtc`  
-**pnpm:** `pnpm install react-native-webrtc`  
+**npm:** `npm install @sorenson-eng/react-native-webrtc --save`  
+**yarn:** `yarn add @sorenson-eng/react-native-webrtc`  
+**pnpm:** `pnpm install @sorenson-eng/react-native-webrtc`
 
 ## Guides
 
