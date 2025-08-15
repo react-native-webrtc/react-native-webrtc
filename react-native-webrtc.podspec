@@ -15,9 +15,14 @@ Pod::Spec.new do |s|
   s.platforms           = { :ios => '12.0', :osx => '10.13', :tvos => '16.0' }
 
   s.preserve_paths      = 'ios/**/*'
-  s.source_files        = 'ios/**/*.{h,m}'
+  s.source_files        = 'ios/**/*.{h,m,swift}'
   s.libraries           = 'c', 'sqlite3', 'stdc++'
   s.framework           = 'AudioToolbox','AVFoundation', 'CoreAudio', 'CoreGraphics', 'CoreVideo', 'GLKit', 'VideoToolbox'
   s.dependency          'React-Core'
   s.dependency          'JitsiWebRTC', '~> 124.0.0'
+
+  s.swift_version = '5.9'
+  s.pod_target_xcconfig = {
+    'DEFINES_MODULE' => 'YES',
+  }
 end
