@@ -1,8 +1,8 @@
 #if TARGET_OS_IOS
 
 #import "ScreenCaptureController.h"
-#import "ScreenCapturer.h"
 #import "SocketConnection.h"
+#import "react_native_webrtc-Swift.h"
 
 NSString *const kRTCScreensharingSocketFD = @"rtc_SSFD";
 NSString *const kRTCAppGroupIdentifier = @"RTCAppGroupIdentifier";
