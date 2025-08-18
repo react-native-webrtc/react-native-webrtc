@@ -3,7 +3,7 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 70;
+	objectVersion = 54;
 	objects = {
 
 /* Begin PBXBuildFile section */
@@ -18,6 +18,11 @@
 		521562942E51E4250000BF92 /* ReplayKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 521562932E51E4240000BF92 /* ReplayKit.framework */; };
 		5215629C2E51E4250000BF92 /* BroadcastExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 521562922E51E4240000BF92 /* BroadcastExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		521562AB2E51EAAB0000BF92 /* Transcoding in Frameworks */ = {isa = PBXBuildFile; productRef = 521562AA2E51EAAB0000BF92 /* Transcoding */; };
+		52D37D202E532222006EED3B /* DarwinNotificationCenter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52D37D182E532222006EED3B /* DarwinNotificationCenter.swift */; };
+		52D37D212E532222006EED3B /* SampleHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52D37D1A2E532222006EED3B /* SampleHandler.swift */; };
+		52D37D222E532222006EED3B /* UnisSocketClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52D37D1B2E532222006EED3B /* UnisSocketClient.swift */; };
+		52D37D232E532222006EED3B /* VideoEncoderTranscoding.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52D37D1C2E532222006EED3B /* VideoEncoderTranscoding.swift */; };
+		52D37D242E532222006EED3B /* VideoFramesSender.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52D37D1D2E532222006EED3B /* VideoFramesSender.swift */; };
 		81AB9BB82411601600AC10FF /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */; };
 		AD367892908F94AB630CCF9E /* libPods-GumTestApp.a in Frameworks */ = {isa = PBXBuildFile; fileRef = A4883388C23D78A7B33E474D /* libPods-GumTestApp.a */; };
 		BC8C3F351A8237EC6AB17E29 /* libPods-GumTestApp-GumTestAppTests.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 45F17E13F20E1C25C3C2E910 /* libPods-GumTestApp-GumTestAppTests.a */; };
@@ -80,6 +85,13 @@
 		521562922E51E4240000BF92 /* BroadcastExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = BroadcastExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		521562932E51E4240000BF92 /* ReplayKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = ReplayKit.framework; path = System/Library/Frameworks/ReplayKit.framework; sourceTree = SDKROOT; };
 		521562AD2E51EE2E0000BF92 /* GumTestApp.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; name = GumTestApp.entitlements; path = GumTestApp/GumTestApp.entitlements; sourceTree = "<group>"; };
+		52D37D172E532222006EED3B /* BroadcastExtension.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = BroadcastExtension.entitlements; sourceTree = "<group>"; };
+		52D37D182E532222006EED3B /* DarwinNotificationCenter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DarwinNotificationCenter.swift; sourceTree = "<group>"; };
+		52D37D192E532222006EED3B /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		52D37D1A2E532222006EED3B /* SampleHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SampleHandler.swift; sourceTree = "<group>"; };
+		52D37D1B2E532222006EED3B /* UnisSocketClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnisSocketClient.swift; sourceTree = "<group>"; };
+		52D37D1C2E532222006EED3B /* VideoEncoderTranscoding.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VideoEncoderTranscoding.swift; sourceTree = "<group>"; };
+		52D37D1D2E532222006EED3B /* VideoFramesSender.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VideoFramesSender.swift; sourceTree = "<group>"; };
 		81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; name = LaunchScreen.storyboard; path = GumTestApp/LaunchScreen.storyboard; sourceTree = "<group>"; };
 		A4883388C23D78A7B33E474D /* libPods-GumTestApp.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-GumTestApp.a"; sourceTree = BUILT_PRODUCTS_DIR; };
 		A8943D48F256A166F5E8FDB2 /* Pods-GumTestApp.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-GumTestApp.debug.xcconfig"; path = "Target Support Files/Pods-GumTestApp/Pods-GumTestApp.debug.xcconfig"; sourceTree = "<group>"; };
@@ -87,20 +99,6 @@
 		ED297162215061F000B7C4FE /* JavaScriptCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = JavaScriptCore.framework; path = System/Library/Frameworks/JavaScriptCore.framework; sourceTree = SDKROOT; };
 		ED2971642150620600B7C4FE /* JavaScriptCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = JavaScriptCore.framework; path = Platforms/AppleTVOS.platform/Developer/SDKs/AppleTVOS12.0.sdk/System/Library/Frameworks/JavaScriptCore.framework; sourceTree = DEVELOPER_DIR; };
 /* End PBXFileReference section */
-
-/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
-		5215629F2E51E4250000BF92 /* PBXFileSystemSynchronizedBuildFileExceptionSet */ = {
-			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
-			membershipExceptions = (
-				Info.plist,
-			);
-			target = 521562912E51E4240000BF92 /* BroadcastExtension */;
-		};
-/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
-
-/* Begin PBXFileSystemSynchronizedRootGroup section */
-		521562952E51E4250000BF92 /* BroadcastExtension */ = {isa = PBXFileSystemSynchronizedRootGroup; exceptions = (5215629F2E51E4250000BF92 /* PBXFileSystemSynchronizedBuildFileExceptionSet */, ); explicitFileTypes = {}; explicitFolders = (); path = BroadcastExtension; sourceTree = "<group>"; };
-/* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
 		00E356EB1AD99517003FC87E /* Frameworks */ = {
@@ -189,6 +187,20 @@
 			name = Frameworks;
 			sourceTree = "<group>";
 		};
+		52D37D1E2E532222006EED3B /* BroadcastExtension */ = {
+			isa = PBXGroup;
+			children = (
+				52D37D172E532222006EED3B /* BroadcastExtension.entitlements */,
+				52D37D182E532222006EED3B /* DarwinNotificationCenter.swift */,
+				52D37D192E532222006EED3B /* Info.plist */,
+				52D37D1A2E532222006EED3B /* SampleHandler.swift */,
+				52D37D1B2E532222006EED3B /* UnisSocketClient.swift */,
+				52D37D1C2E532222006EED3B /* VideoEncoderTranscoding.swift */,
+				52D37D1D2E532222006EED3B /* VideoFramesSender.swift */,
+			);
+			path = BroadcastExtension;
+			sourceTree = "<group>";
+		};
 		832341AE1AAA6A7D00B99B32 /* Libraries */ = {
 			isa = PBXGroup;
 			children = (
@@ -202,7 +214,7 @@
 				13B07FAE1A68108700A75B9A /* GumTestApp */,
 				832341AE1AAA6A7D00B99B32 /* Libraries */,
 				00E356EF1AD99517003FC87E /* GumTestAppTests */,
-				521562952E51E4250000BF92 /* BroadcastExtension */,
+				52D37D1E2E532222006EED3B /* BroadcastExtension */,
 				83CBBA001A601CBA00E9B192 /* Products */,
 				2D16E6871FA4F8E400B85C8A /* Frameworks */,
 				C57A3B9A81E0AC80BDFF5EAE /* Pods */,
@@ -331,9 +343,6 @@
 			buildRules = (
 			);
 			dependencies = (
-			);
-			fileSystemSynchronizedGroups = (
-				521562952E51E4250000BF92 /* BroadcastExtension */,
 			);
 			name = BroadcastExtension;
 			packageProductDependencies = (
@@ -668,6 +677,11 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				52D37D202E532222006EED3B /* DarwinNotificationCenter.swift in Sources */,
+				52D37D212E532222006EED3B /* SampleHandler.swift in Sources */,
+				52D37D222E532222006EED3B /* UnisSocketClient.swift in Sources */,
+				52D37D232E532222006EED3B /* VideoEncoderTranscoding.swift in Sources */,
+				52D37D242E532222006EED3B /* VideoFramesSender.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
