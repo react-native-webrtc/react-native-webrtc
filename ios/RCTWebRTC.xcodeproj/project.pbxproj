@@ -8,6 +8,8 @@
 
 /* Begin PBXBuildFile section */
 		0BDDA6E020C18B6B00B38B45 /* VideoCaptureController.m in Sources */ = {isa = PBXBuildFile; fileRef = 0BDDA6DF20C18B6B00B38B45 /* VideoCaptureController.m */; };
+		474EDB052E4BAA5E00E04760 /* FileCaptureController.m in Sources */ = {isa = PBXBuildFile; fileRef = 474EDB022E4BAA5E00E04760 /* FileCaptureController.m */; };
+		474EDB062E4BAA5E00E04760 /* FileCapturer.m in Sources */ = {isa = PBXBuildFile; fileRef = 474EDB042E4BAA5E00E04760 /* FileCapturer.m */; };
 		4EC498BC25B8777F00E76218 /* ScreenCapturePickerViewManager.m in Sources */ = {isa = PBXBuildFile; fileRef = 4EC498BA25B8777F00E76218 /* ScreenCapturePickerViewManager.m */; };
 		4EE3A8A325B840DA00FAA24A /* RCTConvert+WebRTC.m in Sources */ = {isa = PBXBuildFile; fileRef = 4EE3A8A125B840DA00FAA24A /* RCTConvert+WebRTC.m */; };
 		4EE3A8A725B8411400FAA24A /* RTCMediaStreamTrack+React.m in Sources */ = {isa = PBXBuildFile; fileRef = 4EE3A8A625B8411400FAA24A /* RTCMediaStreamTrack+React.m */; };
@@ -45,6 +47,10 @@
 		131131FC732883F1EF6F2CA3 /* Pods-RCTWebRTC.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-RCTWebRTC.release.xcconfig"; path = "Target Support Files/Pods-RCTWebRTC/Pods-RCTWebRTC.release.xcconfig"; sourceTree = "<group>"; };
 		1A7E646283326F2A95C8C1FA /* Pods-RCTWebRTC.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-RCTWebRTC.debug.xcconfig"; path = "Target Support Files/Pods-RCTWebRTC/Pods-RCTWebRTC.debug.xcconfig"; sourceTree = "<group>"; };
 		35A2221F1CB493700015FD5C /* libRCTWebRTC.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libRCTWebRTC.a; sourceTree = BUILT_PRODUCTS_DIR; };
+		474EDB012E4BAA5E00E04760 /* FileCaptureController.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = FileCaptureController.h; path = RCTWebRTC/FileCaptureController.h; sourceTree = SOURCE_ROOT; };
+		474EDB022E4BAA5E00E04760 /* FileCaptureController.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = FileCaptureController.m; path = RCTWebRTC/FileCaptureController.m; sourceTree = SOURCE_ROOT; };
+		474EDB032E4BAA5E00E04760 /* FileCapturer.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = FileCapturer.h; path = RCTWebRTC/FileCapturer.h; sourceTree = SOURCE_ROOT; };
+		474EDB042E4BAA5E00E04760 /* FileCapturer.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = FileCapturer.m; path = RCTWebRTC/FileCapturer.m; sourceTree = SOURCE_ROOT; };
 		4EC498BA25B8777F00E76218 /* ScreenCapturePickerViewManager.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = ScreenCapturePickerViewManager.m; path = RCTWebRTC/ScreenCapturePickerViewManager.m; sourceTree = SOURCE_ROOT; };
 		4EC498BB25B8777F00E76218 /* ScreenCapturePickerViewManager.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = ScreenCapturePickerViewManager.h; path = RCTWebRTC/ScreenCapturePickerViewManager.h; sourceTree = SOURCE_ROOT; };
 		4EE3A8A125B840DA00FAA24A /* RCTConvert+WebRTC.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = "RCTConvert+WebRTC.m"; path = "RCTWebRTC/RCTConvert+WebRTC.m"; sourceTree = SOURCE_ROOT; };
@@ -124,6 +130,10 @@
 		35A222311CB493C00015FD5C /* RCTWebRTC */ = {
 			isa = PBXGroup;
 			children = (
+				474EDB012E4BAA5E00E04760 /* FileCaptureController.h */,
+				474EDB022E4BAA5E00E04760 /* FileCaptureController.m */,
+				474EDB032E4BAA5E00E04760 /* FileCapturer.h */,
+				474EDB042E4BAA5E00E04760 /* FileCapturer.m */,
 				4EE3A8A225B840DA00FAA24A /* RCTConvert+WebRTC.h */,
 				4EE3A8A125B840DA00FAA24A /* RCTConvert+WebRTC.m */,
 				4EE3A8A525B8411400FAA24A /* RTCMediaStreamTrack+React.h */,
@@ -273,6 +283,8 @@
 				4EE3A8AC25B8412700FAA24A /* RTCVideoViewManager.m in Sources */,
 				4EE3A8C125B8416F00FAA24A /* WebRTCModule+RTCPeerConnection.m in Sources */,
 				4EE3A8A325B840DA00FAA24A /* RCTConvert+WebRTC.m in Sources */,
+				474EDB052E4BAA5E00E04760 /* FileCaptureController.m in Sources */,
+				474EDB062E4BAA5E00E04760 /* FileCapturer.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

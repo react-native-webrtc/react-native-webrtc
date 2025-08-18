@@ -13,6 +13,8 @@
 #import "ProcessorProvider.h"
 #import "ScreenCaptureController.h"
 #import "ScreenCapturer.h"
+#import "FileCaptureController.h"
+#import "FileCapturer.h"
 #import "TrackCapturerEventsEmitter.h"
 #import "VideoCaptureController.h"
 
@@ -192,6 +194,55 @@ RCT_EXPORT_METHOD(getDisplayMedia : (RCTPromiseResolveBlock)resolve rejecter : (
     self.localStreams[mediaStreamId] = mediaStream;
     resolve(@{@"streamId" : mediaStreamId, @"track" : trackInfo});
 #endif
+}
+
+- (RTCVideoTrack *)createFileCaptureVideoTrackWithAsset:(NSString *)asset {
+#if TARGET_OS_TV
+    return nil;
+#endif
+
+    RTCVideoSource *videoSource = [self.peerConnectionFactory videoSource];
+
+    NSString *trackUUID = [[NSUUID UUID] UUIDString];
+    RTCVideoTrack *videoTrack = [self.peerConnectionFactory videoTrackWithSource:videoSource trackId:trackUUID];
+
+    FileCapturer *fileCapturer = [[FileCapturer alloc] initWithDelegate:videoSource asset:asset];
+    FileCaptureController *fileCaptureController =
+        [[FileCaptureController alloc] initWithCapturer:fileCapturer];
+
+    TrackCapturerEventsEmitter *emitter = [[TrackCapturerEventsEmitter alloc] initWith:trackUUID webRTCModule:self];
+    fileCaptureController.eventsDelegate = emitter;
+    videoTrack.captureController = fileCaptureController;
+    [fileCaptureController startCapture];
+
+    return videoTrack;
+}
+
+RCT_EXPORT_METHOD(getFileMedia : (NSString *)asset resolver:(RCTPromiseResolveBlock)resolve rejecter:(RCTPromiseRejectBlock)reject) {
+    RTCVideoTrack *videoTrack = [self createFileCaptureVideoTrackWithAsset:asset];
+
+    if (videoTrack == nil) {
+        reject(@"DOMException", @"AbortError", nil);
+        return;
+    }
+
+    NSString *mediaStreamId = [[NSUUID UUID] UUIDString];
+    RTCMediaStream *mediaStream = [self.peerConnectionFactory mediaStreamWithStreamId:mediaStreamId];
+    [mediaStream addVideoTrack:videoTrack];
+
+    NSString *trackId = videoTrack.trackId;
+    self.localTracks[trackId] = videoTrack;
+
+    NSDictionary *trackInfo = @{
+        @"enabled" : @(videoTrack.isEnabled),
+        @"id" : videoTrack.trackId,
+        @"kind" : videoTrack.kind,
+        @"readyState" : @"live",
+        @"remote" : @(NO)
+    };
+
+    self.localStreams[mediaStreamId] = mediaStream;
+    resolve(@{@"streamId" : mediaStreamId, @"track" : trackInfo});
 }
 
 /**

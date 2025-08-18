@@ -2,6 +2,7 @@ import { EventTarget, Event, defineEventAttribute } from 'event-target-shim/inde
 import { NativeModules } from 'react-native';
 
 import getDisplayMedia from './getDisplayMedia';
+import getFileMedia from './getFileMedia';
 import getUserMedia, { Constraints } from './getUserMedia';
 
 const { WebRTCModule } = NativeModules;
@@ -39,6 +40,18 @@ class MediaDevices extends EventTarget<MediaDevicesEventMap> {
      */
     getUserMedia(constraints: Constraints) {
         return getUserMedia(constraints);
+    }
+
+    /**
+     * File based media stream
+     *
+     * NOTE: Only supports static images at the moment
+     *
+     * @param source A file path, url, or import/require result
+     * @returns {Promise}
+     */
+    getFileMedia(source: number | string) {
+        return getFileMedia(source);
     }
 }
 
