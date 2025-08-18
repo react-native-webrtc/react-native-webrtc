@@ -364,6 +364,13 @@ const [videoDimensions, setVideoDimensions] = useState({ width: 0, height: 0 });
 />
 ```
 
+> [!NOTE]  
+> If for some reason you don't see the rendered video element, you might want to try adding the `style` parameter to the `RTCView` component. This can help ensure the component has the correct dimensions and positioning. For example:
+> ```javascript
+> <RTCView style={{ width: '100%', height: '100%' }} ...
+> ```
+
+
 ## Controlling remote audio tracks
 
 Remote audio tracks are automatically handled and played through your audio output.
