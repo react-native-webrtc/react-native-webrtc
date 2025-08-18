@@ -10,7 +10,7 @@ class VideoEncoderTranscoding {
     videoEncoder = VideoEncoder(config: .init(
       codecType: kCMVideoCodecType_H264,
       allowFrameReordering: false,
-      realTime: true,
+      realTime: true
     ))
     videoEncoderAnnexBAdaptor = VideoEncoderAnnexBAdaptor(
       videoEncoder: videoEncoder
