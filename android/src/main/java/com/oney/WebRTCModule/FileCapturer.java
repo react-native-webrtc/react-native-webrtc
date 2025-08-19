@@ -24,27 +24,37 @@ public class FileCapturer implements VideoCapturer {
     private final FileEventsHandler eventsHandler;
     @Nullable private CapturerObserver capturerObserver;
     private final Uri asset;
+    private boolean isDisposed;
+    private boolean isActive;
 
     public FileCapturer(Context context, Uri asset, FileEventsHandler eventsHandler) {
         this.context = context;
         this.eventsHandler = eventsHandler;
         this.asset = asset;
+        this.isDisposed = false;
+        this.isActive = false;
     }
 
     @Override
-    public void initialize(SurfaceTextureHelper surfaceTextureHelper, Context applicationContext,
+    public synchronized void initialize(SurfaceTextureHelper surfaceTextureHelper, Context applicationContext,
         CapturerObserver capturerObserver) {
+        if (this.isDisposed) {
+            return;
+        }
         this.capturerObserver = capturerObserver;
+        // fetch buffer
     }
 
     @Override
-    public void startCapture(int width, int height, int framerate) {
-        Log.d(TAG, "started");
+    public synchronized void startCapture(int width, int height, int framerate) {
+        this.isActive = true;
+        this.capturerObserver.onCapturerStarted(true); // put after actually starting stuff
     }
 
     @Override
-    public void stopCapture() throws InterruptedException {
-        Log.d(TAG, "stopped");
+    public synchronized void stopCapture() throws InterruptedException {
+        this.isActive = false;
+        this.capturerObserver.onCapturerStopped();
     }
 
     @Override
@@ -53,8 +63,9 @@ public class FileCapturer implements VideoCapturer {
     }
 
     @Override
-    public void dispose() {
-        Log.d(TAG, "disposed");
+    public synchronized void dispose() {
+        this.isDisposed = true;
+        this.isActive = false;
     }
 
     @Override
