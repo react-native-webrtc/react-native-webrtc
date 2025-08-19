@@ -296,6 +296,35 @@ class GetUserMediaImpl {
         }
     }
 
+    void getFileMedia(String asset, Promise promise) {
+        Activity currentActivity = this.reactContext.getCurrentActivity();
+        if (currentActivity == null) {
+            promise.reject(new RuntimeException("No current Activity."));
+            return;
+        }
+
+        FileCaptureController fileCaptureController = new FileCaptureController(
+                reactContext.getCurrentActivity(), asset);
+        VideoTrack track = createVideoTrack(fileCaptureController);
+
+        if (track == null) {
+            promise.reject(new RuntimeException("ScreenTrack is null."));
+        } else {
+            createStream(new MediaStreamTrack[] {track}, (streamId, tracksInfo) -> {
+                WritableMap data = Arguments.createMap();
+
+                data.putString("streamId", streamId);
+
+                if (tracksInfo.size() == 0) {
+                    displayMediaPromise.reject(new RuntimeException("No FileTrackInfo found."));
+                } else {
+                    data.putMap("track", tracksInfo.get(0));
+                    promise.resolve(data);
+                }
+            });
+        }
+    }
+
     private void createScreenStream() {
         VideoTrack track = createScreenTrack();
 

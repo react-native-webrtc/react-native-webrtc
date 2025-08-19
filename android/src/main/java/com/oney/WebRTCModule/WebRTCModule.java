@@ -779,6 +779,11 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
     }
 
     @ReactMethod
+    public void getFileMedia(String asset, Promise promise) {
+        ThreadUtils.runOnExecutor(() -> getUserMediaImpl.getFileMedia(asset, promise));
+    }
+
+    @ReactMethod
     public void enumerateDevices(Callback callback) {
         ThreadUtils.runOnExecutor(() -> callback.invoke(getUserMediaImpl.enumerateDevices()));
     }
