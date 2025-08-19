@@ -316,7 +316,7 @@ class GetUserMediaImpl {
                 data.putString("streamId", streamId);
 
                 if (tracksInfo.size() == 0) {
-                    displayMediaPromise.reject(new RuntimeException("No FileTrackInfo found."));
+                    promise.reject(new RuntimeException("No FileTrackInfo found."));
                 } else {
                     data.putMap("track", tracksInfo.get(0));
                     promise.resolve(data);
