@@ -7,6 +7,7 @@ import android.net.Uri;
 
 import org.webrtc.VideoCapturer;
 import org.webrtc.CapturerObserver;
+import org.webrtc.SurfaceTextureHelper;
 
 public class FileCapturer implements VideoCapturer {
     public interface FileEventsHandler {
