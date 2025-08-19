@@ -3,6 +3,7 @@ package com.oney.WebRTCModule;
 import android.content.Context;
 import android.util.Log;
 import androidx.annotation.Nullable;
+import android.net.Uri;
 
 import org.webrtc.VideoCapturer;
 import org.webrtc.CapturerObserver;
@@ -21,10 +22,12 @@ public class FileCapturer implements VideoCapturer {
     private final Context context;
     private final FileEventsHandler eventsHandler;
     @Nullable private CapturerObserver capturerObserver;
+    private final Uri asset;
 
-    public FileCapturer(Context context, String asset, FileEventsHandler eventsHandler) {
+    public FileCapturer(Context context, Uri asset, FileEventsHandler eventsHandler) {
         this.context = context;
         this.eventsHandler = eventsHandler;
+        this.asset = asset;
     }
 
     @Override

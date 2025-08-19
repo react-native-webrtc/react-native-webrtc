@@ -33,6 +33,9 @@ import java.util.Objects;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+import com.facebook.react.views.imagehelper.ResourceDrawableIdHelper;
+import android.net.Uri;
+
 /**
  * The implementation of {@code getUserMedia} extracted into a separate file in
  * order to reduce complexity and to (somewhat) separate concerns.
@@ -303,8 +306,14 @@ class GetUserMediaImpl {
             return;
         }
 
+        Uri assetUri = this.getAssetUri(asset);
+        if (assetUri == null) {
+            promise.reject(new RuntimeException("Could not resolve asset."));
+            return;
+        }
+
         FileCaptureController fileCaptureController = new FileCaptureController(
-                reactContext.getCurrentActivity(), asset);
+                reactContext.getCurrentActivity(), assetUri);
         VideoTrack track = createVideoTrack(fileCaptureController);
 
         if (track == null) {
@@ -323,6 +332,28 @@ class GetUserMediaImpl {
                 }
             });
         }
+    }
+
+    private Uri getAssetUri(String asset) {
+        Uri uri = Uri.EMPTY;
+        try {
+            uri = Uri.parse(asset);
+        } finally {
+            // no-op
+        }
+        String scheme = uri.getScheme();
+        if (scheme != null) {
+            scheme = scheme.toLowerCase();
+            if (scheme.equals("res") || scheme.startsWith("http") || scheme.equals("android.resource")) {
+                return uri;
+            }
+        }
+        uri = ResourceDrawableIdHelper.getInstance().getResourceDrawableUri(reactContext, asset);
+        scheme = uri.getScheme();
+        if (scheme != null && scheme.equalsIgnoreCase("res")) {
+            return uri;
+        }
+        return null;
     }
 
     private void createScreenStream() {

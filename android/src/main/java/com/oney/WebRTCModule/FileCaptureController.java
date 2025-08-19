@@ -2,6 +2,7 @@ package com.oney.WebRTCModule;
 
 import android.content.Context;
 import android.util.Log;
+import android.net.Uri;
 
 import org.webrtc.VideoCapturer;
 import com.oney.WebRTCModule.FileCapturer;
@@ -17,9 +18,9 @@ public class FileCaptureController extends AbstractVideoCaptureController {
     private static final int DEFAULT_FPS = 1;
 
     private final Context context;
-    private final String asset;
+    private final Uri asset;
 
-    public FileCaptureController(Context context, String asset) {
+    public FileCaptureController(Context context, Uri asset) {
         super(DEFAULT_WIDTH, DEFAULT_HEIGHT, DEFAULT_FPS);
 
         this.context = context;
