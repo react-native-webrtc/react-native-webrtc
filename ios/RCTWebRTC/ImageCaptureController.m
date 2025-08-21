@@ -1,25 +1,25 @@
 #if !TARGET_OS_TV
 
-#import "FileCaptureController.h"
-#import "FileCapturer.h"
+#import "ImageCaptureController.h"
+#import "ImageCapturer.h"
 
-@interface FileCaptureController ()
+@interface ImageCaptureController ()
 
-@property(nonatomic, retain) FileCapturer *capturer;
+@property(nonatomic, retain) ImageCapturer *capturer;
 
 @end
 
-@interface FileCaptureController (CapturerEventsDelegate)<CapturerEventsDelegate>
+@interface ImageCaptureController (CapturerEventsDelegate)<CapturerEventsDelegate>
 - (void)capturerDidEnd:(RTCVideoCapturer *)capturer;
 @end
 
-@implementation FileCaptureController
+@implementation ImageCaptureController
 
-- (instancetype)initWithCapturer:(nonnull FileCapturer *)capturer {
+- (instancetype)initWithCapturer:(nonnull ImageCapturer *)capturer {
     self = [super init];
     if (self) {
         self.capturer = capturer;
-        self.deviceId = @"file-capture";
+        self.deviceId = @"image-capture";
     }
 
     return self;

@@ -3,10 +3,9 @@
 #include <mach/mach_time.h>
 
 #import <ReplayKit/ReplayKit.h>
-#import <WebRTC/RTCCVPixelBuffer.h>
 #import <WebRTC/RTCVideoFrameBuffer.h>
 
-#import "FileCapturer.h"
+#import "ImageCapturer.h"
 
 #import <SDWebImage/SDWebImage.h>
 
@@ -80,48 +79,56 @@ RTCCVPixelBuffer *rtcPixelBufferFromUIImage(UIImage *image) {
   return rtcPixelBuffer;
 }
 
-@implementation FileCapturer {
+void maybeLoadBuffer(UIImage *image, SuccessBlock _Nullable success, FailureBlock _Nullable failure) {
+    RTCCVPixelBuffer *buffer = rtcPixelBufferFromUIImage(image);
+    if (buffer != nil) {
+        dispatch_async(dispatch_get_main_queue(), ^{ if (success) success(buffer); });
+    } else {
+        dispatch_async(dispatch_get_main_queue(), ^{ if (failure) failure(@"could not make buffer from image"); });
+    }
+}
+
+void imageFromAsset(NSString *asset, SuccessBlock _Nullable success, FailureBlock _Nullable failure) {
+    dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+        UIImage *localImage = [UIImage imageNamed:asset];
+        if (localImage != nil) {
+            maybeLoadBuffer(localImage, success, failure);
+            return;
+        }
+        NSURL *url = [NSURL URLWithString: asset];
+        if (url == nil) {
+            dispatch_async(dispatch_get_main_queue(), ^{ if (failure) failure(@"invalid url"); });
+            return;
+        }
+        SDWebImageManager *imageManager = [SDWebImageManager sharedManager];
+        [imageManager loadImageWithURL:url
+                        options:0
+                        progress:nil
+                        completed:^(UIImage * _Nullable image, NSData * _Nullable data, NSError * _Nullable error, SDImageCacheType cacheType, BOOL finished, NSURL * _Nullable imageURL) {
+                          if (image && finished) {
+                            maybeLoadBuffer(image, success, failure);
+                          } else {
+                            dispatch_async(dispatch_get_main_queue(), ^{ if (failure) failure(@"failed to load image"); });
+                          }
+        }];
+    });
+}
+
+@implementation ImageCapturer {
     mach_timebase_info_data_t _timebaseInfo;
     int64_t _startTimeStampNs;
     NSTimer *_timer;
     RTCCVPixelBuffer *_rtcPixelBuffer;
-    SDWebImageCombinedOperation *_imageOperation;
     BOOL _bursting;
     BOOL _active;
 }
 
-- (instancetype)initWithDelegate:(__weak id<RTCVideoCapturerDelegate>)delegate asset:(NSString *)asset {
+- (instancetype)initWithDelegate:(__weak id<RTCVideoCapturerDelegate>)delegate image:(RTCCVPixelBuffer *)image {
     self = [super initWithDelegate:delegate];
     if (self) {
         mach_timebase_info(&_timebaseInfo);
     }
-
-    UIImage *localImage = [UIImage imageNamed:asset];
-    if (localImage != nil) {
-        _rtcPixelBuffer = rtcPixelBufferFromUIImage(localImage);
-    } else {
-      NSURL *url = [NSURL URLWithString: asset];
-      if (url != nil) {
-        SDWebImageManager *imageManager = [SDWebImageManager sharedManager];
-        __weak __typeof__(self) weakSelf = self;
-        _imageOperation = [imageManager loadImageWithURL:url
-                        options:0
-                        progress:nil
-                        completed:^(UIImage * _Nullable image, NSData * _Nullable data, NSError * _Nullable error, SDImageCacheType cacheType, BOOL finished, NSURL * _Nullable imageURL) {
-                          __strong __typeof__(self) strongSelf = weakSelf;
-                          if (!strongSelf) {
-                            return;
-                          }
-                          if (image && finished) {
-                              strongSelf->_rtcPixelBuffer = rtcPixelBufferFromUIImage(image);
-                              if (strongSelf->_active) {
-                                [strongSelf startRenderLoop];
-                              }
-                          }
-        }];
-      }
-    }
-
+    _rtcPixelBuffer = image;
     return self;
 }
 
@@ -142,8 +149,6 @@ RTCCVPixelBuffer *rtcPixelBufferFromUIImage(UIImage *image) {
   _active = NO;
   [_timer invalidate];
   _timer = nil;
-  [_imageOperation cancel];
-  _imageOperation = nil;
 }
 
 - (void)startTimerWithInterval:(NSTimeInterval)interval {

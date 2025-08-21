@@ -13,8 +13,8 @@
 #import "ProcessorProvider.h"
 #import "ScreenCaptureController.h"
 #import "ScreenCapturer.h"
-#import "FileCaptureController.h"
-#import "FileCapturer.h"
+#import "ImageCaptureController.h"
+#import "ImageCapturer.h"
 #import "TrackCapturerEventsEmitter.h"
 #import "VideoCaptureController.h"
 
@@ -196,7 +196,7 @@ RCT_EXPORT_METHOD(getDisplayMedia : (RCTPromiseResolveBlock)resolve rejecter : (
 #endif
 }
 
-- (RTCVideoTrack *)createFileCaptureVideoTrackWithAsset:(NSString *)asset {
+- (RTCVideoTrack *)createImageCaptureVideoTrackWithImage:(RTCCVPixelBuffer *)image {
 #if TARGET_OS_TV
     return nil;
 #endif
@@ -206,20 +206,20 @@ RCT_EXPORT_METHOD(getDisplayMedia : (RCTPromiseResolveBlock)resolve rejecter : (
     NSString *trackUUID = [[NSUUID UUID] UUIDString];
     RTCVideoTrack *videoTrack = [self.peerConnectionFactory videoTrackWithSource:videoSource trackId:trackUUID];
 
-    FileCapturer *fileCapturer = [[FileCapturer alloc] initWithDelegate:videoSource asset:asset];
-    FileCaptureController *fileCaptureController =
-        [[FileCaptureController alloc] initWithCapturer:fileCapturer];
+    ImageCapturer *imageCapturer = [[ImageCapturer alloc] initWithDelegate:videoSource image:image];
+    ImageCaptureController *imageCaptureController =
+        [[ImageCaptureController alloc] initWithCapturer:imageCapturer];
 
     TrackCapturerEventsEmitter *emitter = [[TrackCapturerEventsEmitter alloc] initWith:trackUUID webRTCModule:self];
-    fileCaptureController.eventsDelegate = emitter;
-    videoTrack.captureController = fileCaptureController;
-    [fileCaptureController startCapture];
+    imageCaptureController.eventsDelegate = emitter;
+    videoTrack.captureController = imageCaptureController;
+    [imageCaptureController startCapture];
 
     return videoTrack;
 }
 
-RCT_EXPORT_METHOD(getFileMedia : (NSString *)asset resolver:(RCTPromiseResolveBlock)resolve rejecter:(RCTPromiseRejectBlock)reject) {
-    RTCVideoTrack *videoTrack = [self createFileCaptureVideoTrackWithAsset:asset];
+- (void)makeImageStreamWithImage:(RTCCVPixelBuffer *) image resolver:(RCTPromiseResolveBlock)resolve rejecter:(RCTPromiseRejectBlock)reject {
+    RTCVideoTrack *videoTrack = [self createImageCaptureVideoTrackWithImage:image];
 
     if (videoTrack == nil) {
         reject(@"DOMException", @"AbortError", nil);
@@ -243,6 +243,16 @@ RCT_EXPORT_METHOD(getFileMedia : (NSString *)asset resolver:(RCTPromiseResolveBl
 
     self.localStreams[mediaStreamId] = mediaStream;
     resolve(@{@"streamId" : mediaStreamId, @"track" : trackInfo});
+}
+
+RCT_EXPORT_METHOD(getFileMedia : (NSString *)asset resolver:(RCTPromiseResolveBlock)resolve rejecter:(RCTPromiseRejectBlock)reject) {
+    imageFromAsset(asset,
+        ^(RTCCVPixelBuffer *image) {
+            [self makeImageStreamWithImage:image resolver:resolve rejecter:reject];
+        },
+        ^(NSString *failure) {
+            reject(@"load_failure", failure, nil);
+        });
 }
 
 /**

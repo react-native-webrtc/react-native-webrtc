@@ -4,11 +4,11 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
-@class FileCapturer;
+@class ImageCapturer;
 
-@interface FileCaptureController : CaptureController
+@interface ImageCaptureController : CaptureController
 
-- (instancetype)initWithCapturer:(nonnull FileCapturer *)capturer;
+- (instancetype)initWithCapturer:(nonnull ImageCapturer *)capturer;
 - (void)startCapture;
 - (void)stopCapture;
 
