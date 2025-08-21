@@ -59,7 +59,9 @@
         RTCSetMinDebugLogLevel(loggingSeverity);
 
         if (encoderFactory == nil) {
-            encoderFactory = [[RTCDefaultVideoEncoderFactory alloc] init];
+            RTCDefaultVideoEncoderFactory *videoEncoderFactory = [[RTCDefaultVideoEncoderFactory alloc] init];
+            RTCVideoEncoderFactorySimulcast *simulcastVideoEncoderFactory = [[RTCVideoEncoderFactorySimulcast alloc] initWithPrimary:videoEncoderFactory fallback:videoEncoderFactory];
+            encoderFactory = simulcastVideoEncoderFactory;
         }
         if (decoderFactory == nil) {
             decoderFactory = [[RTCDefaultVideoDecoderFactory alloc] init];
