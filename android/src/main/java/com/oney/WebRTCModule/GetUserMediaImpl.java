@@ -312,9 +312,9 @@ class GetUserMediaImpl {
             return;
         }
 
-        FileCaptureController fileCaptureController = new FileCaptureController(
+        ImageCaptureController imageCaptureController = new ImageCaptureController(
                 reactContext.getCurrentActivity(), assetUri);
-        VideoTrack track = createVideoTrack(fileCaptureController);
+        VideoTrack track = createVideoTrack(imageCaptureController);
 
         if (track == null) {
             promise.reject(new RuntimeException("ScreenTrack is null."));

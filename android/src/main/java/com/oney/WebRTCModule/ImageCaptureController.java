@@ -5,13 +5,13 @@ import android.util.Log;
 import android.net.Uri;
 
 import org.webrtc.VideoCapturer;
-import com.oney.WebRTCModule.FileCapturer;
+import com.oney.WebRTCModule.ImageCapturer;
 
-public class FileCaptureController extends AbstractVideoCaptureController {
+public class ImageCaptureController extends AbstractVideoCaptureController {
     /**
-     * The {@link Log} tag with which {@code FileCaptureController} is to log.
+     * The {@link Log} tag with which {@code ImageCaptureController} is to log.
      */
-    private static final String TAG = FileCaptureController.class.getSimpleName();
+    private static final String TAG = ImageCaptureController.class.getSimpleName();
 
     private static final int DEFAULT_WIDTH = 1;
     private static final int DEFAULT_HEIGHT = 1;
@@ -20,7 +20,7 @@ public class FileCaptureController extends AbstractVideoCaptureController {
     private final Context context;
     private final Uri asset;
 
-    public FileCaptureController(Context context, Uri asset) {
+    public ImageCaptureController(Context context, Uri asset) {
         super(DEFAULT_WIDTH, DEFAULT_HEIGHT, DEFAULT_FPS);
 
         this.context = context;
@@ -29,7 +29,7 @@ public class FileCaptureController extends AbstractVideoCaptureController {
 
     @Override
     public String getDeviceId() {
-        return "file-capture";
+        return "image-capture";
     }
 
     @Override
@@ -40,10 +40,10 @@ public class FileCaptureController extends AbstractVideoCaptureController {
     @Override
     protected VideoCapturer createVideoCapturer() {
         VideoCapturer videoCapturer =
-                new FileCapturer(context, asset, new FileCapturer.FileEventsHandler() {
+                new ImageCapturer(context, asset, new ImageCapturer.ImageEventsHandler() {
                     @Override
                     public void onLoaded(int width, int height) {
-                        Log.w(TAG, "File loaded for track");
+                        Log.w(TAG, "image loaded for track");
                         actualWidth = width;
                         actualHeight = height;
                     }
