@@ -52,20 +52,24 @@ public class ImageLoader {
 
   private void clean() {
     if (stream != null) {
-      stream.close();
+      try {
+        stream.close();
+      } catch (Exception e) {
+        // no-op
+      }
     }
   }
 
   private void fail(final String message) {
+    clean();
     ThreadUtils.runOnExecutor(() -> {
-      clean();
       onFail.fail(message);
     });
   }
 
   private void success(VideoFrame.Buffer image, final int width, final int height) {
+    clean();
     ThreadUtils.runOnExecutor(() -> {
-      clean();
       onSuccess.success(image, width, height);
     });
   }
