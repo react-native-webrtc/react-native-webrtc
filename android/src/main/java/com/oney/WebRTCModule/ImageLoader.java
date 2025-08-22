@@ -210,6 +210,7 @@ public class ImageLoader {
 
     VideoFrame.Buffer cached = cache.retrieve(asset);
     if (cached != null) {
+      cached.retain(); // success releases
       success(cached);
       return;
     }
