@@ -35,7 +35,7 @@ public class BitmapUtils {
     }
   }
 
-  private static VideoFrame.Buffer bufferFromBitmap(Bitmap bitmap) {
+  public static VideoFrame.Buffer bufferFromBitmap(Bitmap bitmap) {
     if (bitmap == null) {
       return null;
     }

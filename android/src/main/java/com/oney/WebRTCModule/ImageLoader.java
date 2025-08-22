@@ -21,9 +21,9 @@ public class ImageLoader {
     void fail(String reason);
   }
 
-  private class Cache {
-    private final HashMap<string, VideoFrame.Buffer> map;
-    private final ArrayList<string> order;
+  private static class Cache {
+    private final HashMap<String, VideoFrame.Buffer> map;
+    private final ArrayList<String> order;
     private final int capacity;
     
     public Cache(final int capacity) {
@@ -38,7 +38,7 @@ public class ImageLoader {
     }
 
     private synchronized boolean maybeHandleExistingItem(final String key, final VideoFrame.Buffer buffer) {
-      VideoFrame.buffer current = map.get(key);
+      VideoFrame.Buffer current = map.get(key);
       if (current == null) {
         return false;
       }
@@ -54,13 +54,13 @@ public class ImageLoader {
     private synchronized void handleKickAndAdd(final String key, final VideoFrame.Buffer buffer) {
       String oldestKey = order.remove(0);
       if (oldestKey != null) {
-        VideoFrame.buffer oldestBuffer = map.remove(oldestKey);
+        VideoFrame.Buffer oldestBuffer = map.remove(oldestKey);
         if (oldestBuffer != null) {
           oldestBuffer.release();
         }
       }
       buffer.retain();
-      map.out(key, buffer);
+      map.put(key, buffer);
       order.add(key);
     }
 
@@ -74,7 +74,7 @@ public class ImageLoader {
         return;
       }
       int currentSize = map.size();
-      if (currentSize = capacity) {
+      if (currentSize == capacity) {
         handleKickAndAdd(key, buffer);
       } else {
         handleAdd(key, buffer);
