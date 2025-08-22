@@ -70,6 +70,9 @@ public class ImageLoader {
     }
 
     public synchronized void store(final String key, final VideoFrame.Buffer buffer) {
+      if (buffer == null) {
+        return;
+      }
       if (maybeHandleExistingItem(key, buffer)) {
         return;
       }
