@@ -337,72 +337,11 @@ class GetUserMediaImpl {
                 }
             },
             (String reason) -> {
-                Log.d(TAG, "buffer failed to laod" + reason);
+                Log.d(TAG, "image loading failed: " + reason);
                 promise.reject(new RuntimeException("Could not load image"));
 
             });
         loader.load();
-
-        // AssetUtils.load(reactContext, asset, new AssetUtils.AssetLoadRresultHandler() {
-        //     @Override
-        //     public void success(VideoFrame.Buffer image, int width, int height) {
-        //         Log.d(TAG, "buffer loaded");
-        //                 ImageCaptureController imageCaptureController = new ImageCaptureController(
-        //         reactContext.getCurrentActivity(), image, width, height);
-        // VideoTrack track = createVideoTrack(imageCaptureController);
-
-        // if (track == null) {
-        //     promise.reject(new RuntimeException("ScreenTrack is null."));
-        // } else {
-        //     createStream(new MediaStreamTrack[] {track}, (streamId, tracksInfo) -> {
-        //         WritableMap data = Arguments.createMap();
-
-        //         data.putString("streamId", streamId);
-
-        //         if (tracksInfo.size() == 0) {
-        //             promise.reject(new RuntimeException("No FileTrackInfo found."));
-        //         } else {
-        //             data.putMap("track", tracksInfo.get(0));
-        //             promise.resolve(data);
-        //         }
-        //     });
-        // }
-        //     }
-        //     @Override
-        //     public void fail(String reason) {
-        //         Log.d(TAG, "buffer failed to laod" + reason);
-        //         promise.reject(new RuntimeException("Could not load image"));
-        //     }
-        // });
-        // Log.d(TAG, "asset: " + asset);
-
-        // Uri assetUri = this.getAssetUri(asset);
-        // if (assetUri == null) {
-        //     promise.reject(new RuntimeException("Could not resolve asset."));
-        //     return;
-        // }
-    }
-
-    private Uri getAssetUri(String asset) {
-        Uri uri = Uri.EMPTY;
-        try {
-            uri = Uri.parse(asset);
-        } finally {
-            // no-op
-        }
-        String scheme = uri.getScheme();
-        if (scheme != null) {
-            scheme = scheme.toLowerCase();
-            if (scheme.equals("res") || scheme.startsWith("http") || scheme.equals("android.resource")) {
-                return uri;
-            }
-        }
-        uri = ResourceDrawableIdHelper.getInstance().getResourceDrawableUri(reactContext, asset);
-        scheme = uri.getScheme();
-        if (scheme != null && scheme.equalsIgnoreCase("res")) {
-            return uri;
-        }
-        return null;
     }
 
     private void createScreenStream() {
