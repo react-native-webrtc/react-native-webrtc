@@ -1,8 +1,8 @@
 package com.oney.WebRTCModule;
 
 import android.content.Context;
-import android.net.Uri;
 import android.graphics.Bitmap;
+import android.net.Uri;
 import androidx.annotation.Nullable;
 import java.io.InputStream;
 import java.net.URL;
@@ -28,6 +28,8 @@ public class ImageLoader {
   private final LoadSuccess onSuccess;
   private final LoadFail onFail;
 
+  private boolean isReadyToLoad;
+
   private @Nullable InputStream stream;
   private @Nullable Bitmap bitmap;
 
@@ -48,9 +50,11 @@ public class ImageLoader {
     this.asset = asset;
     this.onSuccess = onSuccess;
     this.onFail = onFail;
+    this.isReadyToLoad = true;
   }
 
-  private void clean() {
+  private void resolved() {
+    this.isReadyToLoad = true;
     if (stream != null) {
       try {
         stream.close();
@@ -61,14 +65,14 @@ public class ImageLoader {
   }
 
   private void fail(final String message) {
-    clean();
+    resolved();
     ThreadUtils.runOnExecutor(() -> {
       onFail.fail(message);
     });
   }
 
   private void success(VideoFrame.Buffer image, final int width, final int height) {
-    clean();
+    resolved();
     ThreadUtils.runOnExecutor(() -> {
       onSuccess.success(image, width, height);
     });
@@ -124,7 +128,11 @@ public class ImageLoader {
     });
   }
 
-  public void load() {
+  public synchronized void load() {
+    if (!this.isReadyToLoad) {
+      return;
+    }
+    this.isReadyToLoad = false;
     Uri uri = AssetUtils.assetStringToUri(context, asset);
     String scheme = AssetUtils.getAssetUriScheme(uri);
     if (scheme.startsWith(HTTP_SCHEME)) {
