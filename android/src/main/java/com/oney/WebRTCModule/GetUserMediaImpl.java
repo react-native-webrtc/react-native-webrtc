@@ -313,10 +313,10 @@ class GetUserMediaImpl {
         ImageLoader loader = new ImageLoader(
             reactContext,
             asset,
-            (VideoFrame.Buffer image, int width, int height) -> {
+            (VideoFrame.Buffer image) -> {
                 Log.d(TAG, "buffer loaded");
                 ImageCaptureController imageCaptureController = new ImageCaptureController(
-                    reactContext.getCurrentActivity(), image, width, height);
+                    reactContext.getCurrentActivity(), image, image.getWidth(), image.getHeight());
                 VideoTrack track = createVideoTrack(imageCaptureController);
 
                 if (track == null) {

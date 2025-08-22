@@ -6,22 +6,92 @@ import android.net.Uri;
 import androidx.annotation.Nullable;
 import java.io.InputStream;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.concurrent.Executors;
+import java.util.HashMap;
 import org.webrtc.VideoFrame;
 
 public class ImageLoader {
   @FunctionalInterface
   public interface LoadSuccess {
-    void success(VideoFrame.Buffer image, int width, int height);
+    void success(VideoFrame.Buffer image);
   }
   @FunctionalInterface
   public interface LoadFail {
     void fail(String reason);
   }
 
+  private class Cache {
+    private final HashMap<string, VideoFrame.Buffer> map;
+    private final ArrayList<string> order;
+    private final int capacity;
+    
+    public Cache(final int capacity) {
+      this.map = new HashMap<>(capacity);
+      this.order = new ArrayList<>(capacity);
+      this.capacity = capacity;
+    }
+
+    private synchronized void shiftKeyToEnd(final String key) {
+      order.remove(key);
+      order.add(key);
+    }
+
+    private synchronized boolean maybeHandleExistingItem(final String key, final VideoFrame.Buffer buffer) {
+      VideoFrame.buffer current = map.get(key);
+      if (current == null) {
+        return false;
+      }
+      shiftKeyToEnd(key);
+      if (current != buffer) {
+        current.release();
+        buffer.retain();
+        map.put(key, buffer);
+      }
+      return true;
+    }
+
+    private synchronized void handleKickAndAdd(final String key, final VideoFrame.Buffer buffer) {
+      String oldestKey = order.remove(0);
+      if (oldestKey != null) {
+        VideoFrame.buffer oldestBuffer = map.remove(oldestKey);
+        if (oldestBuffer != null) {
+          oldestBuffer.release();
+        }
+      }
+      buffer.retain();
+      map.out(key, buffer);
+      order.add(key);
+    }
+
+    private synchronized void handleAdd(final String key, final VideoFrame.Buffer buffer) {
+      buffer.retain();
+      map.put(key, buffer);
+    }
+
+    public synchronized void store(final String key, final VideoFrame.Buffer buffer) {
+      if (maybeHandleExistingItem(key, buffer)) {
+        return;
+      }
+      int currentSize = map.size();
+      if (currentSize = capacity) {
+        handleKickAndAdd(key, buffer);
+      } else {
+        handleAdd(key, buffer);
+      }
+    }
+
+    public synchronized @Nullable VideoFrame.Buffer retrieve(final String key) {
+      return map.get(key);
+    }
+  }
+
   private static final String RESOURCE_SCHEME = "res";
   private static final String ANDROID_RESOURCE_SCHEME = "android.resource";
   private static final String HTTP_SCHEME = "http";
+  private static final int CACHE_CAPACITY = 5;
+
+  private static final Cache cache = new Cache(CACHE_CAPACITY);
 
   private final Context context;
   private final String asset;
@@ -71,10 +141,10 @@ public class ImageLoader {
     });
   }
 
-  private void success(VideoFrame.Buffer image, final int width, final int height) {
+  private void success(VideoFrame.Buffer image) {
     resolved();
     ThreadUtils.runOnExecutor(() -> {
-      onSuccess.success(image, width, height);
+      onSuccess.success(image);
     });
   }
 
@@ -98,10 +168,9 @@ public class ImageLoader {
       fail("could not convert bitmap to buffer");
       return;
     }
-    int height = bitmap.getHeight();
-    int width = bitmap.getWidth();
     bitmap.recycle();
-    success(buffer, width, height);
+    cache.store(asset, buffer);
+    success(buffer);
   }
 
   private void loadHttp(final Uri uri) {
@@ -133,6 +202,12 @@ public class ImageLoader {
       return;
     }
     this.isReadyToLoad = false;
+
+    VideoFrame.Buffer cached = cache.retrieve(asset);
+    if (cached != null) {
+      success(cached);
+      return;
+    }
     Uri uri = AssetUtils.assetStringToUri(context, asset);
     String scheme = AssetUtils.getAssetUriScheme(uri);
     if (scheme.startsWith(HTTP_SCHEME)) {
