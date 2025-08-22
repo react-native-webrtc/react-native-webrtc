@@ -60,12 +60,13 @@ public class ImageLoader {
           oldestBuffer.release();
         }
       }
-      map.put(key, buffer);
       order.add(key);
+      map.put(key, buffer);
     }
 
     private synchronized void handleAdd(final String key, final VideoFrame.Buffer buffer) {
       buffer.retain();
+      order.add(key);
       map.put(key, buffer);
     }
 
