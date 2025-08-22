@@ -7,37 +7,6 @@ import java.nio.ByteBuffer;
 import org.webrtc.JavaI420Buffer;
 import org.webrtc.VideoFrame;
 import org.webrtc.YuvHelper;
-import org.webrtc.EglBase;
-import org.webrtc.YuvConverter;
-
-import android.opengl.GLES20;
-import android.opengl.GLUtils;
-import android.os.Handler;
-import android.os.Looper;
-
-import android.graphics.Matrix;
-import org.webrtc.VideoFrame.TextureBuffer;
-import org.webrtc.TextureBufferImpl;
-
-import android.graphics.Canvas;
-import android.graphics.SurfaceTexture;
-import android.os.HandlerThread;
-import android.view.Surface;
-import org.webrtc.SurfaceTextureHelper;
-import org.webrtc.VideoSink;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
-
-import android.annotation.TargetApi;
-import android.opengl.GLES11Ext;
-import android.os.Build;
-import androidx.annotation.Nullable;
-import java.util.concurrent.Callable;
-import org.webrtc.EglBase.Context;
-// import org.webrtc.TextureBufferImpl.RefCountMonitor;
-import org.webrtc.RendererCommon;
-
-import android.util.Log;
 
 public class BitmapUtils {
   private static final float AVAILABLE_MEMORY_ADJUSTMENT_RATIO = 0.8f;
@@ -55,7 +24,6 @@ public class BitmapUtils {
     long freeMemory = Runtime.getRuntime().freeMemory();
     long availableMemory = maxMemory - totalMemory + freeMemory;
     long requiredMemory = (strideY * height) + 2 * (strideUV * ((height + 1) / 2)) + (width * height * 4);
-    Log.d("asdf", width + " " + height + " " + strideUV + " " + maxMemory + " " + totalMemory + " " + freeMemory + " " + availableMemory + " " + requiredMemory);
     return requiredMemory < availableMemory * AVAILABLE_MEMORY_ADJUSTMENT_RATIO;
   }
 
