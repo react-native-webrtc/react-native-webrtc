@@ -44,6 +44,7 @@ public class ImageLoader {
       }
       shiftKeyToEnd(key);
       if (current != buffer) {
+        buffer.retain();
         current.release();
         map.put(key, buffer);
       }
@@ -52,6 +53,7 @@ public class ImageLoader {
 
     private synchronized void handleKickAndAdd(final String key, final VideoFrame.Buffer buffer) {
       String oldestKey = order.remove(0);
+      buffer.retain();
       if (oldestKey != null) {
         VideoFrame.Buffer oldestBuffer = map.remove(oldestKey);
         if (oldestBuffer != null) {
@@ -63,6 +65,7 @@ public class ImageLoader {
     }
 
     private synchronized void handleAdd(final String key, final VideoFrame.Buffer buffer) {
+      buffer.retain();
       map.put(key, buffer);
     }
 
@@ -145,6 +148,7 @@ public class ImageLoader {
     resolved();
     ThreadUtils.runOnExecutor(() -> {
       onSuccess.success(image);
+      image.release();
     });
   }
 

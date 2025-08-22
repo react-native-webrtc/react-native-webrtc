@@ -56,6 +56,7 @@ public class ImageCapturer implements VideoCapturer {
         this.startTimeStampNs = -1;
         this.isBursting = false;
         this.timer = new Timer();
+        image.retain();
     }
 
     @Override
