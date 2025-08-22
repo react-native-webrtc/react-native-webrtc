@@ -39,23 +39,26 @@ public class BitmapUtils {
     if (bitmap == null) {
       return null;
     }
+    try {
+      int width = bitmap.getWidth();
+      int height = bitmap.getHeight();
+      int strideY = width;
+      int strideUV = (width + 1) / 2;
 
-    int width = bitmap.getWidth();
-    int height = bitmap.getHeight();
-    int strideY = width;
-    int strideUV = (width + 1) / 2;
+      ByteBuffer dataY = ByteBuffer.allocateDirect(strideY * height);
+      ByteBuffer dataU = ByteBuffer.allocateDirect(strideUV * ((height + 1) / 2));
+      ByteBuffer dataV = ByteBuffer.allocateDirect(strideUV * ((height + 1) / 2));
 
-    ByteBuffer dataY = ByteBuffer.allocateDirect(strideY * height);
-    ByteBuffer dataU = ByteBuffer.allocateDirect(strideUV * ((height + 1) / 2));
-    ByteBuffer dataV = ByteBuffer.allocateDirect(strideUV * ((height + 1) / 2));
+      ByteBuffer rgbaBuffer = ByteBuffer.allocateDirect(width * height * 4);
+      bitmap.copyPixelsToBuffer(rgbaBuffer);
+      rgbaBuffer.rewind();
 
-    ByteBuffer rgbaBuffer = ByteBuffer.allocateDirect(width * height * 4);
-    bitmap.copyPixelsToBuffer(rgbaBuffer);
-    rgbaBuffer.rewind();
+      YuvHelper.ABGRToI420(rgbaBuffer, width * 4, dataY, strideY, dataU, strideUV, dataV, strideUV, width, height);
+      rgbaBuffer.clear();
 
-    YuvHelper.ABGRToI420(rgbaBuffer, width * 4, dataY, strideY, dataU, strideUV, dataV, strideUV, width, height);
-    rgbaBuffer.clear();
-
-    return JavaI420Buffer.wrap(width, height, dataY, strideY, dataU, strideUV, dataV, strideUV, null);
+      return JavaI420Buffer.wrap(width, height, dataY, strideY, dataU, strideUV, dataV, strideUV, null);
+    } catch (Exception e) {
+      return null;
+    }
   }
 }

@@ -163,9 +163,8 @@ public class ImageLoader {
       fail("could not convert stream to bitmap");
       return;
     }
-    // TODO: move into bufferFromBitmap, log it
     if (!BitmapUtils.hasEnoughMemoryToConvert(bitmap)) {
-      fail("not enough memory to handle bitmap");
+      fail("not enough memory to handle asset");
       return;
     }
     VideoFrame.Buffer buffer = BitmapUtils.bufferFromBitmap(bitmap);

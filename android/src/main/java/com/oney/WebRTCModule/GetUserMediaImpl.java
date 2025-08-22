@@ -337,8 +337,8 @@ class GetUserMediaImpl {
                 }
             },
             (String reason) -> {
-                Log.d(TAG, "image loading failed: " + reason);
-                promise.reject(new RuntimeException("Could not load image"));
+                Log.d(TAG, "image loading for (" + asset + ") failed: " + reason);
+                promise.reject(new RuntimeException("Could not load image: " + reason));
 
             });
         loader.load();
