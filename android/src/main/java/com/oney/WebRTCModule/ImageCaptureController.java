@@ -5,6 +5,7 @@ import android.util.Log;
 import android.net.Uri;
 
 import org.webrtc.VideoCapturer;
+import org.webrtc.VideoFrame;
 import com.oney.WebRTCModule.ImageCapturer;
 
 public class ImageCaptureController extends AbstractVideoCaptureController {
@@ -13,18 +14,16 @@ public class ImageCaptureController extends AbstractVideoCaptureController {
      */
     private static final String TAG = ImageCaptureController.class.getSimpleName();
 
-    private static final int DEFAULT_WIDTH = 1;
-    private static final int DEFAULT_HEIGHT = 1;
     private static final int DEFAULT_FPS = 1;
 
     private final Context context;
-    private final Uri asset;
+    private final VideoFrame.Buffer image;
 
-    public ImageCaptureController(Context context, Uri asset) {
-        super(DEFAULT_WIDTH, DEFAULT_HEIGHT, DEFAULT_FPS);
+    public ImageCaptureController(Context context, VideoFrame.Buffer image, int width, int height) {
+        super(width, height, DEFAULT_FPS);
 
         this.context = context;
-        this.asset = asset;
+        this.image = image;
     }
 
     @Override
@@ -39,16 +38,7 @@ public class ImageCaptureController extends AbstractVideoCaptureController {
 
     @Override
     protected VideoCapturer createVideoCapturer() {
-        VideoCapturer videoCapturer =
-                new ImageCapturer(context, asset, new ImageCapturer.ImageEventsHandler() {
-                    @Override
-                    public void onLoaded(int width, int height) {
-                        Log.w(TAG, "image loaded for track");
-                        actualWidth = width;
-                        actualHeight = height;
-                    }
-                });
-
+        VideoCapturer videoCapturer = new ImageCapturer(context, image);
         return videoCapturer;
     }
 }

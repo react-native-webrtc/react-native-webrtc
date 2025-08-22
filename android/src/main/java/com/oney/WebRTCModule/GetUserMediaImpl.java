@@ -306,14 +306,12 @@ class GetUserMediaImpl {
             return;
         }
 
-        Uri assetUri = this.getAssetUri(asset);
-        if (assetUri == null) {
-            promise.reject(new RuntimeException("Could not resolve asset."));
-            return;
-        }
-
-        ImageCaptureController imageCaptureController = new ImageCaptureController(
-                reactContext.getCurrentActivity(), assetUri);
+        AssetUtils.load(reactContext, asset, new AssetUtils.AssetLoadRresultHandler() {
+            @Override
+            public void success(VideoFrame.Buffer image, int width, int height) {
+                Log.d(TAG, "buffer loaded");
+                        ImageCaptureController imageCaptureController = new ImageCaptureController(
+                reactContext.getCurrentActivity(), image, width, height);
         VideoTrack track = createVideoTrack(imageCaptureController);
 
         if (track == null) {
@@ -331,6 +329,20 @@ class GetUserMediaImpl {
                     promise.resolve(data);
                 }
             });
+        }
+            }
+            @Override
+            public void fail(String reason) {
+                Log.d(TAG, "buffer failed to laod" + reason);
+                promise.reject(new RuntimeException("Could not load image"));
+            }
+        });
+        Log.d(TAG, "asset: " + asset);
+
+        Uri assetUri = this.getAssetUri(asset);
+        if (assetUri == null) {
+            promise.reject(new RuntimeException("Could not resolve asset."));
+            return;
         }
     }
 
