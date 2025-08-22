@@ -7,6 +7,35 @@ import java.nio.ByteBuffer;
 import org.webrtc.JavaI420Buffer;
 import org.webrtc.VideoFrame;
 import org.webrtc.YuvHelper;
+import org.webrtc.EglBase;
+import org.webrtc.YuvConverter;
+
+import android.opengl.GLES20;
+import android.opengl.GLUtils;
+import android.os.Handler;
+import android.os.Looper;
+
+import android.graphics.Matrix;
+import org.webrtc.VideoFrame.TextureBuffer;
+import org.webrtc.TextureBufferImpl;
+
+import android.graphics.Canvas;
+import android.graphics.SurfaceTexture;
+import android.os.HandlerThread;
+import android.view.Surface;
+import org.webrtc.SurfaceTextureHelper;
+import org.webrtc.VideoSink;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+
+import android.annotation.TargetApi;
+import android.opengl.GLES11Ext;
+import android.os.Build;
+import androidx.annotation.Nullable;
+import java.util.concurrent.Callable;
+import org.webrtc.EglBase.Context;
+// import org.webrtc.TextureBufferImpl.RefCountMonitor;
+import org.webrtc.RendererCommon;
 
 import android.util.Log;
 
@@ -39,6 +68,61 @@ public class BitmapUtils {
   }
 
   public static VideoFrame.Buffer bufferFromBitmap(Bitmap bitmap) {
+          return bufferFromBitmapSoftware(bitmap);
+
+    // EglBase.Context eglContext = EglUtils.getRootEglBaseContext();
+    // if (eglContext == null) {
+    //   return bufferFromBitmapSoftware(bitmap);
+    // } else {
+    //   return bufferFromBitmapGpu(bitmap, eglContext);
+    // }
+  }
+
+//   private static VideoFrame.Buffer bufferFromBitmapGpu(Bitmap bitmap, EglBase.Context eglBase) {
+//     if (bitmap == null || bitmap.isRecycled()) {
+//         return null;
+//     }
+
+//     this.handler = handler; // current thread looper
+//     // this.timestampAligner = alignTimestamps ? new TimestampAligner() : null;
+//     this.yuvConverter = yuvConverter; // new
+//     // this.frameRefMonitor = frameRefMonitor;
+
+//     eglBase = EglBase.create(sharedContext, EglBase.CONFIG_PIXEL_BUFFER);
+//     try {
+//       // Both these statements have been observed to fail on rare occasions, see BUG=webrtc:5682.
+//       eglBase.createDummyPbufferSurface();
+//       eglBase.makeCurrent();
+//     } catch (RuntimeException e) {
+//       // Clean up before rethrowing the exception.
+//       eglBase.release();
+//       // handler.getLooper().quit();
+//       return null;
+//     }
+
+//     oesTextureId = GlUtil.generateTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES);
+//     surfaceTexture = new SurfaceTexture(oesTextureId);
+//     surfaceTexture.setDefaultBufferSize(bitmap.getWidth(), bitmap.getHeight());
+
+//     // paint texture
+//     Surface surface = new Surface(surfaceTexture);
+//     Canvas canvas = surface.lockCanvas(null);
+//     try {
+//       canvas.drawBitmap(bitmap, 0, 0, null);
+//     } finally {
+//       surface.unlockCanvasAndPost(canvas);
+//       surface.release();
+//     }
+
+//        final float[] transformMatrix = new float[16];
+//     surfaceTexture.getTransformMatrix(transformMatrix);
+
+//     final VideoFrame.TextureBuffer buffer = new TextureBufferImpl(textureWidth, textureHeight, TextureBuffer.Type.OES, oesTextureId,
+//             RendererCommon.convertMatrixToAndroidGraphicsMatrix(transformMatrix), handler,
+//             yuvConverter, textureRefCountMonitor)
+// }
+
+  private static VideoFrame.Buffer bufferFromBitmapSoftware(Bitmap bitmap) {
     if (bitmap == null) {
       return null;
     }
