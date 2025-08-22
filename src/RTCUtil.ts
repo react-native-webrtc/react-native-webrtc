@@ -167,7 +167,7 @@ export function isSdpTypeValid(type: string): boolean {
 export function normalizeOfferOptions(options?: RTCOfferOptions) {
     const newOptions: Record<string,string> = {};
 
-    if (typeof options !== 'object') {
+    if (!options || typeof options !== 'object') {
         return newOptions;
     }
 
