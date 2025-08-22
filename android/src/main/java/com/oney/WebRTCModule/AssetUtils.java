@@ -2,12 +2,10 @@ package com.oney.WebRTCModule;
 
 import android.content.Context;
 import android.net.Uri;
-import java.util.List;
 import com.facebook.react.views.imagehelper.ResourceDrawableIdHelper;
+import java.util.List;
 
 public class AssetUtils {
-  private static final String TAG = AssetUtils.class.getSimpleName();
-
   public static final int INVALID_RESOURCE_ID = 0;
 
   public static Uri assetStringToUri(final Context context, final String asset) {
@@ -33,10 +31,10 @@ public class AssetUtils {
   }
 
   public static int getAssetResourceId(final Context context, final Uri uri) {
-    List<String> pieces = uri.getPathSegments();
+    final List<String> pieces = uri.getPathSegments();
     if (pieces.size() == 1) {
       try {
-        int id = Integer.parseInt(pieces.get(0));
+        final int id = Integer.parseInt(pieces.get(0));
         return id;
       }
       catch (NumberFormatException e) {

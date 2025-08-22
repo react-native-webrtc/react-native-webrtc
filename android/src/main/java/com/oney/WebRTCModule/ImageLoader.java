@@ -38,7 +38,7 @@ public class ImageLoader {
     }
 
     private synchronized boolean maybeHandleExistingItem(final String key, final VideoFrame.Buffer buffer) {
-      VideoFrame.Buffer current = map.get(key);
+      final VideoFrame.Buffer current = map.get(key);
       if (current == null) {
         return false;
       }
@@ -52,10 +52,10 @@ public class ImageLoader {
     }
 
     private synchronized void handleKickAndAdd(final String key, final VideoFrame.Buffer buffer) {
-      String oldestKey = order.remove(0);
+      final String oldestKey = order.remove(0);
       buffer.retain();
       if (oldestKey != null) {
-        VideoFrame.Buffer oldestBuffer = map.remove(oldestKey);
+        final VideoFrame.Buffer oldestBuffer = map.remove(oldestKey);
         if (oldestBuffer != null) {
           oldestBuffer.release();
         }
@@ -77,7 +77,7 @@ public class ImageLoader {
       if (maybeHandleExistingItem(key, buffer)) {
         return;
       }
-      int currentSize = map.size();
+      final int currentSize = map.size();
       if (currentSize == capacity) {
         handleKickAndAdd(key, buffer);
       } else {
@@ -93,7 +93,7 @@ public class ImageLoader {
   private static final String RESOURCE_SCHEME = "res";
   private static final String ANDROID_RESOURCE_SCHEME = "android.resource";
   private static final String HTTP_SCHEME = "http";
-  private static final int CACHE_CAPACITY = 5;
+  private static final int CACHE_CAPACITY = 3;
 
   private static final Cache cache = new Cache(CACHE_CAPACITY);
 
@@ -103,7 +103,6 @@ public class ImageLoader {
   private final LoadFail onFail;
 
   private boolean isReadyToLoad;
-
   private @Nullable InputStream stream;
   private @Nullable Bitmap bitmap;
 
@@ -167,7 +166,7 @@ public class ImageLoader {
       fail("not enough memory to handle asset");
       return;
     }
-    VideoFrame.Buffer buffer = BitmapUtils.bufferFromBitmap(bitmap);
+    final VideoFrame.Buffer buffer = BitmapUtils.bufferFromBitmap(bitmap);
     if (buffer == null) {
       fail("could not convert bitmap to buffer");
       return;
@@ -180,7 +179,7 @@ public class ImageLoader {
   private void loadHttp(final Uri uri) {
     Executors.newSingleThreadExecutor().execute(() -> {
       try {
-        URL url = new URL(uri.toString());
+        final URL url = new URL(uri.toString());
         stream = url.openStream();
         streamToFrame();
       } catch (Exception e) {
@@ -191,7 +190,7 @@ public class ImageLoader {
 
   private void loadResrouce(final Uri uri) {
     Executors.newSingleThreadExecutor().execute(() -> {
-      int id = AssetUtils.getAssetResourceId(context, uri);
+      final int id = AssetUtils.getAssetResourceId(context, uri);
       try {
         stream = context.getResources().openRawResource(id);
         streamToFrame();
@@ -207,14 +206,14 @@ public class ImageLoader {
     }
     this.isReadyToLoad = false;
 
-    VideoFrame.Buffer cached = cache.retrieve(asset);
+    final VideoFrame.Buffer cached = cache.retrieve(asset);
     if (cached != null) {
       cached.retain(); // success releases
       success(cached);
       return;
     }
-    Uri uri = AssetUtils.assetStringToUri(context, asset);
-    String scheme = AssetUtils.getAssetUriScheme(uri);
+    final Uri uri = AssetUtils.assetStringToUri(context, asset);
+    final String scheme = AssetUtils.getAssetUriScheme(uri);
     if (scheme.startsWith(HTTP_SCHEME)) {
       loadHttp(uri);
     } else if (scheme.equals(RESOURCE_SCHEME) || scheme.equals(ANDROID_RESOURCE_SCHEME)) {

@@ -1,23 +1,12 @@
 package com.oney.WebRTCModule;
 
 import android.content.Context;
+import android.os.Handler;
 import android.util.Log;
 import androidx.annotation.Nullable;
-import android.net.Uri;
-import java.util.concurrent.Executors;
 import java.util.Timer;
 import java.util.TimerTask;
-import java.util.concurrent.TimeUnit;
 import java.lang.Thread;
-import java.nio.ByteBuffer;
-import android.os.Handler;
-import java.net.URL;
-import java.io.InputStream;
-import java.util.List;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
-
-import org.webrtc.JavaI420Buffer;
 import org.webrtc.VideoFrame;
 import org.webrtc.VideoCapturer;
 import org.webrtc.CapturerObserver;
@@ -33,20 +22,15 @@ public class ImageCapturer implements VideoCapturer {
     private static final long STEADY_INTERVAL = 1500L;
     private static final long BURST_DURATION = 3L * NSEC_PER_SEC;
 
-    private static final String RESOURCE_SCHEME = "res";
-    private static final String ANDROID_RESOURCE_SCHEME = "android.resource";
-    private static final String HTTP_SCHEME = "http";
-    private static final int INVALID_RESOURCE_ID = 0;
-
     private final Context context;
+    private final VideoFrame.Buffer image;
     @Nullable private CapturerObserver capturerObserver;
+    @Nullable private Handler threadHandler;
     private boolean isDisposed;
     private boolean isActive;
     private long startTimeStampNs;
     private boolean isBursting;
-    private final VideoFrame.Buffer image;
     private Timer timer;
-    @Nullable private Handler threadHandler;
 
     public ImageCapturer(final Context context, final VideoFrame.Buffer image) {
         this.context = context;
@@ -71,7 +55,6 @@ public class ImageCapturer implements VideoCapturer {
 
     @Override
     public synchronized void startCapture(int width, int height, int framerate) {
-        Log.d(TAG, "startCapture");
         isActive = true;
         startRenderLoop();
         if (capturerObserver != null) {
@@ -81,7 +64,6 @@ public class ImageCapturer implements VideoCapturer {
 
     @Override
     public synchronized void stopCapture() throws InterruptedException {
-        Log.d(TAG, "stopCapture");
         isActive = false;
         timer.cancel();
         if (capturerObserver != null) {
@@ -96,7 +78,6 @@ public class ImageCapturer implements VideoCapturer {
 
     @Override
     public synchronized void dispose() {
-        Log.d(TAG, "dispose");
         isDisposed = true;
         isActive = false;
         timer.cancel();
@@ -114,7 +95,6 @@ public class ImageCapturer implements VideoCapturer {
     }
 
     private synchronized boolean startTimer(long interval) {
-        Log.d(TAG, "startTimer");
         timer.cancel();
         timer = new Timer();
         try {
@@ -126,13 +106,12 @@ public class ImageCapturer implements VideoCapturer {
             }, interval, interval);
             return true;
         } catch (Exception e) {
-            Log.w(TAG, "could not start timer" + e.toString());
+            Log.w(TAG, "could not start timer: " + e.toString());
             return false;
         }
     }
 
     private synchronized void startRenderLoop() {
-        Log.d(TAG, "startRenderLoop");
         if (isDisposed || !isActive) {
             return;
         }
@@ -154,7 +133,6 @@ public class ImageCapturer implements VideoCapturer {
     }
 
     private void render() {
-        Log.d(TAG, "render");
         if (isDisposed || !isActive) {
             return;
         }

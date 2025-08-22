@@ -33,9 +33,6 @@ import java.util.Objects;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-import com.facebook.react.views.imagehelper.ResourceDrawableIdHelper;
-import android.net.Uri;
-
 /**
  * The implementation of {@code getUserMedia} extracted into a separate file in
  * order to reduce complexity and to (somewhat) separate concerns.
@@ -314,7 +311,7 @@ class GetUserMediaImpl {
             reactContext,
             asset,
             (VideoFrame.Buffer image) -> {
-                Log.d(TAG, "buffer loaded");
+                Log.d(TAG, "image (" + asset + ") loaded");
                 ImageCaptureController imageCaptureController = new ImageCaptureController(
                     reactContext.getCurrentActivity(), image, image.getWidth(), image.getHeight());
                 VideoTrack track = createVideoTrack(imageCaptureController);
@@ -337,7 +334,7 @@ class GetUserMediaImpl {
                 }
             },
             (String reason) -> {
-                Log.d(TAG, "image loading for (" + asset + ") failed: " + reason);
+                Log.d(TAG, "image (" + asset + ") failed loading: " + reason);
                 promise.reject(new RuntimeException("Could not load image: " + reason));
 
             });
