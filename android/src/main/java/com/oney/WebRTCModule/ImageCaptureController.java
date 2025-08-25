@@ -38,8 +38,6 @@ public class ImageCaptureController extends AbstractVideoCaptureController {
 
     @Override
     protected VideoCapturer createVideoCapturer() {
-        VideoCapturer videoCapturer = new ImageCapturer(context, image);
-        return videoCapturer;
         return new ImageCapturer(context, image);
     }
 }
