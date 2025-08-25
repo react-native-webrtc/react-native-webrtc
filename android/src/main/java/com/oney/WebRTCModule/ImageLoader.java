@@ -27,6 +27,9 @@ public class ImageLoader {
     private final int capacity;
     
     public Cache(final int capacity) {
+      if (capacity <= 0) {
+        throw new IllegalArgumentException("capacity must be 1 or greater");
+      }
       this.map = new HashMap<>(capacity);
       this.order = new ArrayList<>(capacity);
       this.capacity = capacity;
@@ -86,7 +89,11 @@ public class ImageLoader {
     }
 
     public synchronized @Nullable VideoFrame.Buffer retrieve(final String key) {
-      return map.get(key);
+      VideoFrame.Buffer buffer = map.get(key);
+      if (buffer != null) {
+        buffer.retain();
+      }
+      return buffer;
     }
   }
 
@@ -128,9 +135,24 @@ public class ImageLoader {
 
   private void resolved() {
     this.isReadyToLoad = true;
+    closeStream();
+    recycleBitmap();
+  }
+
+  private void closeStream() {
     if (stream != null) {
       try {
         stream.close();
+      } catch (Exception e) {
+        // no-op
+      }
+    }
+  }
+
+  private void recycleBitmap() {
+    if (bitmap != null && !bitmap.recycled()) {
+      try {
+        bitmap.recycle();
       } catch (Exception e) {
         // no-op
       }
@@ -158,6 +180,7 @@ public class ImageLoader {
       return;
     }
     bitmap = BitmapUtils.bitmapFromStream(stream);
+    closeStream();
     if (bitmap == null) {
       fail("could not convert stream to bitmap");
       return;
@@ -167,11 +190,11 @@ public class ImageLoader {
       return;
     }
     final VideoFrame.Buffer buffer = BitmapUtils.bufferFromBitmap(bitmap);
+    recycleBitmap();
     if (buffer == null) {
       fail("could not convert bitmap to buffer");
       return;
     }
-    bitmap.recycle();
     cache.store(asset, buffer);
     success(buffer);
   }
@@ -208,7 +231,6 @@ public class ImageLoader {
 
     final VideoFrame.Buffer cached = cache.retrieve(asset);
     if (cached != null) {
-      cached.retain(); // success releases
       success(cached);
       return;
     }
