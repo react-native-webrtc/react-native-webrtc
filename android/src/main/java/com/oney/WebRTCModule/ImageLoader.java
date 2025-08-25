@@ -20,6 +20,10 @@ public class ImageLoader {
   public interface LoadFail {
     void fail(String reason);
   }
+  @FunctionalInterface
+  public interface ThrowingSupplier<T> {
+      T get() throws Exception;
+  }
 
   private static class Cache {
     private final HashMap<String, VideoFrame.Buffer> map;
@@ -97,6 +101,51 @@ public class ImageLoader {
     }
   }
 
+  private static class Util {
+    private static void closeStream(final @Nullable InputStream stream) {
+      if (stream != null) {
+        try {
+          stream.close();
+        } catch (Exception e) {
+          // no-op
+        }
+      }
+    }
+    private static void recycleBitmap(final @Nullable Bitmap bitmap) {
+      if (bitmap != null && !bitmap.isRecycled()) {
+        try {
+          bitmap.recycle();
+        } catch (Exception e) {
+          // no-op
+        }
+      }
+    }
+    private static @Nullable VideoFrame.Buffer getFrameBufferAndRecycleBitmap(final Bitmap bitmap) {
+      VideoFrame.Buffer buffer = null;
+      try {
+        buffer = BitmapUtils.bufferFromBitmap(bitmap);
+      } catch (Exception e) {
+        e.printStackTrace();
+      } finally {
+        Util.recycleBitmap(bitmap);
+        return buffer;
+      }
+    }
+    private static @Nullable Bitmap getBitmapAndCloseStream(final ThrowingSupplier<InputStream> streamSupplier) {
+      InputStream stream = null;
+      Bitmap bitmap = null;
+      try {
+        stream = streamSupplier.get();
+        bitmap = BitmapUtils.bitmapFromStream(stream);
+      } catch (Exception e) {
+        e.printStackTrace();
+      } finally {
+        Util.closeStream(stream);
+        return bitmap;
+      }
+    }
+  }
+
   private static final String RESOURCE_SCHEME = "res";
   private static final String ANDROID_RESOURCE_SCHEME = "android.resource";
   private static final String HTTP_SCHEME = "http";
@@ -110,8 +159,6 @@ public class ImageLoader {
   private final LoadFail onFail;
 
   private boolean isReadyToLoad;
-  private @Nullable InputStream stream;
-  private @Nullable Bitmap bitmap;
 
   public ImageLoader(final Context context, final String asset, final LoadSuccess onSuccess, final LoadFail onFail) {
     if (context == null) {
@@ -133,107 +180,60 @@ public class ImageLoader {
     this.isReadyToLoad = true;
   }
 
-  private void resolved() {
+  private synchronized void fail(final String message) {
     this.isReadyToLoad = true;
-    closeStream();
-    recycleBitmap();
-  }
-
-  private void closeStream() {
-    if (stream != null) {
-      try {
-        stream.close();
-      } catch (Exception e) {
-        // no-op
-      }
-    }
-  }
-
-  private void recycleBitmap() {
-    if (bitmap != null && !bitmap.recycled()) {
-      try {
-        bitmap.recycle();
-      } catch (Exception e) {
-        // no-op
-      }
-    }
-  }
-
-  private void fail(final String message) {
-    resolved();
     ThreadUtils.runOnExecutor(() -> {
       onFail.fail(message);
     });
   }
 
-  private void success(VideoFrame.Buffer image) {
-    resolved();
+  private synchronized void success(VideoFrame.Buffer image) {
+    this.isReadyToLoad = true;
     ThreadUtils.runOnExecutor(() -> {
       onSuccess.success(image);
       image.release();
     });
   }
 
-  private void streamToFrame() {
-    if (stream == null) {
-      fail("no asset stream");
-      return;
-    }
-    bitmap = BitmapUtils.bitmapFromStream(stream);
-    closeStream();
-    if (bitmap == null) {
-      fail("could not convert stream to bitmap");
-      return;
-    }
-    if (!BitmapUtils.hasEnoughMemoryToConvert(bitmap)) {
-      fail("not enough memory to handle asset");
-      return;
-    }
-    final VideoFrame.Buffer buffer = BitmapUtils.bufferFromBitmap(bitmap);
-    recycleBitmap();
-    if (buffer == null) {
-      fail("could not convert bitmap to buffer");
-      return;
-    }
-    cache.store(asset, buffer);
-    success(buffer);
+  private void loadAsset(final ThrowingSupplier<InputStream> streamSupplier, final String streamSupplierFailureMessage) {
+    Executors.newSingleThreadExecutor().execute(() -> {
+      final Bitmap bitmap;
+      final VideoFrame.Buffer buffer;
+      bitmap = Util.getBitmapAndCloseStream(streamSupplier);
+      if (bitmap == null) {
+        fail(streamSupplierFailureMessage);
+        return;
+      }
+      if (!BitmapUtils.hasEnoughMemoryToConvert(bitmap)) {
+        Util.recycleBitmap(bitmap);
+        fail("not enough memory to handle asset");
+        return;
+      }
+      buffer = Util.getFrameBufferAndRecycleBitmap(bitmap);
+      if (buffer == null) {
+        fail("could not convert bitmap to buffer");
+        return;
+      }
+      cache.store(asset, buffer);
+      success(buffer);
+    });
   }
 
   private void loadHttp(final Uri uri) {
-    Executors.newSingleThreadExecutor().execute(() -> {
-      try {
-        final URL url = new URL(uri.toString());
-        stream = url.openStream();
-        streamToFrame();
-      } catch (Exception e) {
-        fail("failed to open http(s) asset");
-      }
-    });
+    loadAsset(() -> {
+      final URL url = new URL(uri.toString());
+      return url.openStream();
+    }, "failed to open http(s) asset as bitmap");
   }
 
   private void loadResrouce(final Uri uri) {
-    Executors.newSingleThreadExecutor().execute(() -> {
+    loadAsset(() -> {
       final int id = AssetUtils.getAssetResourceId(context, uri);
-      try {
-        stream = context.getResources().openRawResource(id);
-        streamToFrame();
-      } catch (Exception e) {
-        fail("failed to open resource asset");
-      }
-    });
+      return context.getResources().openRawResource(id);
+    }, "failed to open resource asset as bitmap");
   }
 
-  public synchronized void load() {
-    if (!this.isReadyToLoad) {
-      return;
-    }
-    this.isReadyToLoad = false;
-
-    final VideoFrame.Buffer cached = cache.retrieve(asset);
-    if (cached != null) {
-      success(cached);
-      return;
-    }
+  private void doLoad() {
     final Uri uri = AssetUtils.assetStringToUri(context, asset);
     final String scheme = AssetUtils.getAssetUriScheme(uri);
     if (scheme.startsWith(HTTP_SCHEME)) {
@@ -242,6 +242,25 @@ public class ImageLoader {
       loadResrouce(uri);
     } else {
       fail("ussuported asset uri");
+    }
+  }
+
+  private boolean maybeResolveCached() {
+    final VideoFrame.Buffer cached = cache.retrieve(asset);
+    if (cached != null) {
+      success(cached);
+      return true;
+    }
+    return false;
+  }
+
+  public synchronized void load() {
+    if (!this.isReadyToLoad) {
+      return;
+    }
+    this.isReadyToLoad = false;
+    if (!maybeResolveCached()) {
+      doLoad();
     }
   }
 }
