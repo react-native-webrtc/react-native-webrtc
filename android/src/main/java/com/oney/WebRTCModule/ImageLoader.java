@@ -226,7 +226,7 @@ public class ImageLoader {
     }, "failed to open http(s) asset as bitmap");
   }
 
-  private void loadResrouce(final Uri uri) {
+  private void loadResource(final Uri uri) {
     loadAsset(() -> {
       final int id = AssetUtils.getAssetResourceId(context, uri);
       return context.getResources().openRawResource(id);
