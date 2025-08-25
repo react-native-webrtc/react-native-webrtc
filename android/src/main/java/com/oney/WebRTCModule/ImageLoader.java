@@ -241,7 +241,7 @@ public class ImageLoader {
     } else if (scheme.equals(RESOURCE_SCHEME) || scheme.equals(ANDROID_RESOURCE_SCHEME)) {
       loadResrouce(uri);
     } else {
-      fail("ussuported asset uri");
+      fail("unsupported asset uri");
     }
   }
 
