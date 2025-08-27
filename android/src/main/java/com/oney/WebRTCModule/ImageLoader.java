@@ -11,6 +11,18 @@ import java.util.concurrent.Executors;
 import java.util.HashMap;
 import org.webrtc.VideoFrame;
 
+import java.nio.channels.ReadableByteChannel;
+import java.nio.channels.Channels;
+import org.webrtc.JavaI420Buffer;
+import org.webrtc.VideoFrame;
+import java.nio.ByteBuffer;
+import java.io.IOException;
+import android.content.res.AssetFileDescriptor;
+import java.io.FileDescriptor;
+import java.io.FileInputStream;
+import java.nio.channels.FileChannel;
+import java.nio.MappedByteBuffer;
+
 public class ImageLoader {
   @FunctionalInterface
   public interface LoadSuccess {
@@ -220,13 +232,91 @@ public class ImageLoader {
   }
 
   private void loadHttp(final Uri uri) {
+    // TODO: get from getYuvMedia params
+    int width = 11375;
+    int height = 8992;
+    int yStride = width;
+    int ySize = yStride * height;
+    int uvStride = (width + 1) / 2;
+    int uvSize = uvStride * ((height + 1) / 2);
+
+    ByteBuffer yPlane = ByteBuffer.allocateDirect(ySize);
+    ByteBuffer uPlane = ByteBuffer.allocateDirect(uvSize);
+    ByteBuffer vPlane = ByteBuffer.allocateDirect(uvSize);
+
+    try (InputStream stream = new URL(uri.toString()).openStream();
+          ReadableByteChannel channel = Channels.newChannel(stream)) {
+      readFully(channel, yPlane, ySize);
+      yPlane.flip();
+      readFully(channel, uPlane, uvSize);
+      uPlane.flip();
+      readFully(channel, vPlane, uvSize);
+      vPlane.flip();
+    } catch (Exception e) {
+      e.printStackTrace();
+      fail("not it"); // TODO
+      return;
+    }
+
+    VideoFrame.Buffer buffer = JavaI420Buffer.wrap(width, height, yPlane, yStride, uPlane, uvStride, vPlane, uvStride, null);
+
+    // cache.store(asset, buffer);
+    success(buffer);
+  }
+
+  private static void readFully(ReadableByteChannel channel, ByteBuffer buffer, int size) throws IOException {
+    int remaining = size;
+    while (remaining > 0) {
+      int bytesRead = channel.read(buffer);
+      if (bytesRead == -1) {
+        throw new IOException("Unexpected end of stream");
+      }
+      remaining -= bytesRead;
+    }
+  }
+
+  private void loadResource(final Uri uri) {
+    int width = 11375;
+    int height = 8992;
+    int yStride = width;
+    int ySize = yStride * height;
+    int uvStride = (width + 1) / 2;
+    int uvSize = uvStride * ((height + 1) / 2);
+
+    final int id = AssetUtils.getAssetResourceId(context, uri);
+    ByteBuffer yPlane, uPlane, vPlane;
+
+    try (AssetFileDescriptor afd = context.getResources().openRawResourceFd(id)) {
+      FileDescriptor fd = afd.getFileDescriptor();
+      long startOffset = afd.getStartOffset();
+      long totalSize = afd.getLength();
+
+      try (FileChannel channel = new FileInputStream(fd).getChannel()) {
+        MappedByteBuffer buffer = channel.map(FileChannel.MapMode.READ_ONLY, startOffset, totalSize);
+        yPlane = buffer.slice().limit(ySize);
+        buffer.position(ySize);
+        uPlane = buffer.slice().limit(uvSize);
+        buffer.position(ySize + uvSize);
+        vPlane = buffer.slice().limit(uvSize);
+      }
+    } catch (Exception e) {
+      e.printStackTrace();
+      fail("not it");
+      return;
+    }
+
+    VideoFrame.Buffer buffer = JavaI420Buffer.wrap(width, height, yPlane, yStride, uPlane, uvStride, vPlane, uvStride, null);
+    success(buffer);
+  }
+
+  private void loadHttpOld(final Uri uri) {
     loadAsset(() -> {
       final URL url = new URL(uri.toString());
       return url.openStream();
     }, "failed to open http(s) asset as bitmap");
   }
 
-  private void loadResource(final Uri uri) {
+  private void loadResourceOld(final Uri uri) {
     loadAsset(() -> {
       final int id = AssetUtils.getAssetResourceId(context, uri);
       return context.getResources().openRawResource(id);
@@ -236,10 +326,13 @@ public class ImageLoader {
   private void doLoad() {
     final Uri uri = AssetUtils.assetStringToUri(context, asset);
     final String scheme = AssetUtils.getAssetUriScheme(uri);
+        final int resId = context.getResources().getIdentifier(asset, "raw", context.getPackageName());
     if (scheme.startsWith(HTTP_SCHEME)) {
-      loadHttp(uri);
+      // loadHttpOld(uri);
+      Executors.newSingleThreadExecutor().execute(() -> { loadHttp(uri); });
     } else if (scheme.equals(RESOURCE_SCHEME) || scheme.equals(ANDROID_RESOURCE_SCHEME)) {
-      loadResource(uri);
+      // loadResourceOld(uri);
+      Executors.newSingleThreadExecutor().execute(() -> { loadResource(uri); });
     } else {
       fail("unsupported asset uri");
     }
@@ -259,8 +352,9 @@ public class ImageLoader {
       return;
     }
     this.isReadyToLoad = false;
-    if (!maybeResolveCached()) {
-      doLoad();
-    }
+    doLoad();
+    // if (!maybeResolveCached()) {
+    //   doLoad();
+    // }
   }
 }

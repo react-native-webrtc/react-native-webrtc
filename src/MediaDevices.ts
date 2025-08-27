@@ -4,6 +4,7 @@ import { NativeModules } from 'react-native';
 import getDisplayMedia from './getDisplayMedia';
 import getFileMedia from './getFileMedia';
 import getUserMedia, { Constraints } from './getUserMedia';
+import getYuvMedia, { YuvSource } from './getYuvMedia';
 
 const { WebRTCModule } = NativeModules;
 
@@ -52,6 +53,16 @@ class MediaDevices extends EventTarget<MediaDevicesEventMap> {
      */
     getFileMedia(source: number | string) {
         return getFileMedia(source);
+    }
+
+    /**
+     * Use I420 formatted Y'UV file as media stream
+     *
+     * @param source yuv asset information
+     * @returns {Promise}
+     */
+    getYuvMedia(source: YuvSource) {
+        return getYuvMedia(source);
     }
 }
 
