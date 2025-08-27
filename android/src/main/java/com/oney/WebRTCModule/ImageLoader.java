@@ -33,8 +33,8 @@ public class ImageLoader {
     void fail(String reason);
   }
   @FunctionalInterface
-  public interface ThrowingSupplier<T> {
-      T get() throws Exception;
+  private interface YuvBufferSupplier {
+    @Nullable YuvBuffer get(final YuvMeta meta);
   }
 
   private static class Cache {
@@ -113,66 +113,40 @@ public class ImageLoader {
     }
   }
 
-  private static class Util {
-    private static void closeStream(final @Nullable InputStream stream) {
-      if (stream != null) {
-        try {
-          stream.close();
-        } catch (Exception e) {
-          // no-op
-        }
-      }
-    }
-    private static void recycleBitmap(final @Nullable Bitmap bitmap) {
-      if (bitmap != null && !bitmap.isRecycled()) {
-        try {
-          bitmap.recycle();
-        } catch (Exception e) {
-          // no-op
-        }
-      }
-    }
-    private static @Nullable VideoFrame.Buffer getFrameBufferAndRecycleBitmap(final Bitmap bitmap) {
-      VideoFrame.Buffer buffer = null;
-      try {
-        buffer = BitmapUtils.bufferFromBitmap(bitmap);
-      } catch (Exception e) {
-        e.printStackTrace();
-      } finally {
-        Util.recycleBitmap(bitmap);
-        return buffer;
-      }
-    }
-    private static @Nullable Bitmap getBitmapAndCloseStream(final ThrowingSupplier<InputStream> streamSupplier) {
-      InputStream stream = null;
-      Bitmap bitmap = null;
-      try {
-        stream = streamSupplier.get();
-        bitmap = BitmapUtils.bitmapFromStream(stream);
-      } catch (Exception e) {
-        e.printStackTrace();
-      } finally {
-        Util.closeStream(stream);
-        return bitmap;
-      }
+  public static class Asset {
+    public final String src;
+    public final int width;
+    public final int height;
+    public final int yStride;
+    public final int ySize;
+    public final int uvStride;
+    public final int uvSize;
+    public final boolean cache;
+    Asset(final String src, final int width, final int height, final boolean cache) {
+      this.src = src;
+      this.width = width;
+      this.height = height;
+      this.yStride = width;
+      this.ySize = yStride * height;
+      this.uvStride = (width + 1) / 2;
+      this.uvSize = uvStride * ((height + 1) / 2);
+      this.cache = cache;
     }
   }
 
-  private static final String RESOURCE_SCHEME = "res";
-  private static final String ANDROID_RESOURCE_SCHEME = "android.resource";
   private static final String HTTP_SCHEME = "http";
   private static final int CACHE_CAPACITY = 3;
 
   private static final Cache cache = new Cache(CACHE_CAPACITY);
 
   private final Context context;
-  private final String asset;
+  private final Asset asset;
   private final LoadSuccess onSuccess;
   private final LoadFail onFail;
 
   private boolean isReadyToLoad;
 
-  public ImageLoader(final Context context, final String asset, final LoadSuccess onSuccess, final LoadFail onFail) {
+  public ImageLoader(final Context context, final Asset asset, final LoadSuccess onSuccess, final LoadFail onFail) {
     if (context == null) {
       throw new IllegalArgumentException("context cannot be null");
     }
@@ -192,6 +166,10 @@ public class ImageLoader {
     this.isReadyToLoad = true;
   }
 
+  public static ImageLoader.Asset makeAsset(final String src, final int width, final int height, final boolean cache) {
+    return new ImageLoader.Asset(src, width, height, cache);
+  }
+
   private synchronized void fail(final String message) {
     this.isReadyToLoad = true;
     ThreadUtils.runOnExecutor(() -> {
@@ -207,60 +185,31 @@ public class ImageLoader {
     });
   }
 
-  private void loadAsset(final ThrowingSupplier<InputStream> streamSupplier, final String streamSupplierFailureMessage) {
-    Executors.newSingleThreadExecutor().execute(() -> {
-      final Bitmap bitmap;
-      final VideoFrame.Buffer buffer;
-      bitmap = Util.getBitmapAndCloseStream(streamSupplier);
-      if (bitmap == null) {
-        fail(streamSupplierFailureMessage);
-        return;
-      }
-      if (!BitmapUtils.hasEnoughMemoryToConvert(bitmap)) {
-        Util.recycleBitmap(bitmap);
-        fail("not enough memory to handle asset");
-        return;
-      }
-      buffer = Util.getFrameBufferAndRecycleBitmap(bitmap);
-      if (buffer == null) {
-        fail("could not convert bitmap to buffer");
-        return;
-      }
-      cache.store(asset, buffer);
-      success(buffer);
-    });
-  }
-
   private void loadHttp(final Uri uri) {
-    // TODO: get from getYuvMedia params
-    int width = 11375;
-    int height = 8992;
-    int yStride = width;
-    int ySize = yStride * height;
-    int uvStride = (width + 1) / 2;
-    int uvSize = uvStride * ((height + 1) / 2);
-
-    ByteBuffer yPlane = ByteBuffer.allocateDirect(ySize);
-    ByteBuffer uPlane = ByteBuffer.allocateDirect(uvSize);
-    ByteBuffer vPlane = ByteBuffer.allocateDirect(uvSize);
+    ByteBuffer yPlane = ByteBuffer.allocateDirect(asset.ySize);
+    ByteBuffer uPlane = ByteBuffer.allocateDirect(asset.uvSize);
+    ByteBuffer vPlane = ByteBuffer.allocateDirect(asset.uvSize);
 
     try (InputStream stream = new URL(uri.toString()).openStream();
           ReadableByteChannel channel = Channels.newChannel(stream)) {
-      readFully(channel, yPlane, ySize);
+      readFully(channel, yPlane, asset.ySize);
       yPlane.flip();
-      readFully(channel, uPlane, uvSize);
+      readFully(channel, uPlane, asset.uvSize);
       uPlane.flip();
-      readFully(channel, vPlane, uvSize);
+      readFully(channel, vPlane, asset.uvSize);
       vPlane.flip();
     } catch (Exception e) {
       e.printStackTrace();
-      fail("not it"); // TODO
+      fail("could not load http(s) asset");
       return;
     }
 
-    VideoFrame.Buffer buffer = JavaI420Buffer.wrap(width, height, yPlane, yStride, uPlane, uvStride, vPlane, uvStride, null);
+    VideoFrame.Buffer buffer = JavaI420Buffer.wrap(asset.width, asset.height, yPlane, asset.yStride, uPlane, asset.uvStride, vPlane, asset.uvStride, null);
 
-    // cache.store(asset, buffer);
+    if (asset.cache) {
+      cache.store(asset.src, buffer);
+    }
+  
     success(buffer);
   }
 
@@ -275,71 +224,52 @@ public class ImageLoader {
     }
   }
 
-  private void loadResource(final Uri uri) {
-    int width = 11375;
-    int height = 8992;
-    int yStride = width;
-    int ySize = yStride * height;
-    int uvStride = (width + 1) / 2;
-    int uvSize = uvStride * ((height + 1) / 2);
-
-    final int id = AssetUtils.getAssetResourceId(context, uri);
+  private void loadResource(final int resId) {
     ByteBuffer yPlane, uPlane, vPlane;
 
-    try (AssetFileDescriptor afd = context.getResources().openRawResourceFd(id)) {
+    try (AssetFileDescriptor afd = context.getResources().openRawResourceFd(resId)) {
       FileDescriptor fd = afd.getFileDescriptor();
       long startOffset = afd.getStartOffset();
       long totalSize = afd.getLength();
 
       try (FileChannel channel = new FileInputStream(fd).getChannel()) {
         MappedByteBuffer buffer = channel.map(FileChannel.MapMode.READ_ONLY, startOffset, totalSize);
-        yPlane = buffer.slice().limit(ySize);
-        buffer.position(ySize);
-        uPlane = buffer.slice().limit(uvSize);
-        buffer.position(ySize + uvSize);
-        vPlane = buffer.slice().limit(uvSize);
+        yPlane = (ByteBuffer) buffer.slice().limit(asset.ySize);
+        buffer.position(asset.ySize);
+        uPlane = (ByteBuffer) buffer.slice().limit(asset.uvSize);
+        buffer.position(asset.ySize + asset.uvSize);
+        vPlane = (ByteBuffer) buffer.slice().limit(asset.uvSize);
       }
     } catch (Exception e) {
       e.printStackTrace();
-      fail("not it");
+      fail("could not load resource");
       return;
     }
 
-    VideoFrame.Buffer buffer = JavaI420Buffer.wrap(width, height, yPlane, yStride, uPlane, uvStride, vPlane, uvStride, null);
+    VideoFrame.Buffer buffer = JavaI420Buffer.wrap(asset.width, asset.height, yPlane, asset.yStride, uPlane, asset.uvStride, vPlane, asset.uvStride, null);
+
+    if (asset.cache) {
+      cache.store(asset.src, buffer);
+    }
+
     success(buffer);
-  }
-
-  private void loadHttpOld(final Uri uri) {
-    loadAsset(() -> {
-      final URL url = new URL(uri.toString());
-      return url.openStream();
-    }, "failed to open http(s) asset as bitmap");
-  }
-
-  private void loadResourceOld(final Uri uri) {
-    loadAsset(() -> {
-      final int id = AssetUtils.getAssetResourceId(context, uri);
-      return context.getResources().openRawResource(id);
-    }, "failed to open resource asset as bitmap");
-  }
+  
 
   private void doLoad() {
-    final Uri uri = AssetUtils.assetStringToUri(context, asset);
+    final Uri uri = AssetUtils.assetStringToUri(context, asset.src);
     final String scheme = AssetUtils.getAssetUriScheme(uri);
-        final int resId = context.getResources().getIdentifier(asset, "raw", context.getPackageName());
+    final int resId = context.getResources().getIdentifier(asset.src, "raw", context.getPackageName());
     if (scheme.startsWith(HTTP_SCHEME)) {
-      // loadHttpOld(uri);
       Executors.newSingleThreadExecutor().execute(() -> { loadHttp(uri); });
-    } else if (scheme.equals(RESOURCE_SCHEME) || scheme.equals(ANDROID_RESOURCE_SCHEME)) {
-      // loadResourceOld(uri);
-      Executors.newSingleThreadExecutor().execute(() -> { loadResource(uri); });
+    } else if (resId > 0) {
+      Executors.newSingleThreadExecutor().execute(() -> { loadResource(resId); });
     } else {
-      fail("unsupported asset uri");
+      fail("unsupported asset");
     }
   }
 
   private boolean maybeResolveCached() {
-    final VideoFrame.Buffer cached = cache.retrieve(asset);
+    final VideoFrame.Buffer cached = cache.retrieve(asset.src);
     if (cached != null) {
       success(cached);
       return true;
@@ -352,9 +282,8 @@ public class ImageLoader {
       return;
     }
     this.isReadyToLoad = false;
-    doLoad();
-    // if (!maybeResolveCached()) {
-    //   doLoad();
-    // }
+    if (!maybeResolveCached()) {
+      doLoad();
+    }
   }
 }

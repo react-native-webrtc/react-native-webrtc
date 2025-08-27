@@ -296,17 +296,13 @@ class GetUserMediaImpl {
         }
     }
 
-    void getFileMedia(String asset, Promise promise) {
+    void getFileMedia(String src, int width, int height, boolean cache, Promise promise) {
         Activity currentActivity = this.reactContext.getCurrentActivity();
         if (currentActivity == null) {
             promise.reject(new RuntimeException("No current Activity."));
             return;
         }
-        if (asset == null) {
-            promise.reject(new RuntimeException("Asset is null."));
-            return;
-        }
-
+        ImageLoader.Asset asset = ImageLoader.makeAsset(src, width, height, cache);
         ImageLoader loader = new ImageLoader(
             reactContext,
             asset,
