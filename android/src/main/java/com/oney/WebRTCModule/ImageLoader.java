@@ -1,27 +1,25 @@
 package com.oney.WebRTCModule;
 
+import android.content.res.AssetFileDescriptor;
 import android.content.Context;
-import android.graphics.Bitmap;
 import android.net.Uri;
 import androidx.annotation.Nullable;
+import java.io.FileDescriptor;
+import java.io.FileInputStream;
 import java.io.InputStream;
+import java.io.IOException;
 import java.net.URL;
+import java.nio.channels.Channels;
+import java.nio.channels.FileChannel;
+import java.nio.channels.ReadableByteChannel;
+import java.nio.ByteBuffer;
+import java.nio.MappedByteBuffer;
 import java.util.ArrayList;
 import java.util.concurrent.Executors;
 import java.util.HashMap;
-import org.webrtc.VideoFrame;
-
-import java.nio.channels.ReadableByteChannel;
-import java.nio.channels.Channels;
 import org.webrtc.JavaI420Buffer;
 import org.webrtc.VideoFrame;
-import java.nio.ByteBuffer;
-import java.io.IOException;
-import android.content.res.AssetFileDescriptor;
-import java.io.FileDescriptor;
-import java.io.FileInputStream;
-import java.nio.channels.FileChannel;
-import java.nio.MappedByteBuffer;
+
 
 public class ImageLoader {
   @FunctionalInterface
@@ -31,10 +29,6 @@ public class ImageLoader {
   @FunctionalInterface
   public interface LoadFail {
     void fail(String reason);
-  }
-  @FunctionalInterface
-  private interface YuvBufferSupplier {
-    @Nullable YuvBuffer get(final YuvMeta meta);
   }
 
   private static class Cache {

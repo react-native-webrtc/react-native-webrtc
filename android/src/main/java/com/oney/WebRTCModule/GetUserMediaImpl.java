@@ -307,7 +307,7 @@ class GetUserMediaImpl {
             reactContext,
             asset,
             (VideoFrame.Buffer image) -> {
-                Log.d(TAG, "image (" + asset + ") loaded");
+                Log.d(TAG, "image (" + src + ") loaded");
                 ImageCaptureController imageCaptureController = new ImageCaptureController(
                     reactContext.getCurrentActivity(), image, image.getWidth(), image.getHeight());
                 VideoTrack track = createVideoTrack(imageCaptureController);
@@ -330,7 +330,7 @@ class GetUserMediaImpl {
                 }
             },
             (String reason) -> {
-                Log.d(TAG, "image (" + asset + ") failed loading: " + reason);
+                Log.d(TAG, "image (" + src + ") failed loading: " + reason);
                 promise.reject(new RuntimeException("Could not load image: " + reason));
 
             });

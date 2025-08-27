@@ -45,8 +45,6 @@ class MediaDevices extends EventTarget<MediaDevicesEventMap> {
     /**
      * File based media stream
      *
-     * NOTE: Only supports static I420 formatted Y'UV files at the moment
-     *
      * @param source Asset information
      * @returns {Promise}
      */
