@@ -247,7 +247,7 @@ public class ImageLoader {
     }
 
     success(buffer);
-  
+  }
 
   private void doLoad() {
     final Uri uri = AssetUtils.assetStringToUri(context, asset.src);
