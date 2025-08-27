@@ -23,14 +23,11 @@ export type ImageAsset = {
 }
 
 function getFileMediaIos(asset: ImageAsset): Promise<MediaStream> {
-    if (
-        typeof asset !== 'object' ||
-        typeof asset.src !== 'number'
-    ) {
-        return Promise.reject(new TypeError('invalid asset'));
-    }
+    let src = asset.src;
 
-    const src = resolveAssetSource(asset.src)?.uri as string;
+    if (typeof src === 'number') {
+        src = resolveAssetSource(src)?.uri;
+    }
 
     return new Promise((resolve, reject) => {
         WebRTCModule.getFileMedia(src).then(
@@ -55,15 +52,6 @@ function getFileMediaIos(asset: ImageAsset): Promise<MediaStream> {
 }
 
 function getFileMediaAndroid(asset: YuvAsset): Promise<MediaStream> {
-    if (
-        typeof asset !== 'object' ||
-        typeof asset.src !== 'number' ||
-        typeof asset.height !== 'number' ||
-        typeof asset.width !== 'number'
-    ) {
-        return Promise.reject(new TypeError('invalid asset'));
-    }
-
     const src = resolveAssetSource(asset.src)?.uri as string;
     const { width, height, cache } = asset;
 
