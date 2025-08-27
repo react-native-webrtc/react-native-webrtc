@@ -2,9 +2,8 @@ import { EventTarget, Event, defineEventAttribute } from 'event-target-shim/inde
 import { NativeModules } from 'react-native';
 
 import getDisplayMedia from './getDisplayMedia';
-import getFileMedia from './getFileMedia';
+import getFileMedia, { ImageAsset, YuvAsset } from './getFileMedia';
 import getUserMedia, { Constraints } from './getUserMedia';
-import getYuvMedia, { YuvSource } from './getYuvMedia';
 
 const { WebRTCModule } = NativeModules;
 
@@ -46,23 +45,13 @@ class MediaDevices extends EventTarget<MediaDevicesEventMap> {
     /**
      * File based media stream
      *
-     * NOTE: Only supports static images at the moment
+     * NOTE: Only supports static I420 formatted Y'UV files at the moment
      *
-     * @param source A file path, url, or import/require result
+     * @param source Asset information
      * @returns {Promise}
      */
-    getFileMedia(source: number | string) {
-        return getFileMedia(source);
-    }
-
-    /**
-     * Use I420 formatted Y'UV file as media stream
-     *
-     * @param source yuv asset information
-     * @returns {Promise}
-     */
-    getYuvMedia(source: YuvSource) {
-        return getYuvMedia(source);
+    getFileMedia(asset: YuvAsset | ImageAsset) {
+        return getFileMedia(asset);
     }
 }
 
