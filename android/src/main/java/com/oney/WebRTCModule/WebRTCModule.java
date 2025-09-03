@@ -23,14 +23,14 @@ import com.facebook.react.module.annotations.ReactModule;
 import com.facebook.react.modules.core.DeviceEventManagerModule;
 import com.oney.WebRTCModule.audio.AudioProcessingFactoryProvider;
 import com.oney.WebRTCModule.audio.AudioProcessingController;
-import com.oney.WebRTCModule.webrtcutils.H264AndSoftwareVideoDecoderFactory;
-import com.oney.WebRTCModule.webrtcutils.H264AndSoftwareVideoEncoderFactory;
+import com.oney.WebRTCModule.webrtcutils.SelectiveVideoDecoderFactory;
 
 import org.webrtc.*;
 import org.webrtc.audio.AudioDeviceModule;
 import org.webrtc.audio.JavaAudioDeviceModule;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -83,14 +83,9 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
         if (encoderFactory == null || decoderFactory == null) {
             // Initialize EGL context required for HW acceleration.
             EglBase.Context eglContext = EglUtils.getRootEglBaseContext();
+            encoderFactory = new SimulcastAlignedVideoEncoderFactory(eglContext, true, true, ResolutionAdjustment.MULTIPLE_OF_16);
+            decoderFactory = new SelectiveVideoDecoderFactory(eglContext, false, Arrays.asList("VP9", "AV1"));
 
-            if (eglContext != null) {
-                encoderFactory = new H264AndSoftwareVideoEncoderFactory(eglContext);
-                decoderFactory = new H264AndSoftwareVideoDecoderFactory(eglContext);
-            } else {
-                encoderFactory = new SoftwareVideoEncoderFactory();
-                decoderFactory = new SoftwareVideoDecoderFactory();
-            }
         }
 
         if (adm == null) {
@@ -134,9 +129,11 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
     }
 
     void sendEvent(String eventName, @Nullable ReadableMap params) {
-        getReactApplicationContext()
-                .getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter.class)
-                .emit(eventName, params);
+        if (getReactApplicationContext().hasActiveReactInstance()) {
+            getReactApplicationContext()
+                    .getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter.class)
+                    .emit(eventName, params);
+        }
     }
 
     private PeerConnection.IceServer createIceServer(String url) {

@@ -1,15 +1,48 @@
 import java.nio.file.Paths
 
-apply plugin: 'com.android.library'
+buildscript {
+  ext.getExtOrDefault = {name, fallback ->
+    return rootProject.ext.has(name) ? rootProject.ext.get(name) : fallback
+  }
+
+  repositories {
+    google()
+    mavenCentral()
+    maven { url 'https://central.sonatype.com/repository/maven-snapshots/' }
+  }
+
+  dependencies {
+    classpath("com.android.tools.build:gradle:7.3.1")
+    // noinspection DifferentKotlinGradleVersion
+    classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:${getExtOrDefault('kotlinVersion', '1.8.10')}"
+  }
+}
+
+apply plugin: "com.android.library"
+apply plugin: "kotlin-android"
 
 def safeExtGet(prop, fallback) {
     rootProject.ext.has(prop) ? rootProject.ext.get(prop) : fallback
 }
 
+def supportsNamespace() {
+  def parsed = com.android.Version.ANDROID_GRADLE_PLUGIN_VERSION.tokenize('.')
+  def major = parsed[0].toInteger()
+  def minor = parsed[1].toInteger()
+
+  // Namespace support was added in 7.3.0
+  return (major == 7 && minor >= 3) || major >= 8
+}
+
 android {
-    def agpVersion = com.android.Version.ANDROID_GRADLE_PLUGIN_VERSION
-    if (agpVersion.tokenize('.')[0].toInteger() >= 7) {
-      namespace "com.oney.WebRTCModule"
+    if (supportsNamespace()) {
+        namespace "com.oney.WebRTCModule"
+
+        sourceSets {
+            main {
+                manifest.srcFile "src/main/AndroidManifestNew.xml"
+            }
+        }
     }
 
     compileSdkVersion safeExtGet('compileSdkVersion', 24)
@@ -31,7 +64,8 @@ android {
 }
 
 dependencies {
-    api 'io.getstream:stream-webrtc-android:1.3.8'
+    api 'io.getstream:stream-webrtc-android:1.3.9'
     implementation 'com.facebook.react:react-native:+'
+    implementation "org.jetbrains.kotlin:kotlin-stdlib:${getExtOrDefault('kotlinVersion', '1.8.10')}"
     implementation "androidx.core:core:1.7.0"
 }

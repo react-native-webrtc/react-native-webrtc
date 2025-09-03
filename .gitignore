@@ -17,4 +17,12 @@ examples/GumTestApp_macOS/package-lock.json
 *.zip
 lib/
 src/*.js
-
+# Android/IntelliJ
+#
+build/
+.idea
+.gradle
+local.properties
+*.iml
+*.hprof
+.cxx/
