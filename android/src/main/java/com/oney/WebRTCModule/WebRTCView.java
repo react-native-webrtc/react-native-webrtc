@@ -1,14 +1,20 @@
 package com.oney.WebRTCModule;
 
 import android.annotation.SuppressLint;
+import android.app.Activity;
 import android.content.Context;
 import android.graphics.Color;
 import android.graphics.Point;
 import android.util.Log;
+import android.util.Rational;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.FrameLayout;
 
+import androidx.annotation.Nullable;
 import androidx.core.view.ViewCompat;
+import androidx.fragment.app.Fragment;
+import androidx.fragment.app.FragmentActivity;
 
 import com.facebook.react.bridge.Arguments;
 import com.facebook.react.bridge.Callback;
@@ -26,12 +32,11 @@ import org.webrtc.RendererCommon.ScalingType;
 import org.webrtc.SurfaceViewRenderer;
 import org.webrtc.VideoTrack;
 
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
-public class WebRTCView extends ViewGroup {
+public class WebRTCView extends ViewGroup implements PictureInPictureHelperListener {
     /**
      * The scaling type to be utilized by default.
      *
@@ -150,6 +155,43 @@ public class WebRTCView extends ViewGroup {
     private VideoTrack videoTrack;
 
     /**
+     * Helper tag to safely attach and detach PictureInPictureHelperFragment
+     */
+    @Nullable
+    private String pictureInPictureHelperTag;
+
+    /**
+     * Save the rootView's children original visibility state.
+     */
+    private final ArrayList<Integer> rootViewChildrenOriginalVisibility = new ArrayList<>();
+
+    /**
+     * Whether this WebRTCView should handle Picture-In-Picture.
+     */
+    private Boolean pictureInPictureEnabled = false;
+
+    /**
+     * Whether this WebRTCView should handle Picture-In-Picture.
+     */
+    private Boolean werePictureInPictureEnabled = false;
+
+    /**
+     * Whether autoEnter Picture-In-Picture should be apply.
+     */
+    private Boolean autoStartPictureInPicture = true;
+
+    /**
+     * Event name to send to onPictureInPictureChange callback.
+     */
+    static String onPictureInPictureChangeEventName = "onPictureInPictureChange";
+
+    /**
+     * The preferredAspectRatio to apply in Picture-In-Picture Mode.
+     */
+    @Nullable
+    private Rational preferredAspectRatio;
+
+    /**
      * The callback to be called when video dimensions change.
      */
     private boolean onDimensionsChangeEnabled = false;
@@ -206,6 +248,7 @@ public class WebRTCView extends ViewGroup {
             // window. Additionally, a memory leak was solved in a similar way
             // on iOS.
             tryAddRendererToVideoTrack();
+            attachPictureInPictureHelperFragment();
         } finally {
             super.onAttachedToWindow();
         }
@@ -220,6 +263,7 @@ public class WebRTCView extends ViewGroup {
             // window. Additionally, a memory leak was solved in a similar way
             // on iOS.
             removeRendererFromVideoTrack();
+            detachPictureInPictureHelperFragment();
         } finally {
             super.onDetachedFromWindow();
         }
@@ -572,6 +616,187 @@ public class WebRTCView extends ViewGroup {
         }
     }
 
+    @Nullable
+    private Activity getCurrentActivity() {
+        ReactContext reactContext = (ReactContext) getContext();
+        return reactContext.getCurrentActivity();
+    }
+
+    @Nullable
+    private ViewGroup getRootViewGroup() {
+        Activity currentActivity = getCurrentActivity();
+        if (currentActivity == null) return null;
+        return currentActivity.getWindow().getDecorView().findViewById(android.R.id.content);
+    }
+
+    void setPictureInPictureEnabled(Boolean pictureInPictureEnabled) {
+        Activity currentActivity = getCurrentActivity();
+        if (currentActivity == null) return;
+
+        this.pictureInPictureEnabled = pictureInPictureEnabled;
+        if (pictureInPictureEnabled) {
+            werePictureInPictureEnabled = true;
+        } else if (werePictureInPictureEnabled) {
+            PictureInPictureUtils.applyAutoEnter(currentActivity, false);
+        }
+        applyPictureInPictureParams();
+    }
+
+    protected void applyPictureInPictureParams() {
+        Activity currentActivity = getCurrentActivity();
+        if (currentActivity == null) return;
+
+        if (!pictureInPictureEnabled) {
+            return;
+        }
+
+        PictureInPictureUtils.applySourceRectHint(currentActivity, this);
+        PictureInPictureUtils.applyAutoEnter(currentActivity, autoStartPictureInPicture);
+
+        if (preferredAspectRatio != null) {
+            PictureInPictureUtils.applyAspectRatio(currentActivity, preferredAspectRatio);
+        } else {
+            PictureInPictureUtils.applyAspectRatio(currentActivity, new Rational(getWidth(), getHeight()));
+        }
+    }
+
+    void setAutoStartPictureInPicture(Boolean autoStartPictureInPicture) {
+        if (autoStartPictureInPicture == null) {
+            autoStartPictureInPicture = true;
+        }
+        this.autoStartPictureInPicture = autoStartPictureInPicture;
+        applyPictureInPictureParams();
+    }
+
+    void setPictureInPicturePreferredSize(@Nullable ReadableMap size) {
+        if (size == null) {
+            preferredAspectRatio = null;
+            applyPictureInPictureParams();
+            return;
+        };
+
+        if (!size.hasKey("width")) return;
+        if (size.isNull("width")) return;
+
+        if (!size.hasKey("height")) return;
+        if (size.isNull("height")) return;
+
+        Rational aspectRatio = new Rational(size.getInt("width"), size.getInt("height"));
+
+        if (aspectRatio.isNaN()) return;
+
+        preferredAspectRatio = aspectRatio;
+
+        applyPictureInPictureParams();
+    }
+
+    void enterPictureInPicture() {
+        Activity currentActivity = getCurrentActivity();
+        if (currentActivity == null) return;
+
+        if (!pictureInPictureEnabled) {
+            Log.d(TAG, "pictureInPicture is disabled for this RTCView.");
+            return;
+        }
+        applyPictureInPictureParams();
+        PictureInPictureUtils.safeEnterPictureInPicture(currentActivity);
+    }
+
+    protected void layoutForPipEnter() {
+        ViewGroup rootViewGroup = getRootViewGroup();
+        if (rootViewGroup == null) return;
+
+        removeView(surfaceViewRenderer);
+
+        for (int i = 0; i < rootViewGroup.getChildCount(); i++) {
+            View child = rootViewGroup.getChildAt(i);
+            if (child != surfaceViewRenderer) {
+                rootViewChildrenOriginalVisibility.add(child.getVisibility());
+                child.setVisibility(View.GONE);
+            }
+        }
+
+        rootViewGroup.addView(surfaceViewRenderer,
+                new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+    }
+
+    protected void layoutForPipExit() {
+        ViewGroup rootViewGroup = getRootViewGroup();
+        if (rootViewGroup == null) return;
+
+        rootViewGroup.removeView(surfaceViewRenderer);
+
+        for (int i = 0; i < rootViewGroup.getChildCount(); i++) {
+            rootViewGroup.getChildAt(i).setVisibility(rootViewChildrenOriginalVisibility.get(i));
+        }
+
+        rootViewChildrenOriginalVisibility.clear();
+
+        addView(surfaceViewRenderer,
+                new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+        post(requestSurfaceViewRendererLayoutRunnable);
+    }
+
+    protected void attachPictureInPictureHelperFragment() {
+        Activity currentActivity = getCurrentActivity();
+        if (currentActivity == null) return;
+
+        if (currentActivity instanceof FragmentActivity) {
+            FragmentActivity fragmentActivity = (FragmentActivity) currentActivity;
+            PictureInPictureHelperFragment fragment = new PictureInPictureHelperFragment();
+            pictureInPictureHelperTag = fragment.id;
+            fragment.setListener(this);
+            fragmentActivity.getSupportFragmentManager().beginTransaction().add(fragment, fragment.id).commit();
+        }
+        applyPictureInPictureParams();
+    }
+
+    void detachPictureInPictureHelperFragment() {
+        Activity currentActivity = getCurrentActivity();
+        if (currentActivity == null) return;
+
+        if (currentActivity instanceof FragmentActivity) {
+            FragmentActivity fragmentActivity = (FragmentActivity) currentActivity;
+            Fragment fragment =
+                    fragmentActivity.getSupportFragmentManager().findFragmentByTag(pictureInPictureHelperTag);
+            if (fragment != null) {
+                fragmentActivity.getSupportFragmentManager()
+                        .beginTransaction()
+                        .remove(fragment)
+                        .commitAllowingStateLoss();
+            }
+        }
+
+        if (pictureInPictureEnabled) {
+            PictureInPictureUtils.applyAutoEnter(currentActivity, false);
+        }
+    }
+
+    protected void sendPictureInPictureModeChangeEvent(Boolean isInPictureInPictureMode) {
+        ReactContext reactContext = (ReactContext) getContext();
+        if (reactContext == null) return;
+
+        if (!pictureInPictureEnabled) return;
+
+        WritableMap event = Arguments.createMap();
+        event.putBoolean("isInPictureInPicture", isInPictureInPictureMode);
+
+        reactContext.getJSModule(RCTEventEmitter.class)
+                .receiveEvent(this.getId(), onPictureInPictureChangeEventName, event);
+    }
+
+    @Override
+    public void onPictureInPictureModeChange(Boolean isInPictureInPictureMode) {
+        if (!pictureInPictureEnabled) return;
+
+        sendPictureInPictureModeChangeEvent(isInPictureInPictureMode);
+
+        if (isInPictureInPictureMode) {
+            layoutForPipEnter();
+        } else {
+            layoutForPipExit();
+        }
+    }
     /**
      * Sets whether the onDimensionsChange callback should be called.
      *
