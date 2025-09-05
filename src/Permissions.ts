@@ -55,7 +55,7 @@ class Permissions {
     /**
      * Validates the given permission descriptor.
      */
-    _validatePermissionDescriptior(permissionDesc) {
+    _validatePermissionDescriptor(permissionDesc) {
         if (typeof permissionDesc !== 'object') {
             throw new TypeError('Argument 1 of Permissions.query is not an object.');
         }
@@ -77,7 +77,7 @@ class Permissions {
      */
     query(permissionDesc: PermissionDescriptor) {
         try {
-            this._validatePermissionDescriptior(permissionDesc);
+            this._validatePermissionDescriptor(permissionDesc);
         } catch (e) {
             return Promise.reject(e);
         }
@@ -107,7 +107,7 @@ class Permissions {
      */
     request(permissionDesc: PermissionDescriptor) {
         try {
-            this._validatePermissionDescriptior(permissionDesc);
+            this._validatePermissionDescriptor(permissionDesc);
         } catch (e) {
             return Promise.reject(e);
         }
