@@ -4,4 +4,6 @@
 API_AVAILABLE(ios(12))
 @interface ScreenCapturePickerViewManager : RCTViewManager
 
+extern NSString *const kRTCScreenSharingExtension;
+
 @end
