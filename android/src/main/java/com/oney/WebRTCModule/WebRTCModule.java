@@ -123,6 +123,10 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
         return "WebRTCModule";
     }
 
+    public AudioDeviceModule getAudioDeviceModule() {
+        return mAudioDeviceModule;
+    }
+
     private PeerConnection getPeerConnection(int id) {
         PeerConnectionObserver pco = mPeerConnectionObservers.get(id);
         return (pco == null) ? null : pco.getPeerConnection();
