@@ -1,4 +1,4 @@
-import { EventTarget, defineEventAttribute } from 'event-target-shim/index';
+import { EventTarget, getEventAttributeValue, setEventAttributeValue } from 'event-target-shim';
 import { NativeModules } from 'react-native';
 
 import MediaStreamTrack, { MediaStreamTrackInfo } from './MediaStreamTrack';
@@ -150,12 +150,22 @@ export default class MediaStream extends EventTarget<MediaStreamEventMap> {
 
         WebRTCModule.mediaStreamRelease(this._reactTag);
     }
+
+    /**
+     * Define the `onxxx` event handlers.
+     */
+
+    get onaddtrack() {
+        return getEventAttributeValue<MediaStreamEventMap['addtrack']>(this, 'addtrack');
+    }
+    set onaddtrack(value) {
+        setEventAttributeValue<MediaStreamEventMap['addtrack']>(this, 'addtrack', value);
+    }
+
+    get onremovetrack() {
+        return getEventAttributeValue<MediaStreamEventMap['removetrack']>(this, 'removetrack');
+    }
+    set onremovetrack(value) {
+        setEventAttributeValue<MediaStreamEventMap['removetrack']>(this, 'removetrack', value);
+    }
 }
-
-/**
- * Define the `onxxx` event handlers.
- */
-const proto = MediaStream.prototype;
-
-defineEventAttribute(proto, 'addtrack');
-defineEventAttribute(proto, 'removetrack');

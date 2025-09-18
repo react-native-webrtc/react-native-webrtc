@@ -1,4 +1,4 @@
-import { EventTarget, Event, defineEventAttribute } from 'event-target-shim/index';
+import { EventTarget, Event, getEventAttributeValue, setEventAttributeValue } from 'event-target-shim';
 import { NativeModules } from 'react-native';
 
 import { addListener, removeListener } from './EventEmitter';
@@ -310,7 +310,6 @@ export default class RTCPeerConnection extends EventTarget<RTCPeerConnectionEven
                 track,
                 receiver: transceiver.receiver
             };
-
 
             this.dispatchEvent(new RTCTrackEvent('track', eventData));
 
@@ -813,20 +812,78 @@ export default class RTCPeerConnection extends EventTarget<RTCPeerConnectionEven
         this._transceivers.push({ order, transceiver });
         this._transceivers.sort((a, b) => a.order - b.order);
     }
+
+    /**
+     * Define the `onxxx` event handlers.
+     */
+
+    get onconnectionstatechange() {
+        return getEventAttributeValue<RTCPeerConnectionEventMap['connectionstatechange']>(this, 'connectionstatechange');
+    }
+    set onconnectionstatechange(value) {
+        setEventAttributeValue<RTCPeerConnectionEventMap['connectionstatechange']>(this, 'connectionstatechange', value);
+    }
+
+    get onicecandidate() {
+        return getEventAttributeValue<RTCPeerConnectionEventMap['icecandidate']>(this, 'icecandidate');
+    }
+    set onicecandidate(value) {
+        setEventAttributeValue<RTCPeerConnectionEventMap['icecandidate']>(this, 'icecandidate', value);
+    }
+
+    get onicecandidateerror() {
+        return getEventAttributeValue<RTCPeerConnectionEventMap['icecandidateerror']>(this, 'icecandidateerror');
+    }
+    set onicecandidateerror(value) {
+        setEventAttributeValue<RTCPeerConnectionEventMap['icecandidateerror']>(this, 'icecandidateerror', value);
+    }
+
+    get oniceconnectionstatechange() {
+        return getEventAttributeValue<RTCPeerConnectionEventMap['iceconnectionstatechange']>(this, 'iceconnectionstatechange');
+    }
+    set oniceconnectionstatechange(value) {
+        setEventAttributeValue<RTCPeerConnectionEventMap['iceconnectionstatechange']>(this, 'iceconnectionstatechange', value);
+    }
+
+    get onicegatheringstatechange() {
+        return getEventAttributeValue<RTCPeerConnectionEventMap['icegatheringstatechange']>(this, 'icegatheringstatechange');
+    }
+    set onicegatheringstatechange(value) {
+        setEventAttributeValue<RTCPeerConnectionEventMap['icegatheringstatechange']>(this, 'icegatheringstatechange', value);
+    }
+
+    get onnegotiationneeded() {
+        return getEventAttributeValue<RTCPeerConnectionEventMap['negotiationneeded']>(this, 'negotiationneeded');
+    }
+    set onnegotiationneeded(value) {
+        setEventAttributeValue<RTCPeerConnectionEventMap['negotiationneeded']>(this, 'negotiationneeded', value);
+    }
+
+    get onsignalingstatechange() {
+        return getEventAttributeValue<RTCPeerConnectionEventMap['signalingstatechange']>(this, 'signalingstatechange');
+    }
+    set onsignalingstatechange(value) {
+        setEventAttributeValue<RTCPeerConnectionEventMap['signalingstatechange']>(this, 'signalingstatechange', value);
+    }
+
+    get ondatachannel() {
+        return getEventAttributeValue<RTCPeerConnectionEventMap['datachannel']>(this, 'datachannel');
+    }
+    set ondatachannel(value) {
+        setEventAttributeValue<RTCPeerConnectionEventMap['datachannel']>(this, 'datachannel', value);
+    }
+
+    get ontrack() {
+        return getEventAttributeValue<RTCPeerConnectionEventMap['track']>(this, 'track');
+    }
+    set ontrack(value) {
+        setEventAttributeValue<RTCPeerConnectionEventMap['track']>(this, 'track', value);
+    }
+
+    get onerror() {
+        return getEventAttributeValue<RTCPeerConnectionEventMap['error']>(this, 'error');
+    }
+    set onerror(value) {
+        setEventAttributeValue<RTCPeerConnectionEventMap['error']>(this, 'error', value);
+    }
 }
-
-/**
- * Define the `onxxx` event handlers.
- */
-const proto = RTCPeerConnection.prototype;
-
-defineEventAttribute(proto, 'connectionstatechange');
-defineEventAttribute(proto, 'icecandidate');
-defineEventAttribute(proto, 'icecandidateerror');
-defineEventAttribute(proto, 'iceconnectionstatechange');
-defineEventAttribute(proto, 'icegatheringstatechange');
-defineEventAttribute(proto, 'negotiationneeded');
-defineEventAttribute(proto, 'signalingstatechange');
-defineEventAttribute(proto, 'datachannel');
-defineEventAttribute(proto, 'track');
-defineEventAttribute(proto, 'error');
