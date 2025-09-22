@@ -13,19 +13,44 @@ import {
   StyleSheet,
   View,
   StatusBar,
+  Platform,
 } from 'react-native';
 import { Colors } from 'react-native/Libraries/NewAppScreen';
-import { mediaDevices, startIOSPIP, stopIOSPIP, RTCPIPView } from 'react-native-webrtc';
+import { 
+  mediaDevices, 
+  startIOSPIP, 
+  stopIOSPIP, 
+  RTCPIPView, 
+  ScreenCapturePickerView,
+} from 'react-native-webrtc';
+import { findNodeHandle, NativeModules } from 'react-native';
 
 
 const App = () => {
   const view = useRef()
+  const screenCapturePicker = useRef(null);
   const [stream, setStream] = useState(null);
-  const start = async () => {
-    console.log('start');
+  const startCamera = async () => {
+    console.log('startCamera');
     if (!stream) {
       try {
         const s = await mediaDevices.getUserMedia({ video: true });
+        setStream(s);
+      } catch(e) {
+        console.error(e);
+      }
+    }
+  };
+  const startScreenShare = async () => {
+    console.log('startScreenShare');
+    if (!stream) {
+      try {
+        if (Platform.OS === 'ios') {
+          const reactTag = findNodeHandle(screenCapturePicker.current);
+          await NativeModules.ScreenCapturePickerViewManager.show(reactTag);
+        }
+    
+        const s = await mediaDevices.getDisplayMedia();
         setStream(s);
       } catch(e) {
         console.error(e);
@@ -69,8 +94,11 @@ const App = () => {
         <View
           style={styles.footer}>
           <Button
-            title = "Start"
-            onPress = {start} />
+            title = "Start Camera"
+            onPress = {startCamera} />
+          <Button
+            title = "Start Screen Share"
+            onPress = {startScreenShare} />
           <Button
             title = "Start PIP"
             onPress = {startPIP} />
@@ -81,6 +109,9 @@ const App = () => {
             title = "Stop"
             onPress = {stop} />
         </View>
+        {Platform.OS === 'ios' && (
+          <ScreenCapturePickerView ref={screenCapturePicker} />
+        )}
       </SafeAreaView>
     </>
   );
