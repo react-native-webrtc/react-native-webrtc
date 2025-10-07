@@ -302,14 +302,15 @@ RCT_EXPORT_METHOD(enumerateDevices : (RCTResponseSenderBlock)callback) {
         } else if (device.position == AVCaptureDevicePositionFront) {
             position = @"front";
         }
-        NSString *label = @"Unknown video device";
-        if (device.localizedName != nil) {
-            label = device.localizedName;
+        NSString *devId = device.uniqueID ?: @"";
+        NSString *label = device.localizedName ?: @"Unknown video device";
+        if (devId.length == 0) {
+            devId = [[NSUUID UUID] UUIDString];
         }
-
+        
         [devices addObject:@{
             @"facing" : position,
-            @"deviceId" : device.uniqueID,
+            @"deviceId" : devId,
             @"groupId" : @"",
             @"label" : label,
             @"kind" : @"videoinput",
@@ -320,12 +321,14 @@ RCT_EXPORT_METHOD(enumerateDevices : (RCTResponseSenderBlock)callback) {
                                                                mediaType:AVMediaTypeAudio
                                                                 position:AVCaptureDevicePositionUnspecified];
     for (AVCaptureDevice *device in audioDevicesSession.devices) {
-        NSString *label = @"Unknown audio device";
-        if (device.localizedName != nil) {
-            label = device.localizedName;
+        NSString *devId = device.uniqueID ?: @"";
+        NSString *label = device.localizedName ?: @"Unknown audio device";
+
+        if (devId.length == 0) {
+            devId = [[NSUUID UUID] UUIDString];
         }
         [devices addObject:@{
-            @"deviceId" : device.uniqueID,
+            @"deviceId" : devId,
             @"groupId" : @"",
             @"label" : label,
             @"kind" : @"audioinput",
