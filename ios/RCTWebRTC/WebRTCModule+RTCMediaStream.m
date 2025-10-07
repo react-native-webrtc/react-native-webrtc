@@ -296,6 +296,9 @@ RCT_EXPORT_METHOD(enumerateDevices : (RCTResponseSenderBlock)callback) {
                                                                mediaType:AVMediaTypeVideo
                                                                 position:AVCaptureDevicePositionUnspecified];
     for (AVCaptureDevice *device in videoDevicesSession.devices) {
+        if (device.uniqueID == nil) {
+            continue;
+        }
         NSString *position = @"unknown";
         if (device.position == AVCaptureDevicePositionBack) {
             position = @"environment";
@@ -315,11 +318,15 @@ RCT_EXPORT_METHOD(enumerateDevices : (RCTResponseSenderBlock)callback) {
             @"kind" : @"videoinput",
         }];
     }
+
     AVCaptureDeviceDiscoverySession *audioDevicesSession =
         [AVCaptureDeviceDiscoverySession discoverySessionWithDeviceTypes:@[ AVCaptureDeviceTypeBuiltInMicrophone ]
                                                                mediaType:AVMediaTypeAudio
                                                                 position:AVCaptureDevicePositionUnspecified];
     for (AVCaptureDevice *device in audioDevicesSession.devices) {
+        if (device.uniqueID == nil) {
+            continue;
+        }
         NSString *label = @"Unknown audio device";
         if (device.localizedName != nil) {
             label = device.localizedName;
