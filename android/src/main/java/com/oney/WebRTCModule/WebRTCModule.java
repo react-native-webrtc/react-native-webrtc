@@ -395,33 +395,23 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
         }
     }
 
+    // Must be called in the executor.
     MediaStream getStreamForReactTag(String streamReactTag) {
-        // This function _only_ gets called from WebRTCView, in the UI thread.
-        // Hence make sure we run this code in the executor or we run at the risk
-        // of being out of sync.
-        try {
-            return (MediaStream) ThreadUtils
-                    .submitToExecutor((Callable<Object>) () -> {
-                        MediaStream stream = localStreams.get(streamReactTag);
+        MediaStream stream = localStreams.get(streamReactTag);
 
-                        if (stream != null) {
-                            return stream;
-                        }
-
-                        for (int i = 0, size = mPeerConnectionObservers.size(); i < size; i++) {
-                            PeerConnectionObserver pco = mPeerConnectionObservers.valueAt(i);
-                            stream = pco.remoteStreams.get(streamReactTag);
-                            if (stream != null) {
-                                return stream;
-                            }
-                        }
-
-                        return null;
-                    })
-                    .get();
-        } catch (ExecutionException | InterruptedException e) {
-            return null;
+        if (stream != null) {
+            return stream;
         }
+
+        for (int i = 0, size = mPeerConnectionObservers.size(); i < size; i++) {
+            PeerConnectionObserver pco = mPeerConnectionObservers.valueAt(i);
+            stream = pco.remoteStreams.get(streamReactTag);
+            if (stream != null) {
+                return stream;
+            }
+        }
+
+        return null;
     }
 
     public MediaStreamTrack getTrack(int pcId, String trackId) {

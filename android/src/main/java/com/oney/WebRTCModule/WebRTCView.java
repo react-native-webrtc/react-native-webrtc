@@ -173,28 +173,53 @@ public class WebRTCView extends ViewGroup {
         surfaceViewRenderer.clearImage();
     }
 
-    private VideoTrack getVideoTrackForStreamURL(String streamURL) {
-        VideoTrack videoTrack = null;
+    /**
+     * Asynchronously retrieves the VideoTrack for the given streamURL.
+     * This method avoids blocking the UI thread by performing the lookup
+     * on the WebRTC executor thread and posting the result back to the UI thread.
+     *
+     * @param streamURL The stream URL to lookup
+     * @param callback Callback invoked on UI thread with the VideoTrack (or null if not found)
+     */
+    private void getVideoTrackForStreamURL(String streamURL, java.util.function.Consumer<VideoTrack> callback) {
+        if (streamURL == null) {
+            callback.accept(null);
+            return;
+        }
 
-        if (streamURL != null) {
-            ReactContext reactContext = (ReactContext) getContext();
-            WebRTCModule module = reactContext.getNativeModule(WebRTCModule.class);
-            MediaStream stream = module.getStreamForReactTag(streamURL);
+        ReactContext reactContext = (ReactContext) getContext();
+        WebRTCModule module = reactContext.getNativeModule(WebRTCModule.class);
 
-            if (stream != null) {
+        // Submit lookup to executor thread to avoid blocking UI thread
+        ThreadUtils.runOnExecutor(() -> {
+            try {
+                MediaStream stream = module.getStreamForReactTag(streamURL);
+                if (stream == null) {
+                    Log.w(TAG, "Stream not found for URL: " + streamURL);
+                    post(() -> callback.accept(null));
+                    return;
+                }
+
+                VideoTrack videoTrack = null;
                 List<VideoTrack> videoTracks = stream.videoTracks;
-
                 if (!videoTracks.isEmpty()) {
                     videoTrack = videoTracks.get(0);
                 }
-            }
 
-            if (videoTrack == null) {
-                Log.w(TAG, "No video stream for react tag: " + streamURL);
-            }
-        }
+                if (videoTrack == null) {
+                    Log.w(TAG, "No video stream for react tag: " + streamURL);
+                    post(() -> callback.accept(null));
+                    return;
+                }
 
-        return videoTrack;
+                // Post result back to UI thread
+                final VideoTrack result = videoTrack;
+                post(() -> callback.accept(result));
+            } catch (Throwable tr) {
+                Log.e(TAG, "Error getting video track for stream URL: " + streamURL, tr);
+                post(() -> callback.accept(null));
+            }
+        });
     }
 
     @Override
@@ -452,20 +477,23 @@ public class WebRTCView extends ViewGroup {
      * this {@code WebRTCView} or {@code null}.
      */
     void setStreamURL(String streamURL) {
-        // Is the value of this.streamURL really changing?
-        if (!Objects.equals(streamURL, this.streamURL)) {
-            // XXX The value of this.streamURL is really changing. Before
-            // realizing/applying the change, let go of the old videoTrack. Of
-            // course, that is only necessary if the value of videoTrack will
-            // really change. Please note though that letting go of the old
-            // videoTrack before assigning to this.streamURL is vital;
-            // otherwise, removeRendererFromVideoTrack will fail to remove the
-            // old videoTrack from the associated videoRenderer, two
-            // VideoTracks (the old and the new) may start rendering and, most
-            // importantly the videoRender may eventually crash when the old
-            // videoTrack is disposed.
-            VideoTrack videoTrack = getVideoTrackForStreamURL(streamURL);
+        Log.d(TAG, "Set stream URL " + streamURL + " current: " + this.streamURL);
+        if (Objects.equals(streamURL, this.streamURL)) {
+            return;
+        }
 
+        // The value of this.streamURL is really changing. Before
+        // realizing/applying the change, let go of the old videoTrack. Of
+        // course, that is only necessary if the value of videoTrack will
+        // really change. Please note though that letting go of the old
+        // videoTrack before assigning to this.streamURL is vital;
+        // otherwise, removeRendererFromVideoTrack will fail to remove the
+        // old videoTrack from the associated videoRenderer, two
+        // VideoTracks (the old and the new) may start rendering and, most
+        // importantly the videoRender may eventually crash when the old
+        // videoTrack is disposed.
+        getVideoTrackForStreamURL(streamURL, videoTrack -> {
+            Log.d(TAG, "Got video track for stream URL " + streamURL + " -> " + videoTrack);
             if (this.videoTrack != videoTrack) {
                 setVideoTrack(null);
             }
@@ -475,7 +503,7 @@ public class WebRTCView extends ViewGroup {
             // After realizing/applying the change in the value of
             // this.streamURL, reflect it on the value of videoTrack.
             setVideoTrack(videoTrack);
-        }
+        });
     }
 
     /**
