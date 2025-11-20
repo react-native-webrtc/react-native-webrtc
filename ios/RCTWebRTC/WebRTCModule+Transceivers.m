@@ -237,6 +237,7 @@ RCT_EXPORT_BLOCKING_SYNCHRONOUS_METHOD(transceiverSetCodecPreferences : (nonnull
         encoding.isActive = [encodingUpdate[@"active"] boolValue];
         encoding.rid = encodingUpdate[@"rid"];
         encoding.maxBitrateBps = encodingUpdate[@"maxBitrate"];
+        encoding.minBitrateBps = encodingUpdate[@"minBitrate"];
         encoding.maxFramerate = encodingUpdate[@"maxFramerate"];
         encoding.scaleResolutionDownBy = encodingUpdate[@"scaleResolutionDownBy"];
     }

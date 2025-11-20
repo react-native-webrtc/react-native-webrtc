@@ -106,6 +106,9 @@
         if (encoding.maxBitrateBps) {
             encodingDictionary[@"maxBitrate"] = encoding.maxBitrateBps;
         }
+        if (encoding.minBitrateBps) {
+            encodingDictionary[@"minBitrate"] = encoding.minBitrateBps;
+        }
         if (encoding.maxFramerate) {
             encodingDictionary[@"maxFramerate"] = encoding.maxFramerate;
         }
@@ -253,6 +256,9 @@
     }
     if (params[@"maxBitrate"] != nil) {
         [encoding setMaxBitrateBps:(NSNumber *)params[@"maxBitrate"]];
+    }
+    if (params[@"minBitrate"] != nil) {
+        [encoding setMinBitrateBps:(NSNumber *)params[@"minBitrate"]];
     }
     if (params[@"maxFramerate"] != nil) {
         [encoding setMaxFramerate:(NSNumber *)params[@"maxFramerate"]];

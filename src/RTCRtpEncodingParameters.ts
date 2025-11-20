@@ -3,6 +3,7 @@ export interface RTCRtpEncodingParametersInit {
     rid?: string;
     maxFramerate?: number;
     maxBitrate?: number;
+    minBitrate?: number;
     scaleResolutionDownBy?: number;
 }
 
@@ -11,12 +12,14 @@ export default class RTCRtpEncodingParameters {
     _rid: string | null;
     _maxFramerate: number | null;
     _maxBitrate: number | null;
+    _minBitrate: number | null;
     _scaleResolutionDownBy: number | null;
 
     constructor(init: RTCRtpEncodingParametersInit) {
         this.active = init.active;
         this._rid = init.rid ?? null;
         this._maxBitrate = init.maxBitrate ?? null;
+        this._minBitrate = init.minBitrate ?? null;
         this._maxFramerate = init.maxFramerate ?? null;
         this._scaleResolutionDownBy = init.scaleResolutionDownBy ?? null;
     }
@@ -51,6 +54,19 @@ export default class RTCRtpEncodingParameters {
         }
     }
 
+    get minBitrate() {
+        return this._minBitrate;
+    }
+
+    set minBitrate(bitrate) {
+        // eslint-disable-next-line eqeqeq
+        if (bitrate != null && bitrate >= 0) {
+            this._minBitrate = bitrate;
+        } else {
+            this._minBitrate = null;
+        }
+    }
+
     get scaleResolutionDownBy() {
         return this._scaleResolutionDownBy;
     }
@@ -75,6 +91,10 @@ export default class RTCRtpEncodingParameters {
 
         if (this._maxBitrate !== null) {
             obj['maxBitrate'] = this._maxBitrate;
+        }
+
+        if (this._minBitrate !== null) {
+            obj['minBitrate'] = this._minBitrate;
         }
 
         if (this._maxFramerate !== null) {

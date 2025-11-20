@@ -150,6 +150,9 @@ public class SerializeUtils {
             if (encoding.maxBitrateBps != null) {
                 encodingMap.putInt("maxBitrate", encoding.maxBitrateBps);
             }
+            if (encoding.minBitrateBps != null) {
+                encodingMap.putInt("minBitrate", encoding.minBitrateBps);
+            }
             if (encoding.maxFramerate != null) {
                 encodingMap.putInt("maxFramerate", encoding.maxFramerate);
             }
@@ -238,6 +241,7 @@ public class SerializeUtils {
             RtpParameters.Encoding encoding = encodings.get(i);
             // Dealing with nullable Integers
             Integer maxBitrate = encodingUpdate.hasKey("maxBitrate") ? encodingUpdate.getInt("maxBitrate") : null;
+            Integer minBitrate = encodingUpdate.hasKey("minBitrate") ? encodingUpdate.getInt("minBitrate") : null;
             Integer maxFramerate = encodingUpdate.hasKey("maxFramerate") ? encodingUpdate.getInt("maxFramerate") : null;
             Double scaleResolutionDownBy = encodingUpdate.hasKey("scaleResolutionDownBy")
                     ? encodingUpdate.getDouble("scaleResolutionDownBy")
@@ -246,6 +250,7 @@ public class SerializeUtils {
             encoding.active = encodingUpdate.getBoolean("active");
             encoding.rid = encodingUpdate.getString("rid");
             encoding.maxBitrateBps = maxBitrate;
+            encoding.minBitrateBps = minBitrate;
             encoding.maxFramerate = maxFramerate;
             encoding.scaleResolutionDownBy = scaleResolutionDownBy;
         }
@@ -293,6 +298,9 @@ public class SerializeUtils {
         }
         if (params.hasKey("maxBitrate")) {
             encoding.maxBitrateBps = params.getInt("maxBitrate");
+        }
+        if (params.hasKey("minBitrate")) {
+            encoding.minBitrateBps = params.getInt("minBitrate");
         }
         if (params.hasKey("maxFramerate")) {
             encoding.maxFramerate = params.getInt("maxFramerate");
