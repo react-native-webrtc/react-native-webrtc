@@ -161,7 +161,7 @@
     return videoTrack;
 }
 
-RCT_EXPORT_METHOD(getDisplayMedia : (RCTPromiseResolveBlock)resolve rejecter : (RCTPromiseRejectBlock)reject) {
+RCT_EXPORT_METHOD(getDisplayMedia : (NSDictionary *)constraints resolver : (RCTPromiseResolveBlock)resolve rejecter : (RCTPromiseRejectBlock)reject) {
 #if TARGET_OS_TV
     reject(@"unsupported_platform", @"tvOS is not supported", nil);
     return;

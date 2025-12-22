@@ -112,6 +112,18 @@ try {
 };
 ```
 
+### Using Media Constraints on getDisplayMedia (Android Only)
+
+It is possible to use mediaConstraints on getDisplayMedia to restricts the user to capturing the default display using the custom boolean parameter `createConfigForDefaultDisplay`.
+A resolution scale can also be applied using `resolutionScale` parameter. Value is a number between 0 and 1 
+
+```javascript
+	const displayMediaStreamConstraints = {
+		createConfigForDefaultDisplay: true,
+		resolutionScale: 0.5,
+	};
+```
+
 ## Destroying the Media Stream
 
 Cycling all of the tracks and stopping them is more than enough to clean up after a call has finished.  

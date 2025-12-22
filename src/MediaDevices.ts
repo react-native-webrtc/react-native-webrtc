@@ -31,10 +31,11 @@ class MediaDevices extends EventTarget<MediaDevicesEventMap> {
      * W3C "Screen Capture" compatible {@code getDisplayMedia} implementation.
      * See: https://w3c.github.io/mediacapture-screen-share/
      *
+     * @param {*} constraints
      * @returns {Promise}
      */
-    getDisplayMedia() {
-        return getDisplayMedia();
+    getDisplayMedia(constraints: Constraints) {
+        return getDisplayMedia(constraints);
     }
 
     /**
