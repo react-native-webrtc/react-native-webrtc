@@ -7,8 +7,10 @@ import MediaStreamError from './MediaStreamError';
 const { WebRTCModule } = NativeModules;
 
 export interface Constraints {
-    createConfigForDefaultDisplay?: boolean;
-    resolutionScale?: number;
+    android?: {
+        createConfigForDefaultDisplay?: boolean;
+        resolutionScale?: number;
+    }
 }
 
 export default function getDisplayMedia(constraints: Constraints = {}): Promise<MediaStream> {

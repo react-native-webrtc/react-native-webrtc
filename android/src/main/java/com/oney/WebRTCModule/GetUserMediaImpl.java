@@ -273,21 +273,33 @@ class GetUserMediaImpl {
 
         // Handle the incoming params
 
-        // MediaProjectionConfig need API level 34
-        this.createConfigForDefaultDisplay =
-            (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
-            && constraints.hasKey("createConfigForDefaultDisplay")
-            && (constraints.getType("createConfigForDefaultDisplay") == ReadableType.Boolean)
-            && constraints.getBoolean("createConfigForDefaultDisplay");
-
-        float scale = 1.0f;
-        if (constraints.hasKey("resolutionScale") && (constraints.getType("resolutionScale") == ReadableType.Number)) {
-            scale = (float) constraints.getDouble("resolutionScale");
+        ReadableMap androidConstraints = null;
+        if (constraints.hasKey("android") && constraints.getType("android") == ReadableType.Map) {
+            androidConstraints = constraints.getMap("android");
         }
-        // Force la valeur dans [0, 1]
+
+        // Default values
+        boolean createConfigForDefaultDisplay = false;
+        float scale = 1.0f;
+
+        if (androidConstraints != null) {
+            // MediaProjectionConfig need API level 34
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE
+                && androidConstraints.hasKey("createConfigForDefaultDisplay")
+                && androidConstraints.getType("createConfigForDefaultDisplay") == ReadableType.Boolean) {
+                createConfigForDefaultDisplay = androidConstraints.getBoolean("createConfigForDefaultDisplay");
+            }
+            if (androidConstraints.hasKey("resolutionScale")
+                && androidConstraints.getType("resolutionScale") == ReadableType.Number) {
+                scale = (float) androidConstraints.getDouble("resolutionScale");
+            }
+        }
+
+        this.createConfigForDefaultDisplay = createConfigForDefaultDisplay;
+        // Force the value in [0, 1]
         this.resolutionScale = Math.max(0.0f, Math.min(1.0f, scale));
 
-        Log.d(TAG, "######### initializeConstraints: createConfigForDefaultDisplay=" + this.createConfigForDefaultDisplay
+        Log.d(TAG, "initializeConstraints: createConfigForDefaultDisplay=" + this.createConfigForDefaultDisplay
             + " resolutionScale=" + this.resolutionScale);
     }
 
