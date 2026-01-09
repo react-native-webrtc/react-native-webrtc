@@ -1,7 +1,7 @@
 import { NativeModules } from 'react-native';
 
-import getDisplayMedia from './getDisplayMedia';
-import getUserMedia, { Constraints } from './getUserMedia';
+import getDisplayMedia, { Constraints as DisplayMediaConstraints } from './getDisplayMedia';
+import getUserMedia, { Constraints as UserMediaConstraints } from './getUserMedia';
 import { Event, EventTarget, getEventAttributeValue, setEventAttributeValue } from './vendor/event-target-shim';
 
 const { WebRTCModule } = NativeModules;
@@ -34,7 +34,7 @@ class MediaDevices extends EventTarget<MediaDevicesEventMap> {
      * @param {*} constraints
      * @returns {Promise}
      */
-    getDisplayMedia(constraints: Constraints) {
+    getDisplayMedia(constraints: DisplayMediaConstraints) {
         return getDisplayMedia(constraints);
     }
 
@@ -46,7 +46,7 @@ class MediaDevices extends EventTarget<MediaDevicesEventMap> {
      * @param {*} constraints
      * @returns {Promise}
      */
-    getUserMedia(constraints: Constraints) {
+    getUserMedia(constraints: UserMediaConstraints) {
         return getUserMedia(constraints);
     }
 }
