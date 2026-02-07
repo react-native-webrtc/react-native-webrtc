@@ -29,6 +29,10 @@
 
 #pragma mark - getUserMedia
 
+- (NSString *)convertBoolToString:(id)value {
+    return value ? @"true" : @"false";
+}
+
 /**
  * Initializes a new {@link RTCAudioTrack} which satisfies the given constraints.
  *
@@ -37,7 +41,46 @@
  */
 - (RTCAudioTrack *)createAudioTrack:(NSDictionary *)constraints {
     NSString *trackId = [[NSUUID UUID] UUIDString];
-    RTCAudioTrack *audioTrack = [self.peerConnectionFactory audioTrackWithTrackId:trackId];
+
+    NSDictionary *audioDict = nil;
+    if ([constraints[@"audio"] isKindOfClass:[NSDictionary class]]) {
+        audioDict = constraints[@"audio"];
+    }
+
+    NSMutableDictionary *mandatory = [NSMutableDictionary dictionary];
+
+    mandatory[@"googAutoGainControl"] =
+        audioDict[@"autoGainControl"] != nil
+            ? [self convertBoolToString:audioDict[@"autoGainControl"]]
+            : @"true";
+
+    mandatory[@"googNoiseSuppression"] =
+        audioDict[@"noiseSuppression"] != nil
+            ? [self convertBoolToString:audioDict[@"noiseSuppression"]]
+            : @"true";
+
+    mandatory[@"googEchoCancellation"] =
+        audioDict[@"echoCancellation"] != nil
+            ? [self convertBoolToString:audioDict[@"echoCancellation"]]
+            : @"true";
+
+    mandatory[@"googHighpassFilter"] =
+        audioDict[@"highpassFilter"] != nil
+            ? [self convertBoolToString:audioDict[@"highpassFilter"]]
+            : @"true";
+
+    RTCMediaConstraints *mediaConstraints =
+        [[RTCMediaConstraints alloc]
+            initWithMandatoryConstraints:mandatory
+                     optionalConstraints:nil];
+
+    RTCAudioSource *audioSource =
+        [self.peerConnectionFactory audioSourceWithConstraints:mediaConstraints];
+
+    RTCAudioTrack *audioTrack =
+        [self.peerConnectionFactory audioTrackWithSource:audioSource
+                                                  trackId:trackId];
+
     return audioTrack;
 }
 /**
