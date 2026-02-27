@@ -197,10 +197,16 @@
         _pipController.videoTrack = _videoTrack;
     }
 
+    CGFloat blurIntensity = 0;
+    if ([pipOptions objectForKey:@"blurIntensity"]) {
+        blurIntensity = [pipOptions[@"blurIntensity"] doubleValue];
+    }
+
     _pipController.startAutomatically = startAutomatically;
     _pipController.stopAutomatically = stopAutomatically;
     _pipController.objectFit = _objectFit;
     _pipController.preferredSize = preferredSize;
+    _pipController.blurIntensity = blurIntensity;
 }
 
 - (void)API_AVAILABLE(ios(15.0))startPIP {

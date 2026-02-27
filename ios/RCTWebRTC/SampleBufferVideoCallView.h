@@ -7,6 +7,7 @@
 
 @property(nonnull, nonatomic, readonly) AVSampleBufferDisplayLayer *sampleBufferLayer;
 @property(nonatomic, assign) BOOL shouldRender;
+@property(nonatomic, assign) CGFloat blurIntensity;
 
 - (void)requestScaleRecalculation;
 @end
