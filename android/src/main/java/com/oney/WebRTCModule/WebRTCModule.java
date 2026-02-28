@@ -951,6 +951,11 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
     public void peerConnectionCreateOffer(int id, ReadableMap options, Promise promise) {
         ThreadUtils.runOnExecutor(() -> {
             PeerConnectionObserver pco = mPeerConnectionObservers.get(id);
+            if (pco == null) {
+                Log.d(TAG, "peerConnectionCreateOffer() PeerConnectionObserver not found for id " + id);
+                promise.reject(new Exception("PeerConnection not found"));
+                return;
+            }
             PeerConnection peerConnection = pco.getPeerConnection();
 
             if (peerConnection == null) {
@@ -1113,6 +1118,11 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
     public void peerConnectionSetRemoteDescription(int id, ReadableMap desc, Promise promise) {
         ThreadUtils.runOnExecutor(() -> {
             PeerConnectionObserver pco = mPeerConnectionObservers.get(id);
+            if (pco == null) {
+                Log.d(TAG, "peerConnectionSetRemoteDescription() PeerConnectionObserver not found for id " + id);
+                promise.reject(new Exception("PeerConnection not found"));
+                return;
+            }
             PeerConnection peerConnection = pco.getPeerConnection();
 
             if (peerConnection == null) {
