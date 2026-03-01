@@ -1,4 +1,5 @@
 #import <React/RCTLog.h>
+#import <WebRTC/RTCCertificate.h>
 #import <WebRTC/RTCDataChannelConfiguration.h>
 #import <WebRTC/RTCIceServer.h>
 #import <WebRTC/RTCSessionDescription.h>
@@ -169,6 +170,22 @@
             config.tcpCandidatePolicy = RTCTcpCandidatePolicyEnabled;
         } else if ([tcpCandidatePolicy isEqualToString:@"disabled"]) {
             config.tcpCandidatePolicy = RTCTcpCandidatePolicyDisabled;
+        }
+    }
+
+    if (json[@"certificates"] != nil && [json[@"certificates"] isKindOfClass:[NSArray class]]) {
+        NSArray *certs = json[@"certificates"];
+        if (certs.count > 0) {
+            id certInfo = certs[0];
+            if ([certInfo isKindOfClass:[NSDictionary class]]) {
+                NSString *privateKey = certInfo[@"privateKey"];
+                NSString *certificate = certInfo[@"certificate"];
+                if (privateKey && certificate) {
+                    RTCCertificate *cert = [[RTCCertificate alloc] initWithPrivateKey:privateKey
+                                                                          certificate:certificate];
+                    config.certificate = cert;
+                }
+            }
         }
     }
 

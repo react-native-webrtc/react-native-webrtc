@@ -6,6 +6,7 @@ import Logger from './Logger';
 import MediaStream from './MediaStream';
 import MediaStreamTrack from './MediaStreamTrack';
 import MediaStreamTrackEvent from './MediaStreamTrackEvent';
+import RTCCertificate from './RTCCertificate';
 import RTCDataChannel from './RTCDataChannel';
 import RTCDataChannelEvent from './RTCDataChannelEvent';
 import RTCIceCandidate from './RTCIceCandidate';
@@ -55,6 +56,7 @@ type RTCIceServer = {
 
 type RTCConfiguration = {
     bundlePolicy?: 'balanced' | 'max-compat' | 'max-bundle',
+    certificates?: RTCCertificate[],
     iceCandidatePoolSize?: number,
     iceServers?: RTCIceServer[],
     iceTransportPolicy?: 'all' | 'relay',
@@ -89,6 +91,32 @@ export default class RTCPeerConnection extends EventTarget<RTCPeerConnectionEven
     _remoteStreams: Map<string, MediaStream>;
     _pendingTrackEvents: any[];
 
+    static generateCertificate(keygenAlgorithm: string | { name: string, namedCurve?: string, modulusLength?: number, publicExponent?: Uint8Array, hash?: string }): Promise<RTCCertificate> {
+        const options: { keyType?: string, expires?: number } = {};
+
+        let algorithm = keygenAlgorithm;
+
+        if (typeof algorithm === 'string') {
+            algorithm = { name: algorithm };
+        }
+
+        if (algorithm.name === 'RSASSA-PKCS1-v1_5') {
+            options.keyType = 'RSA';
+        } else if (algorithm.name === 'ECDSA') {
+            options.keyType = 'ECDSA';
+        } else {
+            // Default to ECDSA for other cases or if unspecified
+            // This behavior matches common expectations when modern defaults are preferred
+            if (algorithm.name && algorithm.name.toUpperCase().includes('RSA')) {
+                options.keyType = 'RSA';
+            } else {
+                options.keyType = 'ECDSA';
+            }
+        }
+
+        return WebRTCModule.generateCertificate(options).then(info => new RTCCertificate(info));
+    }
+
     constructor(configuration?: RTCConfiguration) {
         super();
 
@@ -118,6 +146,15 @@ export default class RTCPeerConnection extends EventTarget<RTCPeerConnectionEven
 
             // Filter out bogus servers.
             configuration.iceServers = servers.filter(s => s.urls);
+
+            // Sanitize certificates.
+            if (configuration.certificates) {
+                // @ts-ignore
+                configuration.certificates = configuration.certificates.map(cert => ({
+                    privateKey: cert._privateKey,
+                    certificate: cert._certificate
+                }));
+            }
         }
 
         if (!WebRTCModule.peerConnectionInit(configuration, this._pcId)) {
