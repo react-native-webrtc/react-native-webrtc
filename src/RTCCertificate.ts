@@ -4,19 +4,12 @@ export type RTCCertificateFingerprint = {
 };
 
 export default class RTCCertificate {
-    _privateKey: string;
-    _certificate: string;
     _expires: number;
     _fingerprints: RTCCertificateFingerprint[];
+    _id: string;
 
-    constructor(info: {
-        privateKey: string;
-        certificate: string;
-        expires: number;
-        fingerprints: RTCCertificateFingerprint[];
-    }) {
-        this._privateKey = info.privateKey;
-        this._certificate = info.certificate;
+    constructor(info: { certificateId: string, expires: number, fingerprints: RTCCertificateFingerprint[] }) {
+        this._id = info.certificateId;
         this._expires = info.expires;
         this._fingerprints = info.fingerprints;
     }

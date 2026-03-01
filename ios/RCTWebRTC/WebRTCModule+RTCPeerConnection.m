@@ -67,7 +67,22 @@
 
 @end
 
+static NSMutableDictionary<NSString *, RTCCertificate *> *gCertificates = nil;
+
 @implementation WebRTCModule (RTCPeerConnection)
+
++ (void)initialize {
+    if (self == [WebRTCModule class]) {
+        gCertificates = [NSMutableDictionary new];
+    }
+}
+
++ (RTCCertificate *)getCertificate:(NSString *)certId {
+    if (!gCertificates) {
+        return nil;
+    }
+    return gCertificates[certId];
+}
 
 int _transceiverNextId = 0;
 
@@ -948,9 +963,11 @@ RCT_EXPORT_METHOD(generateCertificate : (NSDictionary *)options resolver : (RCTP
         return;
     }
 
+    NSString *certId = [[NSUUID UUID] UUIDString];
+    gCertificates[certId] = cert;
+
     NSMutableDictionary *result = [NSMutableDictionary new];
-    result[@"privateKey"] = cert.privateKey;
-    result[@"certificate"] = cert.certificate;
+    result[@"certificateId"] = certId;
 
     // expires
     NSDate *now = [NSDate date];

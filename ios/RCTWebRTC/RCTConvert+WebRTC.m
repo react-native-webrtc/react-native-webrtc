@@ -5,6 +5,8 @@
 #import <WebRTC/RTCSessionDescription.h>
 #import "RCTConvert+WebRTC.h"
 
+#import "WebRTCModule+RTCPeerConnection.h"
+
 @implementation RCTConvert (WebRTC)
 
 + (RTCSessionDescription *)RTCSessionDescription:(id)json {
@@ -178,12 +180,12 @@
         if (certs.count > 0) {
             id certInfo = certs[0];
             if ([certInfo isKindOfClass:[NSDictionary class]]) {
-                NSString *privateKey = certInfo[@"privateKey"];
-                NSString *certificate = certInfo[@"certificate"];
-                if (privateKey && certificate) {
-                    RTCCertificate *cert = [[RTCCertificate alloc] initWithPrivateKey:privateKey
-                                                                          certificate:certificate];
-                    config.certificate = cert;
+                NSString *certId = certInfo[@"certificateId"];
+                if (certId) {
+                    RTCCertificate *cert = [WebRTCModule getCertificate:certId];
+                    if (cert) {
+                        config.certificate = cert;
+                    }
                 }
             }
         }

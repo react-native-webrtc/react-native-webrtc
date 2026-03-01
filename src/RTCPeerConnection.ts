@@ -151,8 +151,7 @@ export default class RTCPeerConnection extends EventTarget<RTCPeerConnectionEven
             if (configuration.certificates) {
                 // @ts-ignore
                 configuration.certificates = configuration.certificates.map(cert => ({
-                    privateKey: cert._privateKey,
-                    certificate: cert._certificate
+                    certificateId: cert._id
                 }));
             }
         }

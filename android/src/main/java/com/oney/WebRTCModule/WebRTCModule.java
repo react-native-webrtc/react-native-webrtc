@@ -54,6 +54,9 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
     private final SparseArray<PeerConnectionObserver> mPeerConnectionObservers;
     final Map<String, MediaStream> localStreams;
 
+    // Store generated certificates by ID to avoid exposing private keys to JS
+    private static final Map<String, RtcCertificatePem> mCertificates = new HashMap<>();
+
     private final GetUserMediaImpl getUserMediaImpl;
 
     public WebRTCModule(ReactApplicationContext reactContext) {
@@ -265,10 +268,15 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
             ReadableArray certificates = map.getArray("certificates");
             if (certificates.size() > 0) {
                 ReadableMap certMap = certificates.getMap(0);
-                if (certMap.hasKey("privateKey") && certMap.hasKey("certificate")) {
-                    String privateKey = certMap.getString("privateKey");
-                    String certificate = certMap.getString("certificate");
-                    conf.certificate = new RtcCertificatePem(privateKey, certificate);
+                if (certMap.hasKey("certificateId")) {
+                    String certId = certMap.getString("certificateId");
+                    RtcCertificatePem cert;
+                    synchronized (mCertificates) {
+                        cert = mCertificates.get(certId);
+                    }
+                    if (cert != null) {
+                        conf.certificate = cert;
+                    }
                 }
             }
         }
@@ -1446,10 +1454,13 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
                 }
 
                 RtcCertificatePem cert = RtcCertificatePem.generateCertificate(keyType, expires);
+                String certId = java.util.UUID.randomUUID().toString();
+                synchronized (mCertificates) {
+                    mCertificates.put(certId, cert);
+                }
 
                 WritableMap params = Arguments.createMap();
-                params.putString("privateKey", cert.privateKey);
-                params.putString("certificate", cert.certificate);
+                params.putString("certificateId", certId);
                 // Return expires as millis since epoch
                 params.putDouble("expires", System.currentTimeMillis() + expires * 1000);
 

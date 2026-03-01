@@ -14,4 +14,6 @@
 
 @interface WebRTCModule (RTCPeerConnection)<RTCPeerConnectionDelegate>
 
++ (RTCCertificate *)getCertificate:(NSString *)certId;
+
 @end
