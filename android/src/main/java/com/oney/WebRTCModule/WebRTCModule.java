@@ -1495,7 +1495,7 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
     private String bytesToHex(byte[] bytes) {
         StringBuilder sb = new StringBuilder();
         for (byte b : bytes) {
-            sb.append(String.format("%02X", b));
+            sb.append(String.format("%02x", b));
             sb.append(":");
         }
         if (sb.length() > 0) {
