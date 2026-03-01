@@ -995,7 +995,7 @@ RCT_EXPORT_METHOD(generateCertificate : (NSDictionary *)options resolver : (RCTP
 
             NSMutableString *fingerprint = [NSMutableString stringWithCapacity:CC_SHA256_DIGEST_LENGTH * 3];
             for (int i = 0; i < CC_SHA256_DIGEST_LENGTH; ++i) {
-                [fingerprint appendFormat:@"%02X:", digest[i]];
+                [fingerprint appendFormat:@"%02x:", digest[i]];
             }
             if (fingerprint.length > 0) {
                 [fingerprint deleteCharactersInRange:NSMakeRange(fingerprint.length - 1, 1)];
