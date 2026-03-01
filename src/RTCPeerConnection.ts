@@ -91,7 +91,15 @@ export default class RTCPeerConnection extends EventTarget<RTCPeerConnectionEven
     _remoteStreams: Map<string, MediaStream>;
     _pendingTrackEvents: any[];
 
-    static generateCertificate(keygenAlgorithm: string | { name: string, namedCurve?: string, modulusLength?: number, publicExponent?: Uint8Array, hash?: string }): Promise<RTCCertificate> {
+    static generateCertificate(
+        keygenAlgorithm: string | {
+            name: string,
+            namedCurve?: string,
+            modulusLength?: number,
+            publicExponent?: Uint8Array,
+            hash?: string
+        }
+    ): Promise<RTCCertificate> {
         const options: { keyType?: string, expires?: number } = {};
 
         let algorithm = keygenAlgorithm;
@@ -150,9 +158,11 @@ export default class RTCPeerConnection extends EventTarget<RTCPeerConnectionEven
             // Sanitize certificates.
             if (configuration.certificates) {
                 // @ts-ignore
-                configuration.certificates = configuration.certificates.map(cert => ({
-                    certificateId: cert._id
-                }));
+                configuration.certificates = configuration.certificates.map(cert => {
+                    return {
+                        certificateId: cert._id
+                    };
+                });
             }
         }
 
