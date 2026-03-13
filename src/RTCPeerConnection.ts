@@ -1,4 +1,4 @@
-import { Event, EventTarget, getEventAttributeValue, setEventAttributeValue } from 'event-target-shim';
+import { Event, EventTarget, getEventAttributeValue, setEventAttributeValue } from './vendor/event-target-shim';
 import { NativeModules } from 'react-native';
 
 import { addListener, removeListener } from './EventEmitter';

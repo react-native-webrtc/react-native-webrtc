@@ -21,8 +21,7 @@
   "module": "lib/module/index.js",
   "dependencies": {
     "base64-js": "1.5.1",
-    "debug": "4.3.4",
-    "event-target-shim": "6.0.2"
+    "debug": "4.3.4"
   },
   "peerDependencies": {
     "react-native": ">=0.60.0"
