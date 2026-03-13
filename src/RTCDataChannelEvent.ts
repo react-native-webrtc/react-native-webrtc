@@ -1,6 +1,6 @@
+import type RTCDataChannel from './RTCDataChannel';
 import { Event } from './vendor/event-target-shim';
 
-import type RTCDataChannel from './RTCDataChannel';
 
 type DATA_CHANNEL_EVENTS =  'open'| 'message'| 'bufferedamountlow'| 'closing'| 'close'| 'error' | 'datachannel';
 

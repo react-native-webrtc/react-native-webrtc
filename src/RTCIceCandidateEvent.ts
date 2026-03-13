@@ -1,6 +1,6 @@
+import type RTCIceCandidate from './RTCIceCandidate';
 import { Event } from './vendor/event-target-shim';
 
-import type RTCIceCandidate from './RTCIceCandidate';
 
 type RTC_ICECANDIDATE_EVENTS = 'icecandidate' | 'icecandidateerror'
 
