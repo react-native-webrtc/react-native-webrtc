@@ -1,6 +1,6 @@
+import type MediaStreamTrack from './MediaStreamTrack';
 import { Event } from './vendor/event-target-shim';
 
-import type MediaStreamTrack from './MediaStreamTrack';
 
 type MEDIA_STREAM_EVENTS = 'addtrack'| 'removetrack'
 

@@ -1,10 +1,10 @@
-import { Event, EventTarget, getEventAttributeValue, setEventAttributeValue } from './vendor/event-target-shim';
 import { NativeModules } from 'react-native';
 
 import { MediaTrackConstraints } from './Constraints';
 import { addListener, removeListener } from './EventEmitter';
 import Logger from './Logger';
 import { deepClone, normalizeConstraints } from './RTCUtil';
+import { Event, EventTarget, getEventAttributeValue, setEventAttributeValue } from './vendor/event-target-shim';
 
 const log = new Logger('pc');
 const { WebRTCModule } = NativeModules;

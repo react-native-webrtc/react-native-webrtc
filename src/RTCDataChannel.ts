@@ -1,10 +1,10 @@
 import * as base64 from 'base64-js';
-import { EventTarget, getEventAttributeValue, setEventAttributeValue } from './vendor/event-target-shim';
 import { NativeModules } from 'react-native';
 
 import { addListener, removeListener } from './EventEmitter';
 import MessageEvent from './MessageEvent';
 import RTCDataChannelEvent from './RTCDataChannelEvent';
+import { EventTarget, getEventAttributeValue, setEventAttributeValue } from './vendor/event-target-shim';
 
 const { WebRTCModule } = NativeModules;
 
