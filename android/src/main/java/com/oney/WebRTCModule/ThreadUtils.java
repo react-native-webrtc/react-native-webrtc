@@ -14,6 +14,14 @@ final class ThreadUtils {
     private static final ExecutorService executor = Executors.newSingleThreadExecutor();
 
     /**
+     * Gets the executor used to run all WebRTC PeerConnection APIs.
+     * @return ExecutorService.
+     */
+    public static ExecutorService getExecutor() {
+        return executor;
+    }
+
+    /**
      * Runs the given {@link Runnable} on the executor.
      * @param runnable
      */
