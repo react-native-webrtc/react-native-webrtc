@@ -94,6 +94,7 @@
         }
 
         if (!self.renderer.readyForMoreMediaData) {
+            CFRelease(sampleBuffer);
             return;
         }
 
@@ -134,6 +135,7 @@
 
     CFDictionarySetValue(dict, kCMSampleAttachmentKey_DisplayImmediately, kCFBooleanTrue);
     CVPixelBufferRelease(pixelBuffer);
+    CFRelease(formatDescription);
     return sampleBuffer;
 }
 
@@ -144,7 +146,7 @@
     if ([videoFrame.buffer isKindOfClass:[RTCCVPixelBuffer class]]) {
         CVPixelBufferRef pixelBuffer = [((RTCCVPixelBuffer *)videoFrame.buffer) pixelBuffer];
         CVPixelBufferRetain(pixelBuffer);
-        return [((RTCCVPixelBuffer *)videoFrame.buffer) pixelBuffer];
+        return pixelBuffer;
     } else {
         return [self pixelBufferFromI420:[videoFrame.buffer toI420]];
     }
@@ -172,6 +174,9 @@
 }
 
 - (void)dealloc {
+    [[NSNotificationCenter defaultCenter] removeObserver:self
+                                                    name:AVSampleBufferDisplayLayerFailedToDecodeNotification
+                                                  object:self.sampleBufferLayer];
     [_i420Converter unprepareForAccelerateConversion];
 }
 

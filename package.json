@@ -1,64 +1,73 @@
 {
-  "name": "react-native-webrtc",
-  "version": "124.0.7",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/react-native-webrtc/react-native-webrtc.git"
-  },
-  "description": "WebRTC for React Native",
-  "license": "MIT",
-  "homepage": "https://github.com/react-native-webrtc/react-native-webrtc",
-  "keywords": [
-    "react-component",
-    "react-native",
-    "ios",
-    "android",
-    "webrtc"
-  ],
-  "react-native": "src/index.ts",
-  "types": "lib/typescript/index.d.ts",
-  "main": "lib/commonjs/index.js",
-  "module": "lib/module/index.js",
-  "dependencies": {
-    "base64-js": "1.5.1",
-    "debug": "4.3.4"
-  },
-  "peerDependencies": {
-    "react-native": ">=0.60.0"
-  },
-  "scripts": {
-    "lint": "eslint --max-warnings 0 . && tsc --noEmit",
-    "lintfix": "eslint --max-warnings 0 --fix . && tsc --noEmit",
-    "prepare": "husky install && bob build",
-    "format": "tools/format.sh"
-  },
-  "bugs": {
-    "url": "https://github.com/react-native-webrtc/react-native-webrtc/issues"
-  },
-  "devDependencies": {
-    "@types/debug": "4.1.7",
-    "@types/react": "17.0.40",
-    "@types/react-native": "0.67.3",
-    "@typescript-eslint/eslint-plugin": "^5.39.0",
-    "@typescript-eslint/parser": "^5.39.0",
-    "eslint": "^8.24.0",
-    "eslint-plugin-import": "^2.26.0",
-    "husky": "7.0.2",
-    "lint-staged": "11.2.3",
-    "prettier": "2.4.1",
-    "react-native-builder-bob": "0.18.2",
-    "typescript": "4.6.2"
-  },
-  "lint-staged": {
-    "**/*": "prettier --write --ignore-unknown"
-  },
-  "react-native-builder-bob": {
-    "source": "src",
-    "output": "lib",
-    "targets": [
-      "commonjs",
-      "module",
-      "typescript"
-    ]
-  }
+    "name": "react-native-webrtc",
+    "version": "124.0.7",
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/react-native-webrtc/react-native-webrtc.git"
+    },
+    "description": "WebRTC for React Native",
+    "license": "MIT",
+    "homepage": "https://github.com/react-native-webrtc/react-native-webrtc",
+    "keywords": [
+        "react-component",
+        "react-native",
+        "ios",
+        "android",
+        "webrtc"
+    ],
+    "react-native": "src/index.ts",
+    "types": "lib/typescript/index.d.ts",
+    "main": "lib/commonjs/index.js",
+    "module": "lib/module/index.js",
+    "dependencies": {
+        "base64-js": "1.5.1",
+        "debug": "4.3.4"
+    },
+    "peerDependencies": {
+        "react-native": ">=0.60.0"
+    },
+    "scripts": {
+        "lint": "eslint --max-warnings 0 . && tsc --noEmit",
+        "lintfix": "eslint --max-warnings 0 --fix . && tsc --noEmit",
+        "prepare": "husky install && bob build",
+        "format": "tools/format.sh"
+    },
+    "bugs": {
+        "url": "https://github.com/react-native-webrtc/react-native-webrtc/issues"
+    },
+    "devDependencies": {
+        "@types/debug": "4.1.7",
+        "@types/react": "^18.2.0",
+        "@types/react-native": "^0.72.8",
+        "@typescript-eslint/eslint-plugin": "^5.39.0",
+        "@typescript-eslint/parser": "^5.39.0",
+        "eslint": "^8.24.0",
+        "eslint-plugin-import": "^2.26.0",
+        "husky": "7.0.2",
+        "lint-staged": "11.2.3",
+        "prettier": "^2.8.0",
+        "react-native-builder-bob": "0.18.2",
+        "typescript": "4.6.2"
+    },
+    "lint-staged": {
+        "**/*": "prettier --write --ignore-unknown"
+    },
+    "react-native-builder-bob": {
+        "source": "src",
+        "output": "lib",
+        "targets": [
+            "commonjs",
+            "module",
+            "typescript"
+        ]
+    },
+    "codegenConfig": {
+        "name": "RNWebRTCSpec",
+        "type": "all",
+        "jsSrcsDir": "src",
+        "android": {
+            "javaPackageName": "com.oney.WebRTCModule"
+        },
+        "includesGeneratedCode": false
+    }
 }

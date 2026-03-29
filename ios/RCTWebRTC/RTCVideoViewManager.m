@@ -1,5 +1,4 @@
 #import <AVFoundation/AVFoundation.h>
-#import <objc/runtime.h>
 
 #import <React/RCTLog.h>
 #import <React/RCTUIManager.h>
@@ -18,6 +17,8 @@
 #import "PIPController.h"
 #import "RTCVideoViewManager.h"
 #import "WebRTCModule.h"
+
+#ifndef RCT_NEW_ARCH_ENABLED
 
 /**
  * Implements an equivalent of {@code HTMLVideoElement} i.e. Web's video
@@ -41,6 +42,12 @@
 @property(nonatomic) RTCVideoViewObjectFit objectFit;
 
 @property(nonatomic) BOOL enablePIP;
+
+@property(nonatomic) BOOL iosPIPEnabled;
+@property(nonatomic) BOOL iosPIPStartAutomatically;
+@property(nonatomic) BOOL iosPIPStopAutomatically;
+@property(nonatomic) CGFloat iosPIPPreferredWidth;
+@property(nonatomic) CGFloat iosPIPPreferredHeight;
 
 @property(nonatomic, strong) API_AVAILABLE(ios(15.0)) PIPController *pipController;
 
@@ -93,8 +100,12 @@
                 [videoTrack addRenderer:self.videoView];
             });
         } else {
+            __weak RTCVideoTrack *weakVideoTrack = videoTrack;
             dispatch_async(_module.workerQueue, ^{
-                [videoTrack removeRenderer:self.videoView];
+                RTCVideoTrack *strongVideoTrack = weakVideoTrack;
+                if (strongVideoTrack) {
+                    [strongVideoTrack removeRenderer:self.videoView];
+                }
             });
         }
     }
@@ -158,6 +169,7 @@
 
 - (void)API_AVAILABLE(ios(15.0))setPIPOptions:(NSDictionary *)pipOptions {
     if (!pipOptions) {
+        [_pipController stopPIP];
         _pipController = nil;
         return;
     }
@@ -188,6 +200,7 @@
     }
 
     if (!enabled) {
+        [_pipController stopPIP];
         _pipController = nil;
         return;
     }
@@ -201,6 +214,59 @@
     _pipController.stopAutomatically = stopAutomatically;
     _pipController.objectFit = _objectFit;
     _pipController.preferredSize = preferredSize;
+}
+
+- (void)setIosPIPEnabled:(BOOL)iosPIPEnabled {
+    _iosPIPEnabled = iosPIPEnabled;
+    if (@available(iOS 15.0, *)) {
+        [self updatePIPFromIndividualProps];
+    }
+}
+
+- (void)setIosPIPStartAutomatically:(BOOL)iosPIPStartAutomatically {
+    _iosPIPStartAutomatically = iosPIPStartAutomatically;
+    if (@available(iOS 15.0, *)) {
+        [self updatePIPFromIndividualProps];
+    }
+}
+
+- (void)setIosPIPStopAutomatically:(BOOL)iosPIPStopAutomatically {
+    _iosPIPStopAutomatically = iosPIPStopAutomatically;
+    if (@available(iOS 15.0, *)) {
+        [self updatePIPFromIndividualProps];
+    }
+}
+
+- (void)setIosPIPPreferredWidth:(CGFloat)iosPIPPreferredWidth {
+    _iosPIPPreferredWidth = iosPIPPreferredWidth;
+    if (@available(iOS 15.0, *)) {
+        [self updatePIPFromIndividualProps];
+    }
+}
+
+- (void)setIosPIPPreferredHeight:(CGFloat)iosPIPPreferredHeight {
+    _iosPIPPreferredHeight = iosPIPPreferredHeight;
+    if (@available(iOS 15.0, *)) {
+        [self updatePIPFromIndividualProps];
+    }
+}
+
+- (void)API_AVAILABLE(ios(15.0))updatePIPFromIndividualProps {
+    if (!_iosPIPEnabled) {
+        [_pipController stopPIP];
+        _pipController = nil;
+        return;
+    }
+
+    if (!_pipController) {
+        _pipController = [[PIPController alloc] initWithSourceView:self];
+        _pipController.videoTrack = _videoTrack;
+    }
+
+    _pipController.startAutomatically = _iosPIPStartAutomatically;
+    _pipController.stopAutomatically = _iosPIPStopAutomatically;
+    _pipController.objectFit = _objectFit;
+    _pipController.preferredSize = CGSizeMake(_iosPIPPreferredWidth, _iosPIPPreferredHeight);
 }
 
 - (void)API_AVAILABLE(ios(15.0))startPIP {
@@ -247,8 +313,12 @@
 
     if (oldValue != videoTrack) {
         if (oldValue) {
+            __weak RTCVideoTrack *weakOldValue = oldValue;
             dispatch_async(_module.workerQueue, ^{
-                [oldValue removeRenderer:self.videoView];
+                RTCVideoTrack *strongOldValue = weakOldValue;
+                if (strongOldValue) {
+                    [strongOldValue removeRenderer:self.videoView];
+                }
             });
         }
 
@@ -318,7 +388,7 @@ RCT_EXPORT_MODULE()
 
 - (RCTView *)view {
     RTCVideoView *v = [[RTCVideoView alloc] init];
-    v.module = [self.bridge moduleForName:@"WebRTCModule"];
+    v.module = [WebRTCModule sharedInstance];
     v.viewManager = self;
     v.clipsToBounds = YES;
     return v;
@@ -348,6 +418,12 @@ RCT_CUSTOM_VIEW_PROPERTY(objectFit, NSString *, RTCVideoView) {
 
 RCT_EXPORT_VIEW_PROPERTY(onDimensionsChange, RCTDirectEventBlock)
 
+RCT_EXPORT_VIEW_PROPERTY(iosPIPEnabled, BOOL)
+RCT_EXPORT_VIEW_PROPERTY(iosPIPStartAutomatically, BOOL)
+RCT_EXPORT_VIEW_PROPERTY(iosPIPStopAutomatically, BOOL)
+RCT_EXPORT_VIEW_PROPERTY(iosPIPPreferredWidth, CGFloat)
+RCT_EXPORT_VIEW_PROPERTY(iosPIPPreferredHeight, CGFloat)
+
 RCT_CUSTOM_VIEW_PROPERTY(streamURL, NSString *, RTCVideoView) {
     if (!json) {
         view.videoTrack = nil;
@@ -369,12 +445,6 @@ RCT_CUSTOM_VIEW_PROPERTY(streamURL, NSString *, RTCVideoView) {
             });
         }
     });
-}
-
-RCT_CUSTOM_VIEW_PROPERTY(iosPIP, NSDictionary *, RTCVideoView) {
-    if (@available(iOS 15.0, *)) {
-        [view setPIPOptions:json];
-    }
 }
 
 RCT_EXPORT_METHOD(startIOSPIP : (nonnull NSNumber *)reactTag) {
@@ -404,8 +474,11 @@ RCT_EXPORT_METHOD(stopIOSPIP : (nonnull NSNumber *)reactTag) {
         }];
     }
 }
+
 + (BOOL)requiresMainQueueSetup {
     return NO;
 }
 
 @end
+
+#endif /* RCT_NEW_ARCH_ENABLED */

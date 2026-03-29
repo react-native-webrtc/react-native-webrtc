@@ -3,7 +3,6 @@
 #endif
 
 #import <React/RCTBridge.h>
-#import <React/RCTEventDispatcher.h>
 #import <React/RCTLog.h>
 #import <React/RCTUtils.h>
 
@@ -16,11 +15,20 @@
 
 @implementation WebRTCModule
 
+static WebRTCModule *sSharedInstance = nil;
+
++ (instancetype)sharedInstance {
+    return sSharedInstance;
+}
+
 + (BOOL)requiresMainQueueSetup {
     return NO;
 }
 
 - (void)dealloc {
+    _destroyed = YES;
+    sSharedInstance = nil;
+
     [_localTracks removeAllObjects];
     _localTracks = nil;
     [_localStreams removeAllObjects];
@@ -28,17 +36,73 @@
 
     for (NSNumber *peerConnectionId in _peerConnections) {
         RTCPeerConnection *peerConnection = _peerConnections[peerConnectionId];
+        // Dispose video track adapters to stop mute detection timers before closing
+        for (NSString *key in peerConnection.remoteTracks.allKeys) {
+            RTCMediaStreamTrack *track = peerConnection.remoteTracks[key];
+            if (track.kind == kRTCMediaStreamTrackKindVideo) {
+                [peerConnection removeVideoTrackAdapter:(RTCVideoTrack *)track];
+            }
+        }
+        [peerConnection.remoteTracks removeAllObjects];
+        [peerConnection.remoteStreams removeAllObjects];
+
+        NSMutableDictionary<NSString *, DataChannelWrapper *> *dataChannels = peerConnection.dataChannels;
+        for (NSString *tag in dataChannels) {
+            dataChannels[tag].delegate = nil;
+        }
+        [dataChannels removeAllObjects];
+
         peerConnection.delegate = nil;
         [peerConnection close];
     }
     [_peerConnections removeAllObjects];
+    _peerConnections = nil;
 
     _peerConnectionFactory = nil;
+    _workerQueue = nil;
+}
+
+- (void)invalidate {
+    _destroyed = YES;
+
+    // Dispose all peer connections and stop VideoTrackAdapter timers
+    // before the bridge is destroyed.
+    for (NSNumber *peerConnectionId in _peerConnections.allKeys) {
+        RTCPeerConnection *peerConnection = _peerConnections[peerConnectionId];
+        @try {
+            for (NSString *key in peerConnection.remoteTracks.allKeys) {
+                RTCMediaStreamTrack *track = peerConnection.remoteTracks[key];
+                if (track.kind == kRTCMediaStreamTrackKindVideo) {
+                    [peerConnection removeVideoTrackAdapter:(RTCVideoTrack *)track];
+                }
+            }
+            [peerConnection.remoteTracks removeAllObjects];
+            [peerConnection.remoteStreams removeAllObjects];
+
+            NSMutableDictionary<NSString *, DataChannelWrapper *> *dataChannels = peerConnection.dataChannels;
+            for (NSString *tag in dataChannels) {
+                dataChannels[tag].delegate = nil;
+            }
+            [dataChannels removeAllObjects];
+
+            peerConnection.delegate = nil;
+            [peerConnection close];
+        } @catch (NSException *exception) {
+            RCTLogWarn(@"Error disposing peer connection %@ in invalidate: %@", peerConnectionId, exception);
+        }
+    }
+    [_peerConnections removeAllObjects];
+    [_localStreams removeAllObjects];
+
+#ifndef RCT_NEW_ARCH_ENABLED
+    [super invalidate];
+#endif
 }
 
 - (instancetype)init {
     self = [super init];
     if (self) {
+        sSharedInstance = self;
         WebRTCModuleOptions *options = [WebRTCModuleOptions sharedInstance];
         id<RTCAudioDevice> audioDevice = options.audioDevice;
         id<RTCVideoDecoderFactory> decoderFactory = options.videoDecoderFactory;
@@ -76,6 +140,7 @@
         _peerConnections = [NSMutableDictionary new];
         _localStreams = [NSMutableDictionary new];
         _localTracks = [NSMutableDictionary new];
+        _destroyed = NO;
 
         dispatch_queue_attr_t attributes =
             dispatch_queue_attr_make_with_qos_class(DISPATCH_QUEUE_SERIAL, QOS_CLASS_USER_INITIATED, -1);
@@ -105,6 +170,7 @@ RCT_EXPORT_MODULE();
     return _workerQueue;
 }
 
+#ifndef RCT_NEW_ARCH_ENABLED
 - (NSArray<NSString *> *)supportedEvents {
     return @[
         kEventPeerConnectionSignalingStateChanged,
@@ -123,5 +189,14 @@ RCT_EXPORT_MODULE();
         kEventPeerConnectionOnTrack
     ];
 }
+#endif
+
+#ifdef RCT_NEW_ARCH_ENABLED
+- (std::shared_ptr<facebook::react::TurboModule>)getTurboModule:
+    (const facebook::react::ObjCTurboModule::InitParams &)params
+{
+    return std::make_shared<facebook::react::NativeWebRTCModuleSpecJSI>(params);
+}
+#endif
 
 @end

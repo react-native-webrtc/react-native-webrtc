@@ -1,11 +1,7 @@
-import { NativeModules } from 'react-native';
-
 import MediaStreamTrack from './MediaStreamTrack';
+import WebRTCModule from './NativeWebRTCModule';
 import RTCRtpCapabilities from './RTCRtpCapabilities';
 import RTCRtpSendParameters, { RTCRtpSendParametersInit } from './RTCRtpSendParameters';
-
-const { WebRTCModule } = NativeModules;
-
 
 export default class RTCRtpSender {
     _id: string;
@@ -14,10 +10,10 @@ export default class RTCRtpSender {
     _rtpParameters: RTCRtpSendParameters;
 
     constructor(info: {
-        peerConnectionId: number,
-        id: string,
-        track?: MediaStreamTrack,
-        rtpParameters: RTCRtpSendParametersInit
+        peerConnectionId: number;
+        id: string;
+        track?: MediaStreamTrack;
+        rtpParameters: RTCRtpSendParametersInit;
     }) {
         this._peerConnectionId = info.peerConnectionId;
         this._id = info.id;
@@ -30,7 +26,7 @@ export default class RTCRtpSender {
 
     async replaceTrack(track: MediaStreamTrack | null): Promise<void> {
         try {
-            await WebRTCModule.senderReplaceTrack(this._peerConnectionId, this._id, track ? track.id : null);
+            await WebRTCModule.senderReplaceTrack(this._peerConnectionId, this._id, track ? track.id : '');
         } catch (e) {
             return;
         }
@@ -39,7 +35,7 @@ export default class RTCRtpSender {
     }
 
     static getCapabilities(kind: 'audio' | 'video'): RTCRtpCapabilities {
-        return WebRTCModule.senderGetCapabilities(kind);
+        return WebRTCModule.senderGetCapabilities(kind) as any;
     }
 
     getParameters(): RTCRtpSendParameters {
@@ -49,14 +45,19 @@ export default class RTCRtpSender {
     async setParameters(parameters: RTCRtpSendParameters): Promise<void> {
         // This allows us to get rid of private "underscore properties"
         const _params = JSON.parse(JSON.stringify(parameters));
-        const newParameters = await WebRTCModule.senderSetParameters(this._peerConnectionId, this._id, _params);
+        const newParameters = (await WebRTCModule.senderSetParameters(
+            this._peerConnectionId,
+            this._id,
+            _params,
+        )) as any;
 
         this._rtpParameters = new RTCRtpSendParameters(newParameters);
     }
 
     getStats() {
-        return WebRTCModule.senderGetStats(this._peerConnectionId, this._id).then(data =>
-            /* On both Android and iOS it is faster to construct a single
+        return WebRTCModule.senderGetStats(this._peerConnectionId, this._id).then(
+            data =>
+                /* On both Android and iOS it is faster to construct a single
             JSON string representing the Map of StatsReports and have it
             pass through the React Native bridge rather than the Map of
             StatsReports. While the implementations do try to be faster in
@@ -64,7 +65,7 @@ export default class RTCRtpSender {
             Native bridge which is a bottleneck that tends to be visible in
             the UI when there is congestion involving UI-related passing.
             */
-            new Map(JSON.parse(data))
+                new Map(JSON.parse(data as string)),
         );
     }
 

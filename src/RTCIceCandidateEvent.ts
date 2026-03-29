@@ -1,11 +1,10 @@
 import type RTCIceCandidate from './RTCIceCandidate';
 import { Event } from './vendor/event-target-shim';
 
-
-type RTC_ICECANDIDATE_EVENTS = 'icecandidate' | 'icecandidateerror'
+type RTC_ICECANDIDATE_EVENTS = 'icecandidate' | 'icecandidateerror';
 
 interface IRTCDataChannelEventInitDict extends Event.EventInit {
-    candidate: RTCIceCandidate | null
+    candidate: RTCIceCandidate | null;
 }
 
 /**

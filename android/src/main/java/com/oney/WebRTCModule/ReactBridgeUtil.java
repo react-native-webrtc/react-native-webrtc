@@ -14,7 +14,7 @@ public class ReactBridgeUtil {
      * <tt>null</tt> if there is no value mapped for given <tt>key</tt>.
      */
     public static String getMapStrValue(ReadableMap map, String key) {
-        if (!map.hasKey(key)) {
+        if (map == null || !map.hasKey(key)) {
             return null;
         }
         ReadableType type = map.getType(key);

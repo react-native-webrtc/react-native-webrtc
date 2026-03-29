@@ -10,6 +10,7 @@ import org.webrtc.VideoSink;
 import org.webrtc.VideoTrack;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -22,15 +23,15 @@ public class VideoTrackAdapter {
     static final long INITIAL_MUTE_DELAY = 3000;
     static final long MUTE_DELAY = 1500;
 
-    private Map<String, TrackMuteUnmuteImpl> muteImplMap = new HashMap<>();
+    private Map<String, TrackMuteUnmuteImpl> muteImplMap = new ConcurrentHashMap<>();
 
     private Timer timer = new Timer("VideoTrackMutedTimer");
 
     private final int peerConnectionId;
 
-    private final WebRTCModule webRTCModule;
+    private final WebRTCModuleImpl webRTCModule;
 
-    public VideoTrackAdapter(WebRTCModule webRTCModule, int peerConnectionId) {
+    public VideoTrackAdapter(WebRTCModuleImpl webRTCModule, int peerConnectionId) {
         this.peerConnectionId = peerConnectionId;
         this.webRTCModule = webRTCModule;
     }
@@ -60,6 +61,17 @@ public class VideoTrackAdapter {
         videoTrack.removeSink(onMuteImpl);
         onMuteImpl.dispose();
         Log.d(TAG, "Deleted adapter for " + trackId);
+    }
+
+    public void dispose() {
+        if (timer != null) {
+            timer.cancel();
+            timer = null;
+        }
+        for (TrackMuteUnmuteImpl impl : muteImplMap.values()) {
+            impl.dispose();
+        }
+        muteImplMap.clear();
     }
 
     /**
@@ -92,6 +104,9 @@ public class VideoTrackAdapter {
                 if (emitMuteTask != null) {
                     emitMuteTask.cancel();
                 }
+                if (timer == null) {
+                    return;
+                }
                 emitMuteTask = new TimerTask() {
                     private int lastFrameNumber = frameCounter.get();
 
@@ -102,8 +117,15 @@ public class VideoTrackAdapter {
                         }
                         boolean isMuted = lastFrameNumber == frameCounter.get();
                         if (isMuted != mutedState) {
+                            if (disposed) {
+                                return;
+                            }
                             mutedState = isMuted;
-                            emitMuteEvent(isMuted);
+                            try {
+                                emitMuteEvent(isMuted);
+                            } catch (Exception e) {
+                                Log.w(TAG, "Failed to emit mute event for track " + trackId + ": " + e.getMessage());
+                            }
                         }
 
                         lastFrameNumber = frameCounter.get();

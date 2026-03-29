@@ -21,7 +21,7 @@ export default class RTCRtpHeaderExtension {
         return {
             id: this.id,
             uri: this.uri,
-            encrypted: this.encrypted
+            encrypted: this.encrypted,
         };
     }
 }

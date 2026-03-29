@@ -1,5 +1,4 @@
 #import "PIPController.h"
-#import <AVKit/AVKit.h>
 #import "SampleBufferVideoCallView.h"
 
 @interface PIPController ()
@@ -158,7 +157,9 @@
 - (void)dealloc {
     [_videoTrack removeRenderer:_sampleView];
     [_pipController removeObserver:self forKeyPath:@"pictureInPictureActive"];
-    [[NSNotificationCenter defaultCenter] removeObserver:self name:UIApplicationDidBecomeActiveNotification object:nil];
+    [[NSNotificationCenter defaultCenter] removeObserver:self
+                                                    name:UIApplicationWillEnterForegroundNotification
+                                                  object:nil];
 }
 
 @end

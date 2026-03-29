@@ -1,11 +1,10 @@
 import type MediaStreamTrack from './MediaStreamTrack';
 import { Event } from './vendor/event-target-shim';
 
-
-type MEDIA_STREAM_EVENTS = 'addtrack'| 'removetrack'
+type MEDIA_STREAM_EVENTS = 'addtrack' | 'removetrack';
 
 interface IMediaStreamTrackEventInitDict extends Event.EventInit {
-  track: MediaStreamTrack;
+    track: MediaStreamTrack;
 }
 
 /**

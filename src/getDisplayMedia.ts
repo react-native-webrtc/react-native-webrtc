@@ -1,21 +1,17 @@
-
-import { NativeModules } from 'react-native';
-
 import MediaStream from './MediaStream';
 import MediaStreamError from './MediaStreamError';
-
-const { WebRTCModule } = NativeModules;
+import WebRTCModule from './NativeWebRTCModule';
 
 export default function getDisplayMedia(): Promise<MediaStream> {
     return new Promise((resolve, reject) => {
         WebRTCModule.getDisplayMedia().then(
             data => {
-                const { streamId, track } = data;
+                const { streamId, track } = data as any;
 
                 const info = {
                     streamId: streamId,
                     streamReactTag: streamId,
-                    tracks: [ track ]
+                    tracks: [track],
                 };
 
                 const stream = new MediaStream(info);
@@ -24,7 +20,7 @@ export default function getDisplayMedia(): Promise<MediaStream> {
             },
             error => {
                 reject(new MediaStreamError(error));
-            }
+            },
         );
     });
 }

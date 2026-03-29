@@ -2,7 +2,6 @@
 
 #include <mach/mach_time.h>
 
-#import <ReplayKit/ReplayKit.h>
 #import <WebRTC/RTCCVPixelBuffer.h>
 #import <WebRTC/RTCVideoFrameBuffer.h>
 

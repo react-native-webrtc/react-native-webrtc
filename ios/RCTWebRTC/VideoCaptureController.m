@@ -31,7 +31,7 @@
 }
 
 - (void)dealloc {
-    self.device = NULL;
+    self.device = nil;
 }
 
 - (void)startCapture {

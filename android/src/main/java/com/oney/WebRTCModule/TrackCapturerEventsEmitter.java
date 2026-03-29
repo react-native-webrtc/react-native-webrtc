@@ -14,10 +14,10 @@ import org.webrtc.VideoFrame;
 public class TrackCapturerEventsEmitter implements AbstractVideoCaptureController.CapturerEventsListener {
     private static final String TAG = TrackCapturerEventsEmitter.class.getCanonicalName();
 
-    private final WebRTCModule webRTCModule;
+    private final WebRTCModuleImpl webRTCModule;
     private final String trackId;
 
-    public TrackCapturerEventsEmitter(WebRTCModule webRTCModule, String trackId) {
+    public TrackCapturerEventsEmitter(WebRTCModuleImpl webRTCModule, String trackId) {
         this.webRTCModule = webRTCModule;
         this.trackId = trackId;
     }

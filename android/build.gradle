@@ -1,24 +1,39 @@
 apply plugin: 'com.android.library'
 
+def isNewArchitectureEnabled() {
+    return rootProject.hasProperty('newArchEnabled') && rootProject.getProperty('newArchEnabled') == 'true'
+}
+
+if (isNewArchitectureEnabled()) {
+    apply plugin: 'com.facebook.react'
+}
+
 def safeExtGet(prop, fallback) {
     rootProject.ext.has(prop) ? rootProject.ext.get(prop) : fallback
 }
 
 android {
-    def agpVersion = com.android.Version.ANDROID_GRADLE_PLUGIN_VERSION
-    if (agpVersion.tokenize('.')[0].toInteger() >= 7) {
-      namespace "com.oney.WebRTCModule"
-    }
-
-    compileSdkVersion safeExtGet('compileSdkVersion', 24)
-    buildToolsVersion safeExtGet('buildToolsVersion', "23.0.1")
+    namespace 'com.oney.WebRTCModule'
+    compileSdkVersion safeExtGet('compileSdkVersion', 36)
 
     defaultConfig {
-        minSdkVersion 24
-        targetSdkVersion safeExtGet('targetSdkVersion', 24)
         versionCode 1
-        versionName "1.0"
+        versionName '1.0'
+
+        minSdkVersion safeExtGet('minSdkVersion', 24)
+        targetSdkVersion safeExtGet('targetSdkVersion', 36)
         consumerProguardFiles 'consumer-rules.pro'
+        buildConfigField('boolean', 'IS_NEW_ARCHITECTURE_ENABLED', isNewArchitectureEnabled().toString())
+    }
+
+    sourceSets {
+        main {
+            if (isNewArchitectureEnabled()) {
+                java.srcDirs += ['src/newarch']
+            } else {
+                java.srcDirs += ['src/oldarch']
+            }
+        }
     }
 
     // WebRTC requires Java 8 features
@@ -30,7 +45,7 @@ android {
 }
 
 dependencies {
-    implementation "com.facebook.react:react-android:+"
+    implementation 'com.facebook.react:react-android:+'
     api 'org.jitsi:webrtc:124.+'
-    implementation "androidx.core:core:1.7.0"
+    implementation 'androidx.core:core:1.7.0'
 }

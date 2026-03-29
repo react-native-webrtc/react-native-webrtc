@@ -7,19 +7,17 @@
 
 NSString *const kRTCScreenSharingExtension = @"RTCScreenSharingExtension";
 
-@implementation ScreenCapturePickerViewManager {
-    RPSystemBroadcastPickerView *_broadcastPickerView;
-}
+@implementation ScreenCapturePickerViewManager
 
 RCT_EXPORT_MODULE()
 
 - (UIView *)view {
-    _broadcastPickerView = [[RPSystemBroadcastPickerView alloc] init];
-    _broadcastPickerView.preferredExtension = self.preferredExtension;
-    _broadcastPickerView.showsMicrophoneButton = false;
-    _broadcastPickerView.userInteractionEnabled = false;
+    RPSystemBroadcastPickerView *broadcastPickerView = [[RPSystemBroadcastPickerView alloc] init];
+    broadcastPickerView.preferredExtension = self.preferredExtension;
+    broadcastPickerView.showsMicrophoneButton = false;
+    broadcastPickerView.userInteractionEnabled = false;
 
-    return _broadcastPickerView;
+    return broadcastPickerView;
 }
 
 // MARK: Private Methods
@@ -29,6 +27,7 @@ RCT_EXPORT_MODULE()
     return infoDictionary[kRTCScreenSharingExtension];
 }
 
+#ifndef RCT_NEW_ARCH_ENABLED
 RCT_EXPORT_METHOD(show : (nonnull NSNumber *)reactTag) {
     [self.bridge.uiManager
         addUIBlock:^(__unused RCTUIManager *uiManager, NSDictionary<NSNumber *, UIView *> *viewRegistry) {
@@ -54,6 +53,7 @@ RCT_EXPORT_METHOD(show : (nonnull NSNumber *)reactTag) {
             }
         }];
 }
+#endif
 
 @end
 

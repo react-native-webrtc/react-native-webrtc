@@ -1,11 +1,16 @@
 #import <AVFoundation/AVFoundation.h>
 #import <Foundation/Foundation.h>
 
-#import <React/RCTBridgeModule.h>
 #import <React/RCTConvert.h>
-#import <React/RCTEventEmitter.h>
 
 #import <WebRTC/WebRTC.h>
+
+#ifdef RCT_NEW_ARCH_ENABLED
+#import <RNWebRTCSpec/RNWebRTCSpec.h>
+#else
+#import <React/RCTBridgeModule.h>
+#import <React/RCTEventEmitter.h>
+#endif
 
 static NSString *const kEventPeerConnectionSignalingStateChanged = @"peerConnectionSignalingStateChanged";
 static NSString *const kEventPeerConnectionStateChanged = @"peerConnectionStateChanged";
@@ -22,7 +27,11 @@ static NSString *const kEventMediaStreamTrackEnded = @"mediaStreamTrackEnded";
 static NSString *const kEventPeerConnectionOnRemoveTrack = @"peerConnectionOnRemoveTrack";
 static NSString *const kEventPeerConnectionOnTrack = @"peerConnectionOnTrack";
 
+#ifdef RCT_NEW_ARCH_ENABLED
+@interface WebRTCModule : NativeWebRTCModuleSpecBase<NativeWebRTCModuleSpec>
+#else
 @interface WebRTCModule : RCTEventEmitter<RCTBridgeModule>
+#endif
 
 @property(nonatomic, strong) dispatch_queue_t workerQueue;
 
@@ -34,6 +43,10 @@ static NSString *const kEventPeerConnectionOnTrack = @"peerConnectionOnTrack";
 @property(nonatomic, strong) NSMutableDictionary<NSString *, RTCMediaStream *> *localStreams;
 @property(nonatomic, strong) NSMutableDictionary<NSString *, RTCMediaStreamTrack *> *localTracks;
 
+@property(nonatomic, assign) BOOL destroyed;
+
 - (RTCMediaStream *)streamForReactTag:(NSString *)reactTag;
+
++ (nullable instancetype)sharedInstance;
 
 @end

@@ -1,8 +1,5 @@
 #import <objc/runtime.h>
 
-#import <React/RCTBridge.h>
-#import <React/RCTBridgeModule.h>
-
 #import "WebRTCModule.h"
 
 @implementation WebRTCModule (RTCAudioSession)

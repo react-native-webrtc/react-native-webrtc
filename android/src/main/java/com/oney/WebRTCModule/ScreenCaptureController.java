@@ -25,12 +25,17 @@ public class ScreenCaptureController extends AbstractVideoCaptureController {
 
     private final Context context;
 
-    public ScreenCaptureController(Context context, int width, int height, Intent mediaProjectionPermissionResultData) {
+    private final ThreadUtils threadUtils;
+
+    public ScreenCaptureController(Context context, int width, int height, Intent mediaProjectionPermissionResultData,
+            ThreadUtils threadUtils) {
         super(width, height, DEFAULT_FPS);
 
         this.mediaProjectionPermissionResultData = mediaProjectionPermissionResultData;
 
         this.context = context;
+
+        this.threadUtils = threadUtils;
 
         this.orientationListener = new OrientationEventListener(context) {
             @Override
@@ -41,7 +46,7 @@ public class ScreenCaptureController extends AbstractVideoCaptureController {
 
                 // Pivot to the executor thread because videoCapturer.changeCaptureFormat runs in the main
                 // thread and may deadlock.
-                ThreadUtils.runOnExecutor(() -> {
+                threadUtils.runOnExecutor(() -> {
                     try {
                         videoCapturer.changeCaptureFormat(width, height, DEFAULT_FPS);
                     } catch (Exception ex) {
@@ -64,6 +69,7 @@ public class ScreenCaptureController extends AbstractVideoCaptureController {
 
     @Override
     public void dispose() {
+        orientationListener.disable();
         MediaProjectionService.abort(context);
         super.dispose();
     }

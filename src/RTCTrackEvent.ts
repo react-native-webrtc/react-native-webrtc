@@ -1,15 +1,14 @@
-
 import MediaStream from './MediaStream';
 import type MediaStreamTrack from './MediaStreamTrack';
 import RTCRtpReceiver from './RTCRtpReceiver';
 import RTCRtpTransceiver from './RTCRtpTransceiver';
 import { Event } from './vendor/event-target-shim';
 
-type TRACK_EVENTS = 'track'
+type TRACK_EVENTS = 'track';
 
 interface IRTCTrackEventInitDict extends Event.EventInit {
-    streams: MediaStream[]
-    transceiver: RTCRtpTransceiver
+    streams: MediaStream[];
+    transceiver: RTCRtpTransceiver;
 }
 
 /**

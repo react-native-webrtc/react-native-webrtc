@@ -1,4 +1,3 @@
-
 export interface RTCSessionDescriptionInit {
     sdp: string;
     type: string | null;
@@ -24,7 +23,7 @@ export default class RTCSessionDescription {
     toJSON(): RTCSessionDescriptionInit {
         return {
             sdp: this._sdp,
-            type: this._type
+            type: this._type,
         };
     }
 }

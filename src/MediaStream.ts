@@ -1,16 +1,13 @@
-import { NativeModules } from 'react-native';
-
 import MediaStreamTrack, { MediaStreamTrackInfo } from './MediaStreamTrack';
 import MediaStreamTrackEvent from './MediaStreamTrackEvent';
+import WebRTCModule from './NativeWebRTCModule';
 import { uniqueID } from './RTCUtil';
 import { EventTarget, getEventAttributeValue, setEventAttributeValue } from './vendor/event-target-shim';
 
-const { WebRTCModule } = NativeModules;
-
 type MediaStreamEventMap = {
-    addtrack: MediaStreamTrackEvent<'addtrack'>
-    removetrack: MediaStreamTrackEvent<'removetrack'>
-}
+    addtrack: MediaStreamTrackEvent<'addtrack'>;
+    removetrack: MediaStreamTrackEvent<'removetrack'>;
+};
 
 export default class MediaStream extends EventTarget<MediaStreamEventMap> {
     _tracks: MediaStreamTrack[] = [];
@@ -37,10 +34,15 @@ export default class MediaStream extends EventTarget<MediaStreamEventMap> {
      *   done internally, when the stream is first created in native and the JS wrapper is
      *   built afterwards.
      */
-    constructor(arg?:
-        MediaStream |
-        MediaStreamTrack[] |
-        { streamId: string, streamReactTag: string, tracks: MediaStreamTrackInfo[] }
+    constructor(
+        arg?:
+            | MediaStream
+            | MediaStreamTrack[]
+            | {
+                  streamId: string;
+                  streamReactTag: string;
+                  tracks: MediaStreamTrackInfo[];
+              },
     ) {
         super();
 
@@ -154,7 +156,7 @@ export default class MediaStream extends EventTarget<MediaStreamEventMap> {
     }
 
     release(releaseTracks = true): void {
-        const tracks = [ ...this._tracks ];
+        const tracks = [...this._tracks];
 
         for (const track of tracks) {
             this.removeTrack(track);

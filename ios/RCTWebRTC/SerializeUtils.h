@@ -1,8 +1,6 @@
 #import <WebRTC/RTCMediaStreamTrack.h>
-#import <WebRTC/RTCPeerConnectionFactory.h>
 #import <WebRTC/RTCRtpReceiver.h>
 #import <WebRTC/RTCRtpTransceiver.h>
-#import <WebRTC/RTCVideoCodecInfo.h>
 #import "WebRTCModule+RTCPeerConnection.h"
 
 @interface SerializeUtils : NSObject

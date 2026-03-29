@@ -1,10 +1,7 @@
-import { NativeModules } from 'react-native';
-
+import WebRTCModule from './NativeWebRTCModule';
 import RTCRtpCodecCapability from './RTCRtpCodecCapability';
 import RTCRtpReceiver from './RTCRtpReceiver';
 import RTCRtpSender from './RTCRtpSender';
-
-const { WebRTCModule } = NativeModules;
 
 export default class RTCRtpTransceiver {
     _peerConnectionId: number;
@@ -17,13 +14,13 @@ export default class RTCRtpTransceiver {
     _stopped: boolean;
 
     constructor(args: {
-        peerConnectionId: number,
-        isStopped: boolean,
-        direction: string,
-        currentDirection: string,
-        mid?: string,
-        sender: RTCRtpSender,
-        receiver: RTCRtpReceiver,
+        peerConnectionId: number;
+        isStopped: boolean;
+        direction: string;
+        currentDirection: string;
+        mid?: string;
+        sender: RTCRtpSender;
+        receiver: RTCRtpReceiver;
     }) {
         this._peerConnectionId = args.peerConnectionId;
         this._mid = args.mid ?? null;
@@ -47,7 +44,7 @@ export default class RTCRtpTransceiver {
     }
 
     set direction(val) {
-        if (![ 'sendonly', 'recvonly', 'sendrecv', 'inactive' ].includes(val)) {
+        if (!['sendonly', 'recvonly', 'sendrecv', 'inactive'].includes(val)) {
             throw new TypeError('Invalid direction provided');
         }
 
@@ -61,10 +58,9 @@ export default class RTCRtpTransceiver {
 
         const oldDirection = this._direction;
 
-        WebRTCModule.transceiverSetDirection(this._peerConnectionId, this.sender.id, val)
-            .catch(() => {
-                this._direction = oldDirection;
-            });
+        WebRTCModule.transceiverSetDirection(this._peerConnectionId, this.sender.id, val).catch(() => {
+            this._direction = oldDirection;
+        });
 
         this._direction = val;
     }
@@ -86,16 +82,11 @@ export default class RTCRtpTransceiver {
             return;
         }
 
-        WebRTCModule.transceiverStop(this._peerConnectionId, this.sender.id)
-            .then(() => this._setStopped());
+        WebRTCModule.transceiverStop(this._peerConnectionId, this.sender.id).then(() => this._setStopped());
     }
 
     setCodecPreferences(codecs: RTCRtpCodecCapability[]) {
-        WebRTCModule.transceiverSetCodecPreferences(
-            this._peerConnectionId,
-            this.sender.id,
-            codecs
-        );
+        WebRTCModule.transceiverSetCodecPreferences(this._peerConnectionId, this.sender.id, codecs);
     }
 
     _setStopped() {

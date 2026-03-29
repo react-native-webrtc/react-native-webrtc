@@ -2,5 +2,7 @@
 
 #set -x
 
-exec git ls-files | grep -e "\(\.java\|\.h\|\.m\)$" | grep -v examples | xargs clang-format -i
+git ls-files | grep -e "\(\.java\|\.h\|\.m\|\.mm\)$" | grep -v examples | while read -r file; do
+    [ -f "$file" ] && clang-format -i "$file"
+done
 

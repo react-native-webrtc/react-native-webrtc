@@ -1,4 +1,3 @@
-#import <AVFoundation/AVFoundation.h>
 #import <WebRTC/RTCVideoCapturer.h>
 #import "CapturerEventsDelegate.h"
 

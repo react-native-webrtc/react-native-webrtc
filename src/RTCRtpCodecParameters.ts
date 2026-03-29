@@ -28,7 +28,7 @@ export default class RTCRtpCodecParameters {
         const obj = {
             payloadType: this.payloadType,
             clockRate: this.clockRate,
-            mimeType: this.mimeType
+            mimeType: this.mimeType,
         };
 
         if (this.channels !== null) {

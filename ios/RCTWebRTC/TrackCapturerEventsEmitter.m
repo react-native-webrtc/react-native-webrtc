@@ -1,6 +1,4 @@
 #import "TrackCapturerEventsEmitter.h"
-#import "CapturerEventsDelegate.h"
-#import "WebRTCModule.h"
 
 NS_ASSUME_NONNULL_BEGIN
 
@@ -24,10 +22,15 @@ NS_ASSUME_NONNULL_BEGIN
 }
 
 - (void)capturerDidEnd:(RTCVideoCapturer *)capturer {
-    [self.module sendEventWithName:kEventMediaStreamTrackEnded
-                              body:@{
-                                  @"trackId" : self.trackId,
-                              }];
+    if (self.module.destroyed) {
+        return;
+    }
+    NSDictionary *body = @{@"trackId" : self.trackId};
+#ifdef RCT_NEW_ARCH_ENABLED
+    [self.module emitMediaStreamTrackEnded:body];
+#else
+    [self.module sendEventWithName:kEventMediaStreamTrackEnded body:body];
+#endif
 
     RCTLog(@"[TrackCapturerEventsEmitter] ended event for track %@", self.trackId);
 }

@@ -18,10 +18,12 @@
 }
 
 - (void)applyConstraints:(NSDictionary *)constraints error:(NSError **)outError {
-    *outError =
-        [NSError errorWithDomain:@"react-native-webrtc"
-                            code:0
-                        userInfo:@{NSLocalizedDescriptionKey : @"This video track does not support applyConstraints."}];
+    if (outError) {
+        *outError = [NSError
+            errorWithDomain:@"react-native-webrtc"
+                       code:0
+                   userInfo:@{NSLocalizedDescriptionKey : @"This video track does not support applyConstraints."}];
+    }
 }
 
 @end

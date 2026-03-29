@@ -11,7 +11,6 @@ import android.view.ViewGroup;
 import androidx.core.view.ViewCompat;
 
 import com.facebook.react.bridge.Arguments;
-import com.facebook.react.bridge.Callback;
 import com.facebook.react.bridge.ReactContext;
 import com.facebook.react.bridge.ReadableMap;
 import com.facebook.react.bridge.WritableMap;
@@ -26,8 +25,6 @@ import org.webrtc.RendererCommon.ScalingType;
 import org.webrtc.SurfaceViewRenderer;
 import org.webrtc.VideoTrack;
 
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.util.List;
 import java.util.Objects;
 
@@ -49,7 +46,7 @@ public class WebRTCView extends ViewGroup {
      */
     private static final ScalingType DEFAULT_SCALING_TYPE = ScalingType.SCALE_ASPECT_FIT;
 
-    private static final String TAG = WebRTCModule.TAG;
+    private static final String TAG = WebRTCModuleImpl.TAG;
 
     /**
      * The number of instances for {@link SurfaceViewRenderer}, used for logging.
@@ -95,6 +92,14 @@ public class WebRTCView extends ViewGroup {
      * track.
      */
     private boolean rendererAttached;
+
+    /**
+     * Indicates if this view has been detached and should not process
+     * async callbacks.
+     */
+    private volatile boolean disposed;
+
+    private final WebRTCModule module;
 
     /**
      * The {@code RendererEvents} which listens to rendering events reported by
@@ -156,6 +161,7 @@ public class WebRTCView extends ViewGroup {
 
     public WebRTCView(Context context) {
         super(context);
+        this.module = ((ReactContext) context).getNativeModule(WebRTCModule.class);
 
         surfaceViewRenderer = new SurfaceViewRenderer(context);
         addView(surfaceViewRenderer);
@@ -187,11 +193,8 @@ public class WebRTCView extends ViewGroup {
             return;
         }
 
-        ReactContext reactContext = (ReactContext) getContext();
-        WebRTCModule module = reactContext.getNativeModule(WebRTCModule.class);
-
         // Submit lookup to executor thread to avoid blocking UI thread
-        ThreadUtils.runOnExecutor(() -> {
+        module.getThreadUtils().runOnExecutor(() -> {
             try {
                 MediaStream stream = module.getStreamForReactTag(streamURL);
                 if (stream == null) {
@@ -239,6 +242,7 @@ public class WebRTCView extends ViewGroup {
     @Override
     protected void onDetachedFromWindow() {
         try {
+            disposed = true;
             // Generally, OpenGL is only necessary while this View is attached
             // to a window so there is no point in having the whole rendering
             // infrastructure hooked up while this View is not attached to a
@@ -376,7 +380,7 @@ public class WebRTCView extends ViewGroup {
     private void removeRendererFromVideoTrack() {
         if (rendererAttached) {
             if (videoTrack != null) {
-                ThreadUtils.runOnExecutor(() -> {
+                module.getThreadUtils().runOnExecutor(() -> {
                     try {
                         videoTrack.removeSink(surfaceViewRenderer);
                     } catch (Throwable tr) {
@@ -384,21 +388,36 @@ public class WebRTCView extends ViewGroup {
                         // invoked on videoTrack, then it is no longer safe to call removeSink
                         // on the instance, it will throw IllegalStateException.
                     }
+                    surfaceViewRenderer.release();
+                    surfaceViewRendererInstances--;
+
+                    // Post UI cleanup back to main thread since requestSurfaceViewRendererLayout
+                    // calls onLayout which must run on the main thread.
+                    post(() -> {
+                        rendererAttached = false;
+
+                        // Since this WebRTCView is no longer rendering anything, make sure
+                        // surfaceViewRenderer displays nothing as well.
+                        synchronized (layoutSyncRoot) {
+                            frameHeight = 0;
+                            frameRotation = 0;
+                            frameWidth = 0;
+                        }
+                        requestSurfaceViewRendererLayout();
+                    });
                 });
-            }
+            } else {
+                surfaceViewRenderer.release();
+                surfaceViewRendererInstances--;
+                rendererAttached = false;
 
-            surfaceViewRenderer.release();
-            surfaceViewRendererInstances--;
-            rendererAttached = false;
-
-            // Since this WebRTCView is no longer rendering anything, make sure
-            // surfaceViewRenderer displays nothing as well.
-            synchronized (layoutSyncRoot) {
-                frameHeight = 0;
-                frameRotation = 0;
-                frameWidth = 0;
+                synchronized (layoutSyncRoot) {
+                    frameHeight = 0;
+                    frameRotation = 0;
+                    frameWidth = 0;
+                }
+                requestSurfaceViewRendererLayout();
             }
-            requestSurfaceViewRendererLayout();
         }
     }
 
@@ -493,6 +512,10 @@ public class WebRTCView extends ViewGroup {
         // importantly the videoRender may eventually crash when the old
         // videoTrack is disposed.
         getVideoTrackForStreamURL(streamURL, videoTrack -> {
+            if (disposed) {
+                return;
+            }
+
             Log.d(TAG, "Got video track for stream URL " + streamURL + " -> " + videoTrack);
             if (this.videoTrack != videoTrack) {
                 setVideoTrack(null);
@@ -584,7 +607,7 @@ public class WebRTCView extends ViewGroup {
                 return;
             }
 
-            ThreadUtils.runOnExecutor(() -> {
+            module.getThreadUtils().runOnExecutor(() -> {
                 try {
                     videoTrack.addSink(surfaceViewRenderer);
                 } catch (Throwable tr) {

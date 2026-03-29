@@ -1,4 +1,3 @@
-
 export type MediaTrackConstraints = {
     width?: ConstrainNumber;
     height?: ConstrainNumber;
@@ -6,16 +5,20 @@ export type MediaTrackConstraints = {
     facingMode?: ConstrainString;
     deviceId?: ConstrainString;
     groupId?: ConstrainString;
-}
+};
 
-type ConstrainNumber = number | {
-    exact?: number,
-    ideal?: number,
-    max?: number,
-    min?: number,
-}
+type ConstrainNumber =
+    | number
+    | {
+          exact?: number;
+          ideal?: number;
+          max?: number;
+          min?: number;
+      };
 
-type ConstrainString = string | {
-    exact?: string,
-    ideal?: string,
-}
+type ConstrainString =
+    | string
+    | {
+          exact?: string;
+          ideal?: string;
+      };

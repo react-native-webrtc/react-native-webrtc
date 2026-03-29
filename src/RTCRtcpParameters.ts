@@ -17,7 +17,7 @@ export default class RTCRtcpParameters {
     toJSON(): RTCRtcpParametersInit {
         return {
             cname: this.cname,
-            reducedSize: this.reducedSize
+            reducedSize: this.reducedSize,
         };
     }
 }

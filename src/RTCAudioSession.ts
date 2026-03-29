@@ -1,6 +1,6 @@
-import { NativeModules, Platform } from 'react-native';
+import { Platform } from 'react-native';
 
-const { WebRTCModule } = NativeModules;
+import WebRTCModule from './NativeWebRTCModule';
 
 export default class RTCAudioSession {
     /**
