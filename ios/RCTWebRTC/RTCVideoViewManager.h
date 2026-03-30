@@ -1,5 +1,8 @@
 #import <Foundation/Foundation.h>
+
+#ifndef RCT_NEW_ARCH_ENABLED
 #import <React/RCTViewManager.h>
+#endif
 
 /**
  * In the fashion of
@@ -24,6 +27,8 @@ typedef NS_ENUM(NSInteger, RTCVideoViewObjectFit) {
     RTCVideoViewObjectFitCover
 };
 
+#ifndef RCT_NEW_ARCH_ENABLED
 @interface RTCVideoViewManager : RCTViewManager
 
 @end
+#endif

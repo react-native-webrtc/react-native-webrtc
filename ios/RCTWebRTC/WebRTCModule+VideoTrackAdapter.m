@@ -1,6 +1,5 @@
 
 #import <Foundation/Foundation.h>
-#include <libkern/OSAtomic.h>
 #import <objc/runtime.h>
 #import <stdatomic.h>
 
@@ -66,8 +65,16 @@ static const NSTimeInterval MUTE_DELAY = 1.5;
 }
 
 - (void)emitMuteEvent:(BOOL)muted {
-    [self.module sendEventWithName:kEventMediaStreamTrackMuteChanged
-                              body:@{@"pcId" : self.peerConnectionId, @"trackId" : self.trackId, @"muted" : @(muted)}];
+    WebRTCModule *module = self.module;
+    if (!module || module.destroyed) {
+        return;
+    }
+    NSDictionary *body = @{@"pcId" : self.peerConnectionId, @"trackId" : self.trackId, @"muted" : @(muted)};
+#ifdef RCT_NEW_ARCH_ENABLED
+    [module emitMediaStreamTrackMuteChanged:body];
+#else
+    [module sendEventWithName:kEventMediaStreamTrackMuteChanged body:body];
+#endif
     RCTLog(@"[VideoTrackAdapter] %@ event for pc %@ track %@",
            muted ? @"Mute" : @"Unmute",
            self.peerConnectionId,
@@ -98,14 +105,22 @@ static const NSTimeInterval MUTE_DELAY = 1.5;
         if (self->_disposed) {
             return;
         }
+        WebRTCModule *module = self.module;
+        if (!module || module.destroyed) {
+            return;
+        }
 
-        BOOL isMuted = lastFrameCount == self->_frameCount;
+        unsigned long long currentCount = atomic_load(&self->_frameCount);
+        BOOL isMuted = lastFrameCount == currentCount;
         if (isMuted != self->_muted) {
+            if (self->_disposed) {
+                return;
+            }
             self->_muted = isMuted;
             [self emitMuteEvent:isMuted];
         }
 
-        lastFrameCount = self->_frameCount;
+        lastFrameCount = currentCount;
     });
 
     dispatch_resume(_timer);

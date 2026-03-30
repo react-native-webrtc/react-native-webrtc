@@ -1,4 +1,3 @@
-#import "CaptureController.h"
 #import "CapturerEventsDelegate.h"
 #import "WebRTCModule.h"
 

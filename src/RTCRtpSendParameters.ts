@@ -2,11 +2,7 @@ import RTCRtpEncodingParameters, { RTCRtpEncodingParametersInit } from './RTCRtp
 import RTCRtpParameters, { RTCRtpParametersInit } from './RTCRtpParameters';
 import { deepClone } from './RTCUtil';
 
-type DegradationPreferenceType = 'maintain-framerate'
-    | 'maintain-resolution'
-    | 'balanced'
-    | 'disabled'
-
+type DegradationPreferenceType = 'maintain-framerate' | 'maintain-resolution' | 'balanced' | 'disabled';
 
 /**
  * Class to convert degradation preference format. Native has a format such as
@@ -40,8 +36,9 @@ export default class RTCRtpSendParameters extends RTCRtpParameters {
 
         this.transactionId = init.transactionId;
         this.encodings = [];
-        this.degradationPreference = init.degradationPreference ?
-            DegradationPreference.fromNative(init.degradationPreference) : null;
+        this.degradationPreference = init.degradationPreference
+            ? DegradationPreference.fromNative(init.degradationPreference)
+            : null;
 
         for (const enc of init.encodings) {
             this.encodings.push(new RTCRtpEncodingParameters(enc));

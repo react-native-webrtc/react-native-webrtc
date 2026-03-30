@@ -1,14 +1,9 @@
-
-import { NativeModules } from 'react-native';
-
-
 import { MediaTrackConstraints } from './Constraints';
 import MediaStream from './MediaStream';
 import MediaStreamError from './MediaStreamError';
+import WebRTCModule from './NativeWebRTCModule';
 import permissions from './Permissions';
 import * as RTCUtil from './RTCUtil';
-
-const { WebRTCModule } = NativeModules;
 
 export interface Constraints {
     audio?: boolean | MediaTrackConstraints;
@@ -37,20 +32,20 @@ export default function getUserMedia(constraints: Constraints = {}): Promise<Med
     const reqPermissions: Promise<boolean>[] = [];
 
     if (constraints.audio) {
-        reqPermissions.push(permissions.request({ name: 'microphone' }));
+        reqPermissions.push(permissions.request({ name: 'microphone' }) as Promise<boolean>);
     } else {
         reqPermissions.push(Promise.resolve(false));
     }
 
     if (constraints.video) {
-        reqPermissions.push(permissions.request({ name: 'camera' }));
+        reqPermissions.push(permissions.request({ name: 'camera' }) as Promise<boolean>);
     } else {
         reqPermissions.push(Promise.resolve(false));
     }
 
     return new Promise((resolve, reject) => {
         Promise.all(reqPermissions).then(results => {
-            const [ audioPerm, videoPerm ] = results;
+            const [audioPerm, videoPerm] = results;
 
             // Check permission results and remove unneeded permissions.
 
@@ -59,7 +54,7 @@ export default function getUserMedia(constraints: Constraints = {}): Promise<Med
                 // step 4
                 const error = {
                     message: 'Permission denied.',
-                    name: 'SecurityError'
+                    name: 'SecurityError',
                 };
 
                 reject(new MediaStreamError(error));
@@ -83,7 +78,7 @@ export default function getUserMedia(constraints: Constraints = {}): Promise<Med
                 const info = {
                     streamId: id,
                     streamReactTag: id,
-                    tracks
+                    tracks,
                 };
 
                 resolve(new MediaStream(info));

@@ -23,7 +23,7 @@ export default class RTCIceCandidate {
         return {
             candidate: this.candidate,
             sdpMLineIndex: this.sdpMLineIndex,
-            sdpMid: this.sdpMid
+            sdpMid: this.sdpMid,
         };
     }
 }

@@ -1,13 +1,11 @@
 import type RTCDataChannel from './RTCDataChannel';
 import { Event } from './vendor/event-target-shim';
 
-
-type DATA_CHANNEL_EVENTS =  'open'| 'message'| 'bufferedamountlow'| 'closing'| 'close'| 'error' | 'datachannel';
+type DATA_CHANNEL_EVENTS = 'open' | 'message' | 'bufferedamountlow' | 'closing' | 'close' | 'error' | 'datachannel';
 
 interface IRTCDataChannelEventInitDict extends Event.EventInit {
     channel: RTCDataChannel;
 }
-
 
 /**
  * @eventClass
@@ -16,9 +14,7 @@ interface IRTCDataChannelEventInitDict extends Event.EventInit {
  * @param {IRTCDataChannelEventInitDict} eventInitDict - The event init properties.
  * @see {@link https://developer.mozilla.org/en-US/docs/Web/API/RTCDataChannel#events MDN} for details.
  */
-export default class RTCDataChannelEvent<
-TEventType extends DATA_CHANNEL_EVENTS
-> extends Event<TEventType> {
+export default class RTCDataChannelEvent<TEventType extends DATA_CHANNEL_EVENTS> extends Event<TEventType> {
     /** @eventProperty */
     channel: RTCDataChannel;
     constructor(type: TEventType, eventInitDict: IRTCDataChannelEventInitDict) {

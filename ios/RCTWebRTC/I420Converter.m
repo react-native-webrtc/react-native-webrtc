@@ -158,7 +158,6 @@
 
 - (void)dealloc {
     [self unprepareForAccelerateConversion];
-    CVPixelBufferPoolRelease(_pixelBufferPool);
 }
 
 @end

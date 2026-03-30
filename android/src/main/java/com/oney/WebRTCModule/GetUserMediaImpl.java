@@ -23,7 +23,21 @@ import com.oney.WebRTCModule.videoEffects.ProcessorProvider;
 import com.oney.WebRTCModule.videoEffects.VideoEffectProcessor;
 import com.oney.WebRTCModule.videoEffects.VideoFrameProcessor;
 
-import org.webrtc.*;
+import org.webrtc.AudioSource;
+import org.webrtc.AudioTrack;
+import org.webrtc.Camera1Enumerator;
+import org.webrtc.Camera2Enumerator;
+import org.webrtc.CameraEnumerator;
+import org.webrtc.EglBase;
+import org.webrtc.MediaConstraints;
+import org.webrtc.MediaSource;
+import org.webrtc.MediaStream;
+import org.webrtc.MediaStreamTrack;
+import org.webrtc.PeerConnectionFactory;
+import org.webrtc.SurfaceTextureHelper;
+import org.webrtc.VideoCapturer;
+import org.webrtc.VideoSource;
+import org.webrtc.VideoTrack;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -41,7 +55,7 @@ class GetUserMediaImpl {
     /**
      * The {@link Log} tag with which {@code GetUserMediaImpl} is to log.
      */
-    private static final String TAG = WebRTCModule.TAG;
+    private static final String TAG = WebRTCModuleImpl.TAG;
 
     private static final int PERMISSION_REQUEST_CODE = (int) (Math.random() * Short.MAX_VALUE);
 
@@ -55,12 +69,12 @@ class GetUserMediaImpl {
      */
     private final Map<String, TrackPrivate> tracks = new HashMap<>();
 
-    private final WebRTCModule webRTCModule;
+    private final WebRTCModuleImpl webRTCModule;
 
     private Promise displayMediaPromise;
     private Intent mediaProjectionPermissionResultData;
 
-    GetUserMediaImpl(WebRTCModule webRTCModule, ReactApplicationContext reactContext) {
+    GetUserMediaImpl(WebRTCModuleImpl webRTCModule, ReactApplicationContext reactContext) {
         this.webRTCModule = webRTCModule;
         this.reactContext = reactContext;
 
@@ -77,7 +91,7 @@ class GetUserMediaImpl {
 
                     mediaProjectionPermissionResultData = data;
 
-                    ThreadUtils.runOnExecutor(() -> {
+                    webRTCModule.getThreadUtils().runOnExecutor(() -> {
                         MediaProjectionService.launch(activity);
                         createScreenStream();
                     });
@@ -202,8 +216,8 @@ class GetUserMediaImpl {
                 return;
             }
 
-            CameraCaptureController cameraCaptureController = new CameraCaptureController(
-                    currentActivity, getCameraEnumerator(), videoConstraintsMap);
+            CameraCaptureController cameraCaptureController =
+                    new CameraCaptureController(currentActivity, getCameraEnumerator(), videoConstraintsMap);
 
             videoTrack = createVideoTrack(cameraCaptureController);
         }
@@ -373,8 +387,11 @@ class GetUserMediaImpl {
         DisplayMetrics displayMetrics = DisplayUtils.getDisplayMetrics(reactContext.getCurrentActivity());
         int width = displayMetrics.widthPixels;
         int height = displayMetrics.heightPixels;
-        ScreenCaptureController screenCaptureController = new ScreenCaptureController(
-                reactContext.getCurrentActivity(), width, height, mediaProjectionPermissionResultData);
+        ScreenCaptureController screenCaptureController = new ScreenCaptureController(reactContext.getCurrentActivity(),
+                width,
+                height,
+                mediaProjectionPermissionResultData,
+                webRTCModule.getThreadUtils());
         return createVideoTrack(screenCaptureController);
     }
 
@@ -498,9 +515,8 @@ class GetUserMediaImpl {
         public void dispose() {
             if (!disposed) {
                 if (videoCaptureController != null) {
-                    if (videoCaptureController.stopCapture()) {
-                        videoCaptureController.dispose();
-                    }
+                    videoCaptureController.stopCapture();
+                    videoCaptureController.dispose();
                 }
 
                 /*

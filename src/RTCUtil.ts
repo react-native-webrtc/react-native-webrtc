@@ -1,37 +1,31 @@
-
 const DEFAULT_AUDIO_CONSTRAINTS = {};
 
 const DEFAULT_VIDEO_CONSTRAINTS = {
     facingMode: 'user',
     frameRate: 30,
     height: 720,
-    width: 1280
+    width: 1280,
 };
 
-const FACING_MODES = [ 'user', 'environment' ];
+const FACING_MODES = ['user', 'environment'];
 
 const ASPECT_RATIO = 16 / 9;
 
-export type RTCOfferOptions  = {
-    iceRestart?:boolean;
+export type RTCOfferOptions = {
+    iceRestart?: boolean;
     offerToReceiveAudio?: boolean;
     offerToReceiveVideo?: boolean;
-    voiceActivityDetection?:boolean
+    voiceActivityDetection?: boolean;
 };
 
 const STANDARD_OFFER_OPTIONS = {
     icerestart: 'IceRestart',
     offertoreceiveaudio: 'OfferToReceiveAudio',
     offertoreceivevideo: 'OfferToReceiveVideo',
-    voiceactivitydetection: 'VoiceActivityDetection'
+    voiceactivitydetection: 'VoiceActivityDetection',
 };
 
-const SDP_TYPES = [
-    'offer',
-    'pranswer',
-    'answer',
-    'rollback'
-];
+const SDP_TYPES = ['offer', 'pranswer', 'answer', 'rollback'];
 
 function getDefaultMediaConstraints(mediaType) {
     switch (mediaType) {
@@ -49,7 +43,7 @@ function extractString(constraints, prop) {
     const type = typeof value;
 
     if (type === 'object') {
-        for (const v of [ 'exact', 'ideal' ]) {
+        for (const v of ['exact', 'ideal']) {
             if (value[v]) {
                 return value[v];
             }
@@ -66,7 +60,7 @@ function extractNumber(constraints, prop) {
     if (type === 'number') {
         return Number.parseInt(value);
     } else if (type === 'object') {
-        for (const v of [ 'exact', 'ideal', 'max', 'min' ]) {
+        for (const v of ['exact', 'ideal', 'max', 'min']) {
             if (value[v]) {
                 return Number.parseInt(value[v]);
             }
@@ -85,7 +79,7 @@ function normalizeMediaConstraints(constraints, mediaType) {
                 facingMode: extractString(constraints, 'facingMode'),
                 frameRate: extractNumber(constraints, 'frameRate'),
                 height: extractNumber(constraints, 'height'),
-                width: extractNumber(constraints, 'width')
+                width: extractNumber(constraints, 'width'),
             };
 
             if (!c.deviceId) {
@@ -165,7 +159,7 @@ export function isSdpTypeValid(type: string): boolean {
  * @return Normalized options
  */
 export function normalizeOfferOptions(options?: RTCOfferOptions) {
-    const newOptions: Record<string,string> = {};
+    const newOptions: Record<string, string> = {};
 
     if (!options || typeof options !== 'object') {
         return newOptions;
@@ -173,7 +167,7 @@ export function normalizeOfferOptions(options?: RTCOfferOptions) {
 
     // Convert standard options into WebRTC internal constant names.
     // See: https://github.com/jitsi/webrtc/blob/0cd6ce4de669bed94ba47b88cb71b9be0341bb81/sdk/media_constraints.cc#L113
-    for (const [ key, value ] of Object.entries(options)) {
+    for (const [key, value] of Object.entries(options)) {
         const newKey = STANDARD_OFFER_OPTIONS[key.toLowerCase()];
 
         if (newKey) {
@@ -190,7 +184,7 @@ export function normalizeOfferOptions(options?: RTCOfferOptions) {
 export function normalizeConstraints(constraints) {
     const c = deepClone(constraints);
 
-    for (const mediaType of [ 'audio', 'video' ]) {
+    for (const mediaType of ['audio', 'video']) {
         const mediaTypeConstraints = c[mediaType];
         const typeofMediaTypeConstraints = typeof mediaTypeConstraints;
 

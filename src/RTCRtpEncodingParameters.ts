@@ -1,5 +1,5 @@
 export interface RTCRtpEncodingParametersInit {
-    active: boolean,
+    active: boolean;
     rid?: string;
     maxFramerate?: number;
     maxBitrate?: number;

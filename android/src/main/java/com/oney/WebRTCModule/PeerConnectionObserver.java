@@ -29,9 +29,10 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
 class PeerConnectionObserver implements PeerConnection.Observer {
-    private final static String TAG = WebRTCModule.TAG;
+    private final static String TAG = WebRTCModuleImpl.TAG;
 
     private final Map<String, DataChannelWrapper> dataChannels;
     private final int id;
@@ -42,15 +43,15 @@ class PeerConnectionObserver implements PeerConnection.Observer {
     final Map<String, MediaStream> remoteStreams; // React tag -> MediaStream
     final Map<String, MediaStreamTrack> remoteTracks;
     private final VideoTrackAdapter videoTrackAdapters;
-    private final WebRTCModule webRTCModule;
+    private final WebRTCModuleImpl webRTCModule;
 
-    PeerConnectionObserver(WebRTCModule webRTCModule, int id) {
+    PeerConnectionObserver(WebRTCModuleImpl webRTCModule, int id) {
         this.webRTCModule = webRTCModule;
         this.id = id;
-        this.dataChannels = new HashMap<>();
-        this.remoteStreamIds = new HashMap<>();
-        this.remoteStreams = new HashMap<>();
-        this.remoteTracks = new HashMap<>();
+        this.dataChannels = new ConcurrentHashMap<>();
+        this.remoteStreamIds = new ConcurrentHashMap<>();
+        this.remoteStreams = new ConcurrentHashMap<>();
+        this.remoteTracks = new ConcurrentHashMap<>();
         this.videoTrackAdapters = new VideoTrackAdapter(webRTCModule, id);
     }
 
@@ -64,8 +65,9 @@ class PeerConnectionObserver implements PeerConnection.Observer {
 
     void close() {
         Log.d(TAG, "PeerConnection.close() for " + id);
-
-        peerConnection.close();
+        if (peerConnection != null) {
+            peerConnection.close();
+        }
     }
 
     void dispose() {
@@ -77,6 +79,7 @@ class PeerConnectionObserver implements PeerConnection.Observer {
                 videoTrackAdapters.removeAdapter((VideoTrack) track);
             }
         }
+        videoTrackAdapters.dispose();
 
         // Remove DataChannel observers
         for (DataChannelWrapper dcw : dataChannels.values()) {
@@ -87,7 +90,9 @@ class PeerConnectionObserver implements PeerConnection.Observer {
         // At this point there should be no local MediaStreams in the associated
         // PeerConnection. Call dispose() to free all remaining resources held
         // by the PeerConnection instance (RtpReceivers, RtpSenders, etc.)
-        peerConnection.dispose();
+        if (peerConnection != null) {
+            peerConnection.dispose();
+        }
 
         remoteStreamIds.clear();
         remoteStreams.clear();
@@ -195,7 +200,9 @@ class PeerConnectionObserver implements PeerConnection.Observer {
         }
 
         DataChannel dataChannel = dcw.getDataChannel();
-        dataChannel.close();
+        if (dataChannel != null) {
+            dataChannel.close();
+        }
     }
 
     void dataChannelDispose(String reactTag) {
@@ -206,7 +213,9 @@ class PeerConnectionObserver implements PeerConnection.Observer {
         }
 
         DataChannel dataChannel = dcw.getDataChannel();
-        dataChannel.unregisterObserver();
+        if (dataChannel != null) {
+            dataChannel.unregisterObserver();
+        }
         dataChannels.remove(reactTag);
     }
 
@@ -277,7 +286,7 @@ class PeerConnectionObserver implements PeerConnection.Observer {
     public void onIceCandidate(final IceCandidate candidate) {
         Log.d(TAG, "onIceCandidate");
 
-        ThreadUtils.runOnExecutor(() -> {
+        webRTCModule.getThreadUtils().runOnExecutor(() -> {
             WritableMap params = Arguments.createMap();
             params.putInt("pcId", id);
 
@@ -307,7 +316,7 @@ class PeerConnectionObserver implements PeerConnection.Observer {
 
     @Override
     public void onIceConnectionChange(PeerConnection.IceConnectionState iceConnectionState) {
-        ThreadUtils.runOnExecutor(() -> {
+        webRTCModule.getThreadUtils().runOnExecutor(() -> {
             WritableMap params = Arguments.createMap();
             params.putInt("pcId", id);
             params.putString("iceConnectionState", iceConnectionStateString(iceConnectionState));
@@ -317,7 +326,7 @@ class PeerConnectionObserver implements PeerConnection.Observer {
 
     @Override
     public void onConnectionChange(PeerConnection.PeerConnectionState peerConnectionState) {
-        ThreadUtils.runOnExecutor(() -> {
+        webRTCModule.getThreadUtils().runOnExecutor(() -> {
             WritableMap params = Arguments.createMap();
             params.putInt("pcId", id);
             params.putString("connectionState", peerConnectionStateString(peerConnectionState));
@@ -333,7 +342,7 @@ class PeerConnectionObserver implements PeerConnection.Observer {
     public void onIceGatheringChange(PeerConnection.IceGatheringState iceGatheringState) {
         Log.d(TAG, "onIceGatheringChange" + iceGatheringState.name());
 
-        ThreadUtils.runOnExecutor(() -> {
+        webRTCModule.getThreadUtils().runOnExecutor(() -> {
             WritableMap params = Arguments.createMap();
             params.putInt("pcId", id);
             params.putString("iceGatheringState", iceGatheringStateString(iceGatheringState));
@@ -355,7 +364,7 @@ class PeerConnectionObserver implements PeerConnection.Observer {
 
     @Override
     public void onDataChannel(DataChannel dataChannel) {
-        ThreadUtils.runOnExecutor(() -> {
+        webRTCModule.getThreadUtils().runOnExecutor(() -> {
             final String reactTag = UUID.randomUUID().toString();
             DataChannelWrapper dcw = new DataChannelWrapper(webRTCModule, id, reactTag, dataChannel);
             dataChannels.put(reactTag, dcw);
@@ -386,7 +395,7 @@ class PeerConnectionObserver implements PeerConnection.Observer {
 
     @Override
     public void onRenegotiationNeeded() {
-        ThreadUtils.runOnExecutor(() -> {
+        webRTCModule.getThreadUtils().runOnExecutor(() -> {
             WritableMap params = Arguments.createMap();
             params.putInt("pcId", id);
             webRTCModule.sendEvent("peerConnectionOnRenegotiationNeeded", params);
@@ -395,7 +404,7 @@ class PeerConnectionObserver implements PeerConnection.Observer {
 
     @Override
     public void onSignalingChange(PeerConnection.SignalingState signalingState) {
-        ThreadUtils.runOnExecutor(() -> {
+        webRTCModule.getThreadUtils().runOnExecutor(() -> {
             WritableMap params = Arguments.createMap();
             params.putInt("pcId", id);
             params.putString("signalingState", signalingStateString(signalingState));
@@ -411,7 +420,7 @@ class PeerConnectionObserver implements PeerConnection.Observer {
     public void onAddTrack(final RtpReceiver receiver, final MediaStream[] mediaStreams) {
         Log.d(TAG, "onAddTrack");
 
-        ThreadUtils.runOnExecutor(() -> {
+        webRTCModule.getThreadUtils().runOnExecutor(() -> {
             RtpTransceiver transceiver = null;
             for (RtpTransceiver t : this.peerConnection.getTransceivers()) {
                 if (Objects.equals(t.getReceiver().id(), receiver.id())) {
@@ -480,7 +489,7 @@ class PeerConnectionObserver implements PeerConnection.Observer {
      */
     @Override
     public void onRemoveTrack(RtpReceiver receiver) {
-        ThreadUtils.runOnExecutor(() -> {
+        webRTCModule.getThreadUtils().runOnExecutor(() -> {
             WritableMap params = Arguments.createMap();
             params.putInt("pcId", this.id);
             params.putString("receiverId", receiver.id());

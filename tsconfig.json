@@ -1,16 +1,16 @@
 {
     "include": ["src/**/*.ts", "src/**/*.tsx"],
     "compilerOptions": {
-      "target": "es6",
-      "module": "commonjs",
-      "strict": true,
-      "moduleResolution": "node",
-      "lib": ["es2015", "esnext"],
-      "jsx": "react-native",
-      "resolveJsonModule": true,
-      "noImplicitAny": false,
-      "allowSyntheticDefaultImports": true,
-      "esModuleInterop": true,
+        "target": "es6",
+        "module": "commonjs",
+        "strict": true,
+        "moduleResolution": "node",
+        "lib": ["es2015", "esnext"],
+        "jsx": "react-native",
+        "resolveJsonModule": true,
+        "noImplicitAny": false,
+        "allowSyntheticDefaultImports": true,
+        "esModuleInterop": true
     },
     "exclude": ["node_modules"]
 }

@@ -46,6 +46,7 @@ public abstract class AbstractVideoCaptureController {
             videoCapturer.dispose();
             videoCapturer = null;
         }
+        capturerEventsListener = null;
     }
 
     public int getHeight() {

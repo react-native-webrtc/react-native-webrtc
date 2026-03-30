@@ -1,6 +1,5 @@
 import debug from 'debug';
 
-
 export default class Logger {
     static ROOT_PREFIX = 'rn-webrtc';
 

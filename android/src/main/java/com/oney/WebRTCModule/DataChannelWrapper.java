@@ -15,9 +15,9 @@ class DataChannelWrapper implements DataChannel.Observer {
     private final String reactTag;
     private final DataChannel mDataChannel;
     private final int peerConnectionId;
-    private final WebRTCModule webRTCModule;
+    private final WebRTCModuleImpl webRTCModule;
 
-    DataChannelWrapper(WebRTCModule webRTCModule, int peerConnectionId, String reactTag, DataChannel dataChannel) {
+    DataChannelWrapper(WebRTCModuleImpl webRTCModule, int peerConnectionId, String reactTag, DataChannel dataChannel) {
         this.webRTCModule = webRTCModule;
         this.peerConnectionId = peerConnectionId;
         this.reactTag = reactTag;
@@ -63,13 +63,8 @@ class DataChannelWrapper implements DataChannel.Observer {
         params.putString("reactTag", reactTag);
         params.putInt("peerConnectionId", peerConnectionId);
 
-        byte[] bytes;
-        if (buffer.data.hasArray()) {
-            bytes = buffer.data.array();
-        } else {
-            bytes = new byte[buffer.data.remaining()];
-            buffer.data.get(bytes);
-        }
+        byte[] bytes = new byte[buffer.data.remaining()];
+        buffer.data.get(bytes);
 
         String type;
         String data;

@@ -1,7 +1,4 @@
-#import <objc/runtime.h>
-
 #import <React/RCTBridge.h>
-#import <React/RCTBridgeModule.h>
 
 #import <WebRTC/RTCRtpCodecCapability.h>
 #import <WebRTC/RTCRtpReceiver.h>
@@ -41,6 +38,7 @@ RCT_EXPORT_METHOD(senderReplaceTrack : (nonnull NSNumber *)objectID senderId : (
     if (peerConnection == nil) {
         RCTLogWarn(@"PeerConnection %@ not found in senderReplaceTrack()", objectID);
         reject(@"E_INVALID", @"Peer Connection is not initialized", nil);
+        return;
     }
 
     RTCRtpTransceiver *transceiver = nil;
@@ -53,7 +51,8 @@ RCT_EXPORT_METHOD(senderReplaceTrack : (nonnull NSNumber *)objectID senderId : (
 
     if (transceiver == nil) {
         RCTLogWarn(@"senderReplaceTrack() transceiver is null");
-        reject(@"E_INVALID", @"Could not get transceive", nil);
+        reject(@"E_INVALID", @"Could not get transceiver", nil);
+        return;
     }
 
     RTCRtpSender *sender = transceiver.sender;
@@ -88,8 +87,14 @@ RCT_EXPORT_METHOD(senderSetParameters : (nonnull NSNumber *)objectID senderId : 
 
     RTCRtpSender *sender = transceiver.sender;
     RTCRtpParameters *parameters = sender.parameters;
-    [sender setParameters:[self updateParametersWithOptions:options params:parameters]];
+    RTCRtpParameters *updatedParams = [self updateParametersWithOptions:options params:parameters];
 
+    if (updatedParams == nil) {
+        reject(@"E_INVALID", @"Encoding count mismatch - cannot update parameters", nil);
+        return;
+    }
+
+    [sender setParameters:updatedParams];
     resolve([SerializeUtils parametersToJSON:sender.parameters]);
 }
 

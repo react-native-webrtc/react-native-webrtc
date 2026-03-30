@@ -1,7 +1,6 @@
 #import <objc/runtime.h>
 
 #import <WebRTC/RTCCameraVideoCapturer.h>
-#import <WebRTC/RTCMediaConstraints.h>
 #import <WebRTC/RTCMediaStreamTrack.h>
 #import <WebRTC/RTCVideoTrack.h>
 
@@ -15,6 +14,7 @@
 #import "ScreenCapturer.h"
 #import "TrackCapturerEventsEmitter.h"
 #import "VideoCaptureController.h"
+#import "videoEffects/VideoEffectProcessor.h"
 
 @implementation WebRTCModule (RTCMediaStream)
 
@@ -400,7 +400,15 @@ RCT_EXPORT_METHOD(mediaStreamTrackRelease : (nonnull NSString *)trackID) {
     RTCMediaStreamTrack *track = self.localTracks[trackID];
     if (track) {
         track.isEnabled = NO;
-        [track.captureController stopCapture];
+        if (track.captureController) {
+            if ([track.captureController isKindOfClass:[VideoCaptureController class]]) {
+                VideoCaptureController *vcc = (VideoCaptureController *)track.captureController;
+                if (vcc.capturer) {
+                    vcc.capturer.delegate = nil;
+                }
+            }
+            [track.captureController stopCapture];
+        }
         [self.localTracks removeObjectForKey:trackID];
     }
 #endif

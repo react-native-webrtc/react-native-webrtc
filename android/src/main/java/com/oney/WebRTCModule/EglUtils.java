@@ -42,6 +42,7 @@ public class EglUtils {
             if (eglBase == null) {
                 try {
                     eglBase = EglBase.createEgl10(configAttributes);
+                    cause = null;
                 } catch (RuntimeException ex) {
                     // Neither EglBase14, nor EglBase10 succeeded to initialize.
                     cause = ex;

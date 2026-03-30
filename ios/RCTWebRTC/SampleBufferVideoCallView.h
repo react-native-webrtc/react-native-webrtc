@@ -1,4 +1,4 @@
-#import <AVKit/AVKit.h>
+#import <AVFoundation/AVFoundation.h>
 #import <Foundation/Foundation.h>
 #import <React/RCTViewManager.h>
 #import <WebRTC/RTCVideoRenderer.h>

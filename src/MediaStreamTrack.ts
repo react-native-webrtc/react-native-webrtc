@@ -1,14 +1,11 @@
-import { NativeModules } from 'react-native';
-
 import { MediaTrackConstraints } from './Constraints';
 import { addListener, removeListener } from './EventEmitter';
 import Logger from './Logger';
+import WebRTCModule from './NativeWebRTCModule';
 import { deepClone, normalizeConstraints } from './RTCUtil';
 import { Event, EventTarget, getEventAttributeValue, setEventAttributeValue } from './vendor/event-target-shim';
 
 const log = new Logger('pc');
-const { WebRTCModule } = NativeModules;
-
 
 type MediaStreamTrackState = 'live' | 'ended';
 
@@ -21,7 +18,7 @@ export type MediaStreamTrackInfo = {
     settings: object;
     peerConnectionId: number;
     readyState: MediaStreamTrackState;
-}
+};
 
 export type MediaTrackSettings = {
     width?: number;
@@ -30,13 +27,13 @@ export type MediaTrackSettings = {
     facingMode?: string;
     deviceId?: string;
     groupId?: string;
-}
+};
 
 type MediaStreamTrackEventMap = {
     ended: Event<'ended'>;
     mute: Event<'mute'>;
     unmute: Event<'unmute'>;
-}
+};
 
 export default class MediaStreamTrack extends EventTarget<MediaStreamTrackEventMap> {
     _constraints: MediaTrackConstraints;
@@ -164,7 +161,7 @@ export default class MediaStreamTrack extends EventTarget<MediaStreamTrackEventM
     }
 
     _setVideoEffect(name: string) {
-        this._setVideoEffects([ name ]);
+        this._setVideoEffects([name]);
     }
 
     /**
@@ -212,7 +209,10 @@ export default class MediaStreamTrack extends EventTarget<MediaStreamTrackEventM
 
         const normalized = normalizeConstraints({ video: constraints ?? true });
 
-        this._settings = await WebRTCModule.mediaStreamTrackApplyConstraints(this.id, normalized.video);
+        this._settings = (await WebRTCModule.mediaStreamTrackApplyConstraints(
+            this.id,
+            normalized.video,
+        )) as unknown as MediaTrackSettings;
         this._constraints = constraints ?? {};
     }
 

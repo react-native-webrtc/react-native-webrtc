@@ -31,7 +31,7 @@
 }
 
 - (void)dealloc {
-    self.device = NULL;
+    self.device = nil;
 }
 
 - (void)startCapture {
@@ -76,6 +76,11 @@
     }
 
     RCTLog(@"[VideoCaptureController] Capture will start");
+
+    if (self.capturer == nil) {
+        RCTLogError(@"[VideoCaptureController] Capturer is nil, cannot start capture");
+        return;
+    }
 
     // Starting the capture happens on another thread. Wait for it.
     dispatch_semaphore_t semaphore = dispatch_semaphore_create(0);

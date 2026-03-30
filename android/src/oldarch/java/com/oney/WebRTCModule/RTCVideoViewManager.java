@@ -1,10 +1,8 @@
 package com.oney.WebRTCModule;
 
-import com.facebook.react.bridge.ReadableMap;
 import com.facebook.react.uimanager.SimpleViewManager;
 import com.facebook.react.uimanager.ThemedReactContext;
 import com.facebook.react.uimanager.annotations.ReactProp;
-import com.facebook.react.uimanager.events.RCTEventEmitter;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -86,6 +84,23 @@ public class RTCVideoViewManager extends SimpleViewManager<WebRTCView> {
     public void setOnDimensionsChange(WebRTCView view, boolean onDimensionsChange) {
         view.setOnDimensionsChange(onDimensionsChange);
     }
+
+    // iOS-only PIP props — no-ops on Android
+
+    @ReactProp(name = "iosPIPEnabled")
+    public void setIosPIPEnabled(WebRTCView view, boolean value) {}
+
+    @ReactProp(name = "iosPIPStartAutomatically")
+    public void setIosPIPStartAutomatically(WebRTCView view, boolean value) {}
+
+    @ReactProp(name = "iosPIPStopAutomatically")
+    public void setIosPIPStopAutomatically(WebRTCView view, boolean value) {}
+
+    @ReactProp(name = "iosPIPPreferredWidth")
+    public void setIosPIPPreferredWidth(WebRTCView view, float value) {}
+
+    @ReactProp(name = "iosPIPPreferredHeight")
+    public void setIosPIPPreferredHeight(WebRTCView view, float value) {}
 
     @Override
     public Map<String, Object> getExportedCustomDirectEventTypeConstants() {

@@ -3,12 +3,19 @@ package com.oney.WebRTCModule;
 import com.facebook.react.bridge.Arguments;
 import com.facebook.react.bridge.ReadableArray;
 import com.facebook.react.bridge.ReadableMap;
-import com.facebook.react.bridge.ReadableMapKeySetIterator;
-import com.facebook.react.bridge.ReadableType;
 import com.facebook.react.bridge.WritableArray;
 import com.facebook.react.bridge.WritableMap;
 
-import org.webrtc.*;
+import org.webrtc.AudioTrack;
+import org.webrtc.MediaStream;
+import org.webrtc.MediaStreamTrack;
+import org.webrtc.RtpCapabilities;
+import org.webrtc.RtpParameters;
+import org.webrtc.RtpReceiver;
+import org.webrtc.RtpSender;
+import org.webrtc.RtpTransceiver;
+import org.webrtc.VideoCodecInfo;
+import org.webrtc.VideoTrack;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -59,7 +66,7 @@ public class SerializeUtils {
             case STOPPED:
                 return "stopped";
             default:
-                throw new Error("Invalid direction");
+                throw new IllegalArgumentException("Invalid direction");
         }
     }
 
@@ -247,7 +254,7 @@ public class SerializeUtils {
                     ? encodingUpdate.getDouble("scaleResolutionDownBy")
                     : null;
 
-            encoding.active = encodingUpdate.getBoolean("active");
+            encoding.active = encodingUpdate.hasKey("active") ? encodingUpdate.getBoolean("active") : true;
             encoding.rid = encodingUpdate.getString("rid");
             encoding.maxBitrateBps = maxBitrate;
             encoding.minBitrateBps = minBitrate;
@@ -270,7 +277,7 @@ public class SerializeUtils {
             case "video":
                 return MediaStreamTrack.MediaType.MEDIA_TYPE_VIDEO;
             default:
-                throw new Error("Unknown media type");
+                throw new IllegalArgumentException("Unknown media type");
         }
     }
 
@@ -287,7 +294,7 @@ public class SerializeUtils {
                 // Here we ignore the "stopped" direction because user code should
                 // never set it.
         }
-        throw new Error("Invalid direction");
+        throw new IllegalArgumentException("Invalid direction");
     }
 
     private static RtpParameters.Encoding parseEncoding(ReadableMap params) {

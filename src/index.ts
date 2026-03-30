@@ -1,12 +1,4 @@
-import { NativeModules, Platform } from 'react-native';
-const { WebRTCModule } = NativeModules;
-
-if (WebRTCModule === null) {
-    throw new Error(`WebRTC native module not found.\n${Platform.OS === 'ios' ?
-        'Try executing the "pod install" command inside your projects ios folder.' :
-        'Try executing the "npm install" command inside your projects folder.'
-    }`);
-}
+import { Platform } from 'react-native';
 
 import { setupNativeEvents } from './EventEmitter';
 import Logger from './Logger';
@@ -14,6 +6,7 @@ import mediaDevices from './MediaDevices';
 import MediaStream from './MediaStream';
 import MediaStreamTrack, { type MediaTrackSettings } from './MediaStreamTrack';
 import MediaStreamTrackEvent from './MediaStreamTrackEvent';
+import WebRTCModule from './NativeWebRTCModule';
 import permissions from './Permissions';
 import RTCAudioSession from './RTCAudioSession';
 import RTCErrorEvent from './RTCErrorEvent';
@@ -28,6 +21,16 @@ import RTCRtpTransceiver from './RTCRtpTransceiver';
 import RTCSessionDescription from './RTCSessionDescription';
 import RTCView, { type RTCVideoViewProps, type RTCIOSPIPOptions } from './RTCView';
 import ScreenCapturePickerView from './ScreenCapturePickerView';
+
+if (WebRTCModule === null || WebRTCModule === undefined) {
+    throw new Error(
+        `WebRTC native module not found.\n${
+            Platform.OS === 'ios'
+                ? 'Try executing the "pod install" command inside your projects ios folder.'
+                : 'Try executing the "npm install" command inside your projects folder.'
+        }`,
+    );
+}
 
 Logger.enable(`${Logger.ROOT_PREFIX}:*`);
 
@@ -80,8 +83,6 @@ function registerGlobals(): void {
 
     global.RTCIceCandidate = RTCIceCandidate;
     global.RTCPeerConnection = RTCPeerConnection;
-    global.RTCRtpReceiver = RTCRtpReceiver;
-    global.RTCRtpSender = RTCRtpReceiver;
     global.RTCSessionDescription = RTCSessionDescription;
     global.MediaStream = MediaStream;
     global.MediaStreamTrack = MediaStreamTrack;
