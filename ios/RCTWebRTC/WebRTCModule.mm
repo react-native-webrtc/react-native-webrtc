@@ -7,8 +7,11 @@
 #import <React/RCTUtils.h>
 
 #import "WebRTCModule+RTCPeerConnection.h"
+#import "WebRTCModule+VideoTrackAdapter.h"
 #import "WebRTCModule.h"
 #import "WebRTCModuleOptions.h"
+#import "VideoCaptureController.h"
+#import "RTCMediaStreamTrack+React.h"
 
 @interface WebRTCModule ()
 @end
@@ -25,48 +28,10 @@ static WebRTCModule *sSharedInstance = nil;
     return NO;
 }
 
-- (void)dealloc {
-    _destroyed = YES;
-    sSharedInstance = nil;
-
-    [_localTracks removeAllObjects];
-    _localTracks = nil;
-    [_localStreams removeAllObjects];
-    _localStreams = nil;
-
-    for (NSNumber *peerConnectionId in _peerConnections) {
-        RTCPeerConnection *peerConnection = _peerConnections[peerConnectionId];
-        // Dispose video track adapters to stop mute detection timers before closing
-        for (NSString *key in peerConnection.remoteTracks.allKeys) {
-            RTCMediaStreamTrack *track = peerConnection.remoteTracks[key];
-            if (track.kind == kRTCMediaStreamTrackKindVideo) {
-                [peerConnection removeVideoTrackAdapter:(RTCVideoTrack *)track];
-            }
-        }
-        [peerConnection.remoteTracks removeAllObjects];
-        [peerConnection.remoteStreams removeAllObjects];
-
-        NSMutableDictionary<NSString *, DataChannelWrapper *> *dataChannels = peerConnection.dataChannels;
-        for (NSString *tag in dataChannels) {
-            dataChannels[tag].delegate = nil;
-        }
-        [dataChannels removeAllObjects];
-
-        peerConnection.delegate = nil;
-        [peerConnection close];
-    }
-    [_peerConnections removeAllObjects];
-    _peerConnections = nil;
-
-    _peerConnectionFactory = nil;
-    _workerQueue = nil;
-}
-
-- (void)invalidate {
+- (void)cleanupResources {
     _destroyed = YES;
 
     // Dispose all peer connections and stop VideoTrackAdapter timers
-    // before the bridge is destroyed.
     for (NSNumber *peerConnectionId in _peerConnections.allKeys) {
         RTCPeerConnection *peerConnection = _peerConnections[peerConnectionId];
         @try {
@@ -88,11 +53,43 @@ static WebRTCModule *sSharedInstance = nil;
             peerConnection.delegate = nil;
             [peerConnection close];
         } @catch (NSException *exception) {
-            RCTLogWarn(@"Error disposing peer connection %@ in invalidate: %@", peerConnectionId, exception);
+            RCTLogWarn(@"Error disposing peer connection %@ in cleanup: %@", peerConnectionId, exception);
         }
     }
     [_peerConnections removeAllObjects];
+    _peerConnections = nil;
+
+    // Release local tracks (camera/microphone) to free hardware resources
+    for (NSString *trackID in _localTracks.allKeys) {
+        RTCMediaStreamTrack *track = _localTracks[trackID];
+        track.isEnabled = NO;
+        if (track.captureController) {
+            if ([track.captureController isKindOfClass:[VideoCaptureController class]]) {
+                VideoCaptureController *vcc = (VideoCaptureController *)track.captureController;
+                if (vcc.capturer) {
+                    vcc.capturer.delegate = nil;
+                }
+            }
+            [track.captureController stopCapture];
+        }
+    }
+    [_localTracks removeAllObjects];
+    _localTracks = nil;
+
     [_localStreams removeAllObjects];
+    _localStreams = nil;
+
+    _peerConnectionFactory = nil;
+    _workerQueue = nil;
+}
+
+- (void)dealloc {
+    [self cleanupResources];
+    sSharedInstance = nil;
+}
+
+- (void)invalidate {
+    [self cleanupResources];
 
 #ifndef RCT_NEW_ARCH_ENABLED
     [super invalidate];
