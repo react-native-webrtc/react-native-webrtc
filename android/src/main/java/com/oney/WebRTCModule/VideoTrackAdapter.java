@@ -82,7 +82,7 @@ public class VideoTrackAdapter {
         private TimerTask emitMuteTask;
         private volatile boolean disposed;
         private AtomicInteger frameCounter;
-        private boolean mutedState;
+        private volatile boolean mutedState;
         private final String trackId;
 
         TrackMuteUnmuteImpl(String trackId) {

@@ -6,12 +6,12 @@
 #import <React/RCTLog.h>
 #import <React/RCTUtils.h>
 
+#import "RTCMediaStreamTrack+React.h"
+#import "VideoCaptureController.h"
 #import "WebRTCModule+RTCPeerConnection.h"
 #import "WebRTCModule+VideoTrackAdapter.h"
 #import "WebRTCModule.h"
 #import "WebRTCModuleOptions.h"
-#import "VideoCaptureController.h"
-#import "RTCMediaStreamTrack+React.h"
 
 @interface WebRTCModule ()
 @end
@@ -190,8 +190,7 @@ RCT_EXPORT_MODULE();
 
 #ifdef RCT_NEW_ARCH_ENABLED
 - (std::shared_ptr<facebook::react::TurboModule>)getTurboModule:
-    (const facebook::react::ObjCTurboModule::InitParams &)params
-{
+    (const facebook::react::ObjCTurboModule::InitParams &)params {
     return std::make_shared<facebook::react::NativeWebRTCModuleSpecJSI>(params);
 }
 #endif

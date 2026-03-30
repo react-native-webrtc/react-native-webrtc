@@ -16,7 +16,6 @@ import com.facebook.react.bridge.ReadableMapKeySetIterator;
 import com.facebook.react.bridge.ReadableType;
 import com.facebook.react.bridge.WritableArray;
 import com.facebook.react.bridge.WritableMap;
-
 import com.oney.WebRTCModule.webrtcutils.H264AndSoftwareVideoDecoderFactory;
 import com.oney.WebRTCModule.webrtcutils.H264AndSoftwareVideoEncoderFactory;
 
@@ -1154,8 +1153,8 @@ public class WebRTCModuleImpl {
                     promise.reject("E_TYPE_ERROR", "Invalid session description: missing type or sdp");
                     return;
                 }
-                SessionDescription sdp = new SessionDescription(
-                        SessionDescription.Type.fromCanonicalForm(type), sdpStr);
+                SessionDescription sdp =
+                        new SessionDescription(SessionDescription.Type.fromCanonicalForm(type), sdpStr);
 
                 peerConnection.setLocalDescription(observer, sdp);
             } else {
@@ -1186,8 +1185,7 @@ public class WebRTCModuleImpl {
                 promise.reject("E_TYPE_ERROR", "Invalid session description: missing type or sdp");
                 return;
             }
-            SessionDescription sdp = new SessionDescription(
-                    SessionDescription.Type.fromCanonicalForm(type), sdpStr);
+            SessionDescription sdp = new SessionDescription(SessionDescription.Type.fromCanonicalForm(type), sdpStr);
 
             List<String> receiversIds = new ArrayList<>();
             for (RtpTransceiver transceiver : peerConnection.getTransceivers()) {
@@ -1485,9 +1483,13 @@ public class WebRTCModuleImpl {
     public void audioSessionDidDeactivate() {}
 
     // No-ops on Android — iOS-only permission methods (Android uses PermissionsAndroid)
-    public void checkPermission(String mediaType, Promise promise) { promise.resolve(true); }
+    public void checkPermission(String mediaType, Promise promise) {
+        promise.resolve(true);
+    }
 
-    public void requestPermission(String mediaType, Promise promise) { promise.resolve(true); }
+    public void requestPermission(String mediaType, Promise promise) {
+        promise.resolve(true);
+    }
 
     public void addListener(String eventName) {
         // Keep: Required for RN built in Event Emitter Calls.

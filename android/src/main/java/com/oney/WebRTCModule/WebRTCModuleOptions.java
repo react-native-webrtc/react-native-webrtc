@@ -7,8 +7,6 @@ import org.webrtc.VideoEncoderFactory;
 import org.webrtc.audio.AudioDeviceModule;
 
 public class WebRTCModuleOptions {
-    private static WebRTCModuleOptions instance;
-
     public VideoEncoderFactory videoEncoderFactory;
     public VideoDecoderFactory videoDecoderFactory;
     public AudioDeviceModule audioDeviceModule;
@@ -17,11 +15,13 @@ public class WebRTCModuleOptions {
     public String fieldTrials;
     public boolean enableMediaProjectionService;
 
-    public static WebRTCModuleOptions getInstance() {
-        if (instance == null) {
-            instance = new WebRTCModuleOptions();
-        }
+    private WebRTCModuleOptions() {}
 
-        return instance;
+    private static class Holder {
+        static final WebRTCModuleOptions instance = new WebRTCModuleOptions();
+    }
+
+    public static WebRTCModuleOptions getInstance() {
+        return Holder.instance;
     }
 }

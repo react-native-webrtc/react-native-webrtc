@@ -616,6 +616,9 @@ public class WebRTCView extends ViewGroup {
                     // on the instance, it will throw IllegalStateException.
 
                     Log.e(TAG, "Failed to add renderer", tr);
+                    surfaceViewRenderer.release();
+                    surfaceViewRendererInstances--;
+                    post(() -> rendererAttached = false);
                 }
             });
 

@@ -22,16 +22,17 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
     public WebRTCModule(ReactApplicationContext reactContext) {
         super(reactContext);
 
-        impl = new WebRTCModuleImpl(reactContext, (eventName, params) ->
-            reactContext
-                .getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter.class)
-                .emit(eventName, params)
-        );
+        impl = new WebRTCModuleImpl(reactContext,
+                (eventName, params)
+                        -> reactContext.getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter.class)
+                                .emit(eventName, params));
     }
 
     @NonNull
     @Override
-    public String getName() { return impl.getName(); }
+    public String getName() {
+        return impl.getName();
+    }
 
     @Override
     public void invalidate() {

@@ -25,7 +25,9 @@ public class WebRTCModule extends NativeWebRTCModuleSpec {
 
     @NonNull
     @Override
-    public String getName() { return impl.getName(); }
+    public String getName() {
+        return impl.getName();
+    }
 
     @Override
     public void invalidate() {

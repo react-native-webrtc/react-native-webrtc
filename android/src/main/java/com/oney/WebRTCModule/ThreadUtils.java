@@ -1,6 +1,7 @@
 package com.oney.WebRTCModule;
 
 import java.util.concurrent.Callable;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -43,7 +44,9 @@ final class ThreadUtils {
         try {
             return executor.submit(callable);
         } catch (RejectedExecutionException e) {
-            return null;
+            CompletableFuture<T> failed = new CompletableFuture<>();
+            failed.completeExceptionally(e);
+            return failed;
         }
     }
 
@@ -56,7 +59,9 @@ final class ThreadUtils {
         try {
             return executor.submit(runnable);
         } catch (RejectedExecutionException e) {
-            return null;
+            CompletableFuture<?> failed = new CompletableFuture<>();
+            failed.completeExceptionally(e);
+            return failed;
         }
     }
 

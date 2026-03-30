@@ -90,7 +90,9 @@ class PeerConnectionObserver implements PeerConnection.Observer {
         // At this point there should be no local MediaStreams in the associated
         // PeerConnection. Call dispose() to free all remaining resources held
         // by the PeerConnection instance (RtpReceivers, RtpSenders, etc.)
-        peerConnection.dispose();
+        if (peerConnection != null) {
+            peerConnection.dispose();
+        }
 
         remoteStreamIds.clear();
         remoteStreams.clear();

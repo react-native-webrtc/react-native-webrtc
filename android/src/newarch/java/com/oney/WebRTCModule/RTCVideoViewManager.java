@@ -15,9 +15,8 @@ import java.util.HashMap;
 import java.util.Map;
 
 @ReactModule(name = RTCVideoViewManager.REACT_CLASS)
-public class RTCVideoViewManager extends SimpleViewManager<WebRTCView>
-        implements RTCVideoViewManagerInterface<WebRTCView> {
-
+public class RTCVideoViewManager
+        extends SimpleViewManager<WebRTCView> implements RTCVideoViewManagerInterface<WebRTCView> {
     static final String REACT_CLASS = "RTCVideoView";
 
     private final ViewManagerDelegate<WebRTCView> mDelegate;

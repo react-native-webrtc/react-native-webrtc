@@ -1,22 +1,18 @@
 package com.oney.WebRTCModule.videoEffects;
 
-import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Manages VideoFrameProcessorFactoryInterfaces corresponding to name using hashmap, and provides
  * get, add and remove functionality.
  */
 public class ProcessorProvider {
-    private static Map<String, VideoFrameProcessorFactoryInterface> methodMap =
-            new HashMap<String, VideoFrameProcessorFactoryInterface>();
+    private static final Map<String, VideoFrameProcessorFactoryInterface> methodMap = new ConcurrentHashMap<>();
 
     public static VideoFrameProcessor getProcessor(String name) {
-        if (methodMap.containsKey(name)) {
-            return methodMap.get(name).build();
-        } else {
-            return null;
-        }
+        VideoFrameProcessorFactoryInterface factory = methodMap.get(name);
+        return factory != null ? factory.build() : null;
     }
 
     public static void addProcessor(

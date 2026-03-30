@@ -23,7 +23,7 @@
 
 using namespace facebook::react;
 
-@interface RTCVideoViewComponentView () <RTCVideoViewDelegate>
+@interface RTCVideoViewComponentView ()<RTCVideoViewDelegate>
 @end
 
 @implementation RTCVideoViewComponentView {
@@ -81,8 +81,8 @@ using namespace facebook::react;
     // Update objectFit
     if (oldViewProps.objectFit != newViewProps.objectFit) {
         RTCVideoViewObjectFit fit = newViewProps.objectFit == RTCVideoViewObjectFit::Cover
-            ? RTCVideoViewObjectFitCover
-            : RTCVideoViewObjectFitContain;
+                                        ? RTCVideoViewObjectFitCover
+                                        : RTCVideoViewObjectFitContain;
         [self setObjectFit:fit];
     }
 
