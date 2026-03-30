@@ -14,6 +14,7 @@
 #import "ScreenCapturer.h"
 #import "TrackCapturerEventsEmitter.h"
 #import "VideoCaptureController.h"
+#import "videoEffects/VideoEffectProcessor.h"
 
 @implementation WebRTCModule (RTCMediaStream)
 
@@ -400,9 +401,11 @@ RCT_EXPORT_METHOD(mediaStreamTrackRelease : (nonnull NSString *)trackID) {
     if (track) {
         track.isEnabled = NO;
         if (track.captureController) {
-            VideoCaptureController *vcc = (VideoCaptureController *)track.captureController;
-            if (vcc.capturer) {
-                vcc.capturer.delegate = nil;
+            if ([track.captureController isKindOfClass:[VideoCaptureController class]]) {
+                VideoCaptureController *vcc = (VideoCaptureController *)track.captureController;
+                if (vcc.capturer) {
+                    vcc.capturer.delegate = nil;
+                }
             }
             [track.captureController stopCapture];
         }

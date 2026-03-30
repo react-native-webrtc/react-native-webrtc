@@ -88,20 +88,26 @@
         return;
     }
 
+    __weak typeof(self) weakSelf = self;
     dispatch_async(dispatch_get_main_queue(), ^{
-        if (self.renderer.requiresFlushToResumeDecoding) {
-            [self.renderer flush];
+        __strong typeof(weakSelf) strongSelf = weakSelf;
+        if (!strongSelf) {
+            CFRelease(sampleBuffer);
+            return;
+        }
+        if (strongSelf.renderer.requiresFlushToResumeDecoding) {
+            [strongSelf.renderer flush];
         }
 
-        if (!self.renderer.readyForMoreMediaData) {
+        if (!strongSelf.renderer.readyForMoreMediaData) {
             CFRelease(sampleBuffer);
             return;
         }
 
-        [self recalculateScale:frame.rotation];
+        [strongSelf recalculateScale:frame.rotation];
 
         // Display the CMSampleBuffer using AVSampleBufferDisplayLayer
-        [self.renderer enqueueSampleBuffer:sampleBuffer];
+        [strongSelf.renderer enqueueSampleBuffer:sampleBuffer];
         CFRelease(sampleBuffer);
     });
 }
@@ -117,7 +123,11 @@
 
     // Create a CMVideoFormatDescription
     CMVideoFormatDescriptionRef formatDescription;
-    CMVideoFormatDescriptionCreateForImageBuffer(kCFAllocatorDefault, pixelBuffer, &formatDescription);
+    OSStatus status = CMVideoFormatDescriptionCreateForImageBuffer(kCFAllocatorDefault, pixelBuffer, &formatDescription);
+    if (status != noErr || formatDescription == NULL) {
+        CVPixelBufferRelease(pixelBuffer);
+        return nil;
+    }
 
     // Create CMSampleTimingInfo
     // Timescale is 90khz according to RTCVideoFrame.h

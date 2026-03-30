@@ -67,7 +67,7 @@
 
 @implementation WebRTCModule (RTCPeerConnection)
 
-int _transceiverNextId = 0;
+static int _transceiverNextId = 0;
 
 /*
  * This method is synchronous and blocking. This is done so we can implement createDataChannel
@@ -441,6 +441,7 @@ RCT_EXPORT_BLOCKING_SYNCHRONOUS_METHOD(peerConnectionAddTrack : (nonnull NSNumbe
         RTCPeerConnection *peerConnection = self.peerConnections[objectID];
         if (!peerConnection) {
             RCTLogWarn(@"PeerConnection %@ not found in peerConnectionAddTrack()", objectID);
+            params = @{};
             return;
         }
 
@@ -459,6 +460,7 @@ RCT_EXPORT_BLOCKING_SYNCHRONOUS_METHOD(peerConnectionAddTrack : (nonnull NSNumbe
 
         if (!transceiver) {
             RCTLogWarn(@"Transceiver not found in peerConnectionAddTrack()");
+            params = @{};
             return;
         }
 
@@ -480,6 +482,7 @@ RCT_EXPORT_BLOCKING_SYNCHRONOUS_METHOD(peerConnectionAddTransceiver : (nonnull N
         RTCPeerConnection *peerConnection = self.peerConnections[objectID];
         if (!peerConnection) {
             RCTLogWarn(@"PeerConnection %@ not found in peerConnectionAddTransceiver()", objectID);
+            params = @{};
             return;
         }
 
@@ -512,11 +515,13 @@ RCT_EXPORT_BLOCKING_SYNCHRONOUS_METHOD(peerConnectionAddTransceiver : (nonnull N
             transceiver = [peerConnection addTransceiverWithTrack:track init:transceiverInit];
         } else {
             RCTLogWarn(@"peerConnectionAddTransceiver() no type nor trackId provided in options");
+            params = @{};
             return;
         }
 
         if (transceiver == nil) {
             RCTLogWarn(@"peerConnectionAddTransceiver() Error adding transceiver");
+            params = @{};
             return;
         }
 
@@ -612,7 +617,11 @@ RCT_EXPORT_BLOCKING_SYNCHRONOUS_METHOD(peerConnectionRemoveTrack : (nonnull NSNu
             [s appendString:statKey];
             [s appendString:@"\":"];
             NSObject *statisticsValue = [statistics.values objectForKey:statKey];
-            [self appendValue:statisticsValue toString:s];
+            if (statisticsValue == nil) {
+                [s appendString:@"null"];
+            } else {
+                [self appendValue:statisticsValue toString:s];
+            }
         }
 
         [s appendString:@"}]"];

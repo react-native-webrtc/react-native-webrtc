@@ -136,7 +136,9 @@ using namespace facebook::react;
         }
 #endif
         if (@available(iOS 15.0, *)) {
-            _pipController.objectFit = fit;
+            if (_pipController) {
+                _pipController.objectFit = fit;
+            }
         }
     }
 }

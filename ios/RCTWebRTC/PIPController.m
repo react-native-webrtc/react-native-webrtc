@@ -79,12 +79,11 @@
 }
 
 - (void)setVideoTrack:(RTCVideoTrack *)videoTrack {
-    if (_videoTrack != videoTrack) {
-        [_videoTrack removeRenderer:_sampleView];
-    }
-
+    [_videoTrack removeRenderer:_sampleView];
     _videoTrack = videoTrack;
-    [videoTrack addRenderer:_sampleView];
+    if (videoTrack) {
+        [videoTrack addRenderer:_sampleView];
+    }
 
     if (_videoTrack) {
         if (!_sampleView.superview) {

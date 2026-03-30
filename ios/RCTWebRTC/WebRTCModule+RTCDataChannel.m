@@ -22,14 +22,14 @@ RCT_EXPORT_BLOCKING_SYNCHRONOUS_METHOD(createDataChannel : (nonnull NSNumber *)p
 
         if (peerConnection == nil) {
             RCTLogWarn(@"PeerConnection %@ not found", peerConnectionId);
-            channelInfo = nil;
+            channelInfo = @{};
             return;
         }
 
         RTCDataChannel *dataChannel = [peerConnection dataChannelForLabel:label configuration:config];
 
         if (dataChannel == nil) {
-            channelInfo = nil;
+            channelInfo = @{};
             return;
         }
 
@@ -118,7 +118,7 @@ RCT_EXPORT_METHOD(dataChannelSend : (nonnull NSNumber *)peerConnectionId reactTa
         case RTCDataChannelStateClosed:
             return @"closed";
     }
-    return nil;
+    return @"unknown";
 }
 
 #pragma mark - DataChannelWrapperDelegate methods

@@ -21,7 +21,9 @@
 static WebRTCModule *sSharedInstance = nil;
 
 + (instancetype)sharedInstance {
-    return sSharedInstance;
+    @synchronized([WebRTCModule class]) {
+        return sSharedInstance;
+    }
 }
 
 + (BOOL)requiresMainQueueSetup {

@@ -9,15 +9,21 @@ static NSMutableDictionary<NSString *, NSObject<VideoFrameProcessorDelegate> *> 
 }
 
 + (NSObject<VideoFrameProcessorDelegate> *)getProcessor:(NSString *)name {
-    return [processorMap objectForKey:name];
+    @synchronized(self) {
+        return [processorMap objectForKey:name];
+    }
 }
 
 + (void)addProcessor:(NSObject<VideoFrameProcessorDelegate> *)processor forName:(NSString *)name {
-    [processorMap setObject:processor forKey:name];
+    @synchronized(self) {
+        [processorMap setObject:processor forKey:name];
+    }
 }
 
 + (void)removeProcessor:(NSString *)name {
-    [processorMap removeObjectForKey:name];
+    @synchronized(self) {
+        [processorMap removeObjectForKey:name];
+    }
 }
 
 @end
