@@ -1,10 +1,12 @@
 #import <objc/runtime.h>
 
+#import <CommonCrypto/CommonDigest.h>
 #import <React/RCTBridge.h>
 #import <React/RCTEventDispatcher.h>
 #import <React/RCTLog.h>
 #import <React/RCTUtils.h>
 
+#import <WebRTC/RTCCertificate.h>
 #import <WebRTC/RTCConfiguration.h>
 #import <WebRTC/RTCIceCandidate.h>
 #import <WebRTC/RTCIceServer.h>
@@ -65,7 +67,22 @@
 
 @end
 
+static NSMutableDictionary<NSString *, RTCCertificate *> *gCertificates = nil;
+
 @implementation WebRTCModule (RTCPeerConnection)
+
++ (void)initialize {
+    if (self == [WebRTCModule class]) {
+        gCertificates = [NSMutableDictionary new];
+    }
+}
+
++ (RTCCertificate *)getCertificate:(NSString *)certId {
+    if (!gCertificates) {
+        return nil;
+    }
+    return gCertificates[certId];
+}
 
 int _transceiverNextId = 0;
 
@@ -913,6 +930,84 @@ RCT_EXPORT_BLOCKING_SYNCHRONOUS_METHOD(peerConnectionRemoveTrack : (nonnull NSNu
 
 - (void)peerConnection:(nonnull RTCPeerConnection *)peerConnection didRemoveStream:(nonnull RTCMediaStream *)stream {
     // Unused in Unified Plan.
+}
+
+RCT_EXPORT_METHOD(generateCertificate : (NSDictionary *)options resolver : (RCTPromiseResolveBlock)
+                      resolve rejecter : (RCTPromiseRejectBlock)reject) {
+    NSString *keyType = @"ECDSA";
+    if (options[@"keyType"]) {
+        NSString *type = options[@"keyType"];
+        if ([type isEqualToString:@"RSA"] || [type isEqualToString:@"ECDSA"]) {
+            keyType = type;
+        }
+    }
+
+    NSMutableDictionary *params = [NSMutableDictionary new];
+    if ([keyType isEqualToString:@"RSA"]) {
+        params[@"name"] = @"RSASSA-PKCS1-v1_5";
+    } else {
+        params[@"name"] = @"ECDSA";
+        params[@"namedCurve"] = @"P-256";
+    }
+
+    if (options[@"expires"]) {
+        params[@"expires"] = options[@"expires"];
+    } else {
+        params[@"expires"] = @(2592000);  // 30 days
+    }
+
+    RTCCertificate *cert = [RTCCertificate generateCertificateWithParams:params];
+
+    if (!cert) {
+        reject(@"E_GEN_CERT_FAILED", @"Failed to generate certificate", nil);
+        return;
+    }
+
+    NSString *certId = [[NSUUID UUID] UUIDString];
+    gCertificates[certId] = cert;
+
+    NSMutableDictionary *result = [NSMutableDictionary new];
+    result[@"certificateId"] = certId;
+
+    // expires
+    NSDate *now = [NSDate date];
+    NSTimeInterval expiresSeconds = [params[@"expires"] doubleValue];
+    result[@"expires"] = @((long)(([now timeIntervalSince1970] + expiresSeconds) * 1000));
+
+    // Fingerprints
+    NSMutableArray *fingerprints = [NSMutableArray new];
+    NSString *pem = cert.certificate;
+
+    // Calculate SHA-256 fingerprint
+    NSRange start = [pem rangeOfString:@"-----BEGIN CERTIFICATE-----"];
+    NSRange end = [pem rangeOfString:@"-----END CERTIFICATE-----"];
+    if (start.location != NSNotFound && end.location != NSNotFound) {
+        NSUInteger actualStart = start.location + start.length;
+        NSString *base64 = [pem substringWithRange:NSMakeRange(actualStart, end.location - actualStart)];
+        // Remove newlines
+        base64 = [[base64 componentsSeparatedByCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]]
+            componentsJoinedByString:@""];
+
+        NSData *der = [[NSData alloc] initWithBase64EncodedString:base64 options:0];
+        if (der) {
+            unsigned char digest[CC_SHA256_DIGEST_LENGTH];
+            CC_SHA256(der.bytes, (CC_LONG)der.length, digest);
+
+            NSMutableString *fingerprint = [NSMutableString stringWithCapacity:CC_SHA256_DIGEST_LENGTH * 3];
+            for (int i = 0; i < CC_SHA256_DIGEST_LENGTH; ++i) {
+                [fingerprint appendFormat:@"%02x:", digest[i]];
+            }
+            if (fingerprint.length > 0) {
+                [fingerprint deleteCharactersInRange:NSMakeRange(fingerprint.length - 1, 1)];
+            }
+
+            [fingerprints addObject:@{@"algorithm" : @"sha-256", @"value" : fingerprint}];
+        }
+    }
+
+    result[@"fingerprints"] = fingerprints;
+
+    resolve(result);
 }
 
 @end

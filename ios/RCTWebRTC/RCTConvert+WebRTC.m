@@ -1,8 +1,11 @@
 #import <React/RCTLog.h>
+#import <WebRTC/RTCCertificate.h>
 #import <WebRTC/RTCDataChannelConfiguration.h>
 #import <WebRTC/RTCIceServer.h>
 #import <WebRTC/RTCSessionDescription.h>
 #import "RCTConvert+WebRTC.h"
+
+#import "WebRTCModule+RTCPeerConnection.h"
 
 @implementation RCTConvert (WebRTC)
 
@@ -169,6 +172,22 @@
             config.tcpCandidatePolicy = RTCTcpCandidatePolicyEnabled;
         } else if ([tcpCandidatePolicy isEqualToString:@"disabled"]) {
             config.tcpCandidatePolicy = RTCTcpCandidatePolicyDisabled;
+        }
+    }
+
+    if (json[@"certificates"] != nil && [json[@"certificates"] isKindOfClass:[NSArray class]]) {
+        NSArray *certs = json[@"certificates"];
+        if (certs.count > 0) {
+            id certInfo = certs[0];
+            if ([certInfo isKindOfClass:[NSDictionary class]]) {
+                NSString *certId = certInfo[@"certificateId"];
+                if (certId) {
+                    RTCCertificate *cert = [WebRTCModule getCertificate:certId];
+                    if (cert) {
+                        config.certificate = cert;
+                    }
+                }
+            }
         }
     }
 
