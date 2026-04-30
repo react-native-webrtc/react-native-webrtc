@@ -34,6 +34,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
 /**
@@ -83,7 +84,18 @@ class GetUserMediaImpl {
                     mediaProjectionPermissionResultData = data;
 
                     ThreadUtils.runOnExecutor(() -> {
-                        MediaProjectionService.launch(activity);
+                        CompletableFuture<Void> fut = MediaProjectionService.launch(activity);
+
+                        try {
+                            fut.get();
+                        } catch (Exception e) {
+                            Log.e(TAG, "Failed to start MediaProjection service", e);
+                            displayMediaPromise.reject("DOMException", "AbortError");
+                            displayMediaPromise = null;
+                            mediaProjectionPermissionResultData = null;
+                            return;
+                        }
+
                         createScreenStream();
                     });
                 }

@@ -1,5 +1,7 @@
 package com.oney.WebRTCModule;
 
+import android.util.Log;
+
 import androidx.annotation.Nullable;
 import androidx.core.util.Consumer;
 
@@ -10,6 +12,8 @@ import com.facebook.react.bridge.WritableMap;
 import org.webrtc.VideoCapturer;
 
 public abstract class AbstractVideoCaptureController {
+    private static final String TAG = AbstractVideoCaptureController.class.getSimpleName();
+
     protected int targetWidth;
     protected int targetHeight;
     protected int targetFps;
@@ -78,9 +82,7 @@ public abstract class AbstractVideoCaptureController {
         try {
             videoCapturer.startCapture(targetWidth, targetHeight, targetFps);
         } catch (RuntimeException e) {
-            // XXX This can only fail if we initialize the capturer incorrectly,
-            // which we don't. Thus, ignore any failures here since we trust
-            // ourselves.
+            Log.e(TAG, "Failed to start capture", e);
         }
     }
 
