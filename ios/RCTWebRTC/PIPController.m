@@ -127,6 +127,11 @@
     }
 }
 
+- (void)setBlurIntensity:(CGFloat)blurIntensity {
+    _blurIntensity = blurIntensity;
+    _sampleView.blurIntensity = blurIntensity;
+}
+
 - (BOOL)startAutomatically {
     return _pipController.canStartPictureInPictureAutomaticallyFromInline;
 }
