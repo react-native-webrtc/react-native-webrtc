@@ -68,9 +68,9 @@ public class VideoTrackAdapter {
      */
     private class TrackMuteUnmuteImpl implements VideoSink {
         private TimerTask emitMuteTask;
-        private volatile boolean disposed;
-        private AtomicInteger frameCounter;
-        private boolean mutedState;
+        volatile boolean disposed;
+        AtomicInteger frameCounter;
+        boolean mutedState;
         private final String trackId;
 
         TrackMuteUnmuteImpl(String trackId) {
@@ -92,23 +92,7 @@ public class VideoTrackAdapter {
                 if (emitMuteTask != null) {
                     emitMuteTask.cancel();
                 }
-                emitMuteTask = new TimerTask() {
-                    private int lastFrameNumber = frameCounter.get();
-
-                    @Override
-                    public void run() {
-                        if (disposed) {
-                            return;
-                        }
-                        boolean isMuted = lastFrameNumber == frameCounter.get();
-                        if (isMuted != mutedState) {
-                            mutedState = isMuted;
-                            emitMuteEvent(isMuted);
-                        }
-
-                        lastFrameNumber = frameCounter.get();
-                    }
-                };
+                emitMuteTask = new MuteCheckTask(this);
                 timer.schedule(emitMuteTask, INITIAL_MUTE_DELAY, MUTE_DELAY);
             }
         }
@@ -132,6 +116,32 @@ public class VideoTrackAdapter {
                     emitMuteTask = null;
                 }
             }
+        }
+    }
+
+    /**
+     * Named TimerTask to avoid anonymous inner class nest mate issues with AGP 8.12+.
+     */
+    private static class MuteCheckTask extends TimerTask {
+        private final TrackMuteUnmuteImpl impl;
+        private int lastFrameNumber;
+
+        MuteCheckTask(TrackMuteUnmuteImpl impl) {
+            this.impl = impl;
+            this.lastFrameNumber = impl.frameCounter.get();
+        }
+
+        @Override
+        public void run() {
+            if (impl.disposed) {
+                return;
+            }
+            boolean isMuted = lastFrameNumber == impl.frameCounter.get();
+            if (isMuted != impl.mutedState) {
+                impl.mutedState = isMuted;
+                impl.emitMuteEvent(isMuted);
+            }
+            lastFrameNumber = impl.frameCounter.get();
         }
     }
 }
