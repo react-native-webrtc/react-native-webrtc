@@ -23,6 +23,9 @@ typedef NS_ENUM(NSInteger, FishjamAudioUnitState) {
 @interface FishjamRTCAudioDevice () {
     AudioUnit _vpioUnit;
     FishjamAudioUnitState _state;
+    Float64 _configuredSampleRate;
+    double _reportedInputSampleRate;
+    double _reportedOutputSampleRate;
 }
 
 @property(nonatomic, weak) id<RTCAudioDeviceDelegate> delegate;
@@ -39,6 +42,9 @@ typedef NS_ENUM(NSInteger, FishjamAudioUnitState) {
     if (self) {
         _vpioUnit = NULL;
         _state = FishjamAudioUnitStateInitRequired;
+        _configuredSampleRate = 0.0;
+        _reportedInputSampleRate = 0.0;
+        _reportedOutputSampleRate = 0.0;
     }
     return self;
 }
@@ -54,11 +60,11 @@ typedef NS_ENUM(NSInteger, FishjamAudioUnitState) {
 #pragma mark - RTCAudioDevice properties
 
 - (double)deviceInputSampleRate {
-    return self.audioSession.sampleRate;
+    return _reportedInputSampleRate > 0 ? _reportedInputSampleRate : self.audioSession.sampleRate;
 }
 
 - (double)deviceOutputSampleRate {
-    return self.audioSession.sampleRate;
+    return _reportedOutputSampleRate > 0 ? _reportedOutputSampleRate : self.audioSession.sampleRate;
 }
 
 - (NSTimeInterval)inputIOBufferDuration {
@@ -108,6 +114,8 @@ typedef NS_ENUM(NSInteger, FishjamAudioUnitState) {
     self.shouldPlay = NO;
     self.shouldRecord = NO;
     [self disposeAudioUnit];
+    _reportedInputSampleRate = 0.0;
+    _reportedOutputSampleRate = 0.0;
     self.delegate = nil;
     return YES;
 }
@@ -464,6 +472,7 @@ static OSStatus FishjamOnDeliverRecordedData(void *inRefCon,
         }
     }
 
+    _configuredSampleRate = sampleRate;
     _state = FishjamAudioUnitStateInitialized;
     return YES;
 }
@@ -529,6 +538,7 @@ static OSStatus FishjamOnDeliverRecordedData(void *inRefCon,
     }
     _vpioUnit = NULL;
     _state = FishjamAudioUnitStateInitRequired;
+    _configuredSampleRate = 0.0;
 }
 
 #pragma mark - Top-level update (mirrors audio_device_ios.mm UpdateAudioUnit)
@@ -565,6 +575,15 @@ static OSStatus FishjamOnDeliverRecordedData(void *inRefCon,
 
     [self configureAudioSession];
 
+    Float64 targetSampleRate = self.audioSession.sampleRate;
+    if (targetSampleRate <= 0) {
+        targetSampleRate = kHighPerformanceSampleRate;
+    }
+
+    if (_vpioUnit != NULL && _state >= FishjamAudioUnitStateInitialized && _configuredSampleRate != targetSampleRate) {
+        [self uninitializeAudioUnit];
+    }
+
     if ([self audioUnitNeedsRecreate]) {
         [self disposeAudioUnit];
         if (![self createAudioUnit]) {
@@ -573,14 +592,52 @@ static OSStatus FishjamOnDeliverRecordedData(void *inRefCon,
     }
 
     if (_state == FishjamAudioUnitStateUninitialized) {
-        if (![self initializeAudioUnitWithSampleRate:self.audioSession.sampleRate]) {
+        if (![self initializeAudioUnitWithSampleRate:targetSampleRate]) {
             return;
         }
     }
 
     if (_state == FishjamAudioUnitStateInitialized) {
-        [self startAudioUnit];
+        if (![self startAudioUnit]) {
+            return;
+        }
     }
+
+    [self notifySampleRateChangeIfNeeded];
+}
+
+- (void)notifySampleRateChangeIfNeeded {
+    id<RTCAudioDeviceDelegate> delegate = self.delegate;
+    if (delegate == nil || _configuredSampleRate <= 0) {
+        return;
+    }
+
+    BOOL inputChanged = self.shouldRecord && _reportedInputSampleRate != _configuredSampleRate;
+    BOOL outputChanged = self.shouldPlay && _reportedOutputSampleRate != _configuredSampleRate;
+    if (!inputChanged && !outputChanged) {
+        return;
+    }
+
+    if (inputChanged) {
+        _reportedInputSampleRate = _configuredSampleRate;
+    }
+    if (outputChanged) {
+        _reportedOutputSampleRate = _configuredSampleRate;
+    }
+
+    __weak typeof(self) weakSelf = self;
+    [delegate dispatchAsync:^{
+        id<RTCAudioDeviceDelegate> strongDelegate = weakSelf.delegate;
+        if (strongDelegate == nil) {
+            return;
+        }
+        if (inputChanged) {
+            [strongDelegate notifyAudioInputParametersChange];
+        }
+        if (outputChanged) {
+            [strongDelegate notifyAudioOutputParametersChange];
+        }
+    }];
 }
 
 #pragma mark - Audio Session Notifications
