@@ -1,14 +1,17 @@
 package com.oney.WebRTCModule;
 
-import android.bluetooth.BluetoothAdapter;
-import android.bluetooth.BluetoothProfile;
+import android.content.BroadcastReceiver;
 import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
 import android.media.AudioDeviceCallback;
 import android.media.AudioDeviceInfo;
 import android.media.AudioManager;
 import android.os.Build;
 import android.os.Handler;
 import android.os.Looper;
+
+import androidx.annotation.RequiresApi;
 
 import com.facebook.react.bridge.Arguments;
 import com.facebook.react.bridge.Promise;
@@ -19,12 +22,33 @@ import com.facebook.react.bridge.WritableMap;
 import java.util.List;
 
 public class AudioOutputManager {
+    private static final long ROUTE_CHANGE_TIMEOUT_MS = 3000;
+
     private final ReactApplicationContext reactContext;
     private final AudioManager audioManager;
     private final WebRTCModule webRTCModule;
     private AudioDeviceCallback audioDeviceCallback;
     private AudioManager.OnCommunicationDeviceChangedListener communicationDeviceChangedListener;
+    private BroadcastReceiver scoReceiver;
     private boolean isObserving = false;
+
+    private final Handler mainHandler = new Handler(Looper.getMainLooper());
+    // Guarded by `this`. Single in-flight selection — a new request supersedes any prior one.
+    private PendingSelect pending;
+
+    private static final class PendingSelect {
+        final Promise promise;
+        final int targetDeviceId;
+        final int targetType;
+        final Runnable timeoutTask;
+
+        PendingSelect(Promise promise, int targetDeviceId, int targetType, Runnable timeoutTask) {
+            this.promise = promise;
+            this.targetDeviceId = targetDeviceId;
+            this.targetType = targetType;
+            this.timeoutTask = timeoutTask;
+        }
+    }
 
     public AudioOutputManager(WebRTCModule module, ReactApplicationContext context) {
         this.webRTCModule = module;
@@ -166,11 +190,12 @@ public class AudioOutputManager {
                 if (d.getType() == AudioDeviceInfo.TYPE_BUILTIN_SPEAKER) return d;
             }
         }
-        if (audioManager.isWiredHeadsetOn()) {
-            for (AudioDeviceInfo d : devices) {
-                if (d.getType() == AudioDeviceInfo.TYPE_WIRED_HEADSET
-                        || d.getType() == AudioDeviceInfo.TYPE_WIRED_HEADPHONES)
-                    return d;
+        // A wired headset only appears in the device list while it is plugged in,
+        // and the OS auto-routes to it. No deprecated isWiredHeadsetOn() needed.
+        for (AudioDeviceInfo d : devices) {
+            if (d.getType() == AudioDeviceInfo.TYPE_WIRED_HEADSET
+                    || d.getType() == AudioDeviceInfo.TYPE_WIRED_HEADPHONES) {
+                return d;
             }
         }
         for (AudioDeviceInfo d : devices) {
@@ -180,53 +205,93 @@ public class AudioOutputManager {
     }
 
     public void selectAudioOutput(String deviceIdStr, Promise promise) {
+        int deviceId;
         try {
-            int deviceId = Integer.parseInt(deviceIdStr);
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                selectAudioOutputApi31(deviceId);
-            } else {
-                selectAudioOutputLegacy(deviceId);
-                emitOutputChangedEvent();
-            }
-            promise.resolve(null);
+            deviceId = Integer.parseInt(deviceIdStr);
         } catch (NumberFormatException e) {
             promise.reject("E_AUDIO_OUTPUT_SELECT", "Invalid device ID: " + deviceIdStr, e);
-        } catch (Exception e) {
-            promise.reject("E_AUDIO_OUTPUT_SELECT", e.getMessage(), e);
+            return;
         }
-    }
 
-    private void selectAudioOutputApi31(int deviceId) {
-        List<AudioDeviceInfo> devices = audioManager.getAvailableCommunicationDevices();
-        for (AudioDeviceInfo device : devices) {
-            if (device.getId() == deviceId) {
-                if (device.getType() == AudioDeviceInfo.TYPE_BUILTIN_EARPIECE) {
-                    audioManager.clearCommunicationDevice();
-                    return;
-                }
-                boolean success = audioManager.setCommunicationDevice(device);
-                if (!success) {
-                    throw new RuntimeException("setCommunicationDevice failed for device ID " + deviceId);
-                }
-                return;
-            }
-        }
-        throw new RuntimeException("Audio output not available for device ID: " + deviceId);
-    }
-
-    private void selectAudioOutputLegacy(int deviceId) {
-        AudioDeviceInfo[] devices = audioManager.getDevices(AudioManager.GET_DEVICES_OUTPUTS);
-        AudioDeviceInfo target = null;
-        for (AudioDeviceInfo d : devices) {
-            if (d.getId() == deviceId) {
-                target = d;
-                break;
-            }
-        }
+        AudioDeviceInfo target = findTargetDevice(deviceId);
         if (target == null) {
-            throw new RuntimeException("Audio output not available for device ID: " + deviceId);
+            promise.reject("E_AUDIO_OUTPUT_SELECT", "Audio output not available for device ID: " + deviceId);
+            return;
+        }
+        int targetType = target.getType();
+
+        if (isCurrentlyRouted(deviceId, targetType)) {
+            promise.resolve(null);
+            return;
         }
 
+        synchronized (this) {
+            if (pending != null) {
+                mainHandler.removeCallbacks(pending.timeoutTask);
+                Promise old = pending.promise;
+                pending = null;
+                old.reject("E_AUDIO_OUTPUT_SUPERSEDED", "Superseded by newer selectAudioOutput call");
+            }
+            Runnable timeoutTask = this::timeoutPending;
+            pending = new PendingSelect(promise, deviceId, targetType, timeoutTask);
+            mainHandler.postDelayed(timeoutTask, ROUTE_CHANGE_TIMEOUT_MS);
+        }
+
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                dispatchSelectApi31(target);
+            } else {
+                dispatchSelectLegacy(target);
+                // Legacy non-SCO routes don't reliably trigger AudioDeviceCallback for state-only
+                // toggles (speakerphone, earpiece, wired). Emit + check completion right away;
+                // SCO targets fall through to the broadcast receiver below.
+                emitOutputChangedEvent();
+                maybeResolvePending();
+            }
+        } catch (Exception e) {
+            failPending(e);
+        }
+    }
+
+    private AudioDeviceInfo findTargetDevice(int deviceId) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            for (AudioDeviceInfo d : audioManager.getAvailableCommunicationDevices()) {
+                if (d.getId() == deviceId) return d;
+            }
+        } else {
+            for (AudioDeviceInfo d : audioManager.getDevices(AudioManager.GET_DEVICES_OUTPUTS)) {
+                if (d.getId() == deviceId) return d;
+            }
+        }
+        return null;
+    }
+
+    private boolean isCurrentlyRouted(int targetId, int targetType) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            AudioDeviceInfo current = audioManager.getCommunicationDevice();
+            if (current == null) {
+                // clearCommunicationDevice() leaves current==null; that's the earpiece state.
+                return targetType == AudioDeviceInfo.TYPE_BUILTIN_EARPIECE;
+            }
+            return current.getId() == targetId;
+        }
+        AudioDeviceInfo current = findCurrentOutputLegacy();
+        return current != null && current.getId() == targetId;
+    }
+
+    @RequiresApi(api = Build.VERSION_CODES.S)
+    private void dispatchSelectApi31(AudioDeviceInfo target) {
+        if (target.getType() == AudioDeviceInfo.TYPE_BUILTIN_EARPIECE) {
+            audioManager.clearCommunicationDevice();
+            return;
+        }
+        boolean accepted = audioManager.setCommunicationDevice(target);
+        if (!accepted) {
+            throw new RuntimeException("setCommunicationDevice failed for device ID " + target.getId());
+        }
+    }
+
+    private void dispatchSelectLegacy(AudioDeviceInfo target) {
         audioManager.setSpeakerphoneOn(false);
         audioManager.setBluetoothScoOn(false);
         try {
@@ -253,6 +318,62 @@ public class AudioOutputManager {
         }
     }
 
+    private void maybeResolvePending() {
+        synchronized (this) {
+            if (pending == null) return;
+
+            boolean matched;
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                AudioDeviceInfo current = audioManager.getCommunicationDevice();
+                if (current == null) {
+                    matched = pending.targetType == AudioDeviceInfo.TYPE_BUILTIN_EARPIECE;
+                } else {
+                    matched = current.getId() == pending.targetDeviceId;
+                }
+            } else {
+                AudioDeviceInfo current = findCurrentOutputLegacy();
+                matched = current != null && current.getId() == pending.targetDeviceId;
+            }
+            if (!matched) return;
+
+            mainHandler.removeCallbacks(pending.timeoutTask);
+            Promise p = pending.promise;
+            pending = null;
+            p.resolve(null);
+        }
+    }
+
+    private void timeoutPending() {
+        synchronized (this) {
+            if (pending == null) return;
+            mainHandler.removeCallbacks(pending.timeoutTask);
+            Promise p = pending.promise;
+            pending = null;
+            p.reject("E_AUDIO_OUTPUT_TIMEOUT",
+                    String.format("Route change not confirmed within %dms", ROUTE_CHANGE_TIMEOUT_MS));
+        }
+    }
+
+    private void cancelPending(String reason) {
+        synchronized (this) {
+            if (pending == null) return;
+            mainHandler.removeCallbacks(pending.timeoutTask);
+            Promise p = pending.promise;
+            pending = null;
+            p.reject("E_AUDIO_OUTPUT_CANCELLED", reason);
+        }
+    }
+
+    private void failPending(Exception e) {
+        synchronized (this) {
+            if (pending == null) return;
+            mainHandler.removeCallbacks(pending.timeoutTask);
+            Promise p = pending.promise;
+            pending = null;
+            p.reject("E_AUDIO_OUTPUT_SELECT", e.getMessage(), e);
+        }
+    }
+
     public void startObserving() {
         if (isObserving) return;
         isObserving = true;
@@ -261,18 +382,41 @@ public class AudioOutputManager {
             @Override
             public void onAudioDevicesAdded(AudioDeviceInfo[] addedDevices) {
                 emitOutputChangedEvent();
+                maybeResolvePending();
             }
             @Override
             public void onAudioDevicesRemoved(AudioDeviceInfo[] removedDevices) {
                 emitOutputChangedEvent();
+                maybeResolvePending();
             }
         };
-        audioManager.registerAudioDeviceCallback(audioDeviceCallback, new Handler(Looper.getMainLooper()));
+        audioManager.registerAudioDeviceCallback(audioDeviceCallback, mainHandler);
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            communicationDeviceChangedListener = device -> emitOutputChangedEvent();
+            communicationDeviceChangedListener = device -> {
+                emitOutputChangedEvent();
+                maybeResolvePending();
+            };
             audioManager.addOnCommunicationDeviceChangedListener(
                     reactContext.getMainExecutor(), communicationDeviceChangedListener);
+        }
+
+        scoReceiver = new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context c, Intent intent) {
+                int state = intent.getIntExtra(AudioManager.EXTRA_SCO_AUDIO_STATE, -1);
+                if (state == AudioManager.SCO_AUDIO_STATE_CONNECTED
+                        || state == AudioManager.SCO_AUDIO_STATE_DISCONNECTED) {
+                    emitOutputChangedEvent();
+                    maybeResolvePending();
+                }
+            }
+        };
+        IntentFilter scoFilter = new IntentFilter(AudioManager.ACTION_SCO_AUDIO_STATE_UPDATED);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            reactContext.registerReceiver(scoReceiver, scoFilter, Context.RECEIVER_NOT_EXPORTED);
+        } else {
+            reactContext.registerReceiver(scoReceiver, scoFilter);
         }
     }
 
@@ -288,6 +432,15 @@ public class AudioOutputManager {
             audioManager.removeOnCommunicationDeviceChangedListener(communicationDeviceChangedListener);
             communicationDeviceChangedListener = null;
         }
+        if (scoReceiver != null) {
+            try {
+                reactContext.unregisterReceiver(scoReceiver);
+            } catch (IllegalArgumentException ignored) {
+            }
+            scoReceiver = null;
+        }
+
+        cancelPending("Audio output observer stopped");
     }
 
     private void emitOutputChangedEvent() {

@@ -92,6 +92,18 @@ export const AudioOutputManager = {
         /**
          * Routes audio to a specific device.
          *
+         * The returned promise resolves only once the device is confirmed active.
+         * It rejects with one of the following error codes:
+         *
+         * - `E_AUDIO_OUTPUT_SELECT` — invalid device ID, device unavailable, or the
+         *   underlying `AudioManager` call failed.
+         * - `E_AUDIO_OUTPUT_SUPERSEDED` — a newer `selectAudioOutput` call was made
+         *   before this one completed. Callers may safely ignore this code.
+         * - `E_AUDIO_OUTPUT_TIMEOUT` — the system did not confirm the route change
+         *   within the platform timeout.
+         * - `E_AUDIO_OUTPUT_CANCELLED` — the audio output observer was stopped
+         *   (e.g. module teardown) before the route change completed.
+         *
          * @param deviceId The {@link AudioDevice.id} of the target device.
          */
         selectAudioOutput(deviceId: string): Promise<void> {
