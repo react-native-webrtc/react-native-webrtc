@@ -211,13 +211,8 @@ export default class MediaStreamTrack extends EventTarget<MediaStreamTrackEventM
         }
 
         // Preserve current facing mode when user doesn't specify one
-        const effectiveContraints = constraints ?? true;
-        if (
-            typeof effectiveContraints === 'object' &&
-            !effectiveContraints.facingMode &&
-            this._settings?.facingMode
-        ) {
-            effectiveContraints.facingMode = this._settings.facingMode;
+        if (constraints && !constraints?.facingMode && this._settings?.facingMode) {
+            constraints.facingMode = this._settings.facingMode;
         }
 
         const normalized = normalizeConstraints({ video: constraints ?? true });
