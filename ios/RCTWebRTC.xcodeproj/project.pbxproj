@@ -7,7 +7,6 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		F1A2B3C42D0F1A2B00000001 /* FishjamRTCAudioDevice.m in Sources */ = {isa = PBXBuildFile; fileRef = F1A2B3C42D0F1A2B00000003 /* FishjamRTCAudioDevice.m */; };
 		0BDDA6E020C18B6B00B38B45 /* VideoCaptureController.m in Sources */ = {isa = PBXBuildFile; fileRef = 0BDDA6DF20C18B6B00B38B45 /* VideoCaptureController.m */; };
 		4EC498BC25B8777F00E76218 /* ScreenCapturePickerViewManager.m in Sources */ = {isa = PBXBuildFile; fileRef = 4EC498BA25B8777F00E76218 /* ScreenCapturePickerViewManager.m */; };
 		4EE3A8A325B840DA00FAA24A /* RCTConvert+WebRTC.m in Sources */ = {isa = PBXBuildFile; fileRef = 4EE3A8A125B840DA00FAA24A /* RCTConvert+WebRTC.m */; };
@@ -81,8 +80,6 @@
 		D7F99C122938F4E0000A2450 /* WebRTCModule+RTCMediaStream.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = "WebRTCModule+RTCMediaStream.h"; path = "RCTWebRTC/WebRTCModule+RTCMediaStream.h"; sourceTree = SOURCE_ROOT; };
 		DEC96576264176C10052DB35 /* DataChannelWrapper.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = DataChannelWrapper.m; path = RCTWebRTC/DataChannelWrapper.m; sourceTree = "<group>"; };
 		DEC96579264176DF0052DB35 /* DataChannelWrapper.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = DataChannelWrapper.h; path = RCTWebRTC/DataChannelWrapper.h; sourceTree = "<group>"; };
-		F1A2B3C42D0F1A2B00000002 /* FishjamRTCAudioDevice.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = FishjamRTCAudioDevice.h; path = RCTWebRTC/FishjamRTCAudioDevice.h; sourceTree = SOURCE_ROOT; };
-		F1A2B3C42D0F1A2B00000003 /* FishjamRTCAudioDevice.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = FishjamRTCAudioDevice.m; path = RCTWebRTC/FishjamRTCAudioDevice.m; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -162,8 +159,6 @@
 				4EE3A8C825B841DD00FAA24A /* SocketConnection.m */,
 				DEC96579264176DF0052DB35 /* DataChannelWrapper.h */,
 				DEC96576264176C10052DB35 /* DataChannelWrapper.m */,
-				F1A2B3C42D0F1A2B00000002 /* FishjamRTCAudioDevice.h */,
-				F1A2B3C42D0F1A2B00000003 /* FishjamRTCAudioDevice.m */,
 			);
 			name = RCTWebRTC;
 			path = ../apple/RCTWebRTC;
@@ -278,7 +273,6 @@
 				4EE3A8AC25B8412700FAA24A /* RTCVideoViewManager.m in Sources */,
 				4EE3A8C125B8416F00FAA24A /* WebRTCModule+RTCPeerConnection.m in Sources */,
 				4EE3A8A325B840DA00FAA24A /* RCTConvert+WebRTC.m in Sources */,
-				F1A2B3C42D0F1A2B00000001 /* FishjamRTCAudioDevice.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

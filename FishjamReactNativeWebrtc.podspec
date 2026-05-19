@@ -21,5 +21,5 @@ Pod::Spec.new do |s|
   s.libraries           = 'c', 'sqlite3', 'stdc++'
   s.framework           = 'AudioToolbox','AVFoundation', 'CoreAudio', 'CoreGraphics', 'CoreVideo', 'GLKit', 'VideoToolbox'
   s.dependency          'React-Core'
-  s.dependency          'JitsiWebRTC', '~> 124.0.0'
+  s.dependency          'FishjamWebRTC', '~> 124.0.2.0'
 end

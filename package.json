@@ -1,6 +1,6 @@
 {
     "name": "@fishjam-cloud/react-native-webrtc",
-    "version": "0.26.2",
+    "version": "0.27.0",
     "repository": {
         "type": "git",
         "url": "git+https://github.com/fishjam-cloud/fishjam-react-native-webrtc.git"

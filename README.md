@@ -39,12 +39,54 @@ Software encode/decode factories have been enabled by default.
 
 ## WebRTC Revision
 
-* Currently used revision: [M124](https://github.com/jitsi/webrtc/tree/M124)
+* Currently used revision: [M124 (Fishjam fork)](https://github.com/fishjam-cloud/webrtc/tree/fishjam-m124)
+* iOS dependency: [`FishjamWebRTC`](https://cocoapods.org/pods/FishjamWebRTC) — Fishjam's custom WebRTC build with the `defer mic permission` patch (replaces `JitsiWebRTC`).
 * Supported architectures
   * Android: armeabi-v7a, arm64-v8a, x86, x86_64
   * iOS: arm64, x86_64
   * tvOS: arm64
   * macOS: arm64, x86_64
+
+## Maintaining the iOS WebRTC build (FishjamWebRTC)
+
+The iOS side ships against `FishjamWebRTC` — a CocoaPods pod published from [`fishjam-cloud/webrtc`](https://github.com/fishjam-cloud/webrtc) that wraps a prebuilt `WebRTC.xcframework`. Source patches live on the `fishjam-m124` branch; the podspec and release tooling live on `master`.
+
+### When to cut a new release
+
+Cut a new `FishjamWebRTC` version when **any of the following** happens:
+
+- A new patch lands on `fishjam-m124` that we need on the client (e.g. another `audio_device_ios.mm` change, a fix to the network interfaces path, a privacy-manifest update).
+- We rebase `fishjam-m124` onto a newer jitsi/webrtc tag (e.g. moving from `v124.0.2` to `v124.0.3`).
+- A security advisory in upstream WebRTC requires picking up a fix.
+
+You do **not** need to cut a new `FishjamWebRTC` for changes that only touch this RN wrapper (`ios/**.{h,m,swift}`, JS sources). Those ship as a normal `@fishjam-cloud/react-native-webrtc` npm bump.
+
+### Versioning
+
+`<upstream-version>.<fishjam-patch-N>`, e.g. `124.0.2.1`.
+
+- First three parts = the jitsi upstream version the build is patched on top of.
+- Fourth part = Fishjam patch counter against that base, starts at `1`, increments per release.
+- On upstream rebase (e.g. jitsi ships `124.0.3`), reset counter: next release is `124.0.3.1`.
+- Pin with `~> 124.0.2.0` to accept any Fishjam patch on top of jitsi `124.0.2`, or pin exact.
+
+### How to cut a release
+
+Full runbook (build, tag, GH release, trunk publish, smoke test) lives in [`fishjam-cloud/webrtc`'s `RELEASING.md`](https://github.com/fishjam-cloud/webrtc/blob/master/RELEASING.md) on the `master` branch. TL;DR:
+
+1. On a macOS build host with [`depot_tools`](https://chromium.googlesource.com/chromium/tools/depot_tools.git) + a `fetch webrtc_ios` checkout, switch the gclient `src/` to `fishjam-m124`, run `gclient sync`, then `tools_webrtc/ios/build_ios_libs.py --build_config release --arch device:arm64 simulator:arm64 simulator:x64`.
+2. Validate the patch is in the built binary: `strings WebRTC.xcframework/*/WebRTC.framework/WebRTC | grep -c "<unique-string-from-patch>"` — every slice must have a non-zero count. (Release builds strip C++ symbols, so use `strings`, not `nm`.)
+3. Zip the xcframework as `FishjamWebRTC.xcframework.zip`, tag `vX.Y.Z.N` on `fishjam-m124`, push, and `gh release create` with the zip attached.
+4. On `master`: bump `s.version` in `ios/FishjamWebRTC.podspec` to match, commit, push.
+5. `pod trunk push ios/FishjamWebRTC.podspec --allow-warnings` (one-time `pod trunk register` per identity).
+
+### After a new FishjamWebRTC release
+
+Inside this repo:
+
+1. Bump the dependency in `FishjamReactNativeWebrtc.podspec`: `s.dependency 'FishjamWebRTC', '~> X.Y.Z.0'` (or pin exact if needed).
+2. Bump `version` in `package.json` — minor bump if the underlying WebRTC change is user-observable, patch otherwise.
+3. Test with `cd ios && pod install` in a consuming app and exercise the affected behavior end-to-end.
 
 ## Getting Started
 
