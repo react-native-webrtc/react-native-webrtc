@@ -20,6 +20,7 @@ import MediaStreamTrack, { type MediaTrackSettings } from './MediaStreamTrack';
 import MediaStreamTrackEvent from './MediaStreamTrackEvent';
 import permissions from './Permissions';
 import RTCAudioSession from './RTCAudioSession';
+import RTCCertificate from './RTCCertificate';
 import RTCErrorEvent from './RTCErrorEvent';
 import RTCIceCandidate from './RTCIceCandidate';
 import RTCPIPView, {
@@ -69,6 +70,7 @@ export {
     RTCIceCandidate,
     RTCPeerConnection,
     RTCSessionDescription,
+    RTCCertificate,
     RTCView,
     RTCPIPView,
     ScreenCapturePickerView,
@@ -123,6 +125,7 @@ function registerGlobals(): void {
         mediaDevices.enumerateDevices.bind(mediaDevices);
 
     global.RTCIceCandidate = RTCIceCandidate;
+    global.RTCCertificate = RTCCertificate;
     global.RTCPeerConnection = RTCPeerConnection;
     global.RTCRtpReceiver = RTCRtpReceiver;
     global.RTCRtpSender = RTCRtpReceiver;

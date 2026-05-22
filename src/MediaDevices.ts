@@ -1,7 +1,11 @@
 import { NativeModules } from 'react-native';
 
-import getDisplayMedia from './getDisplayMedia';
-import getUserMedia, { Constraints } from './getUserMedia';
+import getDisplayMedia, {
+    Constraints as DisplayMediaConstraints,
+} from './getDisplayMedia';
+import getUserMedia, {
+    Constraints as UserMediaConstraints,
+} from './getUserMedia';
 import {
     Event,
     EventTarget,
@@ -36,10 +40,11 @@ class MediaDevices extends EventTarget<MediaDevicesEventMap> {
      * W3C "Screen Capture" compatible {@code getDisplayMedia} implementation.
      * See: https://w3c.github.io/mediacapture-screen-share/
      *
+     * @param {*} constraints
      * @returns {Promise}
      */
-    getDisplayMedia() {
-        return getDisplayMedia();
+    getDisplayMedia(constraints?: DisplayMediaConstraints) {
+        return getDisplayMedia(constraints);
     }
 
     /**
@@ -50,7 +55,7 @@ class MediaDevices extends EventTarget<MediaDevicesEventMap> {
      * @param {*} constraints
      * @returns {Promise}
      */
-    getUserMedia(constraints: Constraints) {
+    getUserMedia(constraints: UserMediaConstraints) {
         return getUserMedia(constraints);
     }
 }
