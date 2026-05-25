@@ -38,13 +38,13 @@
     "devDependencies": {
         "@types/debug": "4.1.7",
         "@types/react": "19.1.0",
-        "react-native": "0.81.5",
         "@typescript-eslint/eslint-plugin": "^8.18.0",
         "@typescript-eslint/parser": "^8.18.0",
         "eslint": "^8.57.0",
         "eslint-config-prettier": "^9.1.0",
         "eslint-plugin-import": "^2.26.0",
         "prettier": "3.4.2",
+        "react-native": "0.81.5",
         "react-native-builder-bob": "0.18.2",
         "typescript": "~5.9.2"
     },

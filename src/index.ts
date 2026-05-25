@@ -47,6 +47,7 @@ import {
     type AudioDevice,
     type AudioOutputChangedInfo,
 } from './audioOutputManager';
+import presentBroadcastPicker from './presentBroadcastPicker';
 import { useAudioOutput, type UseAudioOutputResult } from './useAudioOutput';
 import { useCallKit, useCallKitEvent, useCallKitService } from './useCallKit';
 import {
@@ -91,6 +92,7 @@ export {
     type RTCPIPOptions,
     mediaDevices,
     permissions,
+    presentBroadcastPicker,
     registerGlobals,
     startPIP,
     stopPIP,

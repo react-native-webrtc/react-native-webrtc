@@ -21,6 +21,7 @@
 
 #import <React/RCTLog.h>
 #import <ReplayKit/ReplayKit.h>
+#import "BroadcastPickerHelper.h"
 
 #endif
 
@@ -185,16 +186,9 @@ RCT_EXPORT_METHOD(getDisplayMedia
     if (@available(iOS 12, *)) {
         [self.bridge.uiManager
             addUIBlock:^(__unused RCTUIManager *uiManager, NSDictionary<NSNumber *, UIView *> *viewRegistry) {
-                NSDictionary *infoDictionary = [[NSBundle mainBundle] infoDictionary];
-                NSString *preferredExtension = infoDictionary[@"RTCScreenSharingExtension"];
-
-                RPSystemBroadcastPickerView *view = [[RPSystemBroadcastPickerView alloc] init];
-                view.preferredExtension = preferredExtension;
-                view.showsMicrophoneButton = false;
-
-                SEL selector = NSSelectorFromString(@"buttonPressed:");
-                if ([view respondsToSelector:selector]) {
-                    [view performSelector:selector withObject:nil];
+                NSError *pickerError = nil;
+                if (![BroadcastPickerHelper presentSystemPickerWithError:&pickerError]) {
+                    RCTLogError(@"Failed to present broadcast picker: %@", pickerError.localizedDescription);
                 }
             }];
     } else {
@@ -225,6 +219,41 @@ RCT_EXPORT_METHOD(getDisplayMedia
                 resolve(@{@"streamId" : mediaStreamId, @"track" : trackInfo});
             }];
     };
+#endif
+}
+
+/**
+ * Presents the iOS system `RPSystemBroadcastPickerView` programmatically.
+ * When no broadcast is active, this opens the extension picker. When a
+ * broadcast is active, it opens the system "Stop Broadcast" sheet — letting
+ * the user end the broadcast via `broadcastFinished()` instead of the
+ * host-initiated socket close that forces the extension to call
+ * `finishBroadcastWithError(_:)` and surface an error dialog.
+ */
+RCT_EXPORT_METHOD(presentBroadcastPicker : (RCTPromiseResolveBlock)resolve rejecter : (RCTPromiseRejectBlock)reject) {
+#if TARGET_OS_TV || TARGET_OS_OSX
+    reject(@"unsupported_platform", @"presentBroadcastPicker is not supported on this platform", nil);
+    return;
+#else
+
+#if TARGET_IPHONE_SIMULATOR
+    reject(@"unsupported_platform", @"presentBroadcastPicker is not supported on the simulator", nil);
+    return;
+#endif
+
+    if (@available(iOS 12, *)) {
+        [self.bridge.uiManager
+            addUIBlock:^(__unused RCTUIManager *uiManager, NSDictionary<NSNumber *, UIView *> *viewRegistry) {
+                NSError *pickerError = nil;
+                if ([BroadcastPickerHelper presentSystemPickerWithError:&pickerError]) {
+                    resolve(nil);
+                } else {
+                    reject(@"picker_button_not_found", pickerError.localizedDescription, pickerError);
+                }
+            }];
+    } else {
+        reject(@"unsupported_version", @"presentBroadcastPicker requires iOS 12 or later", nil);
+    }
 #endif
 }
 

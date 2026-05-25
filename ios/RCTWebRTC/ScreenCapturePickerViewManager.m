@@ -3,6 +3,7 @@
 #import <React/RCTUIManager.h>
 #import <ReplayKit/ReplayKit.h>
 
+#import "BroadcastPickerHelper.h"
 #import "ScreenCapturePickerViewManager.h"
 
 NSString *const kRTCScreenSharingExtension = @"RTCScreenSharingExtension";
@@ -37,20 +38,11 @@ RCT_EXPORT_METHOD(show : (nonnull NSNumber *)reactTag) {
                 RCTLogError(@"Invalid view returned from registry, expecting "
                             @"RPSystemBroadcastPickerView, got: %@",
                             view);
-            } else {
-                // Simulate a click
-                UIButton *btn = nil;
-
-                for (UIView *subview in ((RPSystemBroadcastPickerView *)view).subviews) {
-                    if ([subview isKindOfClass:[UIButton class]]) {
-                        btn = (UIButton *)subview;
-                    }
-                }
-                if (btn != nil) {
-                    [btn sendActionsForControlEvents:UIControlEventTouchUpInside];
-                } else {
-                    RCTLogError(@"RPSystemBroadcastPickerView button not found");
-                }
+                return;
+            }
+            NSError *pickerError = nil;
+            if (![BroadcastPickerHelper tapPickerView:(RPSystemBroadcastPickerView *)view error:&pickerError]) {
+                RCTLogError(@"%@", pickerError.localizedDescription);
             }
         }];
 }
