@@ -619,50 +619,87 @@ public class WebRTCView extends ViewGroup {
     /**
      * Sets the {@code VideoTrack} to be rendered by this {@code WebRTCView}.
      *
+     * <p>The SurfaceViewRenderer (and its underlying EGL context) is kept alive as long as this
+     * view is attached to a window, even when the track becomes {@code null} (camera off).  This
+     * avoids the pattern of calling {@code SurfaceViewRenderer.release()} on camera-off and
+     * {@code SurfaceViewRenderer.init()} on camera-on, which each time allocates a new EGL context
+     * from Android's finite per-process pool 
+     * {@code release()} is only called from {@link #onDetachedFromWindow()}.
+     *
      * @param videoTrack The {@code VideoTrack} to be rendered by this
      * {@code WebRTCView} or {@code null}.
      */
     private void setVideoTrack(VideoTrack videoTrack) {
         VideoTrack oldVideoTrack = this.videoTrack;
 
-        if (oldVideoTrack != videoTrack) {
-            if (oldVideoTrack != null && videoTrack != null && rendererAttached) {
-                final VideoTrack capturedOld = oldVideoTrack;
+        if (oldVideoTrack == videoTrack) {
+            return;
+        }
+
+        // Case 1: Swapping one live track for another while the renderer is active.
+        // Just move the sink — no EGL context churn.
+        if (oldVideoTrack != null && videoTrack != null && rendererAttached) {
+            final VideoTrack capturedOld = oldVideoTrack;
+            final VideoTrack capturedNew = videoTrack;
+            this.videoTrack = videoTrack;
+            ThreadUtils.runOnExecutor(() -> {
+                try {
+                    capturedOld.removeSink(surfaceViewRenderer);
+                } catch (Throwable tr) {
+                    Log.w(TAG, "Failed to remove sink from old track", tr);
+                }
+                if (!rendererAttached) {
+                    return;
+                }
+                try {
+                    capturedNew.addSink(surfaceViewRenderer);
+                } catch (Throwable tr) {
+                    Log.e(TAG, "Failed to add renderer", tr);
+                }
+            });
+            return;
+        }
+
+        // Detach the old track's sink from the renderer (without releasing the EGL context).
+        if (oldVideoTrack != null && rendererAttached) {
+            final VideoTrack trackToRemove = oldVideoTrack;
+            ThreadUtils.runOnExecutor(() -> {
+                try {
+                    trackToRemove.removeSink(surfaceViewRenderer);
+                } catch (Throwable tr) {
+                    Log.w(TAG, "Failed to remove sink from track", tr);
+                }
+            });
+        }
+
+        this.videoTrack = videoTrack;
+
+        if (videoTrack != null) {
+            if (rendererAttached) {
+                // The EGL context was kept alive from a previous session — just add the sink.
+                if (oldVideoTrack == null) {
+                    cleanSurfaceViewRenderer();
+                }
                 final VideoTrack capturedNew = videoTrack;
-                this.videoTrack = videoTrack;
                 ThreadUtils.runOnExecutor(() -> {
-                    try {
-                        capturedOld.removeSink(surfaceViewRenderer);
-                    } catch (Throwable tr) {
-                        Log.w(TAG, "Failed to remove sink from old track", tr);
-                    }
-                    if (!rendererAttached) {
-                        return;
-                    }
                     try {
                         capturedNew.addSink(surfaceViewRenderer);
                     } catch (Throwable tr) {
                         Log.e(TAG, "Failed to add renderer", tr);
                     }
                 });
-                return;
-            }
-
-            if (oldVideoTrack != null) {
-                if (videoTrack == null) {
-                    cleanSurfaceViewRenderer();
-                }
-                removeRendererFromVideoTrack();
-            }
-
-            this.videoTrack = videoTrack;
-
-            if (videoTrack != null) {
-                tryAddRendererToVideoTrack();
+            } else {
+                // Renderer not yet initialised (first render after attach, or after detach).
                 if (oldVideoTrack == null) {
                     cleanSurfaceViewRenderer();
                 }
+                tryAddRendererToVideoTrack();
             }
+        } else {
+            // Track became null (camera off). Keep the EGL context alive so the next
+            // camera-on can reuse it without calling surfaceViewRenderer.init() again.
+            // The renderer is only released in onDetachedFromWindow().
+            cleanSurfaceViewRenderer();
         }
     }
 
