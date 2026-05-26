@@ -1,0 +1,6 @@
+registries:
+  - type: standard
+    ref: v4.400.0
+
+packages:
+  - name: suzuki-shunsuke/pinact@v3.9.2

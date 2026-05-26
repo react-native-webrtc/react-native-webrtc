@@ -1,0 +1,58 @@
+name: Pinact update
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - ".github/workflows/**"
+  schedule:
+    # Weekly on Monday at 00:00 UTC
+    - cron: "0 0 * * 1"
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  pinact:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Install aqua (installs pinact)
+        uses: aquaproj/aqua-installer@11dd79b4e498d471a9385aa9fb7f62bb5f52a73c # v4.0.4
+        with:
+          aqua_version: v2.56.1
+          aqua_opts: "-c aqua.yaml"
+
+      - name: Run pinact (fix workflow files)
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          # Keep the job going even if pinact exits non-zero due to changes.
+          set +e
+          aqua exec -- pinact run \
+            --check \
+            --diff \
+            --fix \
+            --update \
+            --min-age "30"
+          exit_code="$?"
+          set -e
+
+          echo "pinact exit code: ${exit_code}"
+
+      - name: Create PR (if changes)
+        uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1 # v8.1.1
+        with:
+          token: ${{ secrets.PINACT_GITHUB_TOKEN }}
+          commit-message: "chore(pinact): pin/update GitHub Actions"
+          title: "chore(pinact): pin/update GitHub Actions"
+          body: |
+            Automated update by pinact.
+          branch: "ci/pinact_action"
+          delete-branch: true
