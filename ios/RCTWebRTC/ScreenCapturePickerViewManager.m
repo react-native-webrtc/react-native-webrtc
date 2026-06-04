@@ -31,30 +31,27 @@ RCT_EXPORT_MODULE()
 
 RCT_EXPORT_METHOD(show : (nonnull NSNumber *)reactTag) {
     dispatch_async(dispatch_get_main_queue(), ^{
-        [self simulateClickOnPicker:self->_broadcastPickerView];
-    });
-}
-
-- (void)simulateClickOnPicker:(RPSystemBroadcastPickerView *)view {
-    if (![view isKindOfClass:[RPSystemBroadcastPickerView class]]) {
-        RCTLogError(@"Invalid broadcast picker view, expecting "
-                    @"RPSystemBroadcastPickerView, got: %@",
-                    view);
-        return;
-    }
-
-    UIButton *btn = nil;
-
-    for (UIView *subview in view.subviews) {
-        if ([subview isKindOfClass:[UIButton class]]) {
-            btn = (UIButton *)subview;
+        RPSystemBroadcastPickerView *picker = self->_broadcastPickerView;
+        if (![picker isKindOfClass:[RPSystemBroadcastPickerView class]]) {
+            RCTLogError(@"Invalid broadcast picker view, expecting "
+                        @"RPSystemBroadcastPickerView, got: %@",
+                        picker);
+            return;
         }
-    }
-    if (btn != nil) {
-        [btn sendActionsForControlEvents:UIControlEventTouchUpInside];
-    } else {
-        RCTLogError(@"RPSystemBroadcastPickerView button not found");
-    }
+
+        UIButton *btn = nil;
+
+        for (UIView *subview in picker.subviews) {
+            if ([subview isKindOfClass:[UIButton class]]) {
+                btn = (UIButton *)subview;
+            }
+        }
+        if (btn != nil) {
+            [btn sendActionsForControlEvents:UIControlEventTouchUpInside];
+        } else {
+            RCTLogError(@"RPSystemBroadcastPickerView button not found");
+        }
+    });
 }
 
 @end
