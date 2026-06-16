@@ -15,6 +15,18 @@ export interface EngineStateEventData {
   isRecordingEnabled: boolean;
 }
 
+/**
+ * Raw native event payload. Every engine event carries a `requestId` that must
+ * be echoed back to the matching resolve call so the native side can drop a
+ * response from a round that already timed out. This id is internal and is not
+ * surfaced to app-registered handlers.
+ */
+interface EngineEventPayload {
+  requestId: number;
+}
+
+interface EngineStateEventPayload extends EngineEventPayload, EngineStateEventData {}
+
 export type AudioDeviceModuleEventType =
   | 'speechActivity'
   | 'devicesUpdated';
@@ -50,7 +62,8 @@ class AudioDeviceModuleEventEmitter {
     public setupListeners() {
         if (Platform.OS !== 'android' && WebRTCModule) {
             // Setup handlers for blocking delegate methods
-            addListener(this, 'audioDeviceModuleEngineCreated', async () => {
+            addListener(this, 'audioDeviceModuleEngineCreated', async (event: unknown) => {
+                const { requestId } = event as EngineEventPayload;
                 let result = 0;
 
                 if (this.engineCreatedHandler) {
@@ -62,14 +75,14 @@ class AudioDeviceModuleEventEmitter {
                     }
                 }
 
-                WebRTCModule.audioDeviceModuleResolveEngineCreated(result);
+                WebRTCModule.audioDeviceModuleResolveEngineCreated(requestId, result);
             });
 
             addListener(
                 this,
                 'audioDeviceModuleEngineWillEnable',
                 async (event: unknown) => {
-                    const { isPlayoutEnabled, isRecordingEnabled } = event as EngineStateEventData;
+                    const { requestId, isPlayoutEnabled, isRecordingEnabled } = event as EngineStateEventPayload;
                     let result = 0;
 
                     if (this.willEnableEngineHandler) {
@@ -81,7 +94,7 @@ class AudioDeviceModuleEventEmitter {
                         }
                     }
 
-                    WebRTCModule.audioDeviceModuleResolveWillEnableEngine(result);
+                    WebRTCModule.audioDeviceModuleResolveWillEnableEngine(requestId, result);
                 },
             );
 
@@ -89,7 +102,7 @@ class AudioDeviceModuleEventEmitter {
                 this,
                 'audioDeviceModuleEngineWillStart',
                 async (event: unknown) => {
-                    const { isPlayoutEnabled, isRecordingEnabled } = event as EngineStateEventData;
+                    const { requestId, isPlayoutEnabled, isRecordingEnabled } = event as EngineStateEventPayload;
                     let result = 0;
 
                     if (this.willStartEngineHandler) {
@@ -101,7 +114,7 @@ class AudioDeviceModuleEventEmitter {
                         }
                     }
 
-                    WebRTCModule.audioDeviceModuleResolveWillStartEngine(result);
+                    WebRTCModule.audioDeviceModuleResolveWillStartEngine(requestId, result);
                 },
             );
 
@@ -109,7 +122,7 @@ class AudioDeviceModuleEventEmitter {
                 this,
                 'audioDeviceModuleEngineDidStop',
                 async (event: unknown) => {
-                    const { isPlayoutEnabled, isRecordingEnabled } = event as EngineStateEventData;
+                    const { requestId, isPlayoutEnabled, isRecordingEnabled } = event as EngineStateEventPayload;
                     let result = 0;
 
                     if (this.didStopEngineHandler) {
@@ -121,7 +134,7 @@ class AudioDeviceModuleEventEmitter {
                         }
                     }
 
-                    WebRTCModule.audioDeviceModuleResolveDidStopEngine(result);
+                    WebRTCModule.audioDeviceModuleResolveDidStopEngine(requestId, result);
                 },
             );
 
@@ -129,7 +142,7 @@ class AudioDeviceModuleEventEmitter {
                 this,
                 'audioDeviceModuleEngineDidDisable',
                 async (event: unknown) => {
-                    const { isPlayoutEnabled, isRecordingEnabled } = event as EngineStateEventData;
+                    const { requestId, isPlayoutEnabled, isRecordingEnabled } = event as EngineStateEventPayload;
                     let result = 0;
 
                     if (this.didDisableEngineHandler) {
@@ -141,11 +154,12 @@ class AudioDeviceModuleEventEmitter {
                         }
                     }
 
-                    WebRTCModule.audioDeviceModuleResolveDidDisableEngine(result);
+                    WebRTCModule.audioDeviceModuleResolveDidDisableEngine(requestId, result);
                 },
             );
 
-            addListener(this, 'audioDeviceModuleEngineWillRelease', async () => {
+            addListener(this, 'audioDeviceModuleEngineWillRelease', async (event: unknown) => {
+                const { requestId } = event as EngineEventPayload;
                 let result = 0;
 
                 if (this.willReleaseEngineHandler) {
@@ -157,7 +171,7 @@ class AudioDeviceModuleEventEmitter {
                     }
                 }
 
-                WebRTCModule.audioDeviceModuleResolveWillReleaseEngine(result);
+                WebRTCModule.audioDeviceModuleResolveWillReleaseEngine(requestId, result);
             });
         }
     }

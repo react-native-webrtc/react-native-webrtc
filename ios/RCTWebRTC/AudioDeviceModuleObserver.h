@@ -7,13 +7,14 @@ NS_ASSUME_NONNULL_BEGIN
 
 - (instancetype)initWithWebRTCModule:(WebRTCModule *)module;
 
-// Methods to receive results from JS
-- (void)resolveEngineCreatedWithResult:(NSInteger)result;
-- (void)resolveWillEnableEngineWithResult:(NSInteger)result;
-- (void)resolveWillStartEngineWithResult:(NSInteger)result;
-- (void)resolveDidStopEngineWithResult:(NSInteger)result;
-- (void)resolveDidDisableEngineWithResult:(NSInteger)result;
-- (void)resolveWillReleaseEngineWithResult:(NSInteger)result;
+// Methods to receive results from JS. requestId echoes the id sent with the
+// corresponding event so stale responses from timed-out rounds can be dropped.
+- (void)resolveEngineCreatedWithRequestId:(NSInteger)requestId result:(NSInteger)result;
+- (void)resolveWillEnableEngineWithRequestId:(NSInteger)requestId result:(NSInteger)result;
+- (void)resolveWillStartEngineWithRequestId:(NSInteger)requestId result:(NSInteger)result;
+- (void)resolveDidStopEngineWithRequestId:(NSInteger)requestId result:(NSInteger)result;
+- (void)resolveDidDisableEngineWithRequestId:(NSInteger)requestId result:(NSInteger)result;
+- (void)resolveWillReleaseEngineWithRequestId:(NSInteger)requestId result:(NSInteger)result;
 
 @end
 
