@@ -7,6 +7,7 @@
 #import <WebRTC/RTCDataChannelConfiguration.h>
 #import "WebRTCModule+RTCDataChannel.h"
 #import "WebRTCModule+RTCPeerConnection.h"
+#import <QuartzCore/QuartzCore.h>
 
 @implementation WebRTCModule (RTCDataChannel)
 
@@ -117,6 +118,8 @@ RCT_EXPORT_METHOD(dataChannelSend : (nonnull NSNumber *)peerConnectionId reactTa
 
 // Called when a data buffer was successfully received.
 - (void)dataChannel:(DataChannelWrapper *)dcw didReceiveMessageWithBuffer:(RTCDataBuffer *)buffer {
+    NSTimeInterval epochMs = [[NSDate date] timeIntervalSince1970] * 1000.0;
+    double monotonicMs = CACurrentMediaTime() * 1000.0;
     NSString *type;
     NSString *data;
     if (buffer.isBinary) {
@@ -139,7 +142,9 @@ RCT_EXPORT_METHOD(dataChannelSend : (nonnull NSNumber *)peerConnectionId reactTa
         // attempting to insert nil. Such behavior is
         // unacceptable given that protection in such a
         // scenario is extremely simple.
-        @"data" : (data ? data : [NSNull null])
+        @"data" : (data ? data : [NSNull null]),
+        @"nativeReceivedEpochMs" : @(epochMs),
+        @"nativeReceivedMonotonicMs" : @(monotonicMs)
     };
     [self sendEventWithName:kEventDataChannelReceiveMessage body:event];
 }

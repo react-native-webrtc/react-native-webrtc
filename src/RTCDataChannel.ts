@@ -207,7 +207,14 @@ export default class RTCDataChannel extends EventTarget<DataChannelEventMap> {
                 data = base64.toByteArray(ev.data).buffer;
             }
 
-            this.dispatchEvent(new MessageEvent('message', { data }));
+            const messageEvent = new MessageEvent('message', { data });
+            if (typeof ev.nativeReceivedEpochMs === 'number') {
+                (messageEvent as any).nativeReceivedEpochMs = ev.nativeReceivedEpochMs;
+            }
+            if (typeof ev.nativeReceivedMonotonicMs === 'number') {
+                (messageEvent as any).nativeReceivedMonotonicMs = ev.nativeReceivedMonotonicMs;
+            }
+            this.dispatchEvent(messageEvent);
         });
 
         addListener(this, 'dataChannelDidChangeBufferedAmount', (ev: any) => {
