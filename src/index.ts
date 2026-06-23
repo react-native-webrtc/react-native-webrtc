@@ -19,7 +19,7 @@ import RTCAudioSession from './RTCAudioSession';
 import RTCCertificate from './RTCCertificate';
 import RTCErrorEvent from './RTCErrorEvent';
 import RTCIceCandidate from './RTCIceCandidate';
-import RTCPIPView, { startIOSPIP, stopIOSPIP } from './RTCPIPView';
+import RTCPIPView,{ startIOSPIP, stopIOSPIP } from './RTCPIPView';
 import RTCPeerConnection from './RTCPeerConnection';
 import RTCRtpEncodingParameters, { type RTCRtpEncodingParametersInit } from './RTCRtpEncodingParameters';
 import RTCRtpReceiver from './RTCRtpReceiver';
@@ -27,7 +27,7 @@ import RTCRtpSendParameters, { type RTCRtpSendParametersInit } from './RTCRtpSen
 import RTCRtpSender from './RTCRtpSender';
 import RTCRtpTransceiver from './RTCRtpTransceiver';
 import RTCSessionDescription from './RTCSessionDescription';
-import RTCView, { type RTCVideoViewProps, type RTCIOSPIPOptions } from './RTCView';
+import RTCView, { type RTCVideoViewProps } from './RTCView';
 import ScreenCapturePickerView from './ScreenCapturePickerView';
 
 Logger.enable(`${Logger.ROOT_PREFIX}:*`);
@@ -56,7 +56,6 @@ export {
     type RTCRtpEncodingParametersInit,
     type RTCRtpSendParametersInit,
     type RTCVideoViewProps,
-    type RTCIOSPIPOptions,
     mediaDevices,
     permissions,
     registerGlobals,
