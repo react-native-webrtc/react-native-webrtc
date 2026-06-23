@@ -11,6 +11,7 @@ import android.os.IBinder;
 import android.util.Log;
 
 import java.util.Random;
+import java.util.concurrent.CompletableFuture;
 
 /**
  * This class implements an Android {@link Service}, a foreground one specifically, and it's
@@ -24,10 +25,16 @@ public class MediaProjectionService extends Service {
 
     static final int NOTIFICATION_ID = new Random().nextInt(99999) + 10000;
 
-    public static void launch(Context context) {
+    private static volatile CompletableFuture<Void> startFuture;
+
+    public static CompletableFuture<Void> launch(Context context) {
         if (!WebRTCModuleOptions.getInstance().enableMediaProjectionService) {
-            return;
+            return CompletableFuture.completedFuture(null);
         }
+
+        CompletableFuture<Void> future = new CompletableFuture<>();
+
+        startFuture = future;
 
         MediaProjectionNotification.createNotificationChannel(context);
         Intent intent = new Intent(context, MediaProjectionService.class);
@@ -43,14 +50,21 @@ public class MediaProjectionService extends Service {
             // Avoid crashing due to ForegroundServiceStartNotAllowedException (API level 31).
             // See: https://developer.android.com/guide/components/foreground-services#background-start-restrictions
             Log.w(TAG, "Media projection service not started", e);
-            return;
+            startFuture = null;
+            future.completeExceptionally(e);
+
+            return future;
         }
 
         if (componentName == null) {
             Log.w(TAG, "Media projection service not started");
+            startFuture = null;
+            future.completeExceptionally(new RuntimeException("Media projection service not started"));
         } else {
             Log.i(TAG, "Media projection service started");
         }
+
+        return future;
     }
 
     public static void abort(Context context) {
@@ -75,6 +89,13 @@ public class MediaProjectionService extends Service {
             startForeground(NOTIFICATION_ID, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PROJECTION);
         } else {
             startForeground(NOTIFICATION_ID, notification);
+        }
+
+        CompletableFuture<Void> fut = startFuture;
+
+        if (fut != null) {
+            startFuture = null;
+            fut.complete(null);
         }
 
         return START_NOT_STICKY;
