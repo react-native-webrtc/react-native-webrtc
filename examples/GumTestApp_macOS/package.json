@@ -18,7 +18,7 @@
     "react-native-webrtc": "*"
   },
   "devDependencies": {
-    "@babel/core": "7.12.8",
+    "@babel/core": "7.29.6",
     "@babel/runtime": "7.12.5",
     "@react-native-community/eslint-config": "0.0.5",
     "babel-jest": "24.9.0",
