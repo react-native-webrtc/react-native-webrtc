@@ -1,5 +1,6 @@
 package com.oney.WebRTCModule;
 
+import android.os.SystemClock;
 import android.util.Base64;
 
 import androidx.annotation.Nullable;
@@ -59,6 +60,8 @@ class DataChannelWrapper implements DataChannel.Observer {
 
     @Override
     public void onMessage(DataChannel.Buffer buffer) {
+        long epochMs = System.currentTimeMillis();
+        double monotonicMs = SystemClock.elapsedRealtimeNanos() / 1_000_000.0;
         WritableMap params = Arguments.createMap();
         params.putString("reactTag", reactTag);
         params.putInt("peerConnectionId", peerConnectionId);
@@ -82,6 +85,8 @@ class DataChannelWrapper implements DataChannel.Observer {
         }
         params.putString("type", type);
         params.putString("data", data);
+        params.putDouble("nativeReceivedEpochMs", (double) epochMs);
+        params.putDouble("nativeReceivedMonotonicMs", monotonicMs);
 
         webRTCModule.sendEvent("dataChannelReceiveMessage", params);
     }
