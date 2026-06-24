@@ -13,6 +13,7 @@ API_AVAILABLE(ios(15.0))
 @property(nonatomic, assign) BOOL startAutomatically;
 @property(nonatomic, assign) BOOL stopAutomatically;
 @property(nonatomic, assign) CGSize preferredSize;
+@property(nonatomic, assign) CGFloat blurIntensity;
 
 - (instancetype)initWithSourceView:(UIView *)sourceView;
 - (void)togglePIP;
