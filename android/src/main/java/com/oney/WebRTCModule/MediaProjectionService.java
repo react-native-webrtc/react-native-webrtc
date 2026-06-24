@@ -72,7 +72,11 @@ public class MediaProjectionService extends Service {
         Notification notification = MediaProjectionNotification.buildMediaProjectionNotification(this);
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            startForeground(NOTIFICATION_ID, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PROJECTION);
+            int serviceType = ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PROJECTION;
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                serviceType |= ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PROJECTION_MEDIA_PROJECTOR;
+            }
+            startForeground(NOTIFICATION_ID, notification, serviceType);
         } else {
             startForeground(NOTIFICATION_ID, notification);
         }
