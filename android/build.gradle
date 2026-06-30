@@ -1,4 +1,5 @@
 apply plugin: 'com.android.library'
+apply plugin: 'org.jetbrains.kotlin.android'
 
 def safeExtGet(prop, fallback) {
     rootProject.ext.has(prop) ? rootProject.ext.get(prop) : fallback
@@ -50,11 +51,16 @@ android {
         sourceCompatibility JavaVersion.VERSION_1_8
         targetCompatibility JavaVersion.VERSION_1_8
     }
+    kotlinOptions {
+        jvmTarget = '17'
+    }
 }
 
 dependencies {
     implementation "com.facebook.react:react-android:+"
     api 'com.github.fishjam-cloud:webrtc:v124.0.2.2'
     implementation "androidx.core:core:1.7.0"
+    implementation ("androidx.core:core-telecom:1.0.0")
     implementation 'com.facebook.fbjni:fbjni:0.6.0'
+    implementation 'androidx.core:core-ktx:1.19.0'
 }
