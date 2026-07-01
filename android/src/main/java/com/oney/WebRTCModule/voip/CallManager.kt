@@ -7,7 +7,12 @@ import androidx.core.net.toUri
 import androidx.core.telecom.CallAttributesCompat
 import androidx.core.telecom.CallControlResult
 import androidx.core.telecom.CallControlScope
+import androidx.core.telecom.CallEndpointCompat
 import androidx.core.telecom.CallsManager
+import com.facebook.react.bridge.Arguments
+import com.facebook.react.bridge.WritableArray
+import com.facebook.react.bridge.WritableMap
+import com.oney.WebRTCModule.AudioOutputManager
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -29,6 +34,9 @@ object CallManager {
     private val scope = CoroutineScope(Dispatchers.Default + SupervisorJob())
     private var callsManager: CallsManager? = null
     private var registered = false
+    private var lastCurrentEndpoint: CallEndpointCompat? = null
+    private var lastEndpoints: List<CallEndpointCompat> = emptyList()
+    private var audioOutputManager: AudioOutputManager? = null
 
     private var callScope: CoroutineScope? = null
     private var controlScope: CallControlScope? = null
@@ -63,6 +71,10 @@ object CallManager {
     fun setCallActive() { actions?.trySend(CallAction.Activate) }
     fun endCall() { actions?.trySend(CallAction.Disconnect(DisconnectCause(DisconnectCause.LOCAL))) }
     fun setListener(l: CallEventsListener?) { listener = l }
+
+
+
+    fun setAudioOutputManager(manager: AudioOutputManager?) { audioOutputManager = manager }
 
     private fun ensureRegistered(context: Context) {
         if (callsManager == null) {
@@ -110,8 +122,20 @@ object CallManager {
                 ) {
                     listener?.onStarted()
                     launch { processActions(channel.consumeAsFlow(), callType) }
-                    launch { currentCallEndpoint.collect {  } }
-                    launch { availableEndpoints.collect {  } }
+                    launch { currentCallEndpoint.collect { endpoint ->
+                        lastCurrentEndpoint = endpoint
+                        audioOutputManager?.onTelecomAudioStateChanged(
+                            endpoint.toWritableMap(),
+                            lastEndpoints.map { it.toWritableMap() }.toWritableArray()
+                        )
+                    } }
+                    launch { availableEndpoints.collect { endpoints ->
+                        lastEndpoints = endpoints
+                        audioOutputManager?.onTelecomAudioStateChanged(
+                            lastCurrentEndpoint?.toWritableMap(),
+                            endpoints.map { it.toWritableMap() }.toWritableArray()
+                        )
+                    } }
                     launch { isMuted.collect { listener?.onMuteChanged(it) } }
                     }
             } catch (e: Exception) { // should probably less generic
@@ -136,5 +160,29 @@ object CallManager {
 
             if (result is CallControlResult.Error) listener?.onFailed("telecom action failed: ${result.errorCode}")
         }
+    }
+
+    private fun CallEndpointCompat.toWritableMap(): WritableMap = Arguments.createMap().apply {
+        putString("type", normalizedType())
+        putString("nativeType", normalizedType())
+        putString("name", name.toString())
+        putString("id", identifier.toString())   // ParcelUuid -> String; AudioDevice.id is already a String
+    }
+
+    private fun List<WritableMap>.toWritableArray(): WritableArray {
+        val array = Arguments.createArray()
+        for (map in this) {
+            array.pushMap(map)
+        }
+        return array
+    }
+
+    private fun CallEndpointCompat.normalizedType() = when (type) {
+        CallEndpointCompat.TYPE_EARPIECE -> "earpiece"
+        CallEndpointCompat.TYPE_SPEAKER -> "speaker"
+        CallEndpointCompat.TYPE_BLUETOOTH -> "bluetooth"
+        CallEndpointCompat.TYPE_WIRED_HEADSET -> "wiredHeadset"
+        CallEndpointCompat.TYPE_STREAMING -> "streaming"   // watch/Auto — no AudioDeviceInfo analog
+        else -> "unknown"
     }
 }

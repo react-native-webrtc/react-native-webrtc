@@ -36,6 +36,10 @@ public class AudioOutputManager {
     // Guarded by `this`. Single in-flight selection — a new request supersedes any prior one.
     private PendingSelect pending;
 
+    private WritableMap cachedTelecomCurrent;
+    private WritableArray cachedTelecomAvailable;
+    private boolean telecomOwnsRouting = false;
+
     private static final class PendingSelect {
         final Promise promise;
         final int targetDeviceId;
@@ -160,7 +164,10 @@ public class AudioOutputManager {
     }
 
     public void getCurrentAudioOutput(Promise promise) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+        // https://developer.android.com/develop/connectivity/telecom/voip-app/telecom#manage-call-audio-endpoints
+        if (telecomOwnsRouting) {
+            promise.resolve(cachedTelecomCurrent);
+        } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             AudioDeviceInfo device = audioManager.getCommunicationDevice();
             if (device != null) {
                 promise.resolve(serializeAudioDevice(device));
@@ -472,17 +479,28 @@ public class AudioOutputManager {
             for (AudioDeviceInfo d : devices) {
                 int type = d.getType();
                 if (type == AudioDeviceInfo.TYPE_BUILTIN_EARPIECE || type == AudioDeviceInfo.TYPE_BUILTIN_SPEAKER
-                        || type == AudioDeviceInfo.TYPE_WIRED_HEADSET || type == AudioDeviceInfo.TYPE_WIRED_HEADPHONES
-                        || type == AudioDeviceInfo.TYPE_BLUETOOTH_SCO || type == AudioDeviceInfo.TYPE_BLUETOOTH_A2DP
-                        || type == AudioDeviceInfo.TYPE_HDMI || type == AudioDeviceInfo.TYPE_USB_DEVICE
-                        || type == AudioDeviceInfo.TYPE_USB_HEADSET || type == AudioDeviceInfo.TYPE_USB_ACCESSORY
-                        || type == AudioDeviceInfo.TYPE_HEARING_AID) {
+                    || type == AudioDeviceInfo.TYPE_WIRED_HEADSET || type == AudioDeviceInfo.TYPE_WIRED_HEADPHONES
+                    || type == AudioDeviceInfo.TYPE_BLUETOOTH_SCO || type == AudioDeviceInfo.TYPE_BLUETOOTH_A2DP
+                    || type == AudioDeviceInfo.TYPE_HDMI || type == AudioDeviceInfo.TYPE_USB_DEVICE
+                    || type == AudioDeviceInfo.TYPE_USB_HEADSET || type == AudioDeviceInfo.TYPE_USB_ACCESSORY
+                    || type == AudioDeviceInfo.TYPE_HEARING_AID) {
                     available.pushMap(serializeAudioDevice(d));
                 }
             }
         }
         params.putArray("availableAudioOutputs", available);
 
+        webRTCModule.sendEvent("audioOutputChanged", params);
+    }
+
+    public void setTelecomOwnsRouting(boolean owns) { telecomOwnsRouting = owns; }
+    public void onTelecomAudioStateChanged(WritableMap current, WritableArray available) {
+        cachedTelecomCurrent = current;
+        cachedTelecomAvailable = available;
+        WritableMap params = Arguments.createMap();
+        if (current != null) params.putMap("currentAudioOutput", current);
+        else params.putNull("currentAudioOutput");
+        params.putArray("availableAudioOutputs", available);
         webRTCModule.sendEvent("audioOutputChanged", params);
     }
 }
