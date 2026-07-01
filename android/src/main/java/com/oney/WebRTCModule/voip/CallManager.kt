@@ -15,6 +15,7 @@ import com.facebook.react.bridge.WritableMap
 import com.oney.WebRTCModule.AudioOutputManager
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
@@ -40,6 +41,10 @@ object CallManager {
 
     private var callScope: CoroutineScope? = null
     private var controlScope: CallControlScope? = null
+
+    private var endpointJob: Job? = null
+    private var availableJob: Job? = null
+    private var muteJob: Job? = null
 
     // Channel for communicating with Java
     private var actions: Channel<CallAction>? = null
@@ -122,21 +127,21 @@ object CallManager {
                 ) {
                     listener?.onStarted()
                     launch { processActions(channel.consumeAsFlow(), callType) }
-                    launch { currentCallEndpoint.collect { endpoint ->
+                    endpointJob = launch { currentCallEndpoint.collect { endpoint ->
                         lastCurrentEndpoint = endpoint
                         audioOutputManager?.onTelecomAudioStateChanged(
                             endpoint.toWritableMap(),
                             lastEndpoints.map { it.toWritableMap() }.toWritableArray()
                         )
                     } }
-                    launch { availableEndpoints.collect { endpoints ->
+                    availableJob = launch { availableEndpoints.collect { endpoints ->
                         lastEndpoints = endpoints
                         audioOutputManager?.onTelecomAudioStateChanged(
                             lastCurrentEndpoint?.toWritableMap(),
                             endpoints.map { it.toWritableMap() }.toWritableArray()
                         )
                     } }
-                    launch { isMuted.collect { listener?.onMuteChanged(it) } }
+                    muteJob = launch { isMuted.collect { listener?.onMuteChanged(it) } }
                     }
             } catch (e: Exception) { // should probably less generic
                 listener?.onFailed(e.message ?: "addCall failed")
@@ -145,6 +150,11 @@ object CallManager {
                 answered = false
                 actions = null
                 channel.close()
+                endpointJob?.cancel()
+                availableJob?.cancel()
+                muteJob?.cancel()
+                audioOutputManager?.setTelecomOwnsRouting(false)
+
             }
         }
     }
