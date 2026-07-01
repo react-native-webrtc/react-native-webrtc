@@ -1,7 +1,6 @@
 package com.oney.WebRTCModule.voip
 
 import android.content.Context
-import android.net.Uri
 import android.telecom.DisconnectCause
 import androidx.annotation.RequiresApi
 import androidx.core.net.toUri
@@ -12,10 +11,8 @@ import androidx.core.telecom.CallsManager
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.cancel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.consumeAsFlow
 import kotlinx.coroutines.launch
 
@@ -62,6 +59,11 @@ object CallManager {
         register(ctx, displayName, isVideo, CallAttributesCompat.DIRECTION_INCOMING)
     }
 
+    fun answer() { actions?.trySend(CallAction.Answer) }
+    fun setCallActive() { actions?.trySend(CallAction.Activate) }
+    fun endCall() { actions?.trySend(CallAction.Disconnect(DisconnectCause(DisconnectCause.LOCAL))) }
+    fun setListener(l: CallEventsListener?) { listener = l }
+
     private fun ensureRegistered(context: Context) {
         if (callsManager == null) {
             callsManager = CallsManager(context.applicationContext)
@@ -69,6 +71,7 @@ object CallManager {
 
         if (!registered) {
             callsManager!!.registerAppWithTelecom(CallsManager.CAPABILITY_SUPPORTS_VIDEO_CALLING or CallsManager.CAPABILITY_SUPPORTS_CALL_STREAMING)
+            registered = true
         }
     }
 
@@ -78,6 +81,7 @@ object CallManager {
         if (hasActiveCall) return
 
         val channel = Channel<CallAction>()
+        actions = channel
         hasActiveCall = true
         answered = false
 
