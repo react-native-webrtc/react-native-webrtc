@@ -39,9 +39,6 @@ object CallManager {
     private var lastEndpoints: List<CallEndpointCompat> = emptyList()
     private var audioOutputManager: AudioOutputManager? = null
 
-    private var callScope: CoroutineScope? = null
-    private var controlScope: CallControlScope? = null
-
     private var endpointJob: Job? = null
     private var availableJob: Job? = null
     private var muteJob: Job? = null
@@ -126,6 +123,7 @@ object CallManager {
                     onSetInactive = { }
                 ) {
                     listener?.onStarted()
+                    audioOutputManager?.setTelecomOwnsRouting(true)
                     launch { processActions(channel.consumeAsFlow(), callType) }
                     endpointJob = launch { currentCallEndpoint.collect { endpoint ->
                         lastCurrentEndpoint = endpoint

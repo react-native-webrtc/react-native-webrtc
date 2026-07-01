@@ -1,5 +1,6 @@
 package com.oney.WebRTCModule;
 
+import android.os.Build;
 import android.util.Log;
 import android.util.Pair;
 import android.util.SparseArray;
@@ -22,6 +23,8 @@ import com.facebook.react.bridge.WritableMap;
 import com.facebook.react.module.annotations.ReactModule;
 import com.facebook.react.modules.core.DeviceEventManagerModule;
 import com.oney.WebRTCModule.foregroundService.ForegroundServiceController;
+import com.oney.WebRTCModule.voip.CallEventsListener;
+import com.oney.WebRTCModule.voip.CallManager;
 import com.oney.WebRTCModule.webrtcutils.H264AndSoftwareVideoDecoderFactory;
 import com.oney.WebRTCModule.webrtcutils.H264AndSoftwareVideoEncoderFactory;
 
@@ -43,7 +46,7 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 
 @ReactModule(name = "WebRTCModule")
-public class WebRTCModule extends ReactContextBaseJavaModule {
+public class WebRTCModule extends ReactContextBaseJavaModule implements CallEventsListener {
     static final String TAG = WebRTCModule.class.getCanonicalName();
 
     PeerConnectionFactory mFactory;
@@ -132,6 +135,12 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
         foregroundServiceController = ForegroundServiceController.getInstance();
         foregroundServiceController.setContext(reactContext);
         audioOutputManager = new AudioOutputManager(this, reactContext);
+
+        // Core-Telecom (CallManager) requires API 26+; below that, Telecom methods are no-ops.
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            CallManager.INSTANCE.setListener(this);
+            CallManager.INSTANCE.setAudioOutputManager(audioOutputManager);
+        }
     }
 
     @Override
@@ -147,6 +156,13 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
         getUserMediaImpl.dispose();
         // prevent using stale context
         foregroundServiceController.setContext(null);
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            // CallManager is a process-wide singleton; detach so it doesn't hold a
+            // reference to this (possibly destroyed) module instance after a reload.
+            CallManager.INSTANCE.setListener(null);
+            CallManager.INSTANCE.setAudioOutputManager(null);
+        }
     }
 
     @NonNull
@@ -1585,5 +1601,74 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
     @ReactMethod
     public void removeListeners(Integer count) {
         // Keep: Required for RN built in Event Emitter Calls.
+    }
+
+    // ---- CallEventsListener (implemented in Kotlin's CallManager, called back here) ----
+    // These fire on whatever thread the Core-Telecom coroutine is running on, but
+    // sendEvent()/emit() is safe to call from any thread.
+
+    @Override
+    public void onStarted() {
+        WritableMap body = Arguments.createMap();
+        body.putString("event", "started");
+        sendEvent("telecomActionPerformed", body);
+    }
+
+    @Override
+    public void onAnswered() {
+        WritableMap body = Arguments.createMap();
+        body.putString("event", "answer");
+        sendEvent("telecomActionPerformed", body);
+    }
+
+    @Override
+    public void onEnded() {
+        WritableMap body = Arguments.createMap();
+        body.putString("event", "ended");
+        sendEvent("telecomActionPerformed", body);
+    }
+
+    @Override
+    public void onFailed(String reason) {
+        WritableMap body = Arguments.createMap();
+        body.putString("event", "failed");
+        body.putString("reason", reason);
+        sendEvent("telecomActionPerformed", body);
+    }
+
+    @Override
+    public void onMuteChanged(boolean muted) {
+        WritableMap body = Arguments.createMap();
+        body.putString("event", "muteChanged");
+        body.putBoolean("muted", muted);
+        sendEvent("telecomActionPerformed", body);
+    }
+
+    // ---- JS-facing Telecom bridge methods (Android counterpart of CallKit) ----
+
+    @ReactMethod
+    public void startTelecomCall(String displayName, boolean isVideo, Promise promise) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            CallManager.INSTANCE.startOutgoingCall(getReactApplicationContext(), displayName, isVideo);
+        }
+        promise.resolve(null);
+    }
+
+    @ReactMethod
+    public void endTelecomCall(Promise promise) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            CallManager.INSTANCE.endCall();
+        }
+        promise.resolve(null);
+    }
+
+    @ReactMethod(isBlockingSynchronousMethod = true)
+    public boolean hasActiveTelecomCall() {
+        return Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && CallManager.INSTANCE.hasActiveCall();
+    }
+
+    @ReactMethod(isBlockingSynchronousMethod = true)
+    public boolean isTelecomCallAnswered() {
+        return Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && CallManager.INSTANCE.isAnswered();
     }
 }

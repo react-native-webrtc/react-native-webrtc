@@ -29,6 +29,7 @@ const NATIVE_EVENTS = [
     'mediaStreamTrackEnded',
     'callKitActionPerformed',
     'voipPushEvent',
+    'telecomActionPerformed',
     'audioOutputChanged',
     'livestreamStatusChanged',
 ];
