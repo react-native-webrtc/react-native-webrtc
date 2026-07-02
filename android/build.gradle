@@ -1,3 +1,5 @@
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+
 apply plugin: 'com.android.library'
 apply plugin: 'org.jetbrains.kotlin.android'
 
@@ -51,16 +53,20 @@ android {
         sourceCompatibility JavaVersion.VERSION_1_8
         targetCompatibility JavaVersion.VERSION_1_8
     }
-    kotlinOptions {
-        jvmTarget = '17'
+}
+
+kotlin {
+    compilerOptions {
+        // Must match the Java target, which the Expo/RN root config forces to 17.
+        jvmTarget = JvmTarget.JVM_17
     }
 }
 
 dependencies {
     implementation "com.facebook.react:react-android:+"
     api 'com.github.fishjam-cloud:webrtc:v124.0.2.2'
-    implementation "androidx.core:core:1.7.0"
-    implementation ("androidx.core:core-telecom:1.0.0")
+    implementation "androidx.core:core:1.16.0"
+    implementation ("androidx.core:core-telecom:1.0.1")
     implementation 'com.facebook.fbjni:fbjni:0.6.0'
-    implementation 'androidx.core:core-ktx:1.19.0'
+    implementation 'androidx.core:core-ktx:1.16.0'
 }

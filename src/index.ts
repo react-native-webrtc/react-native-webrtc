@@ -61,6 +61,12 @@ import presentBroadcastPicker from './presentBroadcastPicker';
 import presentLivestreamBroadcastPicker from './presentLivestreamBroadcastPicker';
 import { useAudioOutput, type UseAudioOutputResult } from './useAudioOutput';
 import { useCallKit, useCallKitEvent, useCallKitService } from './useCallKit';
+import { useTelecom, useTelecomEvent, type UseTelecomResult } from './useTelecom';
+import {
+    type TelecomConfig,
+    type TelecomEvent,
+    type TelecomEventType,
+} from './Telecom';
 import {
     useForegroundService,
     type ForegroundServiceConfig,
@@ -121,6 +127,8 @@ export {
     useCallKit,
     useCallKitEvent,
     useCallKitService,
+    useTelecom,
+    useTelecomEvent,
     useForegroundService,
     useLivestreamStatus,
     useVoIPEvents,
@@ -131,6 +139,10 @@ export {
     type AudioTrackData,
     type CallKitAction,
     type CallKitConfig,
+    type TelecomConfig,
+    type TelecomEvent,
+    type TelecomEventType,
+    type UseTelecomResult,
     type ForegroundServiceConfig,
     type LivestreamCredentials,
     type LivestreamStatus,
