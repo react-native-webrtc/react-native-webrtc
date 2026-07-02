@@ -1,6 +1,7 @@
 package com.oney.WebRTCModule.voip
 
 import android.content.Context
+import android.content.Intent
 import android.telecom.DisconnectCause
 import androidx.annotation.RequiresApi
 import androidx.core.net.toUri
@@ -60,7 +61,6 @@ object CallManager {
     fun hasActiveCall(): Boolean = hasActiveCall
     fun isAnswered(): Boolean = answered
 
-    // java facing
     fun startOutgoingCall(ctx: Context, displayName: String, isVideo: Boolean) {
         register(ctx, displayName, isVideo, CallAttributesCompat.DIRECTION_OUTGOING)
     }
@@ -74,11 +74,11 @@ object CallManager {
     fun endCall() { actions?.trySend(CallAction.Disconnect(DisconnectCause(DisconnectCause.LOCAL))) }
     fun setListener(l: CallEventsListener?) { listener = l }
 
-
-
     fun setAudioOutputManager(manager: AudioOutputManager?) { audioOutputManager = manager }
 
     private fun ensureRegistered(context: Context) {
+        CallNotificationManager.initChannels(context.applicationContext)
+
         if (callsManager == null) {
             callsManager = CallsManager(context.applicationContext)
         }
@@ -99,8 +99,9 @@ object CallManager {
         hasActiveCall = true
         answered = false
 
+        val isIncoming = direction == CallAttributesCompat.DIRECTION_INCOMING
+        val appContext = ctx.applicationContext
         val callType = if (isVideo) CallAttributesCompat.CALL_TYPE_VIDEO_CALL else CallAttributesCompat.CALL_TYPE_AUDIO_CALL
-
         val callAttributes = CallAttributesCompat(
             displayName = displayName,
             address = "sip:$displayName".toUri(),
@@ -117,12 +118,18 @@ object CallManager {
             try {
                 callsManager!!.addCall(
                     callAttributes,
-                    onAnswer = { _ -> answered = true; listener?.onAnswered() },
+                    onAnswer = { _ ->
+                        answered = true
+                        CallNotificationManager.showOngoing(appContext, displayName)
+                        listener?.onAnswered()
+                    },
                     onDisconnect = { _ -> listener?.onEnded() },
                     onSetActive = { answered = true },
                     onSetInactive = { }
                 ) {
                     listener?.onStarted()
+                    if (isIncoming) CallNotificationManager.showIncoming(appContext, displayName, isVideo)
+                    else CallNotificationManager.showOngoing(appContext, displayName)
                     audioOutputManager?.setTelecomOwnsRouting(true)
                     launch { processActions(channel.consumeAsFlow(), callType) }
                     endpointJob = launch { currentCallEndpoint.collect { endpoint ->
@@ -148,11 +155,14 @@ object CallManager {
                 answered = false
                 actions = null
                 channel.close()
-                endpointJob?.cancel()
-                availableJob?.cancel()
-                muteJob?.cancel()
                 audioOutputManager?.setTelecomOwnsRouting(false)
 
+                CallNotificationManager.cancel(appContext)
+                // Dismiss IncomingCallActivity if the call ended before the
+                // user acted (remote hangup, timeout, answered elsewhere).
+                appContext.sendBroadcast(
+                    Intent(IncomingCallActivity.ACTION_CALL_ENDED).setPackage(appContext.packageName)
+                )
             }
         }
     }
