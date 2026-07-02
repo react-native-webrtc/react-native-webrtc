@@ -1654,6 +1654,32 @@ public class WebRTCModule extends ReactContextBaseJavaModule implements CallEven
         promise.resolve(null);
     }
 
+    // testing only
+    @ReactMethod
+    public void reportIncomingTelecomCall(String displayName, boolean isVideo, Promise promise) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            CallManager.INSTANCE.reportIncomingCall(getReactApplicationContext(), displayName, isVideo);
+        }
+        promise.resolve(null);
+    }
+
+    // testing only
+    @ReactMethod
+    public void answerTelecomCall(Promise promise) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            CallManager.INSTANCE.answer();
+        }
+        promise.resolve(null);
+    }
+
+    @ReactMethod
+    public void setTelecomCallActive(Promise promise) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            CallManager.INSTANCE.setCallActive();
+        }
+        promise.resolve(null);
+    }
+
     @ReactMethod
     public void endTelecomCall(Promise promise) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
