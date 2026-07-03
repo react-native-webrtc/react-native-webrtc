@@ -3,6 +3,7 @@ package com.oney.WebRTCModule.voip
 import android.content.Context
 import android.content.Intent
 import android.telecom.DisconnectCause
+import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.core.net.toUri
 import androidx.core.telecom.CallAttributesCompat
@@ -33,6 +34,7 @@ interface CallEventsListener {
 
 @RequiresApi(value = 26)
 object CallManager {
+    private const val TAG = "FishjamCallManager"
     private val scope = CoroutineScope(Dispatchers.Default + SupervisorJob())
     private var callsManager: CallsManager? = null
     private var registered = false
@@ -74,9 +76,9 @@ object CallManager {
         register(ctx, displayName, isVideo, CallAttributesCompat.DIRECTION_INCOMING)
     }
 
-    fun answer() { actions?.trySend(CallAction.Answer) }
-    fun setCallActive() { actions?.trySend(CallAction.Activate) }
-    fun endCall() { actions?.trySend(CallAction.Disconnect(DisconnectCause(DisconnectCause.LOCAL))) }
+    fun answer() { Log.d(TAG, "answer() sent=${actions?.trySend(CallAction.Answer)}") }
+    fun setCallActive() { Log.d(TAG, "setCallActive() sent=${actions?.trySend(CallAction.Activate)}") }
+    fun endCall() { Log.d(TAG, "endCall() sent=${actions?.trySend(CallAction.Disconnect(DisconnectCause(DisconnectCause.LOCAL)))}") }
     fun setListener(l: CallEventsListener?) { listener = l }
 
     fun setAudioOutputManager(manager: AudioOutputManager?) { audioOutputManager = manager }
@@ -99,7 +101,7 @@ object CallManager {
 
         if (hasActiveCall) return
 
-        val channel = Channel<CallAction>()
+        val channel = Channel<CallAction>(Channel.BUFFERED)
         actions = channel
         hasActiveCall = true
         answered = false
@@ -125,12 +127,14 @@ object CallManager {
             try {
                 callsManager!!.addCall(
                     callAttributes,
+                    // Fires ONLY for external answer requests (system UI, Auto,
+                    // Bluetooth, watch). App-initiated answers reach handleAnswered
+                    // via processActions instead.
                     onAnswer = { _ ->
-                        answered = true
-                        callNotificationManager.showOngoing(appContext, displayName)
-                        listener?.onAnswered()
+                        Log.d(TAG, "onAnswer (external)")
+                        handleAnswered(appContext)
                     },
-                    onDisconnect = { _ -> listener?.onEnded() },
+                    onDisconnect = { _ -> Log.d(TAG, "onDisconnect (external)"); listener?.onEnded() },
                     onSetActive = { answered = true },
                     onSetInactive = { }
                 ) {
@@ -138,7 +142,7 @@ object CallManager {
                     if (isIncoming) callNotificationManager.showIncoming(appContext, displayName, isVideo)
                     else callNotificationManager.showOngoing(appContext, displayName)
                     audioOutputManager?.setTelecomOwnsRouting(true)
-                    launch { processActions(channel.consumeAsFlow(), callType) }
+                    launch { processActions(channel.consumeAsFlow(), callType, appContext) }
                     endpointJob = launch { currentCallEndpoint.collect { endpoint ->
                         lastCurrentEndpoint = endpoint
                         audioOutputManager?.onTelecomAudioStateChanged(
@@ -156,6 +160,7 @@ object CallManager {
                     muteJob = launch { isMuted.collect { listener?.onMuteChanged(it) } }
                     }
             } catch (e: Exception) { // should probably less generic
+                Log.e(TAG, "addCall/scope failed", e)
                 listener?.onFailed(e.message ?: "addCall failed")
             } finally {
                 hasActiveCall = false
@@ -174,7 +179,11 @@ object CallManager {
         }
     }
 
-    private suspend fun CallControlScope.processActions(src: Flow<CallAction>, callType: Int) {
+    private suspend fun CallControlScope.processActions(
+        src: Flow<CallAction>,
+        callType: Int,
+        appContext: Context,
+    ) {
         src.collect { action ->
             val result: CallControlResult = when (action) {
                 CallAction.Answer -> answer(callType)
@@ -182,9 +191,23 @@ object CallManager {
                 CallAction.Hold -> setInactive()
                 is CallAction.Disconnect -> { disconnect(action.cause) }
             }
+            Log.d(TAG, "processActions action=$action result=$result")
 
-            if (result is CallControlResult.Error) listener?.onFailed("telecom action failed: ${result.errorCode}")
+            if (result is CallControlResult.Error) {
+                listener?.onFailed("telecom action failed: ${result.errorCode}")
+            } else if (action == CallAction.Answer) {
+                // App-initiated answer succeeded — onAnswer won't fire for this,
+                // so run the post-answer side effects here.
+                handleAnswered(appContext)
+            }
         }
+    }
+
+    /** Post-answer side effects shared by external (onAnswer) and app-initiated answers. */
+    private fun handleAnswered(appContext: Context) {
+        answered = true
+        callNotificationManager.showOngoing(appContext, displayName)
+        listener?.onAnswered()
     }
 
     private fun CallEndpointCompat.toWritableMap(): WritableMap = Arguments.createMap().apply {

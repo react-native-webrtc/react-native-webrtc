@@ -33,16 +33,15 @@ class CallNotificationManager {
         private const val CHANNEL_INCOMING = "fishjam_telecom_incoming"
         private const val CHANNEL_ONGOING = "fishjam_telecom_ongoing"
         const val NOTIFICATION_ID = 8400
+
+        // Distinct request codes so the PendingIntents don't collapse into one.
+        private const val RC_ANSWER = 1
+        private const val RC_DECLINE = 2
+        private const val RC_HANGUP = 3
+        private const val RC_FULL_SCREEN = 4
     }
 
     private val ringToneUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_RINGTONE)
-
-    // Distinct request codes so the PendingIntents don't collapse into one.
-    private const val RC_ANSWER = 1
-    private const val RC_DECLINE = 2
-    private const val RC_HANGUP = 3
-    private const val RC_FULL_SCREEN = 4
-
     private var channelsReady = false
 
     fun initChannels(context: Context) {
@@ -107,7 +106,7 @@ class CallNotificationManager {
         initChannels(ctx)
 
         val notification =
-            callNotificationBuilder(ctx, CHANNEL_ONGOING, displayName, "Ongoing call") // i think we could also change displayName to displayText since we might want something else rather than user name
+            callNotificationBuilder(ctx, CHANNEL_ONGOING, displayName, "Ongoing call")
                 .setStyle(
                     NotificationCompat.CallStyle.forOngoingCall(
                         person(ctx, displayName),
@@ -115,6 +114,12 @@ class CallNotificationManager {
                     )
                 )
                 .setContentIntent(fullScreenPendingIntent(ctx)) // leave it for now but this should forward the user to the app and rn view instead of oour default one here
+                // Android 14+ requires a CallStyle notification to be an FGS
+                // notification, a user-initiated job, OR carry a full-screen
+                // intent. We aren't an FGS here, so satisfy the rule this way.
+                // (Won't actually pop full-screen: app is foreground post-answer
+                // and this channel is IMPORTANCE_DEFAULT.)
+                .setFullScreenIntent(fullScreenPendingIntent(ctx), false)
                 .setOngoing(true)
                 .setAutoCancel(false)
                 .setUsesChronometer(true)
