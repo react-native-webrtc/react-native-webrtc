@@ -58,10 +58,12 @@ object CallManager {
     @Volatile private var answered = false
     private var listener: CallEventsListener? = null
     private var displayName: String = ""
+    private var videoCall: Boolean = false
 
     fun hasActiveCall(): Boolean = hasActiveCall
     fun isAnswered(): Boolean = answered
     fun currentDisplayName(): String = displayName
+    fun currentIsVideo(): Boolean = videoCall
 
     fun startOutgoingCall(ctx: Context, displayName: String, isVideo: Boolean) {
         register(ctx, displayName, isVideo, CallAttributesCompat.DIRECTION_OUTGOING)
@@ -102,6 +104,7 @@ object CallManager {
         answered = false
 
         this.displayName = displayName
+        this.videoCall = isVideo
         val isIncoming = direction == CallAttributesCompat.DIRECTION_INCOMING
         val appContext = ctx.applicationContext
         val callType = if (isVideo) CallAttributesCompat.CALL_TYPE_VIDEO_CALL else CallAttributesCompat.CALL_TYPE_AUDIO_CALL
