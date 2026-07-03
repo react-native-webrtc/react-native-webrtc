@@ -36,6 +36,7 @@ object CallManager {
     private val scope = CoroutineScope(Dispatchers.Default + SupervisorJob())
     private var callsManager: CallsManager? = null
     private var registered = false
+    private val callNotificationManager = CallNotificationManager()
     private var lastCurrentEndpoint: CallEndpointCompat? = null
     private var lastEndpoints: List<CallEndpointCompat> = emptyList()
     private var audioOutputManager: AudioOutputManager? = null
@@ -81,7 +82,7 @@ object CallManager {
     fun setAudioOutputManager(manager: AudioOutputManager?) { audioOutputManager = manager }
 
     private fun ensureRegistered(context: Context) {
-        CallNotificationManager.initChannels(context.applicationContext)
+        callNotificationManager.initChannels(context.applicationContext)
 
         if (callsManager == null) {
             callsManager = CallsManager(context.applicationContext)
@@ -126,7 +127,7 @@ object CallManager {
                     callAttributes,
                     onAnswer = { _ ->
                         answered = true
-                        CallNotificationManager.showOngoing(appContext, displayName)
+                        callNotificationManager.showOngoing(appContext, displayName)
                         listener?.onAnswered()
                     },
                     onDisconnect = { _ -> listener?.onEnded() },
@@ -134,8 +135,8 @@ object CallManager {
                     onSetInactive = { }
                 ) {
                     listener?.onStarted()
-                    if (isIncoming) CallNotificationManager.showIncoming(appContext, displayName, isVideo)
-                    else CallNotificationManager.showOngoing(appContext, displayName)
+                    if (isIncoming) callNotificationManager.showIncoming(appContext, displayName, isVideo)
+                    else callNotificationManager.showOngoing(appContext, displayName)
                     audioOutputManager?.setTelecomOwnsRouting(true)
                     launch { processActions(channel.consumeAsFlow(), callType) }
                     endpointJob = launch { currentCallEndpoint.collect { endpoint ->
@@ -163,7 +164,7 @@ object CallManager {
                 channel.close()
                 audioOutputManager?.setTelecomOwnsRouting(false)
 
-                CallNotificationManager.cancel(appContext)
+                callNotificationManager.cancel(appContext)
                 // Dismiss IncomingCallActivity if the call ended before the
                 // user acted (remote hangup, timeout, answered elsewhere).
                 appContext.sendBroadcast(

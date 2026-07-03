@@ -28,10 +28,13 @@ import androidx.core.graphics.drawable.IconCompat
  * incoming -> ongoing; the call-style factory decides how it renders
  */
 @RequiresApi(26)
-object CallNotificationManager {
-    private const val CHANNEL_INCOMING = "fishjam_telecom_incoming"
-    private const val CHANNEL_ONGOING = "fishjam_telecom_ongoing"
-    const val NOTIFICATION_ID = 8400
+class CallNotificationManager {
+    companion object {
+        private const val CHANNEL_INCOMING = "fishjam_telecom_incoming"
+        private const val CHANNEL_ONGOING = "fishjam_telecom_ongoing"
+        const val NOTIFICATION_ID = 8400
+    }
+
     private val ringToneUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_RINGTONE)
 
     // Distinct request codes so the PendingIntents don't collapse into one.
