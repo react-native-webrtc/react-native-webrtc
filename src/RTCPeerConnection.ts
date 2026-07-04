@@ -682,6 +682,11 @@ export default class RTCPeerConnection extends EventTarget<RTCPeerConnectionEven
 
         WebRTCModule.peerConnectionClose(this._pcId);
 
+        // https://w3c.github.io/webrtc-pc/#dom-rtcpeerconnection-close
+        this.signalingState = 'closed';
+        this.iceConnectionState = 'closed';
+        this.connectionState = 'closed';
+
         // Mark transceivers as stopped.
         this._transceivers.forEach(({ transceiver })=> {
             transceiver._setStopped();
