@@ -157,8 +157,20 @@ public class WebRTCView extends ViewGroup {
     public WebRTCView(Context context) {
         super(context);
 
+        // Faith native renderer fix: React Native/Fabric can momentarily
+        // measure RTCView at 0 height while decoded frames are already
+        // available. Keep the native SurfaceViewRenderer sized and relaid out
+        // from Android itself so remote video does not paint black.
+        setClipChildren(false);
+        setClipToPadding(false);
+
         surfaceViewRenderer = new SurfaceViewRenderer(context);
-        addView(surfaceViewRenderer);
+        surfaceViewRenderer.setEnableHardwareScaler(true);
+        surfaceViewRenderer.setZOrderMediaOverlay(false);
+        addView(surfaceViewRenderer,
+                new ViewGroup.LayoutParams(
+                        ViewGroup.LayoutParams.MATCH_PARENT,
+                        ViewGroup.LayoutParams.MATCH_PARENT));
 
         setMirror(false);
         setScalingType(DEFAULT_SCALING_TYPE);
@@ -260,6 +272,8 @@ public class WebRTCView extends ViewGroup {
         post(() -> {
             Log.d(TAG, "First frame rendered.");
             surfaceViewRenderer.setBackgroundColor(Color.TRANSPARENT);
+            requestLayout();
+            requestSurfaceViewRendererLayout();
         });
     }
 
@@ -317,6 +331,21 @@ public class WebRTCView extends ViewGroup {
     protected void onLayout(boolean changed, int l, int t, int r, int b) {
         int height = b - t;
         int width = r - l;
+        if (height <= 0) {
+            height = getMeasuredHeight();
+        }
+        if (width <= 0) {
+            width = getMeasuredWidth();
+        }
+        if ((height <= 0 || width <= 0) && getParent() instanceof View) {
+            View parent = (View) getParent();
+            if (height <= 0) {
+                height = parent.getHeight();
+            }
+            if (width <= 0) {
+                width = parent.getWidth();
+            }
+        }
 
         if (height == 0 || width == 0) {
             l = t = r = b = 0;
@@ -351,7 +380,13 @@ public class WebRTCView extends ViewGroup {
                     // to the cover or contain value of the CSS property object-fit
                     // (which will not matter, eventually).
                     if (frameHeight == 0 || frameWidth == 0) {
-                        l = t = r = b = 0;
+                        // Keep a real surface area available before the first
+                        // frame reports dimensions, otherwise Android can keep
+                        // the video surface black.
+                        r = width;
+                        l = 0;
+                        b = height;
+                        t = 0;
                     } else {
                         float frameAspectRatio = (frameRotation % 180 == 0) ? frameWidth / (float) frameHeight
                                                                             : frameHeight / (float) frameWidth;
@@ -367,6 +402,45 @@ public class WebRTCView extends ViewGroup {
             }
         }
         surfaceViewRenderer.layout(l, t, r, b);
+    }
+
+    @Override
+    protected void onSizeChanged(int w, int h, int oldw, int oldh) {
+        super.onSizeChanged(w, h, oldw, oldh);
+        if (w != oldw || h != oldh) {
+            requestSurfaceViewRendererLayout();
+        }
+    }
+
+    @Override
+    protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
+        super.onMeasure(widthMeasureSpec, heightMeasureSpec);
+
+        int width = getMeasuredWidth();
+        int height = getMeasuredHeight();
+
+        if (width <= 0) {
+            width = View.MeasureSpec.getSize(widthMeasureSpec);
+        }
+        if (height <= 0) {
+            height = View.MeasureSpec.getSize(heightMeasureSpec);
+        }
+        if ((width <= 0 || height <= 0) && getParent() instanceof View) {
+            View parent = (View) getParent();
+            if (width <= 0) {
+                width = parent.getWidth();
+            }
+            if (height <= 0) {
+                height = parent.getHeight();
+            }
+        }
+
+        width = Math.max(width, 1);
+        height = Math.max(height, 1);
+        setMeasuredDimension(width, height);
+        surfaceViewRenderer.measure(
+                View.MeasureSpec.makeMeasureSpec(width, View.MeasureSpec.EXACTLY),
+                View.MeasureSpec.makeMeasureSpec(height, View.MeasureSpec.EXACTLY));
     }
 
     /**
@@ -503,6 +577,8 @@ public class WebRTCView extends ViewGroup {
             // After realizing/applying the change in the value of
             // this.streamURL, reflect it on the value of videoTrack.
             setVideoTrack(videoTrack);
+            requestLayout();
+            requestSurfaceViewRendererLayout();
         });
     }
 
@@ -529,6 +605,8 @@ public class WebRTCView extends ViewGroup {
 
             if (videoTrack != null) {
                 tryAddRendererToVideoTrack();
+                requestLayout();
+                requestSurfaceViewRendererLayout();
                 if (oldVideoTrack == null) {
                     // If there was no old track, clean the surface so we start
                     // with black.
