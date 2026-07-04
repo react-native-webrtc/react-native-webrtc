@@ -719,13 +719,6 @@ export default class RTCPeerConnection extends EventTarget<RTCPeerConnectionEven
             this.connectionState = ev.connectionState;
 
             this.dispatchEvent(new Event('connectionstatechange'));
-
-            if (ev.connectionState === 'closed') {
-                // This PeerConnection is done, clean up.
-                removeListener(this);
-
-                WebRTCModule.peerConnectionDispose(this._pcId);
-            }
         });
 
         addListener(this, 'peerConnectionSignalingStateChanged', (ev: any) => {
@@ -736,6 +729,13 @@ export default class RTCPeerConnection extends EventTarget<RTCPeerConnectionEven
             this.signalingState = ev.signalingState;
 
             this.dispatchEvent(new Event('signalingstatechange'));
+
+            if (ev.signalingState === 'closed') {
+                // This PeerConnection is done, clean up.
+                removeListener(this);
+
+                WebRTCModule.peerConnectionDispose(this._pcId);
+            }
         });
 
         // Consider moving away from this event: https://github.com/WebKit/WebKit/pull/3953
