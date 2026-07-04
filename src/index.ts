@@ -83,8 +83,6 @@ function registerGlobals(): void {
     global.RTCIceCandidate = RTCIceCandidate;
     global.RTCCertificate = RTCCertificate;
     global.RTCPeerConnection = RTCPeerConnection;
-    global.RTCRtpReceiver = RTCRtpReceiver;
-    global.RTCRtpSender = RTCRtpReceiver;
     global.RTCSessionDescription = RTCSessionDescription;
     global.MediaStream = MediaStream;
     global.MediaStreamTrack = MediaStreamTrack;
