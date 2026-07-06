@@ -30,6 +30,11 @@ public class ForegroundServiceController {
     private boolean screenSharingAllowed = false;
     private boolean screenShareActive = false;
 
+    private boolean callActive = false;
+    private String callDisplayName = "";
+    private boolean callIsVideo = false;
+    private long callConnectedAtMs = 0;
+
     private String channelId = "com.fishjam.foregroundservice.channel";
     private String channelName = "Fishjam Notifications";
     private String notificationTitle = "[PLACEHOLDER] Tap to return to the call.";
@@ -109,11 +114,32 @@ public class ForegroundServiceController {
         applyState();
     }
 
+    /**
+     * Called by CallManager when a Core-Telecom call becomes ongoing (outgoing
+     * started or incoming answered). Switches the service's notification to the
+     * ongoing CallStyle one and keeps camera/microphone types alive for the call
+     * even if the app never enabled the room foreground service from JS.
+     */
+    public synchronized void onCallStarted(String displayName, boolean isVideo) {
+        callActive = true;
+        callDisplayName = displayName != null ? displayName : "";
+        callIsVideo = isVideo;
+        callConnectedAtMs = System.currentTimeMillis();
+        applyState();
+    }
+
+    public synchronized void onCallEnded() {
+        callActive = false;
+        applyState();
+    }
+
     private void applyState() {
         if (reactContext == null) return;
 
         boolean screenShareNeedsService = screenSharingAllowed && screenShareActive;
-        int[] types = buildForegroundServiceTypes(cameraRequested, microphoneRequested, screenShareNeedsService);
+        boolean cameraNeeded = cameraRequested || (callActive && callIsVideo);
+        boolean microphoneNeeded = microphoneRequested || callActive;
+        int[] types = buildForegroundServiceTypes(cameraNeeded, microphoneNeeded, screenShareNeedsService);
 
         if (types.length == 0 && !screenShareNeedsService) {
             Intent serviceIntent = new Intent(reactContext, WebRTCForegroundService.class);
@@ -129,6 +155,10 @@ public class ForegroundServiceController {
         serviceIntent.putExtra("importance", importance);
         serviceIntent.putExtra("onlyAlertOnce", onlyAlertOnce);
         serviceIntent.putExtra("foregroundServiceTypes", types);
+        if (callActive) {
+            serviceIntent.putExtra("voipDisplayName", callDisplayName);
+            serviceIntent.putExtra("voipConnectedAt", callConnectedAtMs);
+        }
 
         try {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {

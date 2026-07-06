@@ -2,24 +2,4 @@
           package="com.oney.WebRTCModule"
           xmlns:tools="http://schemas.android.com/tools"
     >
-<!-- I think those could be inside of the app of the user :d probably withfishjamandroid :D-->
-    <uses-permission android:name="android.permission.MANAGE_OWN_CALLS" />
-    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
-    <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT" />
-
-    <application>
-        <activity
-            android:name="com.oney.WebRTCModule.voip.IncomingCallActivity"
-            android:exported="false"
-            android:showWhenLocked="true"
-            android:turnScreenOn="true"
-            android:launchMode="singleInstance"
-            android:excludeFromRecents="true"
-            android:taskAffinity=""
-            android:theme="@android:style/Theme.Black.NoTitleBar.Fullscreen" />
-
-        <receiver
-            android:name="com.oney.WebRTCModule.voip.EndCallNotificationReceiver"
-            android:exported="false" />
-    </application>
 </manifest>

@@ -1,5 +1,6 @@
 package com.oney.WebRTCModule.voip
 
+import android.annotation.SuppressLint
 import android.app.Notification
 import android.app.PendingIntent
 import android.content.Context
@@ -16,7 +17,7 @@ import androidx.core.app.Person
 import androidx.core.graphics.drawable.IconCompat
 
 /**
- * Posts and updates the single CallStyle notification that keeps the app in
+ * Builds and posts the single CallStyle notification that keeps the app in
  * foreground-execution priority for the lifetime of a Core-Telecom call.
  *
  * Core-Telecom grants foreground priority only while a valid CallStyle
@@ -24,8 +25,14 @@ import androidx.core.graphics.drawable.IconCompat
  * until the call ends, so [CallManager] posts here as soon as the call is
  * accepted and cancels in its `finally` block.
  *
- * One notification (id [NOTIFICATION_ID]) is re-posted as the call transitions
- * incoming -> ongoing; the call-style factory decides how it renders
+ * One notification (id [NOTIFICATION_ID]) transitions incoming -> ongoing:
+ *  - incoming is posted via notify() with a full-screen intent (rings over
+ *    the lock screen; the FSI also makes the CallStyle valid on Android 14+).
+ *  - ongoing is built by [buildOngoing] and posted by
+ *    WebRTCForegroundService.startForeground() under the same id, so being
+ *    FGS-attached is what keeps it valid — no full-screen intent needed, and
+ *    the service's mediaProjection type covers screen share, the one
+ *    capability Telecom's foreground delegation does not include.
  */
 @RequiresApi(26)
 class CallNotificationManager {
@@ -39,6 +46,7 @@ class CallNotificationManager {
         private const val RC_DECLINE = 2
         private const val RC_HANGUP = 3
         private const val RC_FULL_SCREEN = 4
+        private const val RC_CONTENT = 5
     }
 
     private val ringToneUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_RINGTONE)
@@ -100,34 +108,25 @@ class CallNotificationManager {
         notify(ctx, notification)
     }
 
-    /** Connected/active call: silent, single Hang up action, live duration timer. */
-    fun showOngoing(context: Context, displayName: String, connectedAtMs: Long = System.currentTimeMillis()) {
+    fun buildOngoing(context: Context, displayName: String, connectedAtMs: Long): Notification {
         val ctx = context.applicationContext
         initChannels(ctx)
-
-        val notification =
-            callNotificationBuilder(ctx, CHANNEL_ONGOING, displayName, "Ongoing call")
-                .setStyle(
-                    NotificationCompat.CallStyle.forOngoingCall(
-                        person(ctx, displayName),
-                        hangupPendingIntent(ctx),
-                    )
-                )
-                .setContentIntent(fullScreenPendingIntent(ctx)) // leave it for now but this should forward the user to the app and rn view instead of oour default one here
-                // Android 14+ requires a CallStyle notification to be an FGS
-                // notification, a user-initiated job, OR carry a full-screen
-                // intent. We aren't an FGS here, so satisfy the rule this way.
-                // (Won't actually pop full-screen: app is foreground post-answer
-                // and this channel is IMPORTANCE_DEFAULT.)
-                .setFullScreenIntent(fullScreenPendingIntent(ctx), false)
-                .setOngoing(true)
-                .setAutoCancel(false)
-                .setUsesChronometer(true)
-                .setWhen(connectedAtMs)
-                .build()
-
-        notify(ctx, notification)
+        return ongoingBuilder(ctx, displayName, connectedAtMs).build()
     }
+
+    private fun ongoingBuilder(ctx: Context, displayName: String, connectedAtMs: Long): NotificationCompat.Builder =
+        callNotificationBuilder(ctx, CHANNEL_ONGOING, displayName, "Ongoing call")
+            .setStyle(
+                NotificationCompat.CallStyle.forOngoingCall(
+                    person(ctx, displayName),
+                    hangupPendingIntent(ctx),
+                )
+            )
+            .setContentIntent(appContentPendingIntent(ctx))
+            .setOngoing(true)
+            .setAutoCancel(false)
+            .setUsesChronometer(true)
+            .setWhen(connectedAtMs)
 
     fun cancel(context: Context) {
         NotificationManagerCompat.from(context.applicationContext).cancel(NOTIFICATION_ID)
@@ -183,8 +182,17 @@ class CallNotificationManager {
         return PendingIntent.getActivity(ctx, RC_FULL_SCREEN, intent, immutable())
     }
 
+    private fun appContentPendingIntent(ctx: Context): PendingIntent {
+        val launch =
+            ctx.packageManager.getLaunchIntentForPackage(ctx.packageName)?.apply {
+                flags = Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP
+            } ?: Intent()
+        return PendingIntent.getActivity(ctx, RC_CONTENT, launch, immutable())
+    }
+
     private fun immutable(): Int = PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
 
+    @SuppressLint("MissingPermission")
     private fun notify(ctx: Context, notification: Notification) {
         try {
             NotificationManagerCompat.from(ctx).notify(NOTIFICATION_ID, notification)

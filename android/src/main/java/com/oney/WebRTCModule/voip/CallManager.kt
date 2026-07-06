@@ -2,6 +2,7 @@ package com.oney.WebRTCModule.voip
 
 import android.content.Context
 import android.content.Intent
+import android.annotation.SuppressLint
 import android.telecom.DisconnectCause
 import android.util.Log
 import androidx.annotation.RequiresApi
@@ -15,6 +16,7 @@ import com.facebook.react.bridge.Arguments
 import com.facebook.react.bridge.WritableArray
 import com.facebook.react.bridge.WritableMap
 import com.oney.WebRTCModule.AudioOutputManager
+import com.oney.WebRTCModule.foregroundService.ForegroundServiceController
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -83,6 +85,8 @@ object CallManager {
 
     fun setAudioOutputManager(manager: AudioOutputManager?) { audioOutputManager = manager }
 
+    // MANAGE_OWN_CALLS is declared by the consuming app via the withFishjamVoip
+    @SuppressLint("MissingPermission")
     private fun ensureRegistered(context: Context) {
         callNotificationManager.initChannels(context.applicationContext)
 
@@ -96,6 +100,7 @@ object CallManager {
         }
     }
 
+    @SuppressLint("MissingPermission")
     private fun register(ctx: Context, displayName: String, isVideo: Boolean, direction: Int) {
         ensureRegistered(ctx)
 
@@ -140,7 +145,7 @@ object CallManager {
                 ) {
                     listener?.onStarted()
                     if (isIncoming) callNotificationManager.showIncoming(appContext, displayName, isVideo)
-                    else callNotificationManager.showOngoing(appContext, displayName)
+                    else showOngoingNotification()
                     audioOutputManager?.setTelecomOwnsRouting(true)
                     launch { processActions(channel.consumeAsFlow(), callType, appContext) }
                     endpointJob = launch { currentCallEndpoint.collect { endpoint ->
@@ -168,7 +173,7 @@ object CallManager {
                 actions = null
                 channel.close()
                 audioOutputManager?.setTelecomOwnsRouting(false)
-
+                ForegroundServiceController.getInstance().onCallEnded()
                 callNotificationManager.cancel(appContext)
                 // Dismiss IncomingCallActivity if the call ended before the
                 // user acted (remote hangup, timeout, answered elsewhere).
@@ -206,8 +211,12 @@ object CallManager {
     /** Post-answer side effects shared by external (onAnswer) and app-initiated answers. */
     private fun handleAnswered(appContext: Context) {
         answered = true
-        callNotificationManager.showOngoing(appContext, displayName)
+        showOngoingNotification()
         listener?.onAnswered()
+    }
+
+    private fun showOngoingNotification() {
+        ForegroundServiceController.getInstance().onCallStarted(displayName, videoCall)
     }
 
     private fun CallEndpointCompat.toWritableMap(): WritableMap = Arguments.createMap().apply {
