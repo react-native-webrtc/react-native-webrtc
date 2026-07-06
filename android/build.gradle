@@ -69,4 +69,5 @@ dependencies {
     implementation ("androidx.core:core-telecom:1.0.1")
     implementation 'com.facebook.fbjni:fbjni:0.6.0'
     implementation 'androidx.core:core-ktx:1.16.0'
+    implementation 'com.google.firebase:firebase-messaging:25.1.0'
 }

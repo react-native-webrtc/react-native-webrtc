@@ -25,6 +25,7 @@ import com.facebook.react.modules.core.DeviceEventManagerModule;
 import com.oney.WebRTCModule.foregroundService.ForegroundServiceController;
 import com.oney.WebRTCModule.voip.CallEventsListener;
 import com.oney.WebRTCModule.voip.CallManager;
+import com.oney.WebRTCModule.voip.VoipPushRegistry;
 import com.oney.WebRTCModule.webrtcutils.H264AndSoftwareVideoDecoderFactory;
 import com.oney.WebRTCModule.webrtcutils.H264AndSoftwareVideoEncoderFactory;
 
@@ -46,7 +47,7 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 
 @ReactModule(name = "WebRTCModule")
-public class WebRTCModule extends ReactContextBaseJavaModule implements CallEventsListener {
+public class WebRTCModule extends ReactContextBaseJavaModule implements CallEventsListener, VoipPushRegistry.Listener {
     static final String TAG = WebRTCModule.class.getCanonicalName();
 
     PeerConnectionFactory mFactory;
@@ -141,6 +142,8 @@ public class WebRTCModule extends ReactContextBaseJavaModule implements CallEven
             CallManager.INSTANCE.setListener(this);
             CallManager.INSTANCE.setAudioOutputManager(audioOutputManager);
         }
+
+        VoipPushRegistry.INSTANCE.setListener(this);
     }
 
     @Override
@@ -163,6 +166,8 @@ public class WebRTCModule extends ReactContextBaseJavaModule implements CallEven
             CallManager.INSTANCE.setListener(null);
             CallManager.INSTANCE.setAudioOutputManager(null);
         }
+
+        VoipPushRegistry.INSTANCE.setListener(null);
     }
 
     @NonNull
@@ -1696,5 +1701,49 @@ public class WebRTCModule extends ReactContextBaseJavaModule implements CallEven
     @ReactMethod(isBlockingSynchronousMethod = true)
     public boolean isTelecomCallAnswered() {
         return Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && CallManager.INSTANCE.isAnswered();
+    }
+
+    // ---- VoIP push ----
+
+    @Override
+    public void onVoipToken(String token) {
+        WritableMap body = Arguments.createMap();
+        body.putString("registered", token);
+        sendEvent("voipPushEvent", body);
+    }
+
+    @Override
+    public void onVoipIncoming(VoipPushRegistry.Incoming incoming) {
+        WritableMap payload = Arguments.createMap();
+        payload.putString("roomName", incoming.getRoomName());
+        payload.putString("displayName", incoming.getDisplayName());
+        payload.putBoolean("isVideo", incoming.isVideo());
+        WritableMap body = Arguments.createMap();
+        body.putMap("incoming", payload);
+        sendEvent("voipPushEvent", body);
+    }
+
+    @ReactMethod(isBlockingSynchronousMethod = true)
+    public String getVoipToken() {
+        return VoipPushRegistry.INSTANCE.getToken();
+    }
+
+    @ReactMethod(isBlockingSynchronousMethod = true)
+    public WritableMap getPendingIncomingCall() {
+        VoipPushRegistry.Incoming incoming = VoipPushRegistry.INSTANCE.pending();
+        if (incoming == null) {
+            return null;
+        }
+        WritableMap map = Arguments.createMap();
+        map.putString("roomName", incoming.getRoomName());
+        map.putString("displayName", incoming.getDisplayName());
+        map.putBoolean("isVideo", incoming.isVideo());
+        return map;
+    }
+
+    @ReactMethod
+    public void clearPendingIncomingCall(Promise promise) {
+        VoipPushRegistry.INSTANCE.clearPending();
+        promise.resolve(null);
     }
 }
