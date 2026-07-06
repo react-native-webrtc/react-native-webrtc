@@ -21,6 +21,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.consumeAsFlow
@@ -147,7 +148,7 @@ object CallManager {
                     if (isIncoming) callNotificationManager.showIncoming(appContext, displayName, isVideo)
                     else showOngoingNotification()
                     audioOutputManager?.setTelecomOwnsRouting(true)
-                    launch { processActions(channel.consumeAsFlow(), callType, appContext) }
+                    launch { processActions(channel.consumeAsFlow(), callType) }
                     endpointJob = launch { currentCallEndpoint.collect { endpoint ->
                         lastCurrentEndpoint = endpoint
                         audioOutputManager?.onTelecomAudioStateChanged(
@@ -187,7 +188,6 @@ object CallManager {
     private suspend fun CallControlScope.processActions(
         src: Flow<CallAction>,
         callType: Int,
-        appContext: Context,
     ) {
         src.collect { action ->
             val result: CallControlResult = when (action) {
@@ -204,6 +204,9 @@ object CallManager {
                 // App-initiated answer succeeded — onAnswer won't fire for this,
                 // so run the post-answer side effects here.
                 handleAnswered()
+            } else if (action is CallAction.Disconnect) {
+                listener?.onEnded()
+                this@processActions.cancel()
             }
         }
     }
