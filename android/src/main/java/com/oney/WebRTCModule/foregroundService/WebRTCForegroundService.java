@@ -18,7 +18,7 @@ import com.oney.WebRTCModule.voip.CallNotificationManager;
 
 public class WebRTCForegroundService extends Service {
     private static final String TAG = WebRTCForegroundService.class.getSimpleName();
-    private static final int FOREGROUND_SERVICE_ID = 1668;
+    private static final int FOREGROUND_SERVICE_ID = CallNotificationManager.NOTIFICATION_ID;
 
     private final IBinder binder = new LocalBinder();
 

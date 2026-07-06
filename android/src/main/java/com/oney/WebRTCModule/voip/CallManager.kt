@@ -137,7 +137,7 @@ object CallManager {
                     // via processActions instead.
                     onAnswer = { _ ->
                         Log.d(TAG, "onAnswer (external)")
-                        handleAnswered(appContext)
+                        handleAnswered()
                     },
                     onDisconnect = { _ -> Log.d(TAG, "onDisconnect (external)"); listener?.onEnded() },
                     onSetActive = { answered = true },
@@ -203,13 +203,13 @@ object CallManager {
             } else if (action == CallAction.Answer) {
                 // App-initiated answer succeeded — onAnswer won't fire for this,
                 // so run the post-answer side effects here.
-                handleAnswered(appContext)
+                handleAnswered()
             }
         }
     }
 
     /** Post-answer side effects shared by external (onAnswer) and app-initiated answers. */
-    private fun handleAnswered(appContext: Context) {
+    private fun handleAnswered() {
         answered = true
         showOngoingNotification()
         listener?.onAnswered()
