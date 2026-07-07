@@ -23,10 +23,6 @@ import com.facebook.react.bridge.WritableMap;
 import com.facebook.react.module.annotations.ReactModule;
 import com.facebook.react.modules.core.DeviceEventManagerModule;
 import com.oney.WebRTCModule.foregroundService.ForegroundServiceController;
-import com.oney.WebRTCModule.voip.CallEventsListener;
-import com.oney.WebRTCModule.voip.CallManager;
-import com.oney.WebRTCModule.voip.PushNotificationService;
-import com.oney.WebRTCModule.voip.VoipPushRegistry;
 import com.oney.WebRTCModule.webrtcutils.H264AndSoftwareVideoDecoderFactory;
 import com.oney.WebRTCModule.webrtcutils.H264AndSoftwareVideoEncoderFactory;
 
@@ -48,7 +44,7 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 
 @ReactModule(name = "WebRTCModule")
-public class WebRTCModule extends ReactContextBaseJavaModule implements CallEventsListener, VoipPushRegistry.Listener {
+public class WebRTCModule extends ReactContextBaseJavaModule {
     static final String TAG = WebRTCModule.class.getCanonicalName();
 
     PeerConnectionFactory mFactory;
@@ -69,6 +65,10 @@ public class WebRTCModule extends ReactContextBaseJavaModule implements CallEven
 
     // Local mic + remote track audio extraction; kept out of this upstream module.
     private final AudioExtractionController audioExtractionController;
+
+    // Core-Telecom (native call UX) and VoIP push bridging
+    private final TelecomController telecomController;
+    private final VoipController voipController;
 
     public WebRTCModule(ReactApplicationContext reactContext) {
         super(reactContext);
@@ -138,13 +138,10 @@ public class WebRTCModule extends ReactContextBaseJavaModule implements CallEven
         foregroundServiceController.setContext(reactContext);
         audioOutputManager = new AudioOutputManager(this, reactContext);
 
-        // Core-Telecom (CallManager) requires API 26+; below that, Telecom methods are no-ops.
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            CallManager.INSTANCE.setListener(this);
-            CallManager.INSTANCE.setAudioOutputManager(audioOutputManager);
-        }
-
-        VoipPushRegistry.INSTANCE.setListener(this);
+        telecomController = new TelecomController(this, reactContext, audioOutputManager);
+        voipController = new VoipController(this);
+        telecomController.attach();
+        voipController.attach();
     }
 
     @Override
@@ -161,14 +158,8 @@ public class WebRTCModule extends ReactContextBaseJavaModule implements CallEven
         // prevent using stale context
         foregroundServiceController.setContext(null);
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            // CallManager is a process-wide singleton; detach so it doesn't hold a
-            // reference to this (possibly destroyed) module instance after a reload.
-            CallManager.INSTANCE.setListener(null);
-            CallManager.INSTANCE.setAudioOutputManager(null);
-        }
-
-        VoipPushRegistry.INSTANCE.setListener(null);
+        telecomController.detach();
+        voipController.detach();
     }
 
     @NonNull
@@ -1609,142 +1600,61 @@ public class WebRTCModule extends ReactContextBaseJavaModule implements CallEven
         // Keep: Required for RN built in Event Emitter Calls.
     }
 
-    // ---- CallEventsListener (implemented in Kotlin's CallManager, called back here) ----
-    // These fire on whatever thread the Core-Telecom coroutine is running on, but
-    // sendEvent()/emit() is safe to call from any thread.
-
-    @Override
-    public void onStarted() {
-        WritableMap body = Arguments.createMap();
-        body.putString("event", "started");
-        sendEvent("telecomActionPerformed", body);
-    }
-
-    @Override
-    public void onAnswered() {
-        WritableMap body = Arguments.createMap();
-        body.putString("event", "answer");
-        sendEvent("telecomActionPerformed", body);
-    }
-
-    @Override
-    public void onEnded() {
-        WritableMap body = Arguments.createMap();
-        body.putString("event", "ended");
-        sendEvent("telecomActionPerformed", body);
-    }
-
-    @Override
-    public void onFailed(String reason) {
-        WritableMap body = Arguments.createMap();
-        body.putString("event", "failed");
-        body.putString("reason", reason);
-        sendEvent("telecomActionPerformed", body);
-    }
-
-    @Override
-    public void onMuteChanged(boolean muted) {
-        WritableMap body = Arguments.createMap();
-        body.putString("event", "muteChanged");
-        body.putBoolean("muted", muted);
-        sendEvent("telecomActionPerformed", body);
-    }
-
-    // ---- JS-facing Telecom bridge methods (Android counterpart of CallKit) ----
-
     @ReactMethod
     public void startTelecomCall(String displayName, boolean isVideo, Promise promise) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            CallManager.INSTANCE.startOutgoingCall(getReactApplicationContext(), displayName, isVideo);
-        }
+        telecomController.startCall(displayName, isVideo);
         promise.resolve(null);
     }
 
     // testing only
     @ReactMethod
     public void reportIncomingTelecomCall(String displayName, boolean isVideo, Promise promise) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            CallManager.INSTANCE.reportIncomingCall(getReactApplicationContext(), displayName, isVideo);
-        }
+        telecomController.reportIncomingCall(displayName, isVideo);
         promise.resolve(null);
     }
 
     // testing only
     @ReactMethod
     public void answerTelecomCall(Promise promise) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            CallManager.INSTANCE.answer();
-        }
+        telecomController.answer();
         promise.resolve(null);
     }
 
     @ReactMethod
     public void setTelecomCallActive(Promise promise) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            CallManager.INSTANCE.setCallActive();
-        }
+        telecomController.setCallActive();
         promise.resolve(null);
     }
 
     @ReactMethod
     public void endTelecomCall(Promise promise) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            CallManager.INSTANCE.endCall();
-        }
+        telecomController.endCall();
         promise.resolve(null);
     }
 
     @ReactMethod(isBlockingSynchronousMethod = true)
     public boolean hasActiveTelecomCall() {
-        return Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && CallManager.INSTANCE.hasActiveCall();
+        return telecomController.hasActiveCall();
     }
 
     @ReactMethod(isBlockingSynchronousMethod = true)
     public boolean isTelecomCallAnswered() {
-        return Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && CallManager.INSTANCE.isAnswered();
-    }
-
-    // ---- VoIP push ----
-
-    @Override
-    public void onVoipToken(String token) {
-        WritableMap body = Arguments.createMap();
-        body.putString("registered", token);
-        sendEvent("voipPushEvent", body);
-    }
-
-    @Override
-    public void onVoipIncoming(VoipPushRegistry.Incoming incoming) {
-        WritableMap payload = Arguments.createMap();
-        payload.putString("roomName", incoming.getRoomName());
-        payload.putString("displayName", incoming.getDisplayName());
-        payload.putBoolean("isVideo", incoming.isVideo());
-        WritableMap body = Arguments.createMap();
-        body.putMap("incoming", payload);
-        sendEvent("voipPushEvent", body);
+        return telecomController.isAnswered();
     }
 
     @ReactMethod
     public void getVoipToken(Promise promise) {
-        VoipPushRegistry.INSTANCE.resolveToken(promise);
+        voipController.resolveToken(promise);
     }
 
     @ReactMethod(isBlockingSynchronousMethod = true)
     public WritableMap getPendingIncomingCall() {
-        VoipPushRegistry.Incoming incoming = VoipPushRegistry.INSTANCE.pending();
-        if (incoming == null) {
-            return null;
-        }
-        WritableMap map = Arguments.createMap();
-        map.putString("roomName", incoming.getRoomName());
-        map.putString("displayName", incoming.getDisplayName());
-        map.putBoolean("isVideo", incoming.isVideo());
-        return map;
+        return voipController.getPendingIncomingCall();
     }
 
     @ReactMethod
     public void clearPendingIncomingCall(Promise promise) {
-        VoipPushRegistry.INSTANCE.clearPending();
+        voipController.clearPendingIncomingCall();
         promise.resolve(null);
     }
 }
