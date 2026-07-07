@@ -166,7 +166,7 @@ public class AudioOutputManager {
     public void getCurrentAudioOutput(Promise promise) {
         // https://developer.android.com/develop/connectivity/telecom/voip-app/telecom#manage-call-audio-endpoints
         if (telecomOwnsRouting) {
-            promise.resolve(cachedTelecomCurrent);
+            promise.resolve(cachedTelecomCurrent != null ? cachedTelecomCurrent.copy() : null);
         } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             AudioDeviceInfo device = audioManager.getCommunicationDevice();
             if (device != null) {
@@ -495,8 +495,9 @@ public class AudioOutputManager {
 
     public void setTelecomOwnsRouting(boolean owns) { telecomOwnsRouting = owns; }
     public void onTelecomAudioStateChanged(WritableMap current, WritableArray available) {
-        cachedTelecomCurrent = current;
+        cachedTelecomCurrent = current != null ? current.copy() : null;
         cachedTelecomAvailable = available;
+
         WritableMap params = Arguments.createMap();
         if (current != null) params.putMap("currentAudioOutput", current);
         else params.putNull("currentAudioOutput");

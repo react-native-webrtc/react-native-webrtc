@@ -72,7 +72,6 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
 
     public WebRTCModule(ReactApplicationContext reactContext) {
         super(reactContext);
-
         mPeerConnectionObservers = new SparseArray<>();
         localStreams = new HashMap<>();
         audioExtractionController = new AudioExtractionController(reactContext, this::getTrack);
