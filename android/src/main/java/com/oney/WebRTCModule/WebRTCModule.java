@@ -25,6 +25,7 @@ import com.facebook.react.modules.core.DeviceEventManagerModule;
 import com.oney.WebRTCModule.foregroundService.ForegroundServiceController;
 import com.oney.WebRTCModule.voip.CallEventsListener;
 import com.oney.WebRTCModule.voip.CallManager;
+import com.oney.WebRTCModule.voip.PushNotificationService;
 import com.oney.WebRTCModule.voip.VoipPushRegistry;
 import com.oney.WebRTCModule.webrtcutils.H264AndSoftwareVideoDecoderFactory;
 import com.oney.WebRTCModule.webrtcutils.H264AndSoftwareVideoEncoderFactory;
@@ -1723,9 +1724,9 @@ public class WebRTCModule extends ReactContextBaseJavaModule implements CallEven
         sendEvent("voipPushEvent", body);
     }
 
-    @ReactMethod(isBlockingSynchronousMethod = true)
-    public String getVoipToken() {
-        return VoipPushRegistry.INSTANCE.getToken();
+    @ReactMethod
+    public void getVoipToken(Promise promise) {
+        VoipPushRegistry.INSTANCE.resolveToken(promise);
     }
 
     @ReactMethod(isBlockingSynchronousMethod = true)

@@ -24,11 +24,6 @@ import MediaStream from './MediaStream';
 import MediaStreamTrack, { type MediaTrackSettings } from './MediaStreamTrack';
 import MediaStreamTrackEvent from './MediaStreamTrackEvent';
 import permissions from './Permissions';
-import {
-    clearPendingIncomingCall,
-    getPendingIncomingCall,
-    getVoipToken,
-} from './PushKit';
 import RTCAudioSession from './RTCAudioSession';
 import RTCCertificate from './RTCCertificate';
 import RTCErrorEvent from './RTCErrorEvent';
@@ -52,6 +47,16 @@ import RTCSessionDescription from './RTCSessionDescription';
 import RTCView, { type RTCPIPOptions, type RTCVideoViewProps } from './RTCView';
 import ScreenCapturePickerView from './ScreenCapturePickerView';
 import {
+    type TelecomConfig,
+    type TelecomEvent,
+    type TelecomEventType,
+} from './Telecom';
+import {
+    clearPendingIncomingCall,
+    getPendingIncomingCall,
+    getVoipToken,
+} from './VoIP';
+import {
     AudioDeviceType,
     AudioOutputManager,
     type AudioDevice,
@@ -61,12 +66,6 @@ import presentBroadcastPicker from './presentBroadcastPicker';
 import presentLivestreamBroadcastPicker from './presentLivestreamBroadcastPicker';
 import { useAudioOutput, type UseAudioOutputResult } from './useAudioOutput';
 import { useCallKit, useCallKitEvent, useCallKitService } from './useCallKit';
-import { useTelecom, useTelecomEvent, type UseTelecomResult } from './useTelecom';
-import {
-    type TelecomConfig,
-    type TelecomEvent,
-    type TelecomEventType,
-} from './Telecom';
 import {
     useForegroundService,
     type ForegroundServiceConfig,
@@ -76,6 +75,7 @@ import {
     type LivestreamStatus,
     type LivestreamStatusInfo,
 } from './useLivestreamStatus';
+import { useTelecom, useTelecomEvent, type UseTelecomResult } from './useTelecom';
 import {
     useVoIPEvents,
     type VoIPEventHandlers,
@@ -126,24 +126,16 @@ export {
     useAudioOutput,
     useCallKit,
     useCallKitEvent,
-    useCallKitService,
-    useTelecom,
-    useTelecomEvent,
-    useForegroundService,
-    useLivestreamStatus,
-    useVoIPEvents,
+    useCallKitService, useForegroundService,
+    useLivestreamStatus, useTelecom,
+    useTelecomEvent, useVoIPEvents,
     writeLivestreamCredentials,
     type AudioDevice,
     type AudioExtractionOptions,
     type AudioOutputChangedInfo,
     type AudioTrackData,
     type CallKitAction,
-    type CallKitConfig,
-    type TelecomConfig,
-    type TelecomEvent,
-    type TelecomEventType,
-    type UseTelecomResult,
-    type ForegroundServiceConfig,
+    type CallKitConfig, type ForegroundServiceConfig,
     type LivestreamCredentials,
     type LivestreamStatus,
     type LivestreamStatusInfo,
@@ -152,10 +144,10 @@ export {
     type RTCPIPViewProps,
     type RTCRtpEncodingParametersInit,
     type RTCRtpSendParametersInit,
-    type RTCVideoViewProps,
-    type UseAudioOutputResult,
-    type VoIPEventHandlers,
-    type VoipIncomingPayload,
+    type RTCVideoViewProps, type TelecomConfig,
+    type TelecomEvent,
+    type TelecomEventType, type UseAudioOutputResult, type UseTelecomResult, type VoIPEventHandlers,
+    type VoipIncomingPayload
 };
 
 declare const global: any;

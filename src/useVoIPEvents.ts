@@ -7,7 +7,7 @@ import {
     clearPendingIncomingCall,
     getPendingIncomingCall,
     getVoipToken,
-} from './PushKit';
+} from './VoIP';
 import { useCallKitEvent } from './useCallKit';
 
 // If you don't provide displayName it will default to incoming call, isVideo to false
@@ -51,7 +51,7 @@ const useVoIPEventsIos = (handlers: VoIPEventHandlers): void => {
     });
 
     useEffect(() => {
-        // PushKit events (registered / incoming) arrive on the VoIP push channel.
+        // VoIP push events (registered / incoming) arrive on the VoIP push channel.
         addListener(listener.current, 'voipPushEvent', (event) => {
             if (!event || typeof event !== 'object') {
                 return;
@@ -75,10 +75,11 @@ const useVoIPEventsIos = (handlers: VoIPEventHandlers): void => {
         // The VoIP token / incoming call are usually issued before JS subscribes
         // so the live events above are missed. Recover them from the
         // native buffer on mount.
-        const token = getVoipToken();
-        if (token) {
-            handlersRef.current.onRegistered?.(token);
-        }
+        getVoipToken().then((token) => {
+            if (token) {
+                handlersRef.current.onRegistered?.(token);
+            }
+        });
 
         const pendingCall = getPendingIncomingCall();
         if (pendingCall && hasActiveCallKitSession()) {

@@ -1,6 +1,7 @@
 package com.oney.WebRTCModule.voip
 
 import android.os.Build
+import android.util.Log
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
 
@@ -20,7 +21,6 @@ class PushNotificationService : FirebaseMessagingService() {
 
     override fun onMessageReceived(message: RemoteMessage) {
         val data = message.data
-        // Ignore anything that doesn't have correct payload  VoIP push.
         val roomName = data["roomName"] ?: return
         val displayName = data["displayName"] ?: "Incoming call"
         val isVideo = data["isVideo"]?.toBoolean() ?: false
