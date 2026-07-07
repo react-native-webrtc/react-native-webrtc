@@ -3,11 +3,9 @@ import { Platform } from 'react-native';
 
 import { addListener, removeListener } from './EventEmitter';
 import {
-    answerTelecomCall,
     endTelecomCall,
     hasActiveTelecomCall,
     isTelecomCallAnswered,
-    reportIncomingTelecomCall,
     setTelecomCallActive,
     startTelecomCall,
     type TelecomConfig,
@@ -16,8 +14,6 @@ import {
 
 export type UseTelecomResult = {
     startCall: (config: TelecomConfig) => Promise<void>;
-    reportIncomingCall: (config: TelecomConfig) => Promise<void>;
-    answerCall: () => Promise<void>;
     setCallActive: () => Promise<void>;
     endCall: () => Promise<void>;
     hasActiveCall: () => boolean;
@@ -29,11 +25,6 @@ function useTelecomAndroid(): UseTelecomResult {
         (config: TelecomConfig) => startTelecomCall(config),
         [],
     );
-    const reportIncomingCall = useCallback(
-        (config: TelecomConfig) => reportIncomingTelecomCall(config),
-        [],
-    );
-    const answerCall = useCallback(() => answerTelecomCall(), []);
     const setCallActive = useCallback(() => setTelecomCallActive(), []);
     const endCall = useCallback(() => endTelecomCall(), []);
     const hasActiveCall = useCallback(() => hasActiveTelecomCall(), []);
@@ -41,8 +32,6 @@ function useTelecomAndroid(): UseTelecomResult {
 
     return {
         startCall,
-        reportIncomingCall,
-        answerCall,
         setCallActive,
         endCall,
         hasActiveCall,
@@ -53,8 +42,6 @@ function useTelecomAndroid(): UseTelecomResult {
 const noop = async () => {};
 const emptyResult: UseTelecomResult = {
     startCall: noop,
-    reportIncomingCall: noop,
-    answerCall: noop,
     setCallActive: noop,
     endCall: noop,
     hasActiveCall: () => false,

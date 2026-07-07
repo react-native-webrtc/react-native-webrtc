@@ -1605,20 +1605,6 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
         promise.resolve(null);
     }
 
-    // testing only
-    @ReactMethod
-    public void reportIncomingTelecomCall(String displayName, boolean isVideo, Promise promise) {
-        telecomController.reportIncomingCall(displayName, isVideo);
-        promise.resolve(null);
-    }
-
-    // testing only
-    @ReactMethod
-    public void answerTelecomCall(Promise promise) {
-        telecomController.answer();
-        promise.resolve(null);
-    }
-
     @ReactMethod
     public void setTelecomCallActive(Promise promise) {
         telecomController.setCallActive();

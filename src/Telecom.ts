@@ -28,23 +28,6 @@ export async function startTelecomCall(config: TelecomConfig): Promise<void> {
     await WebRTCModule.startTelecomCall(config.displayName, config.isVideo);
 }
 
-// Temporary for testing only
-export async function reportIncomingTelecomCall(
-    config: TelecomConfig,
-): Promise<void> {
-    if (!isAndroid) {return;}
-    await WebRTCModule.reportIncomingTelecomCall(
-        config.displayName,
-        config.isVideo,
-    );
-}
-
-// Temporary for testing only + maybe react UI ???
-export async function answerTelecomCall(): Promise<void> {
-    if (!isAndroid) {return;}
-    await WebRTCModule.answerTelecomCall();
-}
-
 export async function setTelecomCallActive(): Promise<void> {
     if (!isAndroid) {return;}
     await WebRTCModule.setTelecomCallActive();

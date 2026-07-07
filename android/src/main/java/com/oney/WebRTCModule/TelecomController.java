@@ -43,20 +43,6 @@ final class TelecomController implements CallEventsListener {
         }
     }
 
-    // testing only
-    void reportIncomingCall(String displayName, boolean isVideo) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            CallManager.INSTANCE.reportIncomingCall(reactContext, displayName, isVideo);
-        }
-    }
-
-    // testing only
-    void answer() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            CallManager.INSTANCE.answer();
-        }
-    }
-
     void setCallActive() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             CallManager.INSTANCE.setCallActive();
