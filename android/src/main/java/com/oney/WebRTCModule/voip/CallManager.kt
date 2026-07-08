@@ -243,6 +243,7 @@ object CallManager {
     /** Post-answer side effects shared by external (onAnswer) and app-initiated answers. */
     private fun handleAnswered() {
         answered = true
+        callNotificationManager.stopVibration()
         appContext?.let { LockScreenController.onCallAnswered(it) }
         showOngoingNotification()
         listener?.onAnswered()

@@ -9,6 +9,11 @@ import android.content.pm.PackageManager
 import android.media.AudioAttributes
 import android.media.AudioManager
 import android.media.RingtoneManager
+import android.os.Build
+import android.os.VibrationAttributes
+import android.os.VibrationEffect
+import android.os.Vibrator
+import android.os.VibratorManager
 import androidx.annotation.RequiresApi
 import androidx.core.app.NotificationChannelCompat
 import androidx.core.app.NotificationCompat
@@ -47,10 +52,13 @@ class CallNotificationManager {
         private const val RC_HANGUP = 3
         private const val RC_FULL_SCREEN = 4
         private const val RC_CONTENT = 5
+
+        private val RING_VIBRATION_PATTERN = longArrayOf(0, 350, 200, 350, 1200)
     }
 
     private val ringToneUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_RINGTONE)
     private var channelsReady = false
+    private var vibrator: Vibrator? = null
 
     fun initChannels(context: Context) {
         if (channelsReady) return
@@ -61,7 +69,7 @@ class CallNotificationManager {
             NotificationManagerCompat.IMPORTANCE_HIGH,
         ).setName("Incoming calls")
             .setDescription("Handles the notifications when receiving a call")
-            .setVibrationEnabled(true).setSound(
+            .setVibrationEnabled(false).setSound(
                 ringToneUri,
                 AudioAttributes.Builder()
                     .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
@@ -106,6 +114,7 @@ class CallNotificationManager {
                 .build()
 
         notify(ctx, notification)
+        startVibration(ctx)
     }
 
     fun buildOngoing(context: Context, displayName: String, connectedAtMs: Long): Notification {
@@ -129,8 +138,56 @@ class CallNotificationManager {
             .setWhen(connectedAtMs)
 
     fun cancel(context: Context) {
+        stopVibration()
         NotificationManagerCompat.from(context.applicationContext).cancel(NOTIFICATION_ID)
     }
+
+    /**
+     * Starts the looping ring vibration. Honors the ringer mode (silent -> no
+     * buzz) and tags the vibration as a ringtone so the OS applies its own
+     * ring/DND policy. Safe to call repeatedly; the latest call replaces any
+     * in-flight vibration.
+     */
+    private fun startVibration(context: Context) {
+        val ctx = context.applicationContext
+        val audioManager = ctx.getSystemService(Context.AUDIO_SERVICE) as? AudioManager
+        if (audioManager?.ringerMode == AudioManager.RINGER_MODE_SILENT) return
+
+        val vib = resolveVibrator(ctx).also { vibrator = it }
+        if (vib == null || !vib.hasVibrator()) return
+
+        val effect = VibrationEffect.createWaveform(RING_VIBRATION_PATTERN, 0)
+        @SuppressLint("MissingPermission")
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            vib.vibrate(
+                effect,
+                VibrationAttributes.Builder().setUsage(VibrationAttributes.USAGE_RINGTONE).build(),
+            )
+        } else {
+            @Suppress("DEPRECATION")
+            vib.vibrate(
+                effect,
+                AudioAttributes.Builder()
+                    .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+                    .setUsage(AudioAttributes.USAGE_NOTIFICATION_RINGTONE)
+                    .build(),
+            )
+        }
+    }
+
+    /** Stops the ring vibration. Called on answer, decline, hangup, timeout or teardown. */
+    fun stopVibration() {
+        vibrator?.cancel()
+        vibrator = null
+    }
+
+    private fun resolveVibrator(ctx: Context): Vibrator? =
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            (ctx.getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as? VibratorManager)?.defaultVibrator
+        } else {
+            @Suppress("DEPRECATION")
+            ctx.getSystemService(Context.VIBRATOR_SERVICE) as? Vibrator
+        }
 
     // ---- builders --------------------------------------------------------
 
