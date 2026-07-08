@@ -51,6 +51,23 @@
         return;
     }
 
+    // Enable Center Stage when the device supports it; cooperative with Control Center.
+    if (@available(iOS 16.0, *)) {
+        BOOL centerStageSupported = NO;
+        for (AVCaptureDeviceFormat *fmt in [RTCCameraVideoCapturer supportedFormatsForDevice:self.device]) {
+            if (fmt.isCenterStageSupported) {
+                centerStageSupported = YES;
+                break;
+            }
+        }
+        if (centerStageSupported) {
+            AVCaptureDevice.centerStageControlMode = AVCaptureCenterStageControlModeCooperative;
+            AVCaptureDevice.centerStageEnabled = YES;
+        } else if (AVCaptureDevice.isCenterStageEnabled) {
+            AVCaptureDevice.centerStageEnabled = NO;
+        }
+    }
+
     AVCaptureDeviceFormat *format = [self selectFormatForDevice:self.device
                                                 withTargetWidth:self.width
                                                withTargetHeight:self.height];
@@ -61,6 +78,17 @@
     }
 
     self.selectedFormat = format;
+
+    // Clamp fps to the range Center Stage allows for this format.
+    int fps = self.frameRate;
+    if (@available(iOS 16.0, *)) {
+        if (AVCaptureDevice.isCenterStageEnabled) {
+            AVFrameRateRange *csRange = format.videoFrameRateRangeForCenterStage;
+            if (csRange) {
+                fps = MAX((int)csRange.minFrameRate, MIN(fps, (int)csRange.maxFrameRate));
+            }
+        }
+    }
 
     AVCaptureSession *session = self.capturer.captureSession;
     if (@available(iOS 16.0, *)) {
@@ -83,7 +111,7 @@
     __weak VideoCaptureController *weakSelf = self;
     [self.capturer startCaptureWithDevice:self.device
                                    format:format
-                                      fps:self.frameRate
+                                      fps:fps
                         completionHandler:^(NSError *err) {
                             if (err) {
                                 RCTLogError(@"[VideoCaptureController] Error starting capture: %@", err);
@@ -270,7 +298,18 @@
     AVCaptureDeviceFormat *selectedFormat = nil;
     int currentDiff = INT_MAX;
 
+    BOOL centerStageEnabled = NO;
+    if (@available(iOS 16.0, *)) {
+        centerStageEnabled = AVCaptureDevice.isCenterStageEnabled;
+    }
+
     for (AVCaptureDeviceFormat *format in formats) {
+        // Center Stage only permits supported formats.
+        if (@available(iOS 16.0, *)) {
+            if (centerStageEnabled && !format.isCenterStageSupported) {
+                continue;
+            }
+        }
         CMVideoDimensions dimension = CMVideoFormatDescriptionGetDimensions(format.formatDescription);
         FourCharCode pixelFormat = CMFormatDescriptionGetMediaSubType(format.formatDescription);
         int diff = abs(targetWidth - dimension.width) + abs(targetHeight - dimension.height);
