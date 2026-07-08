@@ -90,20 +90,16 @@ const useVoIPEventsIos = (handlers: VoIPEventHandlers): void => {
                     pendingCall as unknown as VoipIncomingPayload,
                 );
                 clearPendingIncomingCall();
+
+                // The user may have accepted before JS was
+                // ready, so the live onAnswered was missed. Recover it from
+                // native state so the call connects instead of staying stuck.
+                if (isCallAnswered()) {
+                    handlersRef.current.onAnswered?.();
+                }
             } catch {
                 // Ignore a malformed buffered payload.
             }
-        }
-
-        // The user may have answered before JS finished mounting (a real race
-        // on cold start: the native answer can complete, and its live event
-        // fire, before this effect's listener subscription above exists — the
-        // event is then lost, since EventEmitter doesn't buffer for late
-        // subscribers). Checked independently of pendingCall: the call may
-        // already be tracked in app state from an earlier live 'incoming'
-        // event, so this isn't conditional on recovering one here.
-        if (hasActiveCallKitSession() && isCallAnswered()) {
-            handlersRef.current.onAnswered?.();
         }
 
         return () => {
@@ -168,20 +164,16 @@ const useVoIPEventsAndroid = (handlers: VoIPEventHandlers): void => {
                     pendingCall as unknown as VoipIncomingPayload,
                 );
                 clearPendingIncomingCall();
+
+                // The user may have accepted before JS was
+                // ready, so the live onAnswered was missed. Recover it from
+                // native state so the call connects instead of staying stuck.
+                if (isTelecomCallAnswered()) {
+                    handlersRef.current.onAnswered?.();
+                }
             } catch {
                 // Ignore a malformed buffered payload.
             }
-        }
-
-        // The user may have answered before JS finished mounting (a real race
-        // on cold start: the native answer can complete, and its live event
-        // fire, before this effect's listener subscription above exists — the
-        // event is then lost, since EventEmitter doesn't buffer for late
-        // subscribers). Checked independently of pendingCall: the call may
-        // already be tracked in app state from an earlier live 'incoming'
-        // event, so this isn't conditional on recovering one here.
-        if (hasActiveTelecomCall() && isTelecomCallAnswered()) {
-            handlersRef.current.onAnswered?.();
         }
 
         return () => {
