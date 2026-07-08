@@ -163,6 +163,7 @@ object CallManager {
                     onAnswer = { _ ->
                         Log.d(TAG, "onAnswer (external)")
                         handleAnswered()
+                        launchHostApp(appContext)
                     },
                     onDisconnect = { _ -> Log.d(TAG, "onDisconnect (external)"); listener?.onEnded() },
                     onSetActive = { answered = true },
@@ -235,6 +236,13 @@ object CallManager {
                 this@processActions.cancel()
             }
         }
+    }
+
+    private fun launchHostApp(context: Context) {
+        val intent = context.packageManager.getLaunchIntentForPackage(context.packageName) ?: return
+        intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP
+        intent.putExtra(LockScreenController.VOIP_ANSWER, true)
+        context.startActivity(intent)
     }
 
     /** Post-answer side effects shared by external (onAnswer) and app-initiated answers. */

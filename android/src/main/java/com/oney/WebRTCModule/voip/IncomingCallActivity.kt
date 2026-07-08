@@ -114,7 +114,10 @@ class IncomingCallActivity : Activity() {
 
     override fun onStop() {
         super.onStop()
-        if (isAnswering) finish()
+        // Finish once we're covered after any answer: our own swipe/button
+        // (isAnswering), or an external answer (headset/Bluetooth/Auto/watch)
+        // whose CallManager-launched host activity now sits on top of us.
+        if (isAnswering || CallManager.isAnswered()) finish()
     }
 
     private fun registerCallEndedReceiver() {
