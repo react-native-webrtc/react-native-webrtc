@@ -33,7 +33,7 @@ Pod::Spec.new do |s|
   # (miniaudio is not ABI-compatible across differing configs).
   s.pod_target_xcconfig = {
     'CLANG_CXX_LANGUAGE_STANDARD' => 'c++20',
-    'HEADER_SEARCH_PATHS' => '"$(PODS_TARGET_SRCROOT)/common/cpp/vendor" "$(PODS_TARGET_SRCROOT)/common/cpp/fishjam-audio"',
+    'HEADER_SEARCH_PATHS' => '"$(PODS_TARGET_SRCROOT)/common/cpp/vendor" "$(PODS_TARGET_SRCROOT)/common/cpp/fishjam-audio" "$(PODS_TARGET_SRCROOT)/common/cpp/fishjam-video"',
     'GCC_PREPROCESSOR_DEFINITIONS' =>
       'MA_NO_DEVICE_IO=1 MA_NO_DECODING=1 MA_NO_ENCODING=1 MA_NO_GENERATION=1 ' \
       'MA_NO_RESOURCE_MANAGER=1 MA_NO_NODE_GRAPH=1 $(inherited)',

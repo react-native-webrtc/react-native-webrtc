@@ -53,3 +53,46 @@ target_link_libraries(fishjam-webrtc-audio
     android
     log
 )
+
+# --- Custom video track ----------------------------------------------------
+#
+# Loaded from Java via System.loadLibrary("webrtc-custom-video-track") by
+# AHardwareBufferAllocator, CustomVideoFrameDelivery and FJVideoPushInstaller.
+#   - ahardware_buffer_alloc.cpp : allocate GPU_FRAMEBUFFER | GPU_SAMPLED_IMAGE AHBs
+#                                 that react-native-webgpu (Dawn) renders into.
+#   - custom_video_gl.cpp       : import each AHB as a GL_TEXTURE_EXTERNAL_OES
+#                                 texture (AHB -> EGLImage -> OES) and wait the
+#                                 sync-fd GPU fence so libwebrtc can encode it.
+#   - FJVideoPushJSI.cpp        : shared JSI core installing the per-frame push
+#                                 global and forwarding each frame to a deliver cb.
+#   - FJVideoPushInstaller.cpp  : fbjni HybridClass wiring the JS CallInvoker to the
+#                                 shared core and routing frames back to Java.
+add_library(webrtc-custom-video-track
+    SHARED
+    "${CMAKE_CURRENT_SOURCE_DIR}/ahardware_buffer_alloc.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/custom_video_gl.cpp"
+    "${FJ_COMMON_CPP_DIR}/fishjam-video/FJVideoPushJSI.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/FJVideoPushInstaller.cpp"
+)
+
+set_target_properties(webrtc-custom-video-track PROPERTIES
+    CXX_STANDARD 20
+    CXX_STANDARD_REQUIRED ON
+)
+
+target_include_directories(webrtc-custom-video-track
+    PRIVATE
+    "${FJ_COMMON_CPP_DIR}/fishjam-video"
+)
+
+# ReactAndroid / fbjni prefab packages are already located above (for the audio
+# lib) and remain in scope here.
+target_link_libraries(webrtc-custom-video-track
+    ReactAndroid::jsi
+    ReactAndroid::reactnative
+    fbjni::fbjni
+    EGL
+    GLESv2
+    android
+    log
+)

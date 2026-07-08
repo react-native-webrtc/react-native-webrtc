@@ -19,7 +19,7 @@ android {
     }
 
     defaultConfig {
-        minSdkVersion 24
+        minSdkVersion safeExtGet('minSdkVersion', 24)
         targetSdkVersion safeExtGet('targetSdkVersion', 24)
         versionCode 1
         versionName "1.0"
@@ -28,7 +28,15 @@ android {
         externalNativeBuild {
             cmake {
                 cppFlags "-std=c++20"
-                arguments "-DANDROID_STL=c++_shared"
+                // The custom-video-track lib references AHardwareBuffer_* (__INTRODUCED_IN(26))
+                // while this package is minSdk 24. ANDROID_WEAK_API_DEFS makes those symbols
+                // weak so the lib is loadable even on API 24-25, with the __builtin_available
+                // guards gating every call at runtime. The API-26 gate in
+                // WebRTCModule.installCustomVideoJSI (and createCustomVideoTrack) remains the
+                // primary guard; weak linking is insurance so any future code path that loads
+                // the lib on an older device degrades gracefully instead of throwing
+                // UnsatisfiedLinkError.
+                arguments "-DANDROID_STL=c++_shared", "-DANDROID_WEAK_API_DEFS=ON"
             }
         }
 
