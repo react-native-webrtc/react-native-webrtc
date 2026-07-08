@@ -4,7 +4,6 @@ import android.content.Context
 import android.content.Intent
 import android.annotation.SuppressLint
 import android.telecom.DisconnectCause
-import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.core.net.toUri
 import androidx.core.telecom.CallAttributesCompat
@@ -37,7 +36,6 @@ interface CallEventsListener {
 
 @RequiresApi(value = 26)
 object CallManager {
-    private const val TAG = "FishjamCallManager"
     private val scope = CoroutineScope(Dispatchers.Default + SupervisorJob())
     private var callsManager: CallsManager? = null
     private var registered = false
@@ -50,7 +48,6 @@ object CallManager {
     private var availableJob: Job? = null
     private var muteJob: Job? = null
 
-    // Channel for communicating with Java
     private var actions: Channel<CallAction>? = null
 
     sealed interface CallAction {
@@ -81,9 +78,9 @@ object CallManager {
         register(ctx, displayName, isVideo, CallAttributesCompat.DIRECTION_INCOMING)
     }
 
-    fun answer() { Log.d(TAG, "answer() sent=${actions?.trySend(CallAction.Answer)}") }
-    fun setCallActive() { Log.d(TAG, "setCallActive() sent=${actions?.trySend(CallAction.Activate)}") }
-    fun endCall() { Log.d(TAG, "endCall() sent=${actions?.trySend(CallAction.Disconnect(DisconnectCause(DisconnectCause.LOCAL)))}") }
+    fun answer() { actions?.trySend(CallAction.Answer) }
+    fun setCallActive() { actions?.trySend(CallAction.Activate) }
+    fun endCall() { actions?.trySend(CallAction.Disconnect(DisconnectCause(DisconnectCause.LOCAL))) }
     fun setListener(l: CallEventsListener?) { listener = l }
 
     fun setAudioOutputManager(manager: AudioOutputManager?) {
@@ -161,11 +158,10 @@ object CallManager {
                     // Bluetooth, watch). App-initiated answers reach handleAnswered
                     // via processActions instead.
                     onAnswer = { _ ->
-                        Log.d(TAG, "onAnswer (external)")
                         handleAnswered()
                         launchHostApp(appContext)
                     },
-                    onDisconnect = { _ -> Log.d(TAG, "onDisconnect (external)"); listener?.onEnded() },
+                    onDisconnect = { _ -> listener?.onEnded() },
                     onSetActive = { answered = true },
                     onSetInactive = { }
                 ) {
@@ -191,7 +187,6 @@ object CallManager {
                     muteJob = launch { isMuted.collect { listener?.onMuteChanged(it) } }
                     }
             } catch (e: Exception) { // should probably less generic
-                Log.e(TAG, "addCall/scope failed", e)
                 listener?.onFailed(e.message ?: "addCall failed")
             } finally {
                 hasActiveCall = false
@@ -224,7 +219,6 @@ object CallManager {
                 is CallAction.SetEndpoint -> requestEndpointChange(action.endpoint)
                 is CallAction.Disconnect -> { disconnect(action.cause) }
             }
-            Log.d(TAG, "processActions action=$action result=$result")
 
             if (result is CallControlResult.Error) {
                 listener?.onFailed("telecom action failed: ${result.errorCode}")

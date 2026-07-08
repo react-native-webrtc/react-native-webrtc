@@ -3,7 +3,6 @@ package com.oney.WebRTCModule.voip
 import android.os.Build
 import android.os.Handler
 import android.os.Looper
-import android.util.Log
 import com.facebook.react.ReactApplication
 import com.facebook.react.internal.featureflags.ReactNativeFeatureFlags
 import com.google.firebase.messaging.FirebaseMessagingService
@@ -19,10 +18,6 @@ import com.google.firebase.messaging.RemoteMessage
  * details to [VoipPushRegistry] for the JS layer.
  */
 class PushNotificationService : FirebaseMessagingService() {
-    private companion object {
-        const val TAG = "VoipPushService"
-    }
-
     override fun onRegistered(token: String) {
         VoipPushRegistry.updateToken(token)
     }
@@ -54,7 +49,7 @@ class PushNotificationService : FirebaseMessagingService() {
                     }
                 }
             } catch (e: Throwable) {
-                Log.w(TAG, "Failed to warm up React on push", e)
+                // Ignore React warm-up failures on push.
             }
         }
     }

@@ -1,6 +1,5 @@
 package com.oney.WebRTCModule.voip
 
-import android.util.Log
 import com.facebook.react.bridge.Promise
 import com.google.firebase.installations.FirebaseInstallations
 
@@ -10,8 +9,6 @@ import com.google.firebase.installations.FirebaseInstallations
  * JS layer.
  */
 object VoipPushRegistry {
-    private const val TAG = "VoipPushRegistry"
-
     data class Incoming(val roomName: String, val displayName: String, val isVideo: Boolean)
 
     interface Listener {
@@ -60,12 +57,10 @@ object VoipPushRegistry {
                     updateToken(task.result)
                     onResult(task.result)
                 } else {
-                    Log.e(TAG, "Failed to fetch installation id", task.exception)
                     onResult(null)
                 }
             }
         } catch (e: Exception) {
-            Log.w(TAG, "Firebase installations unavailable", e)
             onResult(null)
         }
     }
