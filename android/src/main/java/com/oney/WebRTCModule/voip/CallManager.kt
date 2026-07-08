@@ -57,6 +57,7 @@ object CallManager {
         data object Answer : CallAction
         data object Activate : CallAction
         data object Hold : CallAction
+        data class SetEndpoint(val endpoint: CallEndpointCompat) : CallAction
         data class Disconnect(val cause: DisconnectCause) : CallAction
     }
 
@@ -85,9 +86,30 @@ object CallManager {
     fun endCall() { Log.d(TAG, "endCall() sent=${actions?.trySend(CallAction.Disconnect(DisconnectCause(DisconnectCause.LOCAL)))}") }
     fun setListener(l: CallEventsListener?) { listener = l }
 
-    fun setAudioOutputManager(manager: AudioOutputManager?) { audioOutputManager = manager }
+    fun setAudioOutputManager(manager: AudioOutputManager?) {
+        audioOutputManager = manager
+        // On cold start the call is registered from the FCM push before React
+        // attaches the manager, so it missed setTelecomOwnsRouting(true) and
+        // the endpoint updates emitted inside the addCall block. Without this
+        // replay, selectAudioOutput falls through to AudioManager-based
+        // routing, which the platform ignores while Telecom owns the call.
+        if (manager != null && hasActiveCall) {
+            manager.setTelecomOwnsRouting(true)
+            manager.onTelecomAudioStateChanged(
+                lastCurrentEndpoint?.toWritableMap(),
+                lastEndpoints.map { it.toWritableMap() }.toWritableArray(),
+            )
+        }
+    }
 
-    // MANAGE_OWN_CALLS is declared by the consuming app via the withFishjamVoip
+    fun selectEndpoint(id: String): Boolean {
+        val endpoint = lastEndpoints.firstOrNull { it.identifier.toString() == id } ?: return false
+        return actions?.trySend(CallAction.SetEndpoint(endpoint))?.isSuccess == true
+    }
+
+    /** Fresh serialization of the last-known telecom endpoints for bridge consumers. */
+    fun availableEndpointsSnapshot(): WritableArray = lastEndpoints.map { it.toWritableMap() }.toWritableArray()
+
     @SuppressLint("MissingPermission")
     private fun ensureRegistered(context: Context) {
         callNotificationManager.initChannels(context.applicationContext)
@@ -117,6 +139,7 @@ object CallManager {
         this.videoCall = isVideo
         val isIncoming = direction == CallAttributesCompat.DIRECTION_INCOMING
         val appContext = ctx.applicationContext
+        this.appContext = appContext
         val callType = if (isVideo) CallAttributesCompat.CALL_TYPE_VIDEO_CALL else CallAttributesCompat.CALL_TYPE_AUDIO_CALL
         val callAttributes = CallAttributesCompat(
             displayName = displayName,
@@ -196,6 +219,7 @@ object CallManager {
                 CallAction.Answer -> answer(callType)
                 CallAction.Activate -> setActive()
                 CallAction.Hold -> setInactive()
+                is CallAction.SetEndpoint -> requestEndpointChange(action.endpoint)
                 is CallAction.Disconnect -> { disconnect(action.cause) }
             }
             Log.d(TAG, "processActions action=$action result=$result")
