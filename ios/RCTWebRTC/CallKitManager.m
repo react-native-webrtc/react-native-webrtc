@@ -2,6 +2,7 @@
 
 #import <AVFoundation/AVFoundation.h>
 #import <WebRTC/RTCAudioSession.h>
+#import "VoipManager.h"
 
 @interface CallKitManager ()
 @property(nonatomic, strong) CXCallController *callController;
@@ -135,6 +136,7 @@
 - (void)cleanup {
     self.currentCallUUID = nil;
     self.isCallAnswered = NO;
+    [[VoipManager shared] clearPendingIncomingCall];
 }
 
 #pragma mark - CXProviderDelegate

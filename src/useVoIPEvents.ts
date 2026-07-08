@@ -69,7 +69,6 @@ const useVoIPEventsIos = (handlers: VoIPEventHandlers): void => {
                 handlersRef.current.onIncoming?.(
                     payload.incoming as VoipIncomingPayload,
                 );
-                clearPendingIncomingCall();
             }
         });
 
@@ -89,7 +88,6 @@ const useVoIPEventsIos = (handlers: VoIPEventHandlers): void => {
                 handlersRef.current.onIncoming?.(
                     pendingCall as unknown as VoipIncomingPayload,
                 );
-                clearPendingIncomingCall();
 
                 // The user may have accepted before JS was
                 // ready, so the live onAnswered was missed. Recover it from
@@ -143,7 +141,6 @@ const useVoIPEventsAndroid = (handlers: VoIPEventHandlers): void => {
                 handlersRef.current.onIncoming?.(
                     payload.incoming as VoipIncomingPayload,
                 );
-                clearPendingIncomingCall();
             }
         });
 
@@ -163,7 +160,6 @@ const useVoIPEventsAndroid = (handlers: VoIPEventHandlers): void => {
                 handlersRef.current.onIncoming?.(
                     pendingCall as unknown as VoipIncomingPayload,
                 );
-                clearPendingIncomingCall();
 
                 // The user may have accepted before JS was
                 // ready, so the live onAnswered was missed. Recover it from

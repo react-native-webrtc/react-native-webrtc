@@ -202,6 +202,7 @@ object CallManager {
                 LockScreenController.onCallEnded()
                 ForegroundServiceController.getInstance().onCallEnded()
                 callNotificationManager.cancel(ctx.applicationContext)
+                VoipPushRegistry.clearPending()
                 // Dismiss IncomingCallActivity if the call ended before the
                 // user acted (remote hangup, timeout, answered elsewhere).
                 ctx.applicationContext.sendBroadcast(

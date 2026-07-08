@@ -72,8 +72,8 @@ object VoipPushRegistry {
 
     @Synchronized
     fun reportIncoming(incoming: Incoming) {
-        val l = listener
-        if (l != null) l.onVoipIncoming(incoming) else pendingIncoming = incoming
+        pendingIncoming = incoming
+        listener?.onVoipIncoming(incoming)
     }
 
     @Synchronized
