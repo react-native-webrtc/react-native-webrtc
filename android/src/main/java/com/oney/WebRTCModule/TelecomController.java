@@ -1,5 +1,6 @@
 package com.oney.WebRTCModule;
 
+import android.app.Activity;
 import android.os.Build;
 
 import com.facebook.react.bridge.Arguments;
@@ -7,6 +8,7 @@ import com.facebook.react.bridge.ReactApplicationContext;
 import com.facebook.react.bridge.WritableMap;
 import com.oney.WebRTCModule.voip.CallEventsListener;
 import com.oney.WebRTCModule.voip.CallManager;
+import com.oney.WebRTCModule.voip.LockScreenController;
 
 final class TelecomController implements CallEventsListener {
     private final WebRTCModule webRTCModule;
@@ -72,6 +74,14 @@ final class TelecomController implements CallEventsListener {
 
     @Override
     public void onAnswered() {
+        // Warm start: the host activity already exists, so the lifecycle hook
+        // in LockScreenController never fires — flag it directly.
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            Activity activity = reactContext.getCurrentActivity();
+            if (activity != null) {
+                LockScreenController.INSTANCE.showOverLockScreen(activity);
+            }
+        }
         WritableMap body = Arguments.createMap();
         body.putString("event", "answer");
         webRTCModule.sendEvent("telecomActionPerformed", body);

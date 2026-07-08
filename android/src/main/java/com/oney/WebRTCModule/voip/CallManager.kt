@@ -62,6 +62,7 @@ object CallManager {
 
     @Volatile private var hasActiveCall = false
     @Volatile private var answered = false
+    private var appContext: Context? = null
     private var listener: CallEventsListener? = null
     private var displayName: String = ""
     private var videoCall: Boolean = false
@@ -145,7 +146,7 @@ object CallManager {
                     onSetInactive = { }
                 ) {
                     listener?.onStarted()
-                    if (isIncoming) callNotificationManager.showIncoming(appContext, displayName, isVideo)
+                    if (isIncoming) callNotificationManager.showIncoming(ctx.applicationContext, displayName, isVideo)
                     else showOngoingNotification()
                     audioOutputManager?.setTelecomOwnsRouting(true)
                     launch { processActions(channel.consumeAsFlow(), callType) }
@@ -174,11 +175,12 @@ object CallManager {
                 actions = null
                 channel.close()
                 audioOutputManager?.setTelecomOwnsRouting(false)
+                LockScreenController.onCallEnded()
                 ForegroundServiceController.getInstance().onCallEnded()
-                callNotificationManager.cancel(appContext)
+                callNotificationManager.cancel(ctx.applicationContext)
                 // Dismiss IncomingCallActivity if the call ended before the
                 // user acted (remote hangup, timeout, answered elsewhere).
-                appContext.sendBroadcast(
+                ctx.applicationContext.sendBroadcast(
                     Intent(IncomingCallActivity.ACTION_CALL_ENDED).setPackage(appContext.packageName)
                 )
             }
@@ -214,6 +216,7 @@ object CallManager {
     /** Post-answer side effects shared by external (onAnswer) and app-initiated answers. */
     private fun handleAnswered() {
         answered = true
+        appContext?.let { LockScreenController.onCallAnswered(it) }
         showOngoingNotification()
         listener?.onAnswered()
     }

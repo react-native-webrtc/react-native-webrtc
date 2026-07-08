@@ -31,7 +31,8 @@ import kotlin.math.abs
  *
  * Two entry modes:
  *  - launched with [ACTION_ANSWER] (the notification's Answer button): answers
- *    immediately, brings the host app forward, and finishes without drawing UI.
+ *    immediately, brings the host app forward, and shows a minimal
+ *    "Connecting..." view until the host activity covers it.
  *  - launched without an action (full-screen intent): draws the ring UI with
  *    Answer/Decline buttons.
  *
@@ -61,6 +62,8 @@ class IncomingCallActivity : Activity() {
         object : BroadcastReceiver() {
             override fun onReceive(context: Context, intent: Intent) = finish()
         }
+    private var callEndedReceiverRegistered = false
+    private var isAnswering = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -86,24 +89,37 @@ class IncomingCallActivity : Activity() {
     }
 
     override fun onDestroy() {
-        try {
-            unregisterReceiver(callEndedReceiver)
-        } catch (_: IllegalArgumentException) {
-            // Never registered (e.g. ACTION_ANSWER fast path); ignore.
-        }
+        if (callEndedReceiverRegistered) unregisterReceiver(callEndedReceiver)
         super.onDestroy()
     }
 
     private fun answerAndOpenApp() {
+        // Reachable from both the swipe gesture and repeated ACTION_ANSWER
+        // intents (onCreate + onNewIntent); only the first one may run.
+        if (isAnswering) return
+        isAnswering = true
+
         CallManager.answer()
+        // Register the lifecycle hook before launching, so the host activity
+        // is flagged in onActivityCreated even on the fastest cold start.
+        LockScreenController.onCallAnswered(applicationContext)
         packageManager.getLaunchIntentForPackage(packageName)?.let {
             it.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP
+            it.putExtra(LockScreenController.VOIP_ANSWER, true)
             startActivity(it)
         }
-        finish()
+        setContentView(buildConnectingUi(CallManager.currentDisplayName()))
+        registerCallEndedReceiver()
+    }
+
+    override fun onStop() {
+        super.onStop()
+        if (isAnswering) finish()
     }
 
     private fun registerCallEndedReceiver() {
+        if (callEndedReceiverRegistered) return
+        callEndedReceiverRegistered = true
         ContextCompat.registerReceiver(
             this,
             callEndedReceiver,
@@ -187,6 +203,47 @@ class IncomingCallActivity : Activity() {
         root.addView(Space(this), weight(1f))
 
         root.addView(buildSwipeBar())
+
+        return root
+    }
+
+    /** Placeholder shown after answering, until the host activity covers us. */
+    private fun buildConnectingUi(displayName: String): ViewGroup {
+        val name = displayName.ifBlank { "Unknown" }
+
+        val root =
+            LinearLayout(this).apply {
+                orientation = LinearLayout.VERTICAL
+                gravity = Gravity.CENTER
+                setBackgroundColor(backgroundDark)
+                layoutParams =
+                    ViewGroup.LayoutParams(
+                        ViewGroup.LayoutParams.MATCH_PARENT,
+                        ViewGroup.LayoutParams.MATCH_PARENT,
+                    )
+            }
+
+        root.addView(avatarView(name, sizeDp = 120, textSizeSp = 48f))
+
+        root.addView(
+            TextView(this).apply {
+                text = name
+                setTextColor(textPrimary)
+                textSize = 26f
+                gravity = Gravity.CENTER
+                setPadding(0, dp(20), 0, 0)
+            }
+        )
+
+        root.addView(
+            TextView(this).apply {
+                text = "Connecting…"
+                setTextColor(textSecondary)
+                textSize = 16f
+                gravity = Gravity.CENTER
+                setPadding(0, dp(8), 0, 0)
+            }
+        )
 
         return root
     }
