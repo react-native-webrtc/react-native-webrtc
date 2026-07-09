@@ -72,15 +72,6 @@ const useVoIPEventsIos = (handlers: VoIPEventHandlers): void => {
             }
         });
 
-        // The VoIP token / incoming call are usually issued before JS subscribes
-        // so the live events above are missed. Recover them from the
-        // native buffer on mount.
-        getVoipToken().then((token) => {
-            if (token) {
-                handlersRef.current.onRegistered?.(token);
-            }
-        });
-
         const pendingCall = getPendingIncomingCall();
         if (pendingCall && hasActiveCallKitSession()) {
             try {
