@@ -303,4 +303,15 @@ RCT_EXPORT_BLOCKING_SYNCHRONOUS_METHOD(audioDeviceModuleSetWillReleaseEngineActi
     return nil;
 }
 
+#pragma mark - Automatic Audio Session Configuration
+
+// Pushes the native default audio-session policy (or nil to disable). When set,
+// the observer configures the session natively in willEnable/didDisable instead
+// of doing a JS round trip - removing the JS round trip from the default path.
+RCT_EXPORT_BLOCKING_SYNCHRONOUS_METHOD(audioDeviceModuleSetAutomaticAudioSessionConfiguration
+                                       : (nullable NSDictionary *)config) {
+    self.audioDeviceModuleObserver.automaticAudioSessionConfig = config;
+    return nil;
+}
+
 @end

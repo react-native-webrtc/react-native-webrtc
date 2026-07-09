@@ -20,6 +20,11 @@ NS_ASSUME_NONNULL_BEGIN
 // outcome is deliberately preferred over the unrecoverable deadlock.
 static const int64_t kJSResponseTimeoutSeconds = 2;
 
+// Returned from willEnable/didDisable when native automatic audio-session
+// configuration fails, so libwebrtc rolls the engine operation back. Mirrors the
+// SDK's kAudioEngineErrorFailedToConfigureAudioSession value.
+static const NSInteger kAutomaticAudioSessionConfigError = -4100;
+
 static os_log_t ADMObserverLog(void) {
     static os_log_t log;
     static dispatch_once_t onceToken;
@@ -54,6 +59,15 @@ static os_log_t ADMObserverLog(void) {
 // runs on the native audio thread and the resolve side on the JS thread.
 @property(nonatomic, assign) NSInteger requestIdSeq;
 @property(nonatomic, assign) NSInteger awaitingRequestId;
+
+// Whether the native auto-config path currently holds an
+// RTCAudioSession activation. RTCAudioSession reference-counts activations
+// (setActive:YES on an already-active session only bumps the count, and
+// setActive:NO only deactivates at count 1), so the observer must activate at
+// most once per hold and release exactly what it took, or the OS session leaks
+// active forever. Only touched on the serial delegate (worker) thread, and kept
+// atomic as cheap insurance against future cross-thread reads.
+@property(atomic, assign) BOOL autoSessionHoldsActivation;
 
 @end
 
@@ -185,6 +199,14 @@ static os_log_t ADMObserverLog(void) {
               willEnableEngine:(AVAudioEngine *)engine
               isPlayoutEnabled:(BOOL)isPlayoutEnabled
             isRecordingEnabled:(BOOL)isRecordingEnabled {
+    // With no custom JS handler registered, configure the audio session natively
+    // here instead of doing a JS round trip. This is the default path and avoids
+    // parking the audio worker thread on the JS thread entirely. A custom handler
+    // (isWillEnableEngineActive == YES) falls through to the bounded round trip.
+    if (!self.isWillEnableEngineActive && self.automaticAudioSessionConfig != nil) {
+        return [self applyAutomaticAudioSessionConfigForPlayout:isPlayoutEnabled recording:isRecordingEnabled];
+    }
+
     BOOL isActive = self.isWillEnableEngineActive;
 
     if (isActive) {
@@ -276,6 +298,13 @@ static os_log_t ADMObserverLog(void) {
               didDisableEngine:(AVAudioEngine *)engine
               isPlayoutEnabled:(BOOL)isPlayoutEnabled
             isRecordingEnabled:(BOOL)isRecordingEnabled {
+    // Counterpart of willEnable - apply the native session policy (here the
+    // deactivate-on-stop edge) without a JS round trip when no custom handler
+    // is registered.
+    if (!self.isDidDisableEngineActive && self.automaticAudioSessionConfig != nil) {
+        return [self applyAutomaticAudioSessionConfigForPlayout:isPlayoutEnabled recording:isRecordingEnabled];
+    }
+
     BOOL isActive = self.isDidDisableEngineActive;
 
     if (isActive) {
@@ -417,6 +446,135 @@ static os_log_t ADMObserverLog(void) {
                          self.willReleaseEngineResult = result;
                      }
                  semaphore:self.willReleaseEngineSemaphore];
+}
+
+#pragma mark - Native automatic audio session configuration
+
+// Applies the pushed audio-session policy on the worker thread with no JS round
+// trip: configures on every active state, activates when the session is not
+// already active, optionally deactivates on stop, and returns a non-zero error
+// code on failure so libwebrtc rolls the operation back.
+//
+// Activation is decided against RTCAudioSession's own state rather than a mirror
+// of past engine states, so a policy re-push mid-call (setupIOSAudioManagement
+// called again), a path switch, or an interruption cannot desync it:
+// - session already active (previous hold, custom JS path, or the app) ->
+//   reconfigure only, never a second refcounted activation.
+// - session inactive (fresh start, or the custom path deactivated it before a
+//   switch back to the native path) -> activate and take the hold.
+- (NSInteger)applyAutomaticAudioSessionConfigForPlayout:(BOOL)isPlayoutEnabled recording:(BOOL)isRecordingEnabled {
+    NSDictionary *policy = self.automaticAudioSessionConfig;
+    if (policy == nil) {
+        return 0;
+    }
+
+    BOOL nowActive = isPlayoutEnabled || isRecordingEnabled;
+
+    RTCAudioSession *session = [RTCAudioSession sharedInstance];
+    [session lockForConfiguration];
+
+    NSError *error = nil;
+    if (!nowActive) {
+        if (self.autoSessionHoldsActivation && [policy[@"deactivateOnStop"] boolValue]) {
+            os_log_debug(ADMObserverLog(), "Native auto-config: deactivating audio session");
+            [session setActive:NO error:&error];
+            // RTCAudioSession decrements its activation count even when the OS
+            // session is already inactive (e.g. an interruption cleared it) or the
+            // call fails, so the hold is released in every outcome.
+            self.autoSessionHoldsActivation = NO;
+        }
+    } else {
+        // Recording uses the duplex (playAndRecord) config, while playout-only uses
+        // the playback config. Both are supplied by the SDK in automaticAudioSessionConfig.
+        NSDictionary *cfg = isRecordingEnabled ? policy[@"recording"] : policy[@"playout"];
+        RTCAudioSessionConfiguration *rtcConfig = [RTCAudioSessionConfiguration webRTCConfiguration];
+        if (cfg[@"audioCategory"] != nil) {
+            rtcConfig.category = [self avAudioSessionCategoryFromString:cfg[@"audioCategory"]];
+        }
+        if (cfg[@"audioMode"] != nil) {
+            rtcConfig.mode = [self avAudioSessionModeFromString:cfg[@"audioMode"]];
+        }
+        if (cfg[@"audioCategoryOptions"] != nil) {
+            rtcConfig.categoryOptions = [self avAudioSessionCategoryOptionsFromStrings:cfg[@"audioCategoryOptions"]];
+        }
+        os_log_debug(ADMObserverLog(), "Native auto-config: setting category %{public}@", rtcConfig.category);
+        [session setConfiguration:rtcConfig error:&error];
+        if (error == nil && !session.isActive) {
+            os_log_debug(ADMObserverLog(), "Native auto-config: activating audio session");
+            [session setActive:YES error:&error];
+            if (error == nil) {
+                self.autoSessionHoldsActivation = YES;
+            }
+        }
+    }
+
+    [session unlockForConfiguration];
+
+    if (error != nil) {
+        os_log_error(ADMObserverLog(), "Native auto-config failed: %{public}@", error.localizedDescription);
+        return kAutomaticAudioSessionConfigError;
+    }
+
+    return 0;
+}
+
+// TODO: this friendly-string -> AVAudioSession mapping mirrors AudioUtils in the
+// LiveKit React Native SDK. Keep the accepted values in sync, or consolidate by
+// pushing raw AVAudioSession values across the bridge instead.
+- (NSString *)avAudioSessionCategoryFromString:(NSString *)value {
+    static NSDictionary<NSString *, NSString *> *map;
+    static dispatch_once_t once;
+    dispatch_once(&once, ^{
+        map = @{
+            @"ambient" : AVAudioSessionCategoryAmbient,
+            @"soloAmbient" : AVAudioSessionCategorySoloAmbient,
+            @"playback" : AVAudioSessionCategoryPlayback,
+            @"record" : AVAudioSessionCategoryRecord,
+            @"playAndRecord" : AVAudioSessionCategoryPlayAndRecord,
+            @"multiRoute" : AVAudioSessionCategoryMultiRoute,
+        };
+    });
+    return map[value] ?: AVAudioSessionCategoryPlayAndRecord;
+}
+
+- (NSString *)avAudioSessionModeFromString:(NSString *)value {
+    static NSDictionary<NSString *, NSString *> *map;
+    static dispatch_once_t once;
+    dispatch_once(&once, ^{
+        map = @{
+            @"default" : AVAudioSessionModeDefault,
+            @"voiceChat" : AVAudioSessionModeVoiceChat,
+            @"videoChat" : AVAudioSessionModeVideoChat,
+            @"gameChat" : AVAudioSessionModeGameChat,
+            @"videoRecording" : AVAudioSessionModeVideoRecording,
+            @"measurement" : AVAudioSessionModeMeasurement,
+            @"moviePlayback" : AVAudioSessionModeMoviePlayback,
+            @"spokenAudio" : AVAudioSessionModeSpokenAudio,
+        };
+    });
+    return map[value] ?: AVAudioSessionModeDefault;
+}
+
+- (AVAudioSessionCategoryOptions)avAudioSessionCategoryOptionsFromStrings:(NSArray<NSString *> *)options {
+    AVAudioSessionCategoryOptions result = 0;
+    for (NSString *option in options) {
+        if ([option isEqualToString:@"mixWithOthers"]) {
+            result |= AVAudioSessionCategoryOptionMixWithOthers;
+        } else if ([option isEqualToString:@"duckOthers"]) {
+            result |= AVAudioSessionCategoryOptionDuckOthers;
+        } else if ([option isEqualToString:@"allowBluetooth"]) {
+            result |= AVAudioSessionCategoryOptionAllowBluetooth;
+        } else if ([option isEqualToString:@"allowBluetoothA2DP"]) {
+            result |= AVAudioSessionCategoryOptionAllowBluetoothA2DP;
+        } else if ([option isEqualToString:@"allowAirPlay"]) {
+            result |= AVAudioSessionCategoryOptionAllowAirPlay;
+        } else if ([option isEqualToString:@"defaultToSpeaker"]) {
+            result |= AVAudioSessionCategoryOptionDefaultToSpeaker;
+        } else if ([option isEqualToString:@"interruptSpokenAudioAndMixWithOthers"]) {
+            result |= AVAudioSessionCategoryOptionInterruptSpokenAudioAndMixWithOthers;
+        }
+    }
+    return result;
 }
 
 @end

@@ -18,6 +18,17 @@ NS_ASSUME_NONNULL_BEGIN
 @property(atomic, assign) BOOL isDidDisableEngineActive;
 @property(atomic, assign) BOOL isWillReleaseEngineActive;
 
+// Native default audio-session configuration policy. When set (non-nil) and no
+// custom JS handler is registered for willEnable/didDisable, the observer
+// configures the AVAudioSession natively on the worker thread instead of doing a
+// JS round trip. Pushed once from JS, and nil disables it. Reassigning the policy
+// is safe at any time: activation state is tracked against RTCAudioSession
+// itself, not against the policy. Shape:
+//   @{ @"recording": <cfg>, @"playout": <cfg>, @"deactivateOnStop": @(BOOL) }
+// where <cfg> is @{ @"audioCategory": str, @"audioMode": str,
+//                   @"audioCategoryOptions": @[str...] }.
+@property(atomic, copy, nullable) NSDictionary *automaticAudioSessionConfig;
+
 // Methods to receive results from JS. requestId echoes the id sent with the
 // corresponding event so stale responses from timed-out rounds can be dropped.
 - (void)resolveEngineCreatedWithRequestId:(NSInteger)requestId result:(NSInteger)result;

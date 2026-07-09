@@ -26,10 +26,47 @@ export const AudioEngineAvailability = {
 } as const;
 
 /**
+ * Apple audio session configuration for a single engine state. Matches the
+ * AppleAudioConfiguration shape used by AudioSession.setAppleAudioConfiguration.
+ */
+export interface AutomaticAppleAudioConfiguration {
+  audioCategory?: string;
+  audioMode?: string;
+  audioCategoryOptions?: string[];
+}
+
+/**
+ * Native default audio-session policy. When set, the native observer configures
+ * the AVAudioSession in willEnable/didDisable without a JS round trip.
+ * `recording` is applied while recording is enabled, `playout` while only
+ * playout is enabled, and the session is deactivated on full stop when
+ * `deactivateOnStop` is true.
+ */
+export interface AutomaticAudioSessionConfiguration {
+  recording: AutomaticAppleAudioConfiguration;
+  playout: AutomaticAppleAudioConfiguration;
+  deactivateOnStop: boolean;
+}
+
+/**
  * Audio Device Module API for controlling audio devices and settings.
  * iOS/macOS only - will throw on Android.
  */
 export class AudioDeviceModule {
+    /**
+     * Push (or clear with null) the native default audio-session configuration
+     * policy. When set, the native observer configures the session itself in
+     * willEnable/didDisable, removing the JS round trip from the default path.
+     * iOS/macOS only, a no-op on Android.
+     */
+    static setAutomaticAudioSessionConfiguration(config: AutomaticAudioSessionConfiguration | null): void {
+        if (Platform.OS === 'android' || !WebRTCModule) {
+            return;
+        }
+
+        WebRTCModule.audioDeviceModuleSetAutomaticAudioSessionConfiguration(config);
+    }
+
     /**
      * Start audio playback
      */
