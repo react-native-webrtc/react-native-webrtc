@@ -22,6 +22,7 @@ import com.facebook.react.bridge.WritableArray;
 import com.facebook.react.bridge.WritableMap;
 import com.facebook.react.module.annotations.ReactModule;
 import com.facebook.react.modules.core.DeviceEventManagerModule;
+import com.facebook.react.turbomodule.core.CallInvokerHolderImpl;
 import com.oney.WebRTCModule.foregroundService.ForegroundServiceController;
 import com.oney.WebRTCModule.webrtcutils.H264AndSoftwareVideoDecoderFactory;
 import com.oney.WebRTCModule.webrtcutils.H264AndSoftwareVideoEncoderFactory;
@@ -65,6 +66,12 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
 
     // Local mic + remote track audio extraction; kept out of this upstream module.
     private final AudioExtractionController audioExtractionController;
+
+    // JSI push channel for custom video tracks. Lazily built from the JS
+    // CallInvoker; null on the old architecture (no JSI). Each pushed frame is
+    // routed to the matching custom video track.
+    private FJVideoPushInstaller videoPushInstaller;
+    private boolean videoPushInstallerInitialized;
 
     // Core-Telecom (native call UX) and VoIP push bridging
     private final TelecomController telecomController;
@@ -830,6 +837,37 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
         ThreadUtils.runOnExecutor(() -> getUserMediaImpl.getDisplayMedia(constraints, promise));
     }
 
+    /**
+     * Allocates a pool of AHardwareBuffer-backed surfaces the app renders into on the GPU (pooled
+     * mode). Resolves the {@code { poolId, buffers }} shape consumed by
+     * {@code src/createCustomVideoTrack.ts}. See
+     * {@link GetUserMediaImpl#createCustomVideoBufferPool(ReadableMap, Promise)}.
+     */
+    @ReactMethod
+    public void createCustomVideoBufferPool(ReadableMap init, Promise promise) {
+        ThreadUtils.runOnExecutor(() -> getUserMediaImpl.createCustomVideoBufferPool(init, promise));
+    }
+
+    /**
+     * Releases a pool created by {@link #createCustomVideoBufferPool(ReadableMap, Promise)}. See
+     * {@link GetUserMediaImpl#releaseCustomVideoBufferPool(String, Promise)}.
+     */
+    @ReactMethod
+    public void releaseCustomVideoBufferPool(String poolId, Promise promise) {
+        ThreadUtils.runOnExecutor(() -> getUserMediaImpl.releaseCustomVideoBufferPool(poolId, promise));
+    }
+
+    /**
+     * Creates a custom video track ({@code { poolId? }}; pooled when present, forwarding when
+     * absent). Resolves the {@code { streamId, track }} shape consumed by
+     * {@code src/createCustomVideoTrack.ts}. See
+     * {@link GetUserMediaImpl#createCustomVideoTrack(ReadableMap, Promise)}.
+     */
+    @ReactMethod
+    public void createCustomVideoTrack(ReadableMap init, Promise promise) {
+        ThreadUtils.runOnExecutor(() -> getUserMediaImpl.createCustomVideoTrack(init, promise));
+    }
+
     @ReactMethod
     public void getUserMedia(ReadableMap constraints, Callback successCallback, Callback errorCallback) {
         ThreadUtils.runOnExecutor(() -> getUserMediaImpl.getUserMedia(constraints, successCallback, errorCallback));
@@ -974,6 +1012,72 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
     @ReactMethod
     public void installAudioSinkJSI(Promise promise) {
         audioExtractionController.installAudioSink(promise);
+    }
+
+    /**
+     * Lazily builds the custom-video JSI push installer from the JS CallInvoker. Returns null when
+     * there is no CallInvoker (old architecture) or it can't be acquired, which makes custom video
+     * tracks unsupported.
+     *
+     * <p>Each frame pushed through the JSI global is routed back to the matching custom video track
+     * SYNCHRONOUSLY on the caller's (worklet) thread — NOT hopped to the native-modules executor —
+     * because the forwarding path must take an owning reference on the buffer before the push
+     * returns (the JS caller disposes its own reference right after). {@code pushCustomVideoFrame}
+     * resolves the controller from a thread-safe registry and only posts cheap work to the GL
+     * thread, so it is safe off the executor.
+     */
+    private synchronized FJVideoPushInstaller getVideoPushInstaller() {
+        if (videoPushInstallerInitialized) {
+            return videoPushInstaller;
+        }
+        try {
+            ReactApplicationContext ctx = getReactApplicationContext();
+            // Custom video tracks need a JSI CallInvoker; absent on the old architecture.
+            if (ctx.getJSCallInvokerHolder() instanceof CallInvokerHolderImpl) {
+                videoPushInstaller = new FJVideoPushInstaller(ctx,
+                        (trackId, bufferIndex, nativeBuffer, timestampNs, rotation, fenceHandle, fenceSignaledValue)
+                                -> getUserMediaImpl.pushCustomVideoFrame(trackId,
+                                        bufferIndex,
+                                        nativeBuffer,
+                                        fenceHandle,
+                                        fenceSignaledValue,
+                                        timestampNs,
+                                        rotation));
+            }
+            // Latch only definitive outcomes: success, or old architecture (no
+            // CallInvoker will ever appear). A thrown failure may be transient, so
+            // the next install attempt retries instead of being permanently dead.
+            videoPushInstallerInitialized = true;
+        } catch (Throwable t) {
+            Log.w(TAG, "Custom video tracks unavailable: failed to build the JSI installer", t);
+        }
+        return videoPushInstaller;
+    }
+
+    @ReactMethod
+    public void installCustomVideoJSI(Promise promise) {
+        // Gate on API 26 BEFORE getVideoPushInstaller(), which constructs
+        // FJVideoPushInstaller and so triggers System.loadLibrary("webrtc-custom-video-track").
+        // That lib references AHardwareBuffer_* (__INTRODUCED_IN(26)); __builtin_available
+        // guards in the C++ do NOT stop link-time symbol resolution, so loading it on
+        // API 24-25 can fail (surfacing as a misleading E_NO_JSI). Rejecting here
+        // guarantees the native AHB lib is never loaded on <26, keeping the
+        // minSdk-24 package safe. This is the load-safety guarantee for the lib.
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
+            promise.reject("E_UNSUPPORTED_API_LEVEL", "Custom video tracks require Android 8.0 (API 26).");
+            return;
+        }
+        FJVideoPushInstaller inst = getVideoPushInstaller();
+        if (inst == null) {
+            promise.reject("E_NO_JSI", "Custom video tracks require the New Architecture.");
+            return;
+        }
+        // Re-run the C++ install on every call: after a JS reload the JS runtime is
+        // recreated but this native module (and the cached installer) persist, so the
+        // JSI global must be re-set on the new runtime. FJVideoPush::install owns
+        // idempotency (it resets its installed flag and re-sets the global), so the
+        // Java side must NOT short-circuit on a cached "already installed" flag.
+        inst.install(promise);
     }
 
     @ReactMethod

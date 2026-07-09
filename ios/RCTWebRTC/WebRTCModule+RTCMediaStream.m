@@ -11,6 +11,7 @@
 #import "WebRTCModuleOptions.h"
 
 #import <React/RCTUIManager.h>
+#import "CustomVideoCaptureController.h"
 #import "ProcessorProvider.h"
 #import "ScreenCaptureController.h"
 #import "ScreenCapturer.h"
@@ -219,6 +220,92 @@ RCT_EXPORT_METHOD(getDisplayMedia
                 resolve(@{@"streamId" : mediaStreamId, @"track" : trackInfo});
             }];
     };
+#endif
+}
+
+#pragma mark - Custom video track (app-rendered, IOSurface-backed frames)
+
+/**
+ * Creates a custom video track whose frames are supplied by the app. Mirrors
+ * getDisplayMedia in that it resolves a {streamId, track} pair. Two modes,
+ * selected by the presence of a poolId:
+ *
+ *   * Pooled — init[@"poolId"] names a CustomVideoBufferPool previously allocated
+ *     via createCustomVideoBufferPool. The app renders into that pool's IOSurfaces
+ *     and pushes frames by index (per frame, via the JSI channel installed by
+ *     installCustomVideoJSI). A pool binds to exactly one track.
+ *   * Forwarding — no poolId. The app forwards finished native CVPixelBufferRefs.
+ *
+ * @param init dictionary with an optional {poolId}.
+ */
+RCT_EXPORT_METHOD(createCustomVideoTrack
+                  : (NSDictionary *)init resolver
+                  : (RCTPromiseResolveBlock)resolve rejecter
+                  : (RCTPromiseRejectBlock)reject) {
+#if TARGET_OS_TV || TARGET_OS_OSX
+    reject(@"E_UNSUPPORTED_PLATFORM", @"createCustomVideoTrack is only supported on iOS and Android.", nil);
+    return;
+#else
+    NSString *poolId = init[@"poolId"];
+
+    RTCVideoSource *videoSource = [self.peerConnectionFactory videoSource];
+
+    NSString *trackUUID = [[NSUUID UUID] UUIDString];
+    RTCVideoTrack *videoTrack = [self.peerConnectionFactory videoTrackWithSource:videoSource trackId:trackUUID];
+
+    CustomVideoCaptureController *captureController = nil;
+    if (poolId != nil && poolId.length > 0) {
+        // Pooled: bind to the app-allocated buffer pool (1<->1 with a track).
+        CustomVideoBufferPool *pool = [self registeredCustomVideoBufferPoolForPoolId:poolId];
+        if (pool == nil) {
+            reject(
+                @"E_CUSTOM_VIDEO_TRACK_FAILED", @"No custom video buffer pool registered for the given poolId.", nil);
+            return;
+        }
+        if (pool.attached) {
+            reject(
+                @"E_CUSTOM_VIDEO_POOL_IN_USE", @"This custom video buffer pool is already attached to a track.", nil);
+            return;
+        }
+        pool.attached = YES;
+        captureController = [[CustomVideoCaptureController alloc] initPooledWithVideoSource:videoSource pool:pool];
+        // Let releaseCustomVideoBufferPool refuse disposal while this track is
+        // still live (its in-flight deliveries reference the pool's buffers).
+        pool.attachedController = captureController;
+    } else {
+        // Forwarding: no pool; frames arrive as finished native buffers.
+        captureController = [[CustomVideoCaptureController alloc] initForwardingWithVideoSource:videoSource];
+    }
+
+    videoTrack.captureController = captureController;
+    // Register before startCapture so the per-frame deliver callback can resolve
+    // the controller via the lock-guarded registry instead of racing on
+    // self.localTracks from the JS thread. The registry holds it weakly, so it
+    // clears itself when the track/controller is released.
+    [self registerCustomVideoController:captureController forTrackId:trackUUID];
+    [captureController startCapture];
+
+    NSString *mediaStreamId = [[NSUUID UUID] UUIDString];
+    RTCMediaStream *mediaStream = [self.peerConnectionFactory mediaStreamWithStreamId:mediaStreamId];
+    [mediaStream addVideoTrack:videoTrack];
+
+    self.localTracks[trackUUID] = videoTrack;
+    self.localStreams[mediaStreamId] = mediaStream;
+
+    resolve(@{
+        @"streamId" : mediaStreamId,
+        @"track" : @{
+            @"id" : trackUUID,
+            @"kind" : videoTrack.kind,
+            @"readyState" : @"live",
+            @"remote" : @(NO),
+            @"enabled" : @(videoTrack.isEnabled),
+            // Same shape as the getUserMedia path, so track.getSettings() reports
+            // the real dimensions (pool size for pooled tracks; 0x0 for forwarding
+            // tracks, whose buffers carry their own size per frame).
+            @"settings" : [captureController getSettings],
+        },
+    });
 #endif
 }
 
@@ -631,7 +718,17 @@ RCT_EXPORT_METHOD(mediaStreamTrackRelease : (nonnull NSString *)trackID) {
     RTCMediaStreamTrack *track = self.localTracks[trackID];
     if (track) {
         track.isEnabled = NO;
+#if !TARGET_OS_OSX
+        if ([track.captureController isKindOfClass:[CustomVideoCaptureController class]]) {
+            CustomVideoCaptureController *customController = (CustomVideoCaptureController *)track.captureController;
+            [customController stopCapture];
+            [customController releaseCaptureResources];
+        } else {
+            [track.captureController stopCapture];
+        }
+#else
         [track.captureController stopCapture];
+#endif
         [self.localTracks removeObjectForKey:trackID];
     }
 #endif
