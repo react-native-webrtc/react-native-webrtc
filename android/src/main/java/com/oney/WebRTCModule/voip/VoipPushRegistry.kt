@@ -29,11 +29,13 @@ object VoipPushRegistry {
     @Synchronized
     fun setListener(l: Listener?) {
         listener = l
-        if (l != null) token?.let(l::onVoipToken)
     }
 
     @Synchronized
     fun updateToken(newToken: String) {
+        if (token == newToken) {
+            return
+        }
         token = newToken
         listener?.onVoipToken(newToken)
     }
@@ -54,7 +56,6 @@ object VoipPushRegistry {
         try {
             FirebaseInstallations.getInstance().id.addOnCompleteListener { task ->
                 if (task.isSuccessful) {
-                    updateToken(task.result)
                     onResult(task.result)
                 } else {
                     onResult(null)
