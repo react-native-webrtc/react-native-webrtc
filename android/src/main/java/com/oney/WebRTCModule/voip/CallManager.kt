@@ -123,6 +123,7 @@ object CallManager {
         }
     }
 
+    @Synchronized
     @SuppressLint("MissingPermission")
     private fun register(ctx: Context, displayName: String, isVideo: Boolean, direction: Int) {
         ensureRegistered(ctx)
