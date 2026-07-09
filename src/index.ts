@@ -91,7 +91,11 @@ import {
     type LivestreamStatus,
     type LivestreamStatusInfo,
 } from './useLivestreamStatus';
-import { useTelecom, useTelecomEvent, type UseTelecomResult } from './useTelecom';
+import {
+    useTelecom,
+    useTelecomEvent,
+    type UseTelecomResult,
+} from './useTelecom';
 import {
     useVoIPEvents,
     type VoIPEventHandlers,
@@ -146,9 +150,12 @@ export {
     useAudioOutput,
     useCallKit,
     useCallKitEvent,
-    useCallKitService, useForegroundService,
-    useLivestreamStatus, useTelecom,
-    useTelecomEvent, useVoIPEvents,
+    useCallKitService,
+    useForegroundService,
+    useLivestreamStatus,
+    useTelecom,
+    useTelecomEvent,
+    useVoIPEvents,
     writeLivestreamCredentials,
     type AudioDevice,
     type AudioExtractionOptions,
@@ -175,10 +182,14 @@ export {
     type RTCPIPViewProps,
     type RTCRtpEncodingParametersInit,
     type RTCRtpSendParametersInit,
-    type RTCVideoViewProps, type TelecomConfig,
+    type RTCVideoViewProps,
+    type TelecomConfig,
     type TelecomEvent,
-    type TelecomEventType, type UseAudioOutputResult, type UseTelecomResult, type VoIPEventHandlers,
-    type VoipIncomingPayload
+    type TelecomEventType,
+    type UseAudioOutputResult,
+    type UseTelecomResult,
+    type VoIPEventHandlers,
+    type VoipIncomingPayload,
 };
 
 declare const global: any;

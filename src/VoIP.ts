@@ -2,7 +2,6 @@ import { NativeModules, Platform } from 'react-native';
 
 const { WebRTCModule } = NativeModules;
 
-
 export function getVoipToken(): Promise<string | null> {
     if (Platform.OS === 'ios') {
         const token = WebRTCModule.getVoipToken();

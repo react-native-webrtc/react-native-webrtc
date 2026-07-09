@@ -48,21 +48,20 @@ const emptyResult: UseTelecomResult = {
     isAnswered: () => false,
 };
 
-
 export const useTelecom = Platform.select({
     android: useTelecomAndroid,
     default: () => emptyResult,
 }) as typeof useTelecomAndroid;
 
-export function useTelecomEvent(
-    callback: (event: TelecomEvent) => void,
-): void {
+export function useTelecomEvent(callback: (event: TelecomEvent) => void): void {
     const callbackRef = useRef(callback);
     callbackRef.current = callback;
     const listener = useRef({});
 
     useEffect(() => {
-        if (Platform.OS !== 'android') {return;}
+        if (Platform.OS !== 'android') {
+            return;
+        }
 
         addListener(listener.current, 'telecomActionPerformed', (event) => {
             if (event && typeof event === 'object') {

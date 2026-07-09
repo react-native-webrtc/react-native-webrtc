@@ -561,11 +561,11 @@ public class AudioOutputManager {
             for (AudioDeviceInfo d : devices) {
                 int type = d.getType();
                 if (type == AudioDeviceInfo.TYPE_BUILTIN_EARPIECE || type == AudioDeviceInfo.TYPE_BUILTIN_SPEAKER
-                    || type == AudioDeviceInfo.TYPE_WIRED_HEADSET || type == AudioDeviceInfo.TYPE_WIRED_HEADPHONES
-                    || type == AudioDeviceInfo.TYPE_BLUETOOTH_SCO || type == AudioDeviceInfo.TYPE_BLUETOOTH_A2DP
-                    || type == AudioDeviceInfo.TYPE_HDMI || type == AudioDeviceInfo.TYPE_USB_DEVICE
-                    || type == AudioDeviceInfo.TYPE_USB_HEADSET || type == AudioDeviceInfo.TYPE_USB_ACCESSORY
-                    || type == AudioDeviceInfo.TYPE_HEARING_AID) {
+                        || type == AudioDeviceInfo.TYPE_WIRED_HEADSET || type == AudioDeviceInfo.TYPE_WIRED_HEADPHONES
+                        || type == AudioDeviceInfo.TYPE_BLUETOOTH_SCO || type == AudioDeviceInfo.TYPE_BLUETOOTH_A2DP
+                        || type == AudioDeviceInfo.TYPE_HDMI || type == AudioDeviceInfo.TYPE_USB_DEVICE
+                        || type == AudioDeviceInfo.TYPE_USB_HEADSET || type == AudioDeviceInfo.TYPE_USB_ACCESSORY
+                        || type == AudioDeviceInfo.TYPE_HEARING_AID) {
                     available.pushMap(serializeAudioDevice(d));
                 }
             }
@@ -587,8 +587,7 @@ public class AudioOutputManager {
         cachedTelecomAvailable = available;
 
         synchronized (this) {
-            if (telecomPending != null && current != null
-                    && telecomPending.targetId.equals(current.getString("id"))) {
+            if (telecomPending != null && current != null && telecomPending.targetId.equals(current.getString("id"))) {
                 mainHandler.removeCallbacks(telecomPending.timeoutTask);
                 Promise p = telecomPending.promise;
                 telecomPending = null;
@@ -597,8 +596,10 @@ public class AudioOutputManager {
         }
 
         WritableMap params = Arguments.createMap();
-        if (current != null) params.putMap("currentAudioOutput", current);
-        else params.putNull("currentAudioOutput");
+        if (current != null)
+            params.putMap("currentAudioOutput", current);
+        else
+            params.putNull("currentAudioOutput");
         params.putArray("availableAudioOutputs", available);
         webRTCModule.sendEvent("audioOutputChanged", params);
     }
