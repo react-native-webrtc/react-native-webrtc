@@ -10,7 +10,7 @@ import androidx.annotation.RequiresApi
 import java.lang.ref.WeakReference
 
 /**
- * Lets the host app's activity appear over the lock screen while an answered
+ * Lets the host app's activity appear over the lock screen
  *
  * Two paths:
  *  - Cold start: [onCallAnswered] registers [Application.ActivityLifecycleCallbacks]

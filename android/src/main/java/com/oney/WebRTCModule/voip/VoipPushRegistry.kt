@@ -60,7 +60,7 @@ object VoipPushRegistry {
                     onResult(null)
                 }
             }
-        } catch (e: Exception) {
+        } catch (e: IllegalStateException) {
             onResult(null)
         }
     }

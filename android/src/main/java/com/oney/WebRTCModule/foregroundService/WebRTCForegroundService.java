@@ -107,17 +107,12 @@ public class WebRTCForegroundService extends Service {
     }
 
     private void startForegroundWithNotification(Notification notification, int foregroundServiceType) {
-        try {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                startForeground(FOREGROUND_SERVICE_ID, notification, foregroundServiceType);
-            } else {
-                startForeground(FOREGROUND_SERVICE_ID, notification);
-            }
-        } catch (Exception e) {
-            stopSelf();
-        } finally {
-            ForegroundServiceController.getInstance().onServiceForegrounded();
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            startForeground(FOREGROUND_SERVICE_ID, notification, foregroundServiceType);
+        } else {
+            startForeground(FOREGROUND_SERVICE_ID, notification);
         }
+        ForegroundServiceController.getInstance().onServiceForegrounded();
     }
 
     private void createNotificationChannel(String channelId, String channelName, String importance) {

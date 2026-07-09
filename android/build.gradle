@@ -65,7 +65,6 @@ android {
 
 kotlin {
     compilerOptions {
-        // Must match the Java target, which the Expo/RN root config forces to 17.
         jvmTarget = JvmTarget.JVM_17
     }
 }

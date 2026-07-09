@@ -10,12 +10,14 @@ import androidx.core.telecom.CallAttributesCompat
 import androidx.core.telecom.CallControlResult
 import androidx.core.telecom.CallControlScope
 import androidx.core.telecom.CallEndpointCompat
+import androidx.core.telecom.CallException
 import androidx.core.telecom.CallsManager
 import com.facebook.react.bridge.Arguments
 import com.facebook.react.bridge.WritableArray
 import com.facebook.react.bridge.WritableMap
 import com.oney.WebRTCModule.AudioOutputManager
 import com.oney.WebRTCModule.foregroundService.ForegroundServiceController
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -186,8 +188,14 @@ object CallManager {
                     } }
                     muteJob = launch { isMuted.collect { listener?.onMuteChanged(it) } }
                     }
-            } catch (e: Exception) { // should probably less generic
-                listener?.onFailed(e.message ?: "addCall failed")
+            } catch (e: CancellationException) {
+                // Never swallow coroutine cancellation — let it propagate so the
+                // parent scope tears down cleanly.
+                throw e
+            } catch (e: CallException) {
+                listener?.onFailed(e.message ?: "addCall failed (code ${e.code})")
+            } catch (e: UnsupportedOperationException) {
+                listener?.onFailed(e.message ?: "Telecom not supported on this device")
             } finally {
                 hasActiveCall = false
                 answered = false

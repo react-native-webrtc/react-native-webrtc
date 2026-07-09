@@ -48,8 +48,8 @@ class PushNotificationService : FirebaseMessagingService() {
                         manager.createReactContextInBackground()
                     }
                 }
-            } catch (e: Throwable) {
-                // Ignore React warm-up failures on push.
+            } catch (e: Exception) {
+                // Ignore React warm-up failures on push
             }
         }
     }
