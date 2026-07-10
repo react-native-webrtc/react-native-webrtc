@@ -47,6 +47,7 @@ import RTCSessionDescription from './RTCSessionDescription';
 import RTCView, { type RTCPIPOptions, type RTCVideoViewProps } from './RTCView';
 import ScreenCapturePickerView from './ScreenCapturePickerView';
 import {
+    type CallEndedReason,
     type TelecomConfig,
     type TelecomEvent,
     type TelecomEventType,
@@ -161,6 +162,7 @@ export {
     type AudioExtractionOptions,
     type AudioOutputChangedInfo,
     type AudioTrackData,
+    type CallEndedReason,
     type CallKitAction,
     type CallKitConfig,
     type CustomVideoBuffer,

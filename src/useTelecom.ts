@@ -3,6 +3,7 @@ import { Platform } from 'react-native';
 
 import { addListener, removeListener } from './EventEmitter';
 import {
+    type CallEndedReason,
     endTelecomCall,
     hasActiveTelecomCall,
     isTelecomCallAnswered,
@@ -15,7 +16,7 @@ import {
 export type UseTelecomResult = {
     startCall: (config: TelecomConfig) => Promise<void>;
     setCallActive: () => Promise<void>;
-    endCall: () => Promise<void>;
+    endCall: (reason?: CallEndedReason) => Promise<void>;
     hasActiveCall: () => boolean;
     isAnswered: () => boolean;
 };
@@ -26,7 +27,10 @@ function useTelecomAndroid(): UseTelecomResult {
         [],
     );
     const setCallActive = useCallback(() => setTelecomCallActive(), []);
-    const endCall = useCallback(() => endTelecomCall(), []);
+    const endCall = useCallback(
+        (reason?: CallEndedReason) => endTelecomCall(reason),
+        [],
+    );
     const hasActiveCall = useCallback(() => hasActiveTelecomCall(), []);
     const isAnswered = useCallback(() => isTelecomCallAnswered(), []);
 

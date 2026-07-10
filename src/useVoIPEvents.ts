@@ -3,7 +3,11 @@ import { Platform } from 'react-native';
 
 import { hasActiveCallKitSession, isCallAnswered } from './CallKit';
 import { addListener, removeListener } from './EventEmitter';
-import { hasActiveTelecomCall, isTelecomCallAnswered } from './Telecom';
+import {
+    type CallEndedReason,
+    hasActiveTelecomCall,
+    isTelecomCallAnswered,
+} from './Telecom';
 import {
     clearPendingIncomingCall,
     getPendingIncomingCall,
@@ -21,7 +25,7 @@ export type VoipIncomingPayload = {
 export type VoIPEventHandlers = {
     onIncoming?: (payload: VoipIncomingPayload) => void;
     onAnswered?: () => void;
-    onEnded?: () => void;
+    onEnded?: (reason?: CallEndedReason) => void;
     onRegistered?: (token: string) => void;
 };
 
@@ -46,9 +50,9 @@ const useVoIPEventsIos = (handlers: VoIPEventHandlers): void => {
     const listener = useRef({});
 
     useCallKitEvent('answer', () => handlersRef.current.onAnswered?.());
-    useCallKitEvent('ended', () => {
+    useCallKitEvent('ended', (reason) => {
         clearPendingIncomingCall();
-        handlersRef.current.onEnded?.();
+        handlersRef.current.onEnded?.(reason);
     });
 
     useEffect(() => {
@@ -113,12 +117,12 @@ const useVoIPEventsAndroid = (handlers: VoIPEventHandlers): void => {
             if (!event || typeof event !== 'object') {
                 return;
             }
-            const payload = event as { event?: string };
+            const payload = event as { event?: string; reason?: CallEndedReason };
             if (payload.event === 'answer') {
                 handlersRef.current.onAnswered?.();
             } else if (payload.event === 'ended') {
                 clearPendingIncomingCall();
-                handlersRef.current.onEnded?.();
+                handlersRef.current.onEnded?.(payload.reason);
             }
         });
 

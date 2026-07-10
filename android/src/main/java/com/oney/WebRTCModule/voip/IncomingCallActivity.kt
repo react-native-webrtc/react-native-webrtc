@@ -9,6 +9,7 @@ import android.graphics.Color
 import android.graphics.drawable.GradientDrawable
 import android.os.Build
 import android.os.Bundle
+import android.telecom.DisconnectCause
 import android.text.TextUtils
 import android.view.Gravity
 import android.view.MotionEvent
@@ -395,7 +396,7 @@ class IncomingCallActivity : Activity() {
                     when {
                         fraction >= SWIPE_TRIGGER -> answerAndOpenApp()
                         fraction <= -SWIPE_TRIGGER -> {
-                            CallManager.endCall()
+                            CallManager.endCall(DisconnectCause(DisconnectCause.REJECTED))
                             finish()
                         }
                         else -> resetVisuals()

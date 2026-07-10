@@ -31,7 +31,7 @@ import kotlinx.coroutines.launch
 interface CallEventsListener {
     fun onStarted()
     fun onAnswered()
-    fun onEnded()
+    fun onEnded(reason: String)
     fun onFailed(reason: String)
     fun onMuteChanged(muted: Boolean)
 }
@@ -82,8 +82,32 @@ object CallManager {
 
     fun answer() { actions?.trySend(CallAction.Answer) }
     fun setCallActive() { actions?.trySend(CallAction.Activate) }
-    fun endCall() { actions?.trySend(CallAction.Disconnect(DisconnectCause(DisconnectCause.LOCAL))) }
+
+    fun endCall(cause: DisconnectCause = DisconnectCause(DisconnectCause.LOCAL)) {
+        actions?.trySend(CallAction.Disconnect(cause))
+    }
+
     fun setListener(l: CallEventsListener?) { listener = l }
+
+    fun reasonToCause(reason: String): DisconnectCause = when (reason) {
+        "local" -> DisconnectCause(DisconnectCause.LOCAL)
+        "rejected" -> DisconnectCause(DisconnectCause.REJECTED)
+        "missed" -> DisconnectCause(DisconnectCause.MISSED)
+        "remote" -> DisconnectCause(DisconnectCause.REMOTE)
+        "answeredElsewhere" -> DisconnectCause(DisconnectCause.ANSWERED_ELSEWHERE)
+        "failed" -> DisconnectCause(DisconnectCause.ERROR)
+        else -> DisconnectCause(DisconnectCause.LOCAL)
+    }
+
+    private fun causeToReason(cause: DisconnectCause): String = when (cause.code) {
+        DisconnectCause.LOCAL -> "local"
+        DisconnectCause.REJECTED -> "rejected"
+        DisconnectCause.MISSED -> "missed"
+        DisconnectCause.REMOTE -> "remote"
+        DisconnectCause.ANSWERED_ELSEWHERE -> "answeredElsewhere"
+        DisconnectCause.ERROR -> "failed"
+        else -> "remote"
+    }
 
     fun setAudioOutputManager(manager: AudioOutputManager?) {
         audioOutputManager = manager
@@ -164,7 +188,7 @@ object CallManager {
                         handleAnswered()
                         launchHostApp(appContext)
                     },
-                    onDisconnect = { _ -> listener?.onEnded() },
+                    onDisconnect = { cause -> listener?.onEnded(causeToReason(cause)) },
                     onSetActive = { answered = true },
                     onSetInactive = { }
                 ) {
@@ -236,7 +260,7 @@ object CallManager {
                 // so run the post-answer side effects here.
                 handleAnswered()
             } else if (action is CallAction.Disconnect) {
-                listener?.onEnded()
+                listener?.onEnded(causeToReason(action.cause))
                 this@processActions.cancel()
             }
         }

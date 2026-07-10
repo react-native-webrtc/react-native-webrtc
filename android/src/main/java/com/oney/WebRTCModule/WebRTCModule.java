@@ -1716,8 +1716,8 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
     }
 
     @ReactMethod
-    public void endTelecomCall(Promise promise) {
-        telecomController.endCall();
+    public void endTelecomCall(String reason, Promise promise) {
+        telecomController.endCall(reason);
         promise.resolve(null);
     }
 

@@ -51,9 +51,9 @@ final class TelecomController implements CallEventsListener {
         }
     }
 
-    void endCall() {
+    void endCall(String reason) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            CallManager.INSTANCE.endCall();
+            CallManager.INSTANCE.endCall(CallManager.INSTANCE.reasonToCause(reason));
         }
     }
 
@@ -88,9 +88,10 @@ final class TelecomController implements CallEventsListener {
     }
 
     @Override
-    public void onEnded() {
+    public void onEnded(String reason) {
         WritableMap body = Arguments.createMap();
         body.putString("event", "ended");
+        body.putString("reason", reason);
         webRTCModule.sendEvent("telecomActionPerformed", body);
     }
 

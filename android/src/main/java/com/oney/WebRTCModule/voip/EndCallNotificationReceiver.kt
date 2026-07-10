@@ -4,6 +4,7 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.os.Build
+import android.telecom.DisconnectCause
 import androidx.annotation.RequiresApi
 
 /**
@@ -20,7 +21,8 @@ class EndCallNotificationReceiver : BroadcastReceiver() {
 
     override fun onReceive(context: Context, intent: Intent) {
         when (intent.action) {
-            ACTION_DECLINE, ACTION_HANGUP -> CallManager.endCall()
+            ACTION_DECLINE -> CallManager.endCall(DisconnectCause(DisconnectCause.REJECTED))
+            ACTION_HANGUP -> CallManager.endCall(DisconnectCause(DisconnectCause.LOCAL))
         }
     }
 }
