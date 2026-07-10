@@ -110,27 +110,55 @@
                                       }];
 }
 
-- (void)endCall {
+/**
+ * Only the reasons that must go through `reportCallWithUUID:endedAtDate:reason:` are covered
+ * here - `local`/`rejected` are handled separately via the `CXEndCallAction`
+ * transaction, since CallKit has no ended-reason case for either.
+ */
+- (CXCallEndedReason)cxEndedReasonForReason:(NSString *)reason {
+    if ([reason isEqualToString:@"missed"]) {
+        return CXCallEndedReasonUnanswered;
+    } else if ([reason isEqualToString:@"remote"]) {
+        return CXCallEndedReasonRemoteEnded;
+    } else if ([reason isEqualToString:@"answeredElsewhere"]) {
+        return CXCallEndedReasonAnsweredElsewhere;
+    } else if ([reason isEqualToString:@"failed"]) {
+        return CXCallEndedReasonFailed;
+    }
+    return CXCallEndedReasonRemoteEnded;
+}
+
+- (void)endCallWithReason:(NSString *)reason {
     if (self.currentCallUUID == nil) {
         NSLog(@"[CallKitManager] No active call to end");
         return;
     }
 
-    CXEndCallAction *endCallAction = [[CXEndCallAction alloc] initWithCallUUID:self.currentCallUUID];
-    CXTransaction *transaction = [[CXTransaction alloc] initWithAction:endCallAction];
+    if (reason == nil || [reason isEqualToString:@"local"] || [reason isEqualToString:@"rejected"]) {
+        CXEndCallAction *endCallAction = [[CXEndCallAction alloc] initWithCallUUID:self.currentCallUUID];
+        CXTransaction *transaction = [[CXTransaction alloc] initWithAction:endCallAction];
 
-    __weak typeof(self) weakSelf = self;
-    [self.callController requestTransaction:transaction
-                                 completion:^(NSError *error) {
-                                     if (error) {
-                                         NSLog(@"[CallKitManager] Failed to end call: %@", error.localizedDescription);
-                                         return;
-                                     }
-                                     if (weakSelf.onCallEnded) {
-                                         weakSelf.onCallEnded();
-                                     }
-                                     [weakSelf cleanup];
-                                 }];
+        __weak typeof(self) weakSelf = self;
+        [self.callController
+            requestTransaction:transaction
+                    completion:^(NSError *error) {
+                        if (error) {
+                            NSLog(@"[CallKitManager] Failed to end call: %@", error.localizedDescription);
+                            return;
+                        }
+                        // onCallEnded fires from performEndCallAction once the transaction
+                        // fulfills, so it is not duplicated here.
+                    }];
+        return;
+    }
+
+    // (missed / remote / answeredElsewhere / failed)
+    NSUUID *uuid = self.currentCallUUID;
+    [self.provider reportCallWithUUID:uuid endedAtDate:[NSDate date] reason:[self cxEndedReasonForReason:reason]];
+    if (self.onCallEnded) {
+        self.onCallEnded(reason);
+    }
+    [self cleanup];
 }
 
 - (void)cleanup {
@@ -151,7 +179,7 @@
 
 - (void)provider:(CXProvider *)provider performEndCallAction:(CXEndCallAction *)action {
     if (self.onCallEnded) {
-        self.onCallEnded();
+        self.onCallEnded(@"local");
     }
     [action fulfill];
     [self cleanup];

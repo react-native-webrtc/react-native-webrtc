@@ -26,8 +26,8 @@ static void *CallKitManagerKey = &CallKitManagerKey;
     manager.onCallAnswered = ^{
         [weakSelf sendEventWithName:kEventCallKitActionPerformed body:@{@"answer" : [NSNull null]}];
     };
-    manager.onCallEnded = ^{
-        [weakSelf sendEventWithName:kEventCallKitActionPerformed body:@{@"ended" : [NSNull null]}];
+    manager.onCallEnded = ^(NSString *reason) {
+        [weakSelf sendEventWithName:kEventCallKitActionPerformed body:@{@"ended" : reason ?: @"local"}];
     };
     manager.onCallFailed = ^(NSString *reason) {
         [weakSelf sendEventWithName:kEventCallKitActionPerformed body:@{@"failed" : reason ?: @""}];
@@ -72,9 +72,12 @@ RCT_EXPORT_METHOD(startCallKitSession
     }
 }
 
-RCT_EXPORT_METHOD(endCallKitSession : (RCTPromiseResolveBlock)resolve rejecter : (RCTPromiseRejectBlock)reject) {
+RCT_EXPORT_METHOD(endCallKitSession
+                  : (NSString *)reason resolver
+                  : (RCTPromiseResolveBlock)resolve rejecter
+                  : (RCTPromiseRejectBlock)reject) {
     @try {
-        [[self callKitManager] endCall];
+        [[self callKitManager] endCallWithReason:reason];
         resolve(nil);
     } @catch (NSException *exception) {
         reject(@"E_CALLKIT_END_FAILED", exception.reason, nil);

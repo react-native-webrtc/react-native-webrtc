@@ -9,7 +9,7 @@ typedef void (^CallKitBoolCallback)(BOOL);
 
 @property(nonatomic, copy) CallKitVoidCallback onCallStarted;
 @property(nonatomic, copy) CallKitVoidCallback onCallAnswered;
-@property(nonatomic, copy) CallKitVoidCallback onCallEnded;
+@property(nonatomic, copy) CallKitStringCallback onCallEnded;
 @property(nonatomic, copy) CallKitStringCallback onCallFailed;
 @property(nonatomic, copy) CallKitBoolCallback onCallMuted;
 @property(nonatomic, copy) CallKitBoolCallback onCallHeld;
@@ -20,6 +20,6 @@ typedef void (^CallKitBoolCallback)(BOOL);
 
 - (void)startCallWithDisplayName:(NSString *)displayName isVideo:(BOOL)isVideo;
 - (void)reportIncomingCallWithDisplayName:(NSString *)displayName isVideo:(BOOL)isVideo;
-- (void)endCall;
+- (void)endCallWithReason:(NSString *_Nullable)reason;
 
 @end

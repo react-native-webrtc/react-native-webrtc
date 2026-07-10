@@ -9,10 +9,11 @@ import {
     startCallKitSession,
 } from './CallKit';
 import { addListener, removeListener } from './EventEmitter';
+import type { CallEndedReason } from './Telecom';
 
 export type UseCallKitResult = {
     startCallKitSession: (config: CallKitConfig) => Promise<void>;
-    endCallKitSession: () => Promise<void>;
+    endCallKitSession: (reason?: CallEndedReason) => Promise<void>;
     getCallKitSessionStatus: () => Promise<boolean>;
 };
 
@@ -26,9 +27,9 @@ function useCallKitIos(): UseCallKitResult {
         }
     }, []);
 
-    const endCallKitSessionCb = useCallback(async () => {
+    const endCallKitSessionCb = useCallback(async (reason?: CallEndedReason) => {
         try {
-            await endCallKitSession();
+            await endCallKitSession(reason);
         } catch (error) {
             console.error('Failed to end CallKit session:', error);
             throw error;

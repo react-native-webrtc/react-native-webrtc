@@ -1,5 +1,7 @@
 import { NativeModules, Platform } from 'react-native';
 
+import type { CallEndedReason } from './Telecom';
+
 const { WebRTCModule } = NativeModules;
 
 export type CallKitConfig = {
@@ -10,7 +12,7 @@ export type CallKitConfig = {
 export type CallKitAction = {
     started?: undefined;
     answer?: undefined;
-    ended?: undefined;
+    ended?: CallEndedReason;
     failed?: string;
     muted?: boolean;
     held?: boolean;
@@ -25,11 +27,13 @@ export async function startCallKitSession(
     await WebRTCModule.startCallKitSession(config.displayName, config.isVideo);
 }
 
-export async function endCallKitSession(): Promise<void> {
+export async function endCallKitSession(
+    reason: CallEndedReason = 'local',
+): Promise<void> {
     if (Platform.OS !== 'ios') {
         return;
     }
-    await WebRTCModule.endCallKitSession();
+    await WebRTCModule.endCallKitSession(reason);
 }
 
 export function hasActiveCallKitSession(): boolean {
