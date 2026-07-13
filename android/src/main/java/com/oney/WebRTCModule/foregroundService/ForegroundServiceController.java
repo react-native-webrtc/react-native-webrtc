@@ -31,6 +31,7 @@ public class ForegroundServiceController {
     private boolean screenShareActive = false;
 
     private boolean callActive = false;
+    private boolean callConnecting = false;
     private String callDisplayName = "";
     private boolean callIsVideo = false;
     private long callConnectedAtMs = 0;
@@ -114,22 +115,36 @@ public class ForegroundServiceController {
         applyState();
     }
 
-    /**
-     * Called by CallManager when a Core-Telecom call becomes ongoing (outgoing
-     * started or incoming answered). Switches the service's notification to the
-     * ongoing CallStyle one and keeps camera/microphone types alive for the call
-     * even if the app never enabled the room foreground service from JS.
-     */
-    public synchronized void onCallStarted(String displayName, boolean isVideo) {
+    public synchronized void onCallConnecting(String displayName, boolean isVideo) {
         callActive = true;
+        callConnecting = true;
+        callDisplayName = displayName != null ? displayName : "";
+        callIsVideo = isVideo;
+        callConnectedAtMs = 0;
+        applyState();
+    }
+
+    /**
+     * Called when media is connected. Switches the service's notification to
+     * the ongoing CallStyle variant and starts its chronometer.
+     */
+    public synchronized void onCallConnected(String displayName, boolean isVideo) {
+        callActive = true;
+        callConnecting = false;
         callDisplayName = displayName != null ? displayName : "";
         callIsVideo = isVideo;
         callConnectedAtMs = System.currentTimeMillis();
         applyState();
     }
 
+    /** Kept for native callers compiled against the previous API. */
+    public synchronized void onCallStarted(String displayName, boolean isVideo) {
+        onCallConnected(displayName, isVideo);
+    }
+
     public synchronized void onCallEnded() {
         callActive = false;
+        callConnecting = false;
         applyState();
     }
 
@@ -158,6 +173,7 @@ public class ForegroundServiceController {
         if (callActive) {
             serviceIntent.putExtra("voipDisplayName", callDisplayName);
             serviceIntent.putExtra("voipConnectedAt", callConnectedAtMs);
+            serviceIntent.putExtra("voipConnecting", callConnecting);
         }
 
         try {

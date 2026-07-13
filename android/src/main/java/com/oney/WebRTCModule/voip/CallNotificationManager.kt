@@ -30,7 +30,7 @@ import androidx.core.graphics.drawable.IconCompat
  * until the call ends, so [CallManager] posts here as soon as the call is
  * accepted and cancels in its `finally` block.
  *
- * One notification (id [NOTIFICATION_ID]) transitions incoming -> ongoing:
+ * One notification (id [NOTIFICATION_ID]) transitions incoming -> connecting -> ongoing:
  *  - incoming is posted via notify() with a full-screen intent (rings over
  *    the lock screen; the FSI also makes the CallStyle valid on Android 14+).
  *  - ongoing is built by [buildOngoing] and posted by
@@ -123,6 +123,23 @@ class CallNotificationManager {
         return ongoingBuilder(ctx, displayName, connectedAtMs).build()
     }
 
+    fun buildConnecting(context: Context, displayName: String): Notification {
+        val ctx = context.applicationContext
+        initChannels(ctx)
+        return callNotificationBuilder(ctx, CHANNEL_ONGOING, displayName, "Connecting…")
+            .setStyle(
+                NotificationCompat.CallStyle.forOngoingCall(
+                    person(ctx, displayName),
+                    hangupPendingIntent(ctx),
+                )
+            )
+            .setContentIntent(appContentPendingIntent(ctx))
+            .setOngoing(true)
+            .setAutoCancel(false)
+            .setUsesChronometer(false)
+            .build()
+    }
+
     private fun ongoingBuilder(ctx: Context, displayName: String, connectedAtMs: Long): NotificationCompat.Builder =
         callNotificationBuilder(ctx, CHANNEL_ONGOING, displayName, "Ongoing call")
             .setStyle(
@@ -148,6 +165,7 @@ class CallNotificationManager {
      * ring/DND policy. Safe to call repeatedly; the latest call replaces any
      * in-flight vibration.
      */
+    @SuppressLint("MissingPermission")
     private fun startVibration(context: Context) {
         val ctx = context.applicationContext
         val audioManager = ctx.getSystemService(Context.AUDIO_SERVICE) as? AudioManager
@@ -157,7 +175,6 @@ class CallNotificationManager {
         if (vib == null || !vib.hasVibrator()) return
 
         val effect = VibrationEffect.createWaveform(RING_VIBRATION_PATTERN, 0)
-        @SuppressLint("MissingPermission")
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
             vib.vibrate(
                 effect,
@@ -176,6 +193,7 @@ class CallNotificationManager {
     }
 
     /** Stops the ring vibration. Called on answer, decline, hangup, timeout or teardown. */
+    @SuppressLint("MissingPermission")
     fun stopVibration() {
         vibrator?.cancel()
         vibrator = null

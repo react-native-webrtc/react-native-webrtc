@@ -1,15 +1,15 @@
 import { useEffect, useRef } from 'react';
 import { Platform } from 'react-native';
 
-import { hasActiveCallKitSession, isCallAnswered } from './CallKit';
+import { hasActiveCallKitSession } from './CallKit';
 import { addListener, removeListener } from './EventEmitter';
 import {
     type CallEndedReason,
     hasActiveTelecomCall,
-    isTelecomCallAnswered,
 } from './Telecom';
 import {
     clearPendingIncomingCall,
+    getPendingAnswerRequestId,
     getPendingIncomingCall,
     getVoipToken,
 } from './VoIP';
@@ -24,7 +24,7 @@ export type VoipIncomingPayload = {
 
 export type VoIPEventHandlers = {
     onIncoming?: (payload: VoipIncomingPayload) => void;
-    onAnswered?: () => void;
+    onAnswered?: (requestId: string) => void;
     onEnded?: (reason?: CallEndedReason) => void;
     onRegistered?: (token: string) => void;
 };
@@ -49,7 +49,11 @@ const useVoIPEventsIos = (handlers: VoIPEventHandlers): void => {
     handlersRef.current = handlers;
     const listener = useRef({});
 
-    useCallKitEvent('answer', () => handlersRef.current.onAnswered?.());
+    useCallKitEvent('answer', (requestId) => {
+        if (requestId) {
+            handlersRef.current.onAnswered?.(requestId);
+        }
+    });
     useCallKitEvent('ended', (reason) => {
         clearPendingIncomingCall();
         handlersRef.current.onEnded?.(reason);
@@ -90,11 +94,9 @@ const useVoIPEventsIos = (handlers: VoIPEventHandlers): void => {
                     pendingCall as unknown as VoipIncomingPayload,
                 );
 
-                // The user may have accepted before JS was
-                // ready, so the live onAnswered was missed. Recover it from
-                // native state so the call connects instead of staying stuck.
-                if (isCallAnswered()) {
-                    handlersRef.current.onAnswered?.();
+                const requestId = getPendingAnswerRequestId();
+                if (requestId) {
+                    handlersRef.current.onAnswered?.(requestId);
                 }
             } catch {
                 // Ignore a malformed buffered payload.
@@ -117,9 +119,13 @@ const useVoIPEventsAndroid = (handlers: VoIPEventHandlers): void => {
             if (!event || typeof event !== 'object') {
                 return;
             }
-            const payload = event as { event?: string; reason?: CallEndedReason };
-            if (payload.event === 'answer') {
-                handlersRef.current.onAnswered?.();
+            const payload = event as {
+                event?: string;
+                requestId?: string;
+                reason?: CallEndedReason;
+            };
+            if (payload.event === 'answer' && payload.requestId) {
+                handlersRef.current.onAnswered?.(payload.requestId);
             } else if (payload.event === 'ended') {
                 clearPendingIncomingCall();
                 handlersRef.current.onEnded?.(payload.reason);
@@ -159,11 +165,9 @@ const useVoIPEventsAndroid = (handlers: VoIPEventHandlers): void => {
                     pendingCall as unknown as VoipIncomingPayload,
                 );
 
-                // The user may have accepted before JS was
-                // ready, so the live onAnswered was missed. Recover it from
-                // native state so the call connects instead of staying stuck.
-                if (isTelecomCallAnswered()) {
-                    handlersRef.current.onAnswered?.();
+                const requestId = getPendingAnswerRequestId();
+                if (requestId) {
+                    handlersRef.current.onAnswered?.(requestId);
                 }
             } catch {
                 // Ignore a malformed buffered payload.

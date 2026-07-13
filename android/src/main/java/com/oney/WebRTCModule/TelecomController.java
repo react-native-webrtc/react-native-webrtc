@@ -51,6 +51,17 @@ final class TelecomController implements CallEventsListener {
         }
     }
 
+    boolean fulfillAnswered(String requestId) {
+        return Build.VERSION.SDK_INT >= Build.VERSION_CODES.O
+                && CallManager.INSTANCE.fulfillAnswered(requestId);
+    }
+
+    void failAnswered(String requestId) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            CallManager.INSTANCE.failAnswered(requestId);
+        }
+    }
+
     void endCall(String reason) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             CallManager.INSTANCE.endCall(CallManager.INSTANCE.reasonToCause(reason));
@@ -65,6 +76,12 @@ final class TelecomController implements CallEventsListener {
         return Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && CallManager.INSTANCE.isAnswered();
     }
 
+    String pendingAnswerRequestId() {
+        return Build.VERSION.SDK_INT >= Build.VERSION_CODES.O
+                ? CallManager.INSTANCE.pendingAnswerRequestId()
+                : null;
+    }
+
     @Override
     public void onStarted() {
         WritableMap body = Arguments.createMap();
@@ -73,7 +90,7 @@ final class TelecomController implements CallEventsListener {
     }
 
     @Override
-    public void onAnswered() {
+    public void onAnswered(String requestId) {
         // Warm start: the host activity already exists, so the lifecycle hook
         // in LockScreenController never fires — flag it directly.
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -84,6 +101,7 @@ final class TelecomController implements CallEventsListener {
         }
         WritableMap body = Arguments.createMap();
         body.putString("event", "answer");
+        body.putString("requestId", requestId);
         webRTCModule.sendEvent("telecomActionPerformed", body);
     }
 

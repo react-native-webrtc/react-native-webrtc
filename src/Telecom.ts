@@ -37,6 +37,7 @@ export type CallEndedReason =
 
 export type TelecomEvent = {
     event: TelecomEventType;
+    requestId?: string;
     reason?: CallEndedReason | string;
     muted?: boolean;
 };
@@ -55,6 +56,32 @@ export async function setTelecomCallActive(): Promise<void> {
         return;
     }
     await WebRTCModule.setTelecomCallActive();
+}
+
+export async function fulfillTelecomCallAnswered(
+    requestId: string,
+): Promise<boolean> {
+    if (!isAndroid) {
+        return false;
+    }
+    return WebRTCModule.fulfillTelecomCallAnswered(requestId);
+}
+
+export async function failTelecomCallAnswered(
+    requestId: string,
+): Promise<void> {
+    if (!isAndroid) {
+        return;
+    }
+    await WebRTCModule.failTelecomCallAnswered(requestId);
+}
+
+export function getPendingAnswerRequestId(): string | null {
+    if (!isAndroid) {
+        return null;
+    }
+    const requestId: unknown = WebRTCModule.getPendingAnswerRequestId();
+    return typeof requestId === 'string' ? requestId : null;
 }
 
 export async function endTelecomCall(

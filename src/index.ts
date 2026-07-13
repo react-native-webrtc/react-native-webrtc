@@ -54,6 +54,9 @@ import {
 } from './Telecom';
 import {
     clearPendingIncomingCall,
+    failIncomingCallConnected,
+    fulfillIncomingCallConnected,
+    getPendingAnswerRequestId,
     getPendingIncomingCall,
     getVoipToken,
 } from './VoIP';
@@ -120,7 +123,10 @@ export {
     createCustomVideoTrack,
     Event,
     EventTarget,
+    failIncomingCallConnected,
     forwardFrame,
+    fulfillIncomingCallConnected,
+    getPendingAnswerRequestId,
     getPendingIncomingCall,
     getVoipToken,
     mediaDevices,

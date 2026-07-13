@@ -1716,6 +1716,17 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
     }
 
     @ReactMethod
+    public void fulfillTelecomCallAnswered(String requestId, Promise promise) {
+        promise.resolve(telecomController.fulfillAnswered(requestId));
+    }
+
+    @ReactMethod
+    public void failTelecomCallAnswered(String requestId, Promise promise) {
+        telecomController.failAnswered(requestId);
+        promise.resolve(null);
+    }
+
+    @ReactMethod
     public void endTelecomCall(String reason, Promise promise) {
         telecomController.endCall(reason);
         promise.resolve(null);
@@ -1729,6 +1740,11 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
     @ReactMethod(isBlockingSynchronousMethod = true)
     public boolean isTelecomCallAnswered() {
         return telecomController.isAnswered();
+    }
+
+    @ReactMethod(isBlockingSynchronousMethod = true)
+    public String getPendingAnswerRequestId() {
+        return telecomController.pendingAnswerRequestId();
     }
 
     @ReactMethod

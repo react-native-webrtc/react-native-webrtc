@@ -30,7 +30,7 @@ import kotlinx.coroutines.launch
 
 interface CallEventsListener {
     fun onStarted()
-    fun onAnswered()
+    fun onAnswered(requestId: String)
     fun onEnded(reason: String)
     fun onFailed(reason: String)
     fun onMuteChanged(muted: Boolean)
@@ -38,6 +38,8 @@ interface CallEventsListener {
 
 @RequiresApi(value = 26)
 object CallManager {
+    private const val FULFILL_ANSWER_TIMEOUT_MS = 10_000L
+
     private val scope = CoroutineScope(Dispatchers.Default + SupervisorJob())
     private var callsManager: CallsManager? = null
     private var registered = false
@@ -62,6 +64,7 @@ object CallManager {
 
     @Volatile private var hasActiveCall = false
     @Volatile private var answered = false
+    @Volatile private var pendingAnswerRequestId: String? = null
     private var appContext: Context? = null
     private var listener: CallEventsListener? = null
     private var displayName: String = ""
@@ -69,6 +72,7 @@ object CallManager {
 
     fun hasActiveCall(): Boolean = hasActiveCall
     fun isAnswered(): Boolean = answered
+    fun pendingAnswerRequestId(): String? = pendingAnswerRequestId
     fun currentDisplayName(): String = displayName
     fun currentIsVideo(): Boolean = videoCall
 
@@ -82,6 +86,24 @@ object CallManager {
 
     fun answer() { actions?.trySend(CallAction.Answer) }
     fun setCallActive() { actions?.trySend(CallAction.Activate) }
+
+    fun fulfillAnswered(requestId: String): Boolean {
+        if (!FulfillRequestManager.fulfill(requestId)) return false
+        if (pendingAnswerRequestId == requestId) {
+            pendingAnswerRequestId = null
+        }
+        setCallActive()
+        showOngoingNotification()
+        return true
+    }
+
+    fun failAnswered(requestId: String) {
+        if (!FulfillRequestManager.cancel(requestId)) return
+        if (pendingAnswerRequestId == requestId) {
+            pendingAnswerRequestId = null
+        }
+        endCall(DisconnectCause(DisconnectCause.ERROR))
+    }
 
     fun endCall(cause: DisconnectCause = DisconnectCause(DisconnectCause.LOCAL)) {
         actions?.trySend(CallAction.Disconnect(cause))
@@ -188,7 +210,11 @@ object CallManager {
                         handleAnswered()
                         launchHostApp(appContext)
                     },
-                    onDisconnect = { cause -> listener?.onEnded(causeToReason(cause)) },
+                    onDisconnect = { cause ->
+                        FulfillRequestManager.cancelAll()
+                        pendingAnswerRequestId = null
+                        listener?.onEnded(causeToReason(cause))
+                    },
                     onSetActive = { answered = true },
                     onSetInactive = { }
                 ) {
@@ -222,6 +248,8 @@ object CallManager {
             } catch (e: UnsupportedOperationException) {
                 listener?.onFailed(e.message ?: "Telecom not supported on this device")
             } finally {
+                FulfillRequestManager.cancelAll()
+                pendingAnswerRequestId = null
                 hasActiveCall = false
                 answered = false
                 actions = null
@@ -275,15 +303,28 @@ object CallManager {
 
     /** Post-answer side effects shared by external (onAnswer) and app-initiated answers. */
     private fun handleAnswered() {
+        if (pendingAnswerRequestId != null) return
         answered = true
         callNotificationManager.stopVibration()
         appContext?.let { LockScreenController.onCallAnswered(it) }
-        showOngoingNotification()
-        listener?.onAnswered()
+        showConnectingNotification()
+
+        val requestId = FulfillRequestManager.createRequest(FULFILL_ANSWER_TIMEOUT_MS) { timedOutRequestId ->
+            if (pendingAnswerRequestId != timedOutRequestId) return@createRequest
+            pendingAnswerRequestId = null
+            listener?.onFailed("answer fulfill timed out")
+            endCall(DisconnectCause(DisconnectCause.ERROR))
+        }
+        pendingAnswerRequestId = requestId
+        listener?.onAnswered(requestId)
+    }
+
+    private fun showConnectingNotification() {
+        ForegroundServiceController.getInstance().onCallConnecting(displayName, videoCall)
     }
 
     private fun showOngoingNotification() {
-        ForegroundServiceController.getInstance().onCallStarted(displayName, videoCall)
+        ForegroundServiceController.getInstance().onCallConnected(displayName, videoCall)
     }
 
     private fun CallEndpointCompat.toWritableMap(): WritableMap = Arguments.createMap().apply {

@@ -55,9 +55,15 @@ public class WebRTCForegroundService extends Service {
         // full-screen intent) instead of the generic room notification.
         String voipDisplayName = intent.getStringExtra("voipDisplayName");
         if (voipDisplayName != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            long connectedAt = intent.getLongExtra("voipConnectedAt", System.currentTimeMillis());
             CallNotificationManager callNotificationManager = new CallNotificationManager();
-            Notification notification = callNotificationManager.buildOngoing(this, voipDisplayName, connectedAt);
+            boolean connecting = intent.getBooleanExtra("voipConnecting", false);
+            Notification notification;
+            if (connecting) {
+                notification = callNotificationManager.buildConnecting(this, voipDisplayName);
+            } else {
+                long connectedAt = intent.getLongExtra("voipConnectedAt", System.currentTimeMillis());
+                notification = callNotificationManager.buildOngoing(this, voipDisplayName, connectedAt);
+            }
             startForegroundWithNotification(notification, foregroundServiceType);
             return;
         }
