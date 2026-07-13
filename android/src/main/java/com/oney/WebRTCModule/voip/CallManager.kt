@@ -48,10 +48,6 @@ object CallManager {
     private var lastEndpoints: List<CallEndpointCompat> = emptyList()
     private var audioOutputManager: AudioOutputManager? = null
 
-    private var endpointJob: Job? = null
-    private var availableJob: Job? = null
-    private var muteJob: Job? = null
-
     private var actions: Channel<CallAction>? = null
 
     sealed interface CallAction {
@@ -223,21 +219,21 @@ object CallManager {
                     else showOngoingNotification()
                     audioOutputManager?.setTelecomOwnsRouting(true)
                     launch { processActions(channel.consumeAsFlow(), callType) }
-                    endpointJob = launch { currentCallEndpoint.collect { endpoint ->
+                    launch { currentCallEndpoint.collect { endpoint ->
                         lastCurrentEndpoint = endpoint
                         audioOutputManager?.onTelecomAudioStateChanged(
                             endpoint.toWritableMap(),
                             lastEndpoints.map { it.toWritableMap() }.toWritableArray()
                         )
                     } }
-                    availableJob = launch { availableEndpoints.collect { endpoints ->
+                    launch { availableEndpoints.collect { endpoints ->
                         lastEndpoints = endpoints
                         audioOutputManager?.onTelecomAudioStateChanged(
                             lastCurrentEndpoint?.toWritableMap(),
                             endpoints.map { it.toWritableMap() }.toWritableArray()
                         )
                     } }
-                    muteJob = launch { isMuted.collect { listener?.onMuteChanged(it) } }
+                    launch { isMuted.collect { listener?.onMuteChanged(it) } }
                     }
             } catch (e: CancellationException) {
                 // Never swallow coroutine cancellation — let it propagate so the
