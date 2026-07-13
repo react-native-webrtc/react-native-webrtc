@@ -35,14 +35,17 @@ const NATIVE_EVENTS = [
     'livestreamStatusChanged',
 ];
 
-const ANDROID_ONLY_EVENTS = [ 'telecomActionPerformed' ];
+const ANDROID_ONLY_EVENTS = ['telecomActionPerformed'];
 
 const eventEmitter = new EventEmitter();
 
 export function setupNativeEvents() {
     for (const eventName of NATIVE_EVENTS) {
         // Only listen to Android-only events on Android.
-        if (Platform.OS !== 'android' && ANDROID_ONLY_EVENTS.includes(eventName)) {
+        if (
+            Platform.OS !== 'android' &&
+            ANDROID_ONLY_EVENTS.includes(eventName)
+        ) {
             continue;
         }
 
