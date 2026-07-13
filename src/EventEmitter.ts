@@ -2,6 +2,7 @@ import {
     EmitterSubscription,
     NativeEventEmitter,
     NativeModules,
+    Platform,
 } from 'react-native';
 // @ts-ignore
 import EventEmitter from 'react-native/Libraries/vendor/emitter/EventEmitter';
@@ -34,10 +35,17 @@ const NATIVE_EVENTS = [
     'livestreamStatusChanged',
 ];
 
+const ANDROID_ONLY_EVENTS = [ 'telecomActionPerformed' ];
+
 const eventEmitter = new EventEmitter();
 
 export function setupNativeEvents() {
     for (const eventName of NATIVE_EVENTS) {
+        // Only listen to Android-only events on Android.
+        if (Platform.OS !== 'android' && ANDROID_ONLY_EVENTS.includes(eventName)) {
+            continue;
+        }
+
         nativeEmitter.addListener(eventName, (...args) => {
             eventEmitter.emit(eventName, ...args);
         });
