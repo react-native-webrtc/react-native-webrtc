@@ -3,6 +3,7 @@ package com.oney.WebRTCModule.voip
 import android.content.Context
 import android.content.Intent
 import android.annotation.SuppressLint
+import android.content.pm.PackageManager
 import android.telecom.DisconnectCause
 import androidx.annotation.RequiresApi
 import androidx.core.net.toUri
@@ -26,6 +27,7 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.consumeAsFlow
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 interface CallEventsListener {
@@ -38,7 +40,9 @@ interface CallEventsListener {
 
 @RequiresApi(value = 26)
 object CallManager {
-    private const val FULFILL_ANSWER_TIMEOUT_MS = 10_000L
+    private const val DEFAULT_INCOMING_CALL_TIMEOUT_MS = 45_000L
+    private const val DEFAULT_OUTGOING_CALL_TIMEOUT_MS = 60_000L
+    private const val DEFAULT_FULFILL_ANSWER_TIMEOUT_MS = 10_000L
 
     private val scope = CoroutineScope(Dispatchers.Default + SupervisorJob())
     private var callsManager: CallsManager? = null
@@ -47,6 +51,8 @@ object CallManager {
     private var lastCurrentEndpoint: CallEndpointCompat? = null
     private var lastEndpoints: List<CallEndpointCompat> = emptyList()
     private var audioOutputManager: AudioOutputManager? = null
+
+    private var ringTimeoutJob: Job? = null
 
     private var actions: Channel<CallAction>? = null
 
@@ -65,6 +71,10 @@ object CallManager {
     private var listener: CallEventsListener? = null
     private var displayName: String = ""
     private var videoCall: Boolean = false
+    private var timeoutsLoaded = false
+    private var incomingCallTimeoutMs = DEFAULT_INCOMING_CALL_TIMEOUT_MS
+    private var outgoingCallTimeoutMs = DEFAULT_OUTGOING_CALL_TIMEOUT_MS
+    private var fulfillAnswerTimeoutMs = DEFAULT_FULFILL_ANSWER_TIMEOUT_MS
 
     fun hasActiveCall(): Boolean = hasActiveCall
     fun isAnswered(): Boolean = answered
@@ -153,6 +163,7 @@ object CallManager {
 
     @SuppressLint("MissingPermission")
     private fun ensureRegistered(context: Context) {
+        loadTimeouts(context)
         callNotificationManager.initChannels(context.applicationContext)
 
         if (callsManager == null) {
@@ -163,6 +174,27 @@ object CallManager {
             callsManager!!.registerAppWithTelecom(CallsManager.CAPABILITY_SUPPORTS_VIDEO_CALLING or CallsManager.CAPABILITY_SUPPORTS_CALL_STREAMING)
             registered = true
         }
+    }
+
+    private fun loadTimeouts(context: Context) {
+        if (timeoutsLoaded) return
+        timeoutsLoaded = true
+        incomingCallTimeoutMs = readTimeoutMs(context, "FishjamVoipIncomingCallTimeout", DEFAULT_INCOMING_CALL_TIMEOUT_MS)
+        outgoingCallTimeoutMs = readTimeoutMs(context, "FishjamVoipOutgoingCallTimeout", DEFAULT_OUTGOING_CALL_TIMEOUT_MS)
+        fulfillAnswerTimeoutMs = readTimeoutMs(context, "FishjamVoipFulfillAnswerTimeout", DEFAULT_FULFILL_ANSWER_TIMEOUT_MS)
+    }
+
+    /** Reads a manifest meta-data value in seconds; returns milliseconds. */
+    private fun readTimeoutMs(context: Context, key: String, defaultMs: Long): Long = try {
+        val appInfo = context.packageManager.getApplicationInfo(
+            context.packageName,
+            PackageManager.GET_META_DATA,
+        )
+        val seconds = appInfo.metaData?.getInt(key, (defaultMs / 1000).toInt())
+            ?: (defaultMs / 1000).toInt()
+        if (seconds > 0) seconds * 1000L else defaultMs
+    } catch (_: Exception) {
+        defaultMs
     }
 
     @Synchronized
@@ -211,12 +243,20 @@ object CallManager {
                         pendingAnswerRequestId = null
                         listener?.onEnded(causeToReason(cause))
                     },
-                    onSetActive = { answered = true },
+                    onSetActive = {
+                        answered = true
+                        cancelRingTimeout()
+                    },
                     onSetInactive = { }
                 ) {
                     listener?.onStarted()
-                    if (isIncoming) callNotificationManager.showIncoming(ctx.applicationContext, displayName, isVideo)
-                    else showOngoingNotification()
+                    if (isIncoming) {
+                        callNotificationManager.showIncoming(ctx.applicationContext, displayName, isVideo)
+                        startRingTimeout(incomingCallTimeoutMs)
+                    } else {
+                        showOngoingNotification()
+                        startRingTimeout(outgoingCallTimeoutMs)
+                    }
                     audioOutputManager?.setTelecomOwnsRouting(true)
                     launch { processActions(channel.consumeAsFlow(), callType) }
                     launch { currentCallEndpoint.collect { endpoint ->
@@ -244,6 +284,7 @@ object CallManager {
             } catch (e: UnsupportedOperationException) {
                 listener?.onFailed(e.message ?: "Telecom not supported on this device")
             } finally {
+                cancelRingTimeout()
                 FulfillRequestManager.cancelAll()
                 pendingAnswerRequestId = null
                 hasActiveCall = false
@@ -283,6 +324,9 @@ object CallManager {
                 // App-initiated answer succeeded — onAnswer won't fire for this,
                 // so run the post-answer side effects here.
                 handleAnswered()
+            } else if (action == CallAction.Activate) {
+                answered = true
+                cancelRingTimeout()
             } else if (action is CallAction.Disconnect) {
                 listener?.onEnded(causeToReason(action.cause))
                 this@processActions.cancel()
@@ -299,13 +343,14 @@ object CallManager {
 
     /** Post-answer side effects shared by external (onAnswer) and app-initiated answers. */
     private fun handleAnswered() {
+        cancelRingTimeout()
         if (pendingAnswerRequestId != null) return
         answered = true
         callNotificationManager.stopVibration()
         appContext?.let { LockScreenController.onCallAnswered(it) }
         showConnectingNotification()
 
-        val requestId = FulfillRequestManager.createRequest(FULFILL_ANSWER_TIMEOUT_MS) { timedOutRequestId ->
+        val requestId = FulfillRequestManager.createRequest(fulfillAnswerTimeoutMs) { timedOutRequestId ->
             if (pendingAnswerRequestId != timedOutRequestId) return@createRequest
             pendingAnswerRequestId = null
             listener?.onFailed("answer fulfill timed out")
@@ -313,6 +358,20 @@ object CallManager {
         }
         pendingAnswerRequestId = requestId
         listener?.onAnswered(requestId)
+    }
+
+    private fun startRingTimeout(timeoutMs: Long) {
+        cancelRingTimeout()
+        ringTimeoutJob = scope.launch {
+            delay(timeoutMs)
+            if (!hasActiveCall || answered) return@launch
+            endCall(DisconnectCause(DisconnectCause.MISSED))
+        }
+    }
+
+    private fun cancelRingTimeout() {
+        ringTimeoutJob?.cancel()
+        ringTimeoutJob = null
     }
 
     private fun showConnectingNotification() {

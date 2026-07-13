@@ -22,8 +22,10 @@ export type TelecomEventType =
  * - `rejected` — the callee actively declined a ringing incoming call (Android only
  *   — CallKit has no ended-reason case for a local decline, so on iOS this also
  *   surfaces as `local`).
- * - `missed` — an incoming call rang and was never answered.
- * - `remote` — the other party ended the call, or an outgoing call wasn't answered.
+ * - `missed` — an incoming call rang and was never answered, including the native
+ *   ring timeout (default 45 seconds), or an Android outgoing call did not connect
+ *   before its native timeout (default 60 seconds).
+ * - `remote` — the other party ended the call.
  * - `answeredElsewhere` — answered on another of the user's devices while ringing.
  * - `failed` — call setup (e.g. room join) failed.
  */

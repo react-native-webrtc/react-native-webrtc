@@ -5,7 +5,20 @@
 #import "FulfillRequestManager.h"
 #import "VoipManager.h"
 
-static const NSTimeInterval kFulfillAnswerTimeout = 10;
+static const NSTimeInterval kDefaultIncomingCallTimeout = 45;
+static const NSTimeInterval kDefaultOutgoingCallTimeout = 60;
+static const NSTimeInterval kDefaultFulfillAnswerTimeout = 10;
+
+static NSTimeInterval timeoutFromInfoPlist(NSString *key, NSTimeInterval fallback) {
+    id value = [NSBundle.mainBundle objectForInfoDictionaryKey:key];
+    if ([value respondsToSelector:@selector(doubleValue)]) {
+        double seconds = [value doubleValue];
+        if (seconds > 0) {
+            return seconds;
+        }
+    }
+    return fallback;
+}
 
 @interface CallKitManager ()
 @property(nonatomic, strong) CXCallController *callController;
@@ -13,6 +26,10 @@ static const NSTimeInterval kFulfillAnswerTimeout = 10;
 @property(nonatomic, strong) NSUUID *currentCallUUID;
 @property(nonatomic, assign) BOOL isCallAnswered;
 @property(nonatomic, copy, nullable) NSString *pendingAnswerRequestId;
+@property(nonatomic, copy, nullable) dispatch_block_t ringTimeoutBlock;
+@property(nonatomic, assign) NSTimeInterval incomingCallTimeout;
+@property(nonatomic, assign) NSTimeInterval outgoingCallTimeout;
+@property(nonatomic, assign) NSTimeInterval fulfillAnswerTimeout;
 @end
 
 @implementation CallKitManager
@@ -39,6 +56,9 @@ static const NSTimeInterval kFulfillAnswerTimeout = 10;
         _provider = [[CXProvider alloc] initWithConfiguration:providerConfiguration];
         [_provider setDelegate:self queue:nil];
         _callController = [[CXCallController alloc] init];
+        _incomingCallTimeout = timeoutFromInfoPlist(@"FishjamVoipIncomingCallTimeout", kDefaultIncomingCallTimeout);
+        _outgoingCallTimeout = timeoutFromInfoPlist(@"FishjamVoipOutgoingCallTimeout", kDefaultOutgoingCallTimeout);
+        _fulfillAnswerTimeout = timeoutFromInfoPlist(@"FishjamVoipFulfillAnswerTimeout", kDefaultFulfillAnswerTimeout);
     }
     return self;
 }
@@ -110,7 +130,9 @@ static const NSTimeInterval kFulfillAnswerTimeout = 10;
                                               if (weakSelf.onCallFailed) {
                                                   weakSelf.onCallFailed(error.localizedDescription);
                                               }
+                                              return;
                                           }
+                                          [weakSelf startRingTimeoutForCall:uuid timeout:weakSelf.incomingCallTimeout];
                                       }];
 }
 
@@ -182,7 +204,35 @@ static const NSTimeInterval kFulfillAnswerTimeout = 10;
     [self cleanup];
 }
 
+- (void)startRingTimeoutForCall:(NSUUID *)uuid timeout:(NSTimeInterval)timeout {
+    [self cancelRingTimeout];
+
+    __weak typeof(self) weakSelf = self;
+    dispatch_block_t block = dispatch_block_create(0, ^{
+        typeof(self) strongSelf = weakSelf;
+        if (strongSelf == nil) {
+            return;
+        }
+        strongSelf.ringTimeoutBlock = nil;
+        if (![uuid isEqual:strongSelf.currentCallUUID] || strongSelf.isCallAnswered) {
+            return;
+        }
+        [strongSelf endCallWithReason:@"missed"];
+    });
+    self.ringTimeoutBlock = block;
+    dispatch_after(dispatch_walltime(NULL, (int64_t)(timeout * NSEC_PER_SEC)),
+                   dispatch_get_main_queue(), block);
+}
+
+- (void)cancelRingTimeout {
+    if (self.ringTimeoutBlock != nil) {
+        dispatch_block_cancel(self.ringTimeoutBlock);
+        self.ringTimeoutBlock = nil;
+    }
+}
+
 - (void)cleanup {
+    [self cancelRingTimeout];
     self.currentCallUUID = nil;
     self.isCallAnswered = NO;
     self.pendingAnswerRequestId = nil;
@@ -209,12 +259,13 @@ static const NSTimeInterval kFulfillAnswerTimeout = 10;
 }
 
 - (void)provider:(CXProvider *)provider performAnswerCallAction:(CXAnswerCallAction *)action {
+    [self cancelRingTimeout];
     self.isCallAnswered = YES;
 
     __weak typeof(self) weakSelf = self;
     __block NSString *requestId = nil;
     requestId = [[FulfillRequestManager shared]
-        createRequestWithTimeout:kFulfillAnswerTimeout
+        createRequestWithTimeout:self.fulfillAnswerTimeout
                       completion:^(FulfillResult result) {
                           typeof(self) strongSelf = weakSelf;
                           if (strongSelf == nil) {
