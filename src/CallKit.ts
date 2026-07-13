@@ -11,7 +11,7 @@ export type CallKitConfig = {
 
 export type CallKitAction = {
     started?: undefined;
-    answer?: undefined;
+    answer?: string;
     ended?: CallEndedReason;
     failed?: string;
     muted?: boolean;
@@ -34,6 +34,32 @@ export async function endCallKitSession(
         return;
     }
     await WebRTCModule.endCallKitSession(reason);
+}
+
+export async function fulfillIncomingCallConnected(
+    requestId: string,
+): Promise<boolean> {
+    if (Platform.OS !== 'ios') {
+        return false;
+    }
+    return WebRTCModule.fulfillIncomingCallConnected(requestId);
+}
+
+export async function failIncomingCallConnected(
+    requestId: string,
+): Promise<void> {
+    if (Platform.OS !== 'ios') {
+        return;
+    }
+    await WebRTCModule.failIncomingCallConnected(requestId);
+}
+
+export function getPendingAnswerRequestId(): string | null {
+    if (Platform.OS !== 'ios') {
+        return null;
+    }
+    const requestId: unknown = WebRTCModule.getPendingAnswerRequestId();
+    return typeof requestId === 'string' ? requestId : null;
 }
 
 export function hasActiveCallKitSession(): boolean {

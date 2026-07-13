@@ -2,13 +2,17 @@
 
 #import <AVFoundation/AVFoundation.h>
 #import <WebRTC/RTCAudioSession.h>
+#import "FulfillRequestManager.h"
 #import "VoipManager.h"
+
+static const NSTimeInterval kFulfillAnswerTimeout = 10;
 
 @interface CallKitManager ()
 @property(nonatomic, strong) CXCallController *callController;
 @property(nonatomic, strong) CXProvider *provider;
 @property(nonatomic, strong) NSUUID *currentCallUUID;
 @property(nonatomic, assign) BOOL isCallAnswered;
+@property(nonatomic, copy, nullable) NSString *pendingAnswerRequestId;
 @end
 
 @implementation CallKitManager
@@ -161,9 +165,28 @@
     [self cleanup];
 }
 
+- (BOOL)fulfillIncomingCallConnected:(NSString *)requestId {
+    return [[FulfillRequestManager shared] fulfill:requestId];
+}
+
+- (void)failIncomingCallConnected:(NSString *)requestId {
+    [[FulfillRequestManager shared] cancel:requestId];
+}
+
+- (void)reportAnswerFailureForCall:(NSUUID *)uuid {
+    if (uuid == nil || ![uuid isEqual:self.currentCallUUID]) {
+        return;
+    }
+
+    [self.provider reportCallWithUUID:uuid endedAtDate:[NSDate date] reason:CXCallEndedReasonFailed];
+    [self cleanup];
+}
+
 - (void)cleanup {
     self.currentCallUUID = nil;
     self.isCallAnswered = NO;
+    self.pendingAnswerRequestId = nil;
+    [[FulfillRequestManager shared] cancelAll];
     [[VoipManager shared] clearPendingIncomingCall];
 }
 
@@ -187,10 +210,46 @@
 
 - (void)provider:(CXProvider *)provider performAnswerCallAction:(CXAnswerCallAction *)action {
     self.isCallAnswered = YES;
+
+    __weak typeof(self) weakSelf = self;
+    __block NSString *requestId = nil;
+    requestId = [[FulfillRequestManager shared]
+        createRequestWithTimeout:kFulfillAnswerTimeout
+                      completion:^(FulfillResult result) {
+                          typeof(self) strongSelf = weakSelf;
+                          if (strongSelf == nil) {
+                              [action fail];
+                              return;
+                          }
+                          if ([strongSelf.pendingAnswerRequestId isEqualToString:requestId]) {
+                              strongSelf.pendingAnswerRequestId = nil;
+                          }
+                          if (result == FulfillResultFulfilled) {
+                              [action fulfill];
+                          } else {
+                              [action fail];
+                              [strongSelf reportAnswerFailureForCall:action.callUUID];
+                          }
+                      }];
+
+    self.pendingAnswerRequestId = requestId;
     if (self.onCallAnswered) {
-        self.onCallAnswered();
+        self.onCallAnswered(requestId);
     }
-    [action fulfill];
+}
+
+- (void)provider:(CXProvider *)provider timedOutPerformingAction:(CXAction *)action {
+    if (![action isKindOfClass:[CXAnswerCallAction class]]) {
+        return;
+    }
+
+    NSString *requestId = self.pendingAnswerRequestId;
+    if (requestId != nil && [[FulfillRequestManager shared] cancel:requestId]) {
+        return;
+    }
+
+    [action fail];
+    [self reportAnswerFailureForCall:action.UUID];
 }
 
 - (void)provider:(CXProvider *)provider performSetHeldCallAction:(CXSetHeldCallAction *)action {

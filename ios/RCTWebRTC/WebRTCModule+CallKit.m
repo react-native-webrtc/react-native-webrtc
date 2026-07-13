@@ -23,8 +23,8 @@ static void *CallKitManagerKey = &CallKitManagerKey;
     manager.onCallStarted = ^{
         [weakSelf sendEventWithName:kEventCallKitActionPerformed body:@{@"started" : [NSNull null]}];
     };
-    manager.onCallAnswered = ^{
-        [weakSelf sendEventWithName:kEventCallKitActionPerformed body:@{@"answer" : [NSNull null]}];
+    manager.onCallAnswered = ^(NSString *requestId) {
+        [weakSelf sendEventWithName:kEventCallKitActionPerformed body:@{@"answer" : requestId}];
     };
     manager.onCallEnded = ^(NSString *reason) {
         [weakSelf sendEventWithName:kEventCallKitActionPerformed body:@{@"ended" : reason ?: @"local"}];
@@ -82,6 +82,33 @@ RCT_EXPORT_METHOD(endCallKitSession
     } @catch (NSException *exception) {
         reject(@"E_CALLKIT_END_FAILED", exception.reason, nil);
     }
+}
+
+RCT_EXPORT_METHOD(fulfillIncomingCallConnected
+                  : (NSString *)requestId resolver
+                  : (RCTPromiseResolveBlock)resolve rejecter
+                  : (RCTPromiseRejectBlock)reject) {
+    @try {
+        resolve(@([[self callKitManager] fulfillIncomingCallConnected:requestId]));
+    } @catch (NSException *exception) {
+        reject(@"E_CALLKIT_FULFILL_ANSWER_FAILED", exception.reason, nil);
+    }
+}
+
+RCT_EXPORT_METHOD(failIncomingCallConnected
+                  : (NSString *)requestId resolver
+                  : (RCTPromiseResolveBlock)resolve rejecter
+                  : (RCTPromiseRejectBlock)reject) {
+    @try {
+        [[self callKitManager] failIncomingCallConnected:requestId];
+        resolve(nil);
+    } @catch (NSException *exception) {
+        reject(@"E_CALLKIT_FAIL_ANSWER_FAILED", exception.reason, nil);
+    }
+}
+
+RCT_EXPORT_BLOCKING_SYNCHRONOUS_METHOD(getPendingAnswerRequestId) {
+    return [self callKitManager].pendingAnswerRequestId;
 }
 
 RCT_EXPORT_BLOCKING_SYNCHRONOUS_METHOD(hasActiveCallKitSession) {
