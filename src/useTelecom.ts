@@ -19,7 +19,7 @@ export type UseTelecomResult = {
     isAnswered: () => boolean;
 };
 
-function useTelecomAndroid(): UseTelecomResult {
+export function useTelecom(): UseTelecomResult {
     const startCall = useCallback(
         (config: TelecomConfig) => startTelecomCall(config),
         [],
@@ -38,19 +38,6 @@ function useTelecomAndroid(): UseTelecomResult {
         isAnswered,
     };
 }
-
-const noop = async () => {};
-const emptyResult: UseTelecomResult = {
-    startCall: noop,
-    endCall: noop,
-    hasActiveCall: () => false,
-    isAnswered: () => false,
-};
-
-export const useTelecom = Platform.select({
-    android: useTelecomAndroid,
-    default: () => emptyResult,
-}) as typeof useTelecomAndroid;
 
 export function useTelecomEvent(callback: (event: TelecomEvent) => void): void {
     const callbackRef = useRef(callback);
