@@ -4,13 +4,17 @@ import {
     failIncomingCallConnected as failCallKitAnswer,
     fulfillIncomingCallConnected as fulfillCallKitAnswer,
     getPendingAnswerRequestId as getPendingCallKitAnswerRequestId,
+    isCallKitCallHeld,
     reportOutgoingCallConnected as reportCallKitOutgoingCallConnected,
+    setCallKitCallHeld,
 } from './CallKit';
 import {
     failTelecomCallAnswered,
     fulfillTelecomCallAnswered,
     getPendingAnswerRequestId as getPendingTelecomAnswerRequestId,
+    isTelecomCallHeld,
     reportTelecomCallConnected,
+    setTelecomCallHeld,
 } from './Telecom';
 
 const { WebRTCModule } = NativeModules;
@@ -108,4 +112,23 @@ export function reportOutgoingCallConnected(): Promise<void> {
     return Platform.OS === 'ios'
         ? reportCallKitOutgoingCallConnected()
         : reportTelecomCallConnected();
+}
+
+/**
+ * Asks the OS to hold or resume the current call. The system decides and reports back
+ * through `onHeldChanged`, so treat that event — not this call returning — as the point
+ * the call is actually held. No-op when there is no active call.
+ */
+export function setCallHeld(onHold: boolean): Promise<void> {
+    return Platform.OS === 'ios'
+        ? setCallKitCallHeld(onHold)
+        : setTelecomCallHeld(onHold);
+}
+
+/**
+ * Whether the OS currently has the call on hold. Useful on mount, when no `onHeldChanged`
+ * event has been seen yet.
+ */
+export function isCallHeld(): boolean {
+    return Platform.OS === 'ios' ? isCallKitCallHeld() : isTelecomCallHeld();
 }

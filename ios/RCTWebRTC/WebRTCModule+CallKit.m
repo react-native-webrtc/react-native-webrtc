@@ -121,6 +121,18 @@ RCT_EXPORT_METHOD(reportOutgoingCallConnected
     }
 }
 
+RCT_EXPORT_METHOD(setCallKitCallHeld
+                  : (BOOL)onHold resolver
+                  : (RCTPromiseResolveBlock)resolve rejecter
+                  : (RCTPromiseRejectBlock)reject) {
+    @try {
+        [[self callKitManager] setCallHeld:onHold];
+        resolve(nil);
+    } @catch (NSException *exception) {
+        reject(@"E_CALLKIT_SET_HELD_FAILED", exception.reason, nil);
+    }
+}
+
 RCT_EXPORT_BLOCKING_SYNCHRONOUS_METHOD(getPendingAnswerRequestId) {
     return [self callKitManager].pendingAnswerRequestId;
 }
@@ -131,6 +143,10 @@ RCT_EXPORT_BLOCKING_SYNCHRONOUS_METHOD(hasActiveCallKitSession) {
 
 RCT_EXPORT_BLOCKING_SYNCHRONOUS_METHOD(isCallAnswered) {
     return @([self callKitManager].isCallAnswered);
+}
+
+RCT_EXPORT_BLOCKING_SYNCHRONOUS_METHOD(isCallKitCallHeld) {
+    return @([self callKitManager].isCallOnHold);
 }
 
 @end

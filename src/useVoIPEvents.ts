@@ -3,10 +3,7 @@ import { Platform } from 'react-native';
 
 import { hasActiveCallKitSession } from './CallKit';
 import { addListener, removeListener } from './EventEmitter';
-import {
-    type CallEndedReason,
-    hasActiveTelecomCall,
-} from './Telecom';
+import { type CallEndedReason, hasActiveTelecomCall } from './Telecom';
 import {
     clearPendingCallIntent,
     clearPendingIncomingCall,
@@ -36,6 +33,7 @@ export type VoIPEventHandlers = {
     onAnswered?: (requestId: string) => void;
     onEnded?: (reason?: CallEndedReason) => void;
     onRegistered?: (token: string) => void;
+    onHeldChanged?: (onHold: boolean) => void;
     onCallIntent?: (intent: VoipCallIntent) => void;
 };
 
@@ -67,6 +65,9 @@ const useVoIPEventsIos = (handlers: VoIPEventHandlers): void => {
     useCallKitEvent('ended', (reason) => {
         clearPendingIncomingCall();
         handlersRef.current.onEnded?.(reason);
+    });
+    useCallKitEvent('held', (onHold) => {
+        handlersRef.current.onHeldChanged?.(Boolean(onHold));
     });
 
     useEffect(() => {
@@ -144,12 +145,18 @@ const useVoIPEventsAndroid = (handlers: VoIPEventHandlers): void => {
                 event?: string;
                 requestId?: string;
                 reason?: CallEndedReason;
+                held?: boolean;
             };
             if (payload.event === 'answer' && payload.requestId) {
                 handlersRef.current.onAnswered?.(payload.requestId);
             } else if (payload.event === 'ended') {
                 clearPendingIncomingCall();
                 handlersRef.current.onEnded?.(payload.reason);
+            } else if (
+                payload.event === 'holdChanged' &&
+                typeof payload.held === 'boolean'
+            ) {
+                handlersRef.current.onHeldChanged?.(payload.held);
             }
         });
 

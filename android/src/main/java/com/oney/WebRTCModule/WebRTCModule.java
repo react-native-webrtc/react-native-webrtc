@@ -1733,6 +1733,12 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
         promise.resolve(null);
     }
 
+    @ReactMethod
+    public void setTelecomCallHeld(boolean onHold, Promise promise) {
+        telecomController.setCallHeld(onHold);
+        promise.resolve(null);
+    }
+
     @ReactMethod(isBlockingSynchronousMethod = true)
     public boolean hasActiveTelecomCall() {
         return telecomController.hasActiveCall();
@@ -1741,6 +1747,11 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
     @ReactMethod(isBlockingSynchronousMethod = true)
     public boolean isTelecomCallAnswered() {
         return telecomController.isAnswered();
+    }
+
+    @ReactMethod(isBlockingSynchronousMethod = true)
+    public boolean isTelecomCallHeld() {
+        return telecomController.isOnHold();
     }
 
     @ReactMethod(isBlockingSynchronousMethod = true)

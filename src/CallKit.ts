@@ -73,6 +73,13 @@ export async function reportOutgoingCallConnected(): Promise<void> {
     await WebRTCModule.reportOutgoingCallConnected();
 }
 
+export async function setCallKitCallHeld(onHold: boolean): Promise<void> {
+    if (Platform.OS !== 'ios') {
+        return;
+    }
+    await WebRTCModule.setCallKitCallHeld(onHold);
+}
+
 export function getPendingAnswerRequestId(): string | null {
     if (Platform.OS !== 'ios') {
         return null;
@@ -93,4 +100,11 @@ export function isCallAnswered(): boolean {
         return false;
     }
     return WebRTCModule.isCallAnswered();
+}
+
+export function isCallKitCallHeld(): boolean {
+    if (Platform.OS !== 'ios') {
+        return false;
+    }
+    return WebRTCModule.isCallKitCallHeld();
 }

@@ -16,7 +16,12 @@ import {
     type AudioExtractionOptions,
     type AudioTrackData,
 } from './AudioExtraction';
-import { type CallKitAction, type CallKitConfig } from './CallKit';
+import {
+    type CallKitAction,
+    type CallKitConfig,
+    isCallKitCallHeld,
+    setCallKitCallHeld,
+} from './CallKit';
 import { setupNativeEvents } from './EventEmitter';
 import Logger from './Logger';
 import mediaDevices from './MediaDevices';
@@ -51,6 +56,8 @@ import {
     type TelecomConfig,
     type TelecomEvent,
     type TelecomEventType,
+    isTelecomCallHeld,
+    setTelecomCallHeld,
 } from './Telecom';
 import {
     clearPendingCallIntent,
@@ -61,7 +68,9 @@ import {
     getPendingCallIntent,
     getPendingIncomingCall,
     getVoipToken,
+    isCallHeld,
     reportOutgoingCallConnected,
+    setCallHeld,
     type VoipCallIntent,
 } from './VoIP';
 import {
@@ -144,6 +153,9 @@ export {
     pushFrame,
     registerGlobals,
     reportOutgoingCallConnected,
+    isCallHeld,
+    isCallKitCallHeld,
+    isTelecomCallHeld,
     RTCAudioSession,
     RTCCertificate,
     RTCErrorEvent,
@@ -161,6 +173,9 @@ export {
     startAudioExtraction,
     startPIP,
     stopPIP,
+    setCallHeld,
+    setCallKitCallHeld,
+    setTelecomCallHeld,
     useAudioOutput,
     useCallKit,
     useCallKitEvent,

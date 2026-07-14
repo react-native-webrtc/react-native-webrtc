@@ -18,7 +18,6 @@ import com.facebook.react.bridge.Arguments
 import com.facebook.react.bridge.WritableArray
 import com.facebook.react.bridge.WritableMap
 import com.oney.WebRTCModule.AudioOutputManager
-import com.oney.WebRTCModule.foregroundService.ForegroundServiceController
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -37,6 +36,7 @@ interface CallEventsListener {
     fun onEnded(reason: String)
     fun onFailed(reason: String)
     fun onMuteChanged(muted: Boolean)
+    fun onHoldChanged(onHold: Boolean)
 }
 
 @RequiresApi(value = 26)
@@ -67,6 +67,7 @@ object CallManager {
 
     @Volatile private var hasActiveCall = false
     @Volatile private var answered = false
+    @Volatile private var onHold = false
     @Volatile private var isOutgoing = false
     @Volatile private var pendingAnswerRequestId: String? = null
     private var appContext: Context? = null
@@ -80,6 +81,7 @@ object CallManager {
 
     fun hasActiveCall(): Boolean = hasActiveCall
     fun isAnswered(): Boolean = answered
+    fun isOnHold(): Boolean = onHold
     fun pendingAnswerRequestId(): String? = pendingAnswerRequestId
     fun currentDisplayName(): String = displayName
     fun currentIsVideo(): Boolean = videoCall
@@ -94,7 +96,9 @@ object CallManager {
 
     fun answer() { actions?.trySend(CallAction.Answer) }
     private fun setCallActive() { actions?.trySend(CallAction.Activate) }
-
+    fun setCallHeld(onHold: Boolean) {
+        actions?.trySend(if (onHold) CallAction.Hold else CallAction.Activate)
+    }
     fun fulfillAnswered(requestId: String): Boolean {
         if (!FulfillRequestManager.fulfill(requestId)) return false
         if (pendingAnswerRequestId == requestId) {
@@ -219,6 +223,7 @@ object CallManager {
         actions = channel
         hasActiveCall = true
         answered = false
+        onHold = false
 
         this.displayName = displayName
         this.videoCall = isVideo
@@ -258,8 +263,15 @@ object CallManager {
                     onSetActive = {
                         answered = true
                         cancelRingTimeout()
+                        onHold = false
+                        VoipForegroundServiceController.onCallHeld(false)
+                        listener?.onHoldChanged(false)
                     },
-                    onSetInactive = { }
+                    onSetInactive = {
+                        onHold = true
+                        VoipForegroundServiceController.onCallHeld(true)
+                        listener?.onHoldChanged(true)
+                    }
                 ) {
                     listener?.onStarted()
                     if (isIncoming) {
@@ -301,12 +313,13 @@ object CallManager {
                 pendingAnswerRequestId = null
                 hasActiveCall = false
                 answered = false
+                onHold = false
                 isOutgoing = false
                 actions = null
                 channel.close()
                 audioOutputManager?.setTelecomOwnsRouting(false)
                 LockScreenController.onCallEnded()
-                ForegroundServiceController.getInstance().onCallEnded()
+                VoipForegroundServiceController.onCallEnded()
                 callNotificationManager.cancel(ctx.applicationContext)
                 VoipPushRegistry.clearPending()
                 // Dismiss IncomingCallActivity if the call ended before the
@@ -340,6 +353,15 @@ object CallManager {
             } else if (action == CallAction.Activate) {
                 answered = true
                 cancelRingTimeout()
+                // Activate also reports an outgoing call as connected, so this can
+                // emit false before a call was ever held.
+                onHold = false
+                VoipForegroundServiceController.onCallHeld(false)
+                listener?.onHoldChanged(false)
+            } else if (action == CallAction.Hold) {
+                onHold = true
+                VoipForegroundServiceController.onCallHeld(true)
+                listener?.onHoldChanged(true)
             } else if (action is CallAction.Disconnect) {
                 listener?.onEnded(causeToReason(action.cause))
                 this@processActions.cancel()
@@ -388,11 +410,11 @@ object CallManager {
     }
 
     private fun showConnectingNotification() {
-        ForegroundServiceController.getInstance().onCallConnecting(displayName, videoCall)
+        VoipForegroundServiceController.onCallConnecting(displayName, videoCall)
     }
 
     private fun showOngoingNotification() {
-        ForegroundServiceController.getInstance().onCallConnected(displayName, videoCall)
+        VoipForegroundServiceController.onCallConnected(displayName, videoCall)
     }
 
     private fun CallEndpointCompat.toWritableMap(): WritableMap = Arguments.createMap().apply {

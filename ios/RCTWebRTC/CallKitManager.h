@@ -16,6 +16,7 @@ typedef void (^CallKitBoolCallback)(BOOL);
 @property(nonatomic, readonly) BOOL hasActiveCall;
 @property(nonatomic, readonly) BOOL isCallAnswered;
 @property(nonatomic, readonly) BOOL isOutgoingCall;
+@property(nonatomic, readonly) BOOL isCallOnHold;
 @property(nonatomic, readonly, nullable) NSString *pendingAnswerRequestId;
 
 + (instancetype)shared;
@@ -28,5 +29,6 @@ typedef void (^CallKitBoolCallback)(BOOL);
 - (BOOL)fulfillIncomingCallConnected:(NSString *)requestId;
 - (void)failIncomingCallConnected:(NSString *)requestId;
 - (void)reportOutgoingCallConnected;
+- (void)setCallHeld:(BOOL)onHold;
 
 @end

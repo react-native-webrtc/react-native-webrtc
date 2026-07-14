@@ -12,6 +12,7 @@ import androidx.core.content.ContextCompat;
 import com.facebook.react.bridge.Promise;
 import com.facebook.react.bridge.ReactApplicationContext;
 import com.facebook.react.bridge.ReadableMap;
+import com.oney.WebRTCModule.voip.VoipForegroundRequest;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -30,11 +31,7 @@ public class ForegroundServiceController {
     private boolean screenSharingAllowed = false;
     private boolean screenShareActive = false;
 
-    private boolean callActive = false;
-    private boolean callConnecting = false;
-    private String callDisplayName = "";
-    private boolean callIsVideo = false;
-    private long callConnectedAtMs = 0;
+    private VoipForegroundRequest voipRequest = VoipForegroundRequest.INACTIVE;
 
     private String channelId = "com.fishjam.foregroundservice.channel";
     private String channelName = "Fishjam Notifications";
@@ -115,45 +112,27 @@ public class ForegroundServiceController {
         applyState();
     }
 
-    public synchronized void onCallConnecting(String displayName, boolean isVideo) {
-        callActive = true;
-        callConnecting = true;
-        callDisplayName = displayName != null ? displayName : "";
-        callIsVideo = isVideo;
-        callConnectedAtMs = 0;
+    public synchronized void setVoipRequest(VoipForegroundRequest request) {
+        voipRequest = request;
         applyState();
     }
 
-    /**
-     * Called when media is connected. Switches the service's notification to
-     * the ongoing CallStyle variant and starts its chronometer.
-     */
-    public synchronized void onCallConnected(String displayName, boolean isVideo) {
-        callActive = true;
-        callConnecting = false;
-        callDisplayName = displayName != null ? displayName : "";
-        callIsVideo = isVideo;
-        callConnectedAtMs = System.currentTimeMillis();
+    public synchronized void setVoipHeld(boolean held) {
+        if (!voipRequest.isActive()) return;
+        voipRequest = voipRequest.withHeld(held);
         applyState();
     }
 
-    /** Kept for native callers compiled against the previous API. */
-    public synchronized void onCallStarted(String displayName, boolean isVideo) {
-        onCallConnected(displayName, isVideo);
-    }
-
-    public synchronized void onCallEnded() {
-        callActive = false;
-        callConnecting = false;
-        applyState();
+    public synchronized VoipForegroundRequest getVoipRequest() {
+        return voipRequest;
     }
 
     private void applyState() {
         if (reactContext == null) return;
 
         boolean screenShareNeedsService = screenSharingAllowed && screenShareActive;
-        boolean cameraNeeded = cameraRequested || (callActive && callIsVideo);
-        boolean microphoneNeeded = microphoneRequested || callActive;
+        boolean cameraNeeded = cameraRequested || voipRequest.needsCamera();
+        boolean microphoneNeeded = microphoneRequested || voipRequest.needsMicrophone();
         int[] types = buildForegroundServiceTypes(cameraNeeded, microphoneNeeded, screenShareNeedsService);
 
         if (types.length == 0 && !screenShareNeedsService) {
@@ -170,11 +149,6 @@ public class ForegroundServiceController {
         serviceIntent.putExtra("importance", importance);
         serviceIntent.putExtra("onlyAlertOnce", onlyAlertOnce);
         serviceIntent.putExtra("foregroundServiceTypes", types);
-        if (callActive) {
-            serviceIntent.putExtra("voipDisplayName", callDisplayName);
-            serviceIntent.putExtra("voipConnectedAt", callConnectedAtMs);
-            serviceIntent.putExtra("voipConnecting", callConnecting);
-        }
 
         try {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {

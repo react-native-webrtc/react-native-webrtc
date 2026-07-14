@@ -13,6 +13,7 @@ import android.os.IBinder;
 import androidx.core.app.NotificationCompat;
 
 import com.oney.WebRTCModule.voip.CallNotificationManager;
+import com.oney.WebRTCModule.voip.VoipForegroundRequest;
 
 public class WebRTCForegroundService extends Service {
     private static final int FOREGROUND_SERVICE_ID = CallNotificationManager.NOTIFICATION_ID;
@@ -53,16 +54,17 @@ public class WebRTCForegroundService extends Service {
         // Post the ongoing CallStyle notification through startForeground()
         // (FGS-attached is what makes it valid on Android 14+ without a
         // full-screen intent) instead of the generic room notification.
-        String voipDisplayName = intent.getStringExtra("voipDisplayName");
-        if (voipDisplayName != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+        VoipForegroundRequest voipRequest = ForegroundServiceController.getInstance().getVoipRequest();
+        if (voipRequest.isActive() && Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             CallNotificationManager callNotificationManager = new CallNotificationManager();
-            boolean connecting = intent.getBooleanExtra("voipConnecting", false);
             Notification notification;
-            if (connecting) {
-                notification = callNotificationManager.buildConnecting(this, voipDisplayName);
+            if (voipRequest.isConnecting()) {
+                notification = callNotificationManager.buildConnecting(this, voipRequest.getDisplayName());
+            } else if (voipRequest.isHeld()) {
+                notification = callNotificationManager.buildHeld(this, voipRequest.getDisplayName());
             } else {
-                long connectedAt = intent.getLongExtra("voipConnectedAt", System.currentTimeMillis());
-                notification = callNotificationManager.buildOngoing(this, voipDisplayName, connectedAt);
+                notification = callNotificationManager.buildOngoing(
+                        this, voipRequest.getDisplayName(), voipRequest.getConnectedAtMs());
             }
             startForegroundWithNotification(notification, foregroundServiceType);
             return;

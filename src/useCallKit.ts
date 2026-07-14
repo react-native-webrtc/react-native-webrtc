@@ -6,6 +6,8 @@ import {
     CallKitConfig,
     endCallKitSession,
     hasActiveCallKitSession,
+    isCallKitCallHeld,
+    setCallKitCallHeld,
     startCallKitSession,
 } from './CallKit';
 import { addListener, removeListener } from './EventEmitter';
@@ -15,6 +17,8 @@ export type UseCallKitResult = {
     startCallKitSession: (config: CallKitConfig) => Promise<void>;
     endCallKitSession: (reason?: CallEndedReason) => Promise<void>;
     getCallKitSessionStatus: () => Promise<boolean>;
+    setCallHeld: (onHold: boolean) => Promise<void>;
+    isHeld: () => boolean;
 };
 
 function useCallKitIos(): UseCallKitResult {
@@ -39,11 +43,18 @@ function useCallKitIos(): UseCallKitResult {
     const getCallKitSessionStatus = useCallback(async () => {
         return hasActiveCallKitSession();
     }, []);
+    const setCallHeld = useCallback(
+        (onHold: boolean) => setCallKitCallHeld(onHold),
+        [],
+    );
+    const isHeld = useCallback(() => isCallKitCallHeld(), []);
 
     return {
         startCallKitSession: startCallKitSessionCb,
         endCallKitSession: endCallKitSessionCb,
         getCallKitSessionStatus,
+        setCallHeld,
+        isHeld,
     };
 }
 

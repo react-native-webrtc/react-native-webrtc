@@ -8,9 +8,8 @@ import android.telecom.DisconnectCause
 import androidx.annotation.RequiresApi
 
 /**
- * Handles the notification actions that only need to end the call and don't
- * have to bring an Activity forward (Decline on an incoming call, Hang up on an
- * ongoing one). Both route to [CallManager.endCall].
+ * Handles notification actions without bringing an Activity forward: decline
+ * and hang up.
  */
 @RequiresApi(Build.VERSION_CODES.O)
 class EndCallNotificationReceiver : BroadcastReceiver() {

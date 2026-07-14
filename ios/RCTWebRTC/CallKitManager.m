@@ -26,6 +26,7 @@ static NSTimeInterval timeoutFromInfoPlist(NSString *key, NSTimeInterval fallbac
 @property(nonatomic, strong) NSUUID *currentCallUUID;
 @property(nonatomic, assign) BOOL isCallAnswered;
 @property(nonatomic, assign) BOOL isOutgoingCall;
+@property(nonatomic, assign) BOOL isCallOnHold;
 @property(nonatomic, copy, nullable) NSString *pendingAnswerRequestId;
 @property(nonatomic, copy, nullable) dispatch_block_t ringTimeoutBlock;
 @property(nonatomic, assign) NSTimeInterval incomingCallTimeout;
@@ -104,6 +105,13 @@ static NSTimeInterval timeoutFromInfoPlist(NSString *key, NSTimeInterval fallbac
                     if (weakSelf.onCallStarted) {
                         weakSelf.onCallStarted();
                     }
+
+                    CXCallUpdate *update = [[CXCallUpdate alloc] init];
+                    update.supportsHolding = YES;
+                    update.supportsGrouping = NO;
+                    update.supportsUngrouping = NO;
+                    update.supportsDTMF = NO;
+                    [weakSelf.provider reportCallWithUUID:uuid updated:update];
                 }];
 }
 
@@ -119,7 +127,7 @@ static NSTimeInterval timeoutFromInfoPlist(NSString *key, NSTimeInterval fallbac
     update.remoteHandle = [[CXHandle alloc] initWithType:CXHandleTypeGeneric value:handle];
     update.localizedCallerName = displayName;
     update.hasVideo = isVideo;
-    update.supportsHolding = NO;
+    update.supportsHolding = YES;
     update.supportsGrouping = NO;
     update.supportsUngrouping = NO;
     update.supportsDTMF = NO;
@@ -211,6 +219,23 @@ static NSTimeInterval timeoutFromInfoPlist(NSString *key, NSTimeInterval fallbac
     [self.provider reportOutgoingCallWithUUID:uuid connectedAtDate:[NSDate date]];
 }
 
+- (void)setCallHeld:(BOOL)onHold {
+    NSUUID *uuid = self.currentCallUUID;
+    if (uuid == nil) {
+        NSLog(@"[CallKitManager] No active call to set held");
+        return;
+    }
+
+    CXSetHeldCallAction *action = [[CXSetHeldCallAction alloc] initWithCallUUID:uuid onHold:onHold];
+    CXTransaction *transaction = [[CXTransaction alloc] initWithAction:action];
+    [self.callController requestTransaction:transaction
+                                 completion:^(NSError *error) {
+                                     if (error) {
+                                         NSLog(@"[CallKitManager] Failed to set held: %@", error.localizedDescription);
+                                     }
+                                 }];
+}
+
 - (void)reportAnswerFailureForCall:(NSUUID *)uuid {
     if (uuid == nil || ![uuid isEqual:self.currentCallUUID]) {
         return;
@@ -252,6 +277,7 @@ static NSTimeInterval timeoutFromInfoPlist(NSString *key, NSTimeInterval fallbac
     self.currentCallUUID = nil;
     self.isCallAnswered = NO;
     self.isOutgoingCall = NO;
+    self.isCallOnHold = NO;
     self.pendingAnswerRequestId = nil;
     [[FulfillRequestManager shared] cancelAll];
     [[VoipManager shared] clearPendingIncomingCall];
@@ -323,6 +349,7 @@ static NSTimeInterval timeoutFromInfoPlist(NSString *key, NSTimeInterval fallbac
 }
 
 - (void)provider:(CXProvider *)provider performSetHeldCallAction:(CXSetHeldCallAction *)action {
+    self.isCallOnHold = action.isOnHold;
     if (self.onCallHeld) {
         self.onCallHeld(action.isOnHold);
     }

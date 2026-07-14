@@ -19,7 +19,8 @@ export type TelecomEventType =
     | 'answer'
     | 'ended'
     | 'failed'
-    | 'muteChanged';
+    | 'muteChanged'
+    | 'holdChanged';
 
 /**
  * Cross-platform reason a call ended, surfaced from both Telecom (Android) and
@@ -49,6 +50,7 @@ export type TelecomEvent = {
     requestId?: string;
     reason?: CallEndedReason | string;
     muted?: boolean;
+    held?: boolean;
 };
 
 const isAndroid = Platform.OS === 'android';
@@ -106,6 +108,13 @@ export async function endTelecomCall(
     await WebRTCModule.endTelecomCall(reason);
 }
 
+export async function setTelecomCallHeld(onHold: boolean): Promise<void> {
+    if (!isAndroid) {
+        return;
+    }
+    await WebRTCModule.setTelecomCallHeld(onHold);
+}
+
 export function hasActiveTelecomCall(): boolean {
     if (!isAndroid) {
         return false;
@@ -118,4 +127,11 @@ export function isTelecomCallAnswered(): boolean {
         return false;
     }
     return WebRTCModule.isTelecomCallAnswered();
+}
+
+export function isTelecomCallHeld(): boolean {
+    if (!isAndroid) {
+        return false;
+    }
+    return WebRTCModule.isTelecomCallHeld();
 }

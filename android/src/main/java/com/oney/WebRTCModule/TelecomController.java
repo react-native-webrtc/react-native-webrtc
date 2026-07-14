@@ -68,12 +68,22 @@ final class TelecomController implements CallEventsListener {
         }
     }
 
+    void setCallHeld(boolean onHold) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            CallManager.INSTANCE.setCallHeld(onHold);
+        }
+    }
+
     boolean hasActiveCall() {
         return Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && CallManager.INSTANCE.hasActiveCall();
     }
 
     boolean isAnswered() {
         return Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && CallManager.INSTANCE.isAnswered();
+    }
+
+    boolean isOnHold() {
+        return Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && CallManager.INSTANCE.isOnHold();
     }
 
     String pendingAnswerRequestId() {
@@ -126,6 +136,14 @@ final class TelecomController implements CallEventsListener {
         WritableMap body = Arguments.createMap();
         body.putString("event", "muteChanged");
         body.putBoolean("muted", muted);
+        webRTCModule.sendEvent("telecomActionPerformed", body);
+    }
+
+    @Override
+    public void onHoldChanged(boolean onHold) {
+        WritableMap body = Arguments.createMap();
+        body.putString("event", "holdChanged");
+        body.putBoolean("held", onHold);
         webRTCModule.sendEvent("telecomActionPerformed", body);
     }
 }

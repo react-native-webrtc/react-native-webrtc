@@ -7,6 +7,8 @@ import {
     endTelecomCall,
     hasActiveTelecomCall,
     isTelecomCallAnswered,
+    isTelecomCallHeld,
+    setTelecomCallHeld,
     startTelecomCall,
     type TelecomConfig,
     type TelecomEvent,
@@ -17,6 +19,8 @@ export type UseTelecomResult = {
     endCall: (reason?: CallEndedReason) => Promise<void>;
     hasActiveCall: () => boolean;
     isAnswered: () => boolean;
+    setCallHeld: (onHold: boolean) => Promise<void>;
+    isHeld: () => boolean;
 };
 
 export function useTelecom(): UseTelecomResult {
@@ -30,12 +34,19 @@ export function useTelecom(): UseTelecomResult {
     );
     const hasActiveCall = useCallback(() => hasActiveTelecomCall(), []);
     const isAnswered = useCallback(() => isTelecomCallAnswered(), []);
+    const setCallHeld = useCallback(
+        (onHold: boolean) => setTelecomCallHeld(onHold),
+        [],
+    );
+    const isHeld = useCallback(() => isTelecomCallHeld(), []);
 
     return {
         startCall,
         endCall,
         hasActiveCall,
         isAnswered,
+        setCallHeld,
+        isHeld,
     };
 }
 

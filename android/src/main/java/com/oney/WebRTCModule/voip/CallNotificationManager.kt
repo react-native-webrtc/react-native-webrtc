@@ -117,7 +117,11 @@ class CallNotificationManager {
         startVibration(ctx)
     }
 
-    fun buildOngoing(context: Context, displayName: String, connectedAtMs: Long): Notification {
+    fun buildOngoing(
+        context: Context,
+        displayName: String,
+        connectedAtMs: Long,
+    ): Notification {
         val ctx = context.applicationContext
         initChannels(ctx)
         return ongoingBuilder(ctx, displayName, connectedAtMs).build()
@@ -140,7 +144,28 @@ class CallNotificationManager {
             .build()
     }
 
-    private fun ongoingBuilder(ctx: Context, displayName: String, connectedAtMs: Long): NotificationCompat.Builder =
+    fun buildHeld(context: Context, displayName: String): Notification {
+        val ctx = context.applicationContext
+        initChannels(ctx)
+        return callNotificationBuilder(ctx, CHANNEL_ONGOING, displayName, "On hold")
+            .setStyle(
+                NotificationCompat.CallStyle.forOngoingCall(
+                    person(ctx, displayName),
+                    hangupPendingIntent(ctx),
+                )
+            )
+            .setContentIntent(appContentPendingIntent(ctx))
+            .setOngoing(true)
+            .setAutoCancel(false)
+            .setUsesChronometer(true)
+            .build()
+    }
+
+    private fun ongoingBuilder(
+        ctx: Context,
+        displayName: String,
+        connectedAtMs: Long,
+    ): NotificationCompat.Builder =
         callNotificationBuilder(ctx, CHANNEL_ONGOING, displayName, "Ongoing call")
             .setStyle(
                 NotificationCompat.CallStyle.forOngoingCall(
