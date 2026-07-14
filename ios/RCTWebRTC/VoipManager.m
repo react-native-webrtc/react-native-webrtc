@@ -109,12 +109,25 @@
 }
 
 - (BOOL)handleContinueUserActivity:(NSUserActivity *)userActivity {
-    if (![userActivity.interaction.intent isKindOfClass:[INStartCallIntent class]]) {
+    INIntent *intent = userActivity.interaction.intent;
+    INPerson *person = nil;
+    BOOL isVideo = NO;
+
+    // INStartAudioCallIntent/INStartVideoCallIntent are deprecated in favour of
+    // INStartCallIntent, but Recents redial still delivers them, so all three are handled.
+    if ([intent isKindOfClass:[INStartCallIntent class]]) {
+        INStartCallIntent *startCallIntent = (INStartCallIntent *)intent;
+        person = startCallIntent.contacts.firstObject;
+        isVideo = startCallIntent.callCapability == INCallCapabilityVideoCall;
+    } else if ([intent isKindOfClass:[INStartAudioCallIntent class]]) {
+        person = ((INStartAudioCallIntent *)intent).contacts.firstObject;
+    } else if ([intent isKindOfClass:[INStartVideoCallIntent class]]) {
+        person = ((INStartVideoCallIntent *)intent).contacts.firstObject;
+        isVideo = YES;
+    } else {
         return NO;
     }
-    INStartCallIntent *intent = (INStartCallIntent *)userActivity.interaction.intent;
 
-    INPerson *person = intent.contacts.firstObject;
     NSString *handle = person.personHandle.value;
     if (handle.length == 0) {
         return NO;
@@ -125,7 +138,7 @@
     NSDictionary *callIntent = @{
         @"handle" : handle,
         @"displayName" : displayName,
-        @"isVideo" : @(intent.callCapability == INCallCapabilityVideoCall),
+        @"isVideo" : @(isVideo),
     };
     self.pendingCallIntent = callIntent;
     if (self.onCallIntent) {
