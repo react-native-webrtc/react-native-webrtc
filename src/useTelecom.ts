@@ -7,7 +7,6 @@ import {
     endTelecomCall,
     hasActiveTelecomCall,
     isTelecomCallAnswered,
-    setTelecomCallActive,
     startTelecomCall,
     type TelecomConfig,
     type TelecomEvent,
@@ -15,7 +14,6 @@ import {
 
 export type UseTelecomResult = {
     startCall: (config: TelecomConfig) => Promise<void>;
-    setCallActive: () => Promise<void>;
     endCall: (reason?: CallEndedReason) => Promise<void>;
     hasActiveCall: () => boolean;
     isAnswered: () => boolean;
@@ -26,7 +24,6 @@ function useTelecomAndroid(): UseTelecomResult {
         (config: TelecomConfig) => startTelecomCall(config),
         [],
     );
-    const setCallActive = useCallback(() => setTelecomCallActive(), []);
     const endCall = useCallback(
         (reason?: CallEndedReason) => endTelecomCall(reason),
         [],
@@ -36,7 +33,6 @@ function useTelecomAndroid(): UseTelecomResult {
 
     return {
         startCall,
-        setCallActive,
         endCall,
         hasActiveCall,
         isAnswered,
@@ -46,7 +42,6 @@ function useTelecomAndroid(): UseTelecomResult {
 const noop = async () => {};
 const emptyResult: UseTelecomResult = {
     startCall: noop,
-    setCallActive: noop,
     endCall: noop,
     hasActiveCall: () => false,
     isAnswered: () => false,

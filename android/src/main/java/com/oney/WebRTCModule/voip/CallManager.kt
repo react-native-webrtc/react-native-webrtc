@@ -66,6 +66,7 @@ object CallManager {
 
     @Volatile private var hasActiveCall = false
     @Volatile private var answered = false
+    @Volatile private var isOutgoing = false
     @Volatile private var pendingAnswerRequestId: String? = null
     private var appContext: Context? = null
     private var listener: CallEventsListener? = null
@@ -91,16 +92,25 @@ object CallManager {
     }
 
     fun answer() { actions?.trySend(CallAction.Answer) }
-    fun setCallActive() { actions?.trySend(CallAction.Activate) }
+    private fun setCallActive() { actions?.trySend(CallAction.Activate) }
 
     fun fulfillAnswered(requestId: String): Boolean {
         if (!FulfillRequestManager.fulfill(requestId)) return false
         if (pendingAnswerRequestId == requestId) {
             pendingAnswerRequestId = null
         }
+        markConnected()
+        return true
+    }
+
+    fun reportOutgoingCallConnected() {
+        if (!hasActiveCall || !isOutgoing) return
+        markConnected()
+    }
+
+    private fun markConnected() {
         setCallActive()
         showOngoingNotification()
-        return true
     }
 
     fun failAnswered(requestId: String) {
@@ -212,6 +222,7 @@ object CallManager {
         this.displayName = displayName
         this.videoCall = isVideo
         val isIncoming = direction == CallAttributesCompat.DIRECTION_INCOMING
+        isOutgoing = direction == CallAttributesCompat.DIRECTION_OUTGOING
         val appContext = ctx.applicationContext
         this.appContext = appContext
         val callType = if (isVideo) CallAttributesCompat.CALL_TYPE_VIDEO_CALL else CallAttributesCompat.CALL_TYPE_AUDIO_CALL
@@ -254,7 +265,7 @@ object CallManager {
                         callNotificationManager.showIncoming(ctx.applicationContext, displayName, isVideo)
                         startRingTimeout(incomingCallTimeoutMs)
                     } else {
-                        showOngoingNotification()
+                        showConnectingNotification()
                         startRingTimeout(outgoingCallTimeoutMs)
                     }
                     audioOutputManager?.setTelecomOwnsRouting(true)
@@ -289,6 +300,7 @@ object CallManager {
                 pendingAnswerRequestId = null
                 hasActiveCall = false
                 answered = false
+                isOutgoing = false
                 actions = null
                 channel.close()
                 audioOutputManager?.setTelecomOwnsRouting(false)

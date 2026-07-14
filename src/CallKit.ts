@@ -54,6 +54,13 @@ export async function failIncomingCallConnected(
     await WebRTCModule.failIncomingCallConnected(requestId);
 }
 
+export async function reportOutgoingCallConnected(): Promise<void> {
+    if (Platform.OS !== 'ios') {
+        return;
+    }
+    await WebRTCModule.reportOutgoingCallConnected();
+}
+
 export function getPendingAnswerRequestId(): string | null {
     if (Platform.OS !== 'ios') {
         return null;

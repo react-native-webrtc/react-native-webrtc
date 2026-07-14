@@ -107,6 +107,17 @@ RCT_EXPORT_METHOD(failIncomingCallConnected
     }
 }
 
+RCT_EXPORT_METHOD(reportOutgoingCallConnected
+                  : (RCTPromiseResolveBlock)resolve rejecter
+                  : (RCTPromiseRejectBlock)reject) {
+    @try {
+        [[self callKitManager] reportOutgoingCallConnected];
+        resolve(nil);
+    } @catch (NSException *exception) {
+        reject(@"E_CALLKIT_REPORT_OUTGOING_CONNECTED_FAILED", exception.reason, nil);
+    }
+}
+
 RCT_EXPORT_BLOCKING_SYNCHRONOUS_METHOD(getPendingAnswerRequestId) {
     return [self callKitManager].pendingAnswerRequestId;
 }

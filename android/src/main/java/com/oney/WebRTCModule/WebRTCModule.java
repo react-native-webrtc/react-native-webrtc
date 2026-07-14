@@ -1710,8 +1710,8 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
     }
 
     @ReactMethod
-    public void setTelecomCallActive(Promise promise) {
-        telecomController.setCallActive();
+    public void reportOutgoingCallConnected(Promise promise) {
+        telecomController.reportOutgoingCallConnected();
         promise.resolve(null);
     }
 

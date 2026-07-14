@@ -59,6 +59,7 @@ import {
     getPendingAnswerRequestId,
     getPendingIncomingCall,
     getVoipToken,
+    reportOutgoingCallConnected,
 } from './VoIP';
 import {
     AudioDeviceType,
@@ -137,6 +138,7 @@ export {
     presentLivestreamBroadcastPicker,
     pushFrame,
     registerGlobals,
+    reportOutgoingCallConnected,
     RTCAudioSession,
     RTCCertificate,
     RTCErrorEvent,

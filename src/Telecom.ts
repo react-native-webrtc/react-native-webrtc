@@ -53,11 +53,11 @@ export async function startTelecomCall(config: TelecomConfig): Promise<void> {
     await WebRTCModule.startTelecomCall(config.displayName, config.isVideo);
 }
 
-export async function setTelecomCallActive(): Promise<void> {
+export async function reportTelecomCallConnected(): Promise<void> {
     if (!isAndroid) {
         return;
     }
-    await WebRTCModule.setTelecomCallActive();
+    await WebRTCModule.reportOutgoingCallConnected();
 }
 
 export async function fulfillTelecomCallAnswered(

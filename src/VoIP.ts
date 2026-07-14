@@ -4,11 +4,13 @@ import {
     failIncomingCallConnected as failCallKitAnswer,
     fulfillIncomingCallConnected as fulfillCallKitAnswer,
     getPendingAnswerRequestId as getPendingCallKitAnswerRequestId,
+    reportOutgoingCallConnected as reportCallKitOutgoingCallConnected,
 } from './CallKit';
 import {
     failTelecomCallAnswered,
     fulfillTelecomCallAnswered,
     getPendingAnswerRequestId as getPendingTelecomAnswerRequestId,
+    reportTelecomCallConnected,
 } from './Telecom';
 
 const { WebRTCModule } = NativeModules;
@@ -62,4 +64,16 @@ export function getPendingAnswerRequestId(): string | null {
     return Platform.OS === 'ios'
         ? getPendingCallKitAnswerRequestId()
         : getPendingTelecomAnswerRequestId();
+}
+
+/**
+ * Reports that an outgoing call's media is connected — the remote party answered.
+ * Until this is called, the OS shows the call as "Calling…" / "Dialing…" and no
+ * call timer runs. No-op for incoming calls, or when there is no active outgoing
+ * call.
+ */
+export function reportOutgoingCallConnected(): Promise<void> {
+    return Platform.OS === 'ios'
+        ? reportCallKitOutgoingCallConnected()
+        : reportTelecomCallConnected();
 }

@@ -25,6 +25,7 @@ static NSTimeInterval timeoutFromInfoPlist(NSString *key, NSTimeInterval fallbac
 @property(nonatomic, strong) CXProvider *provider;
 @property(nonatomic, strong) NSUUID *currentCallUUID;
 @property(nonatomic, assign) BOOL isCallAnswered;
+@property(nonatomic, assign) BOOL isOutgoingCall;
 @property(nonatomic, copy, nullable) NSString *pendingAnswerRequestId;
 @property(nonatomic, copy, nullable) dispatch_block_t ringTimeoutBlock;
 @property(nonatomic, assign) NSTimeInterval incomingCallTimeout;
@@ -75,6 +76,7 @@ static NSTimeInterval timeoutFromInfoPlist(NSString *key, NSTimeInterval fallbac
 
     NSUUID *uuid = [NSUUID UUID];
     self.currentCallUUID = uuid;
+    self.isOutgoingCall = YES;
 
     CXHandle *handle = [[CXHandle alloc] initWithType:CXHandleTypeGeneric value:displayName];
     CXStartCallAction *startCallAction = [[CXStartCallAction alloc] initWithCallUUID:uuid handle:handle];
@@ -97,8 +99,6 @@ static NSTimeInterval timeoutFromInfoPlist(NSString *key, NSTimeInterval fallbac
                         return;
                     }
 
-                    [weakSelf.provider reportOutgoingCallWithUUID:uuid startedConnectingAtDate:[NSDate date]];
-                    [weakSelf.provider reportOutgoingCallWithUUID:uuid connectedAtDate:[NSDate date]];
                     if (weakSelf.onCallStarted) {
                         weakSelf.onCallStarted();
                     }
@@ -109,6 +109,7 @@ static NSTimeInterval timeoutFromInfoPlist(NSString *key, NSTimeInterval fallbac
     NSUUID *uuid = [NSUUID UUID];
     self.currentCallUUID = uuid;
     self.isCallAnswered = NO;
+    self.isOutgoingCall = NO;
 
     CXCallUpdate *update = [[CXCallUpdate alloc] init];
     update.remoteHandle = [[CXHandle alloc] initWithType:CXHandleTypeGeneric value:displayName];
@@ -195,6 +196,17 @@ static NSTimeInterval timeoutFromInfoPlist(NSString *key, NSTimeInterval fallbac
     [[FulfillRequestManager shared] cancel:requestId];
 }
 
+- (void)reportOutgoingCallConnected {
+    NSUUID *uuid = self.currentCallUUID;
+    if (uuid == nil || !self.isOutgoingCall) {
+        NSLog(@"[CallKitManager] No outgoing call to report as connected");
+        return;
+    }
+
+    [self cancelRingTimeout];
+    [self.provider reportOutgoingCallWithUUID:uuid connectedAtDate:[NSDate date]];
+}
+
 - (void)reportAnswerFailureForCall:(NSUUID *)uuid {
     if (uuid == nil || ![uuid isEqual:self.currentCallUUID]) {
         return;
@@ -235,6 +247,7 @@ static NSTimeInterval timeoutFromInfoPlist(NSString *key, NSTimeInterval fallbac
     [self cancelRingTimeout];
     self.currentCallUUID = nil;
     self.isCallAnswered = NO;
+    self.isOutgoingCall = NO;
     self.pendingAnswerRequestId = nil;
     [[FulfillRequestManager shared] cancelAll];
     [[VoipManager shared] clearPendingIncomingCall];
@@ -247,6 +260,8 @@ static NSTimeInterval timeoutFromInfoPlist(NSString *key, NSTimeInterval fallbac
 }
 
 - (void)provider:(CXProvider *)provider performStartCallAction:(CXStartCallAction *)action {
+    [provider reportOutgoingCallWithUUID:action.callUUID startedConnectingAtDate:[NSDate date]];
+    [self startRingTimeoutForCall:action.callUUID timeout:self.outgoingCallTimeout];
     [action fulfill];
 }
 

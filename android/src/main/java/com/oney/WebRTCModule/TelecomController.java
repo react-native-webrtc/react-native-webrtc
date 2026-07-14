@@ -45,9 +45,9 @@ final class TelecomController implements CallEventsListener {
         }
     }
 
-    void setCallActive() {
+    void reportOutgoingCallConnected() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            CallManager.INSTANCE.setCallActive();
+            CallManager.INSTANCE.reportOutgoingCallConnected();
         }
     }
 
