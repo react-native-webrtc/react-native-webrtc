@@ -20,8 +20,10 @@ typedef void (^CallKitBoolCallback)(BOOL);
 
 + (instancetype)shared;
 
-- (void)startCallWithDisplayName:(NSString *)displayName isVideo:(BOOL)isVideo;
-- (void)reportIncomingCallWithDisplayName:(NSString *)displayName isVideo:(BOOL)isVideo;
+- (void)startCallWithDisplayName:(NSString *)displayName handle:(NSString *)handle isVideo:(BOOL)isVideo;
+- (void)reportIncomingCallWithDisplayName:(NSString *)displayName
+                                   handle:(NSString *)handle
+                                  isVideo:(BOOL)isVideo;
 - (void)endCallWithReason:(NSString *_Nullable)reason;
 - (BOOL)fulfillIncomingCallConnected:(NSString *)requestId;
 - (void)failIncomingCallConnected:(NSString *)requestId;

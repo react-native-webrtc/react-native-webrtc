@@ -1704,8 +1704,9 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
     }
 
     @ReactMethod
-    public void startTelecomCall(String displayName, boolean isVideo, Promise promise) {
-        telecomController.startCall(displayName, isVideo);
+    public void startTelecomCall(String displayName, String handle, boolean isVideo, Promise promise) {
+        String callHandle = (handle == null || handle.isEmpty()) ? displayName : handle;
+        telecomController.startCall(displayName, callHandle, isVideo);
         promise.resolve(null);
     }
 

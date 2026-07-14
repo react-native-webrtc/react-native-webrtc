@@ -1,5 +1,6 @@
 #import "VoipManager.h"
 #import <PushKit/PushKit.h>
+#import <Intents/Intents.h>
 #import "CallKitManager.h"
 
 @interface VoipManager ()<PKPushRegistryDelegate>
@@ -7,6 +8,7 @@
 @property(nonatomic, strong) dispatch_queue_t registryQueue;
 @property(copy, readwrite, nullable) NSString *token;
 @property(copy, readwrite, nullable) NSDictionary *pendingIncomingCall;
+@property(copy, readwrite, nullable) NSDictionary *pendingCallIntent;
 @end
 
 @implementation VoipManager
@@ -23,6 +25,10 @@
 
 + (void)registerForVoIPPushes {
     [[self shared] registerForVoIPPushes];
+}
+
++ (BOOL)handleContinueUserActivity:(NSUserActivity *)userActivity {
+    return [[self shared] handleContinueUserActivity:userActivity];
 }
 
 - (void)registerForVoIPPushes {
@@ -68,6 +74,7 @@
                 withCompletionHandler:(void (^)(void))completion {
     NSMutableDictionary *dict = [payload.dictionaryPayload mutableCopy];
     NSString *displayName = dict[@"displayName"];
+    NSString *handle = dict[@"handle"];
     BOOL isVideo = [dict[@"isVideo"] boolValue];
     dict[@"isVideo"] = @(isVideo);
 
@@ -76,7 +83,12 @@
         dict[@"displayName"] = displayName;
     }
 
-    [[CallKitManager shared] reportIncomingCallWithDisplayName:displayName isVideo:isVideo];
+    if (handle.length == 0) {
+        handle = displayName;
+    }
+    dict[@"handle"] = handle;
+
+    [[CallKitManager shared] reportIncomingCallWithDisplayName:displayName handle:handle isVideo:isVideo];
 
     // Buffer the payload if the app was cold-launched and JS side hasn't yet loaded
     self.pendingIncomingCall = dict;
@@ -90,6 +102,36 @@
 
 - (void)clearPendingIncomingCall {
     self.pendingIncomingCall = nil;
+}
+
+- (void)clearPendingCallIntent {
+    self.pendingCallIntent = nil;
+}
+
+- (BOOL)handleContinueUserActivity:(NSUserActivity *)userActivity {
+    if (![userActivity.interaction.intent isKindOfClass:[INStartCallIntent class]]) {
+        return NO;
+    }
+    INStartCallIntent *intent = (INStartCallIntent *)userActivity.interaction.intent;
+
+    INPerson *person = intent.contacts.firstObject;
+    NSString *handle = person.personHandle.value;
+    if (handle.length == 0) {
+        return NO;
+    }
+
+    NSString *displayName = person.displayName.length > 0 ? person.displayName : handle;
+
+    NSDictionary *callIntent = @{
+        @"handle" : handle,
+        @"displayName" : displayName,
+        @"isVideo" : @(intent.callCapability == INCallCapabilityVideoCall),
+    };
+    self.pendingCallIntent = callIntent;
+    if (self.onCallIntent) {
+        self.onCallIntent(callIntent);
+    }
+    return YES;
 }
 
 @end

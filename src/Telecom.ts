@@ -3,7 +3,14 @@ import { NativeModules, Platform } from 'react-native';
 const { WebRTCModule } = NativeModules;
 
 export type TelecomConfig = {
+    /** Label shown in the system call UI and in the call log. */
     displayName: string;
+    /**
+     * Stable identifier for the remote party (e.g. a user id), used as the call's Telecom
+     * address. Unlike iOS there is no redial-from-Recents path on Android today, so this is
+     * identity only - it is not handed back to the app. Defaults to `displayName`.
+     */
+    handle?: string;
     isVideo: boolean;
 };
 
@@ -50,7 +57,11 @@ export async function startTelecomCall(config: TelecomConfig): Promise<void> {
     if (!isAndroid) {
         return;
     }
-    await WebRTCModule.startTelecomCall(config.displayName, config.isVideo);
+    await WebRTCModule.startTelecomCall(
+        config.displayName,
+        config.handle ?? config.displayName,
+        config.isVideo,
+    );
 }
 
 export async function reportTelecomCallConnected(): Promise<void> {

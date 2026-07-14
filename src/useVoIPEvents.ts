@@ -8,10 +8,13 @@ import {
     hasActiveTelecomCall,
 } from './Telecom';
 import {
+    clearPendingCallIntent,
     clearPendingIncomingCall,
+    getPendingCallIntent,
     getPendingAnswerRequestId,
     getPendingIncomingCall,
     getVoipToken,
+    type VoipCallIntent,
 } from './VoIP';
 import { useCallKitEvent } from './useCallKit';
 
@@ -19,6 +22,12 @@ import { useCallKitEvent } from './useCallKit';
 export type VoipIncomingPayload = {
     roomName: string;
     displayName: string;
+    /**
+     * Stable id of the caller, taken from the push payload's `handle` (falls back to
+     * `displayName`). On iOS this is what lands in Recents and comes back as the redial
+     * intent's handle; on Android it is the call's Telecom address.
+     */
+    handle: string;
     isVideo: boolean;
 };
 
@@ -27,6 +36,7 @@ export type VoIPEventHandlers = {
     onAnswered?: (requestId: string) => void;
     onEnded?: (reason?: CallEndedReason) => void;
     onRegistered?: (token: string) => void;
+    onCallIntent?: (intent: VoipCallIntent) => void;
 };
 
 const assertRoomName = (raw: unknown): string => {
@@ -78,6 +88,11 @@ const useVoIPEventsIos = (handlers: VoIPEventHandlers): void => {
                     payload.incoming as VoipIncomingPayload,
                 );
             }
+            if ('callIntent' in payload) {
+                const intent = payload.callIntent as VoipCallIntent;
+                handlersRef.current.onCallIntent?.(intent);
+                clearPendingCallIntent();
+            }
         });
 
         getVoipToken().then((token) => {
@@ -101,6 +116,12 @@ const useVoIPEventsIos = (handlers: VoIPEventHandlers): void => {
             } catch {
                 // Ignore a malformed buffered payload.
             }
+        }
+
+        const pendingCallIntent = getPendingCallIntent();
+        if (pendingCallIntent) {
+            handlersRef.current.onCallIntent?.(pendingCallIntent);
+            clearPendingCallIntent();
         }
 
         return () => {

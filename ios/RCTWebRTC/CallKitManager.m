@@ -52,7 +52,7 @@ static NSTimeInterval timeoutFromInfoPlist(NSString *key, NSTimeInterval fallbac
         providerConfiguration.supportedHandleTypes = [NSSet setWithObject:@(CXHandleTypeGeneric)];
         providerConfiguration.maximumCallsPerCallGroup = 1;
         providerConfiguration.maximumCallGroups = 1;
-        providerConfiguration.includesCallsInRecents = NO;
+        providerConfiguration.includesCallsInRecents = YES;
 
         _provider = [[CXProvider alloc] initWithConfiguration:providerConfiguration];
         [_provider setDelegate:self queue:nil];
@@ -68,7 +68,7 @@ static NSTimeInterval timeoutFromInfoPlist(NSString *key, NSTimeInterval fallbac
     return self.currentCallUUID != nil;
 }
 
-- (void)startCallWithDisplayName:(NSString *)displayName isVideo:(BOOL)isVideo {
+- (void)startCallWithDisplayName:(NSString *)displayName handle:(NSString *)handle isVideo:(BOOL)isVideo {
     if (self.currentCallUUID != nil) {
         NSLog(@"[CallKitManager] Call already in progress");
         return;
@@ -78,8 +78,10 @@ static NSTimeInterval timeoutFromInfoPlist(NSString *key, NSTimeInterval fallbac
     self.currentCallUUID = uuid;
     self.isOutgoingCall = YES;
 
-    CXHandle *handle = [[CXHandle alloc] initWithType:CXHandleTypeGeneric value:displayName];
-    CXStartCallAction *startCallAction = [[CXStartCallAction alloc] initWithCallUUID:uuid handle:handle];
+    // The handle is the identity persisted in Recents and handed back to us in the
+    // redial intent, so it must be the caller's unique id.
+    CXHandle *callHandle = [[CXHandle alloc] initWithType:CXHandleTypeGeneric value:handle];
+    CXStartCallAction *startCallAction = [[CXStartCallAction alloc] initWithCallUUID:uuid handle:callHandle];
     startCallAction.video = isVideo;
     startCallAction.contactIdentifier = displayName;
 
@@ -105,14 +107,16 @@ static NSTimeInterval timeoutFromInfoPlist(NSString *key, NSTimeInterval fallbac
                 }];
 }
 
-- (void)reportIncomingCallWithDisplayName:(NSString *)displayName isVideo:(BOOL)isVideo {
+- (void)reportIncomingCallWithDisplayName:(NSString *)displayName
+                                   handle:(NSString *)handle
+                                  isVideo:(BOOL)isVideo {
     NSUUID *uuid = [NSUUID UUID];
     self.currentCallUUID = uuid;
     self.isCallAnswered = NO;
     self.isOutgoingCall = NO;
 
     CXCallUpdate *update = [[CXCallUpdate alloc] init];
-    update.remoteHandle = [[CXHandle alloc] initWithType:CXHandleTypeGeneric value:displayName];
+    update.remoteHandle = [[CXHandle alloc] initWithType:CXHandleTypeGeneric value:handle];
     update.localizedCallerName = displayName;
     update.hasVideo = isVideo;
     update.supportsHolding = NO;

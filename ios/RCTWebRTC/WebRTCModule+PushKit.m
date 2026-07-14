@@ -15,6 +15,9 @@
     push.onIncomingPush = ^(NSDictionary *payload) {
         [weakSelf sendEventWithName:kEventVoipPush body:@{@"incoming" : payload ?: @{}}];
     };
+    push.onCallIntent = ^(NSDictionary *intent) {
+        [weakSelf sendEventWithName:kEventVoipPush body:@{@"callIntent" : intent ?: @{}}];
+    };
 
     NSString *token = push.token;
     if (token.length > 0) {
@@ -31,6 +34,7 @@
     VoipManager *push = [VoipManager shared];
     push.onTokenUpdated = nil;
     push.onIncomingPush = nil;
+    push.onCallIntent = nil;
 }
 
 RCT_EXPORT_BLOCKING_SYNCHRONOUS_METHOD(getVoipToken) {
@@ -43,6 +47,14 @@ RCT_EXPORT_BLOCKING_SYNCHRONOUS_METHOD(getPendingIncomingCall) {
 
 RCT_EXPORT_METHOD(clearPendingIncomingCall) {
     [[VoipManager shared] clearPendingIncomingCall];
+}
+
+RCT_EXPORT_BLOCKING_SYNCHRONOUS_METHOD(getPendingCallIntent) {
+    return [VoipManager shared].pendingCallIntent ?: [NSNull null];
+}
+
+RCT_EXPORT_METHOD(clearPendingCallIntent) {
+    [[VoipManager shared] clearPendingCallIntent];
 }
 
 @end

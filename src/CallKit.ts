@@ -5,7 +5,15 @@ import type { CallEndedReason } from './Telecom';
 const { WebRTCModule } = NativeModules;
 
 export type CallKitConfig = {
+    /** Label shown in the system call UI and in Recents. */
     displayName: string;
+    /**
+     * Stable identifier for the remote party (e.g. a user id). It is what iOS persists
+     * in Recents and hands back in the redial intent, so it must be something your app
+     * can resolve - `displayName` alone is ambiguous when two users share a name.
+     * Defaults to `displayName`.
+     */
+    handle?: string;
     isVideo: boolean;
 };
 
@@ -24,7 +32,11 @@ export async function startCallKitSession(
     if (Platform.OS !== 'ios') {
         return;
     }
-    await WebRTCModule.startCallKitSession(config.displayName, config.isVideo);
+    await WebRTCModule.startCallKitSession(
+        config.displayName,
+        config.handle ?? config.displayName,
+        config.isVideo,
+    );
 }
 
 export async function endCallKitSession(

@@ -55,7 +55,8 @@ static void *CallKitManagerKey = &CallKitManagerKey;
 }
 
 RCT_EXPORT_METHOD(startCallKitSession
-                  : (NSString *)displayName isVideo
+                  : (NSString *)displayName handle
+                  : (NSString *)handle isVideo
                   : (BOOL)isVideo resolver
                   : (RCTPromiseResolveBlock)resolve rejecter
                   : (RCTPromiseRejectBlock)reject) {
@@ -64,8 +65,10 @@ RCT_EXPORT_METHOD(startCallKitSession
         return;
     }
 
+    NSString *callHandle = handle.length > 0 ? handle : displayName;
+
     @try {
-        [[self callKitManager] startCallWithDisplayName:displayName isVideo:isVideo];
+        [[self callKitManager] startCallWithDisplayName:displayName handle:callHandle isVideo:isVideo];
         resolve(nil);
     } @catch (NSException *exception) {
         reject(@"E_CALLKIT_START_FAILED", exception.reason, nil);

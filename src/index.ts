@@ -53,13 +53,16 @@ import {
     type TelecomEventType,
 } from './Telecom';
 import {
+    clearPendingCallIntent,
     clearPendingIncomingCall,
     failIncomingCallConnected,
     fulfillIncomingCallConnected,
     getPendingAnswerRequestId,
+    getPendingCallIntent,
     getPendingIncomingCall,
     getVoipToken,
     reportOutgoingCallConnected,
+    type VoipCallIntent,
 } from './VoIP';
 import {
     AudioDeviceType,
@@ -119,6 +122,7 @@ setupNativeEvents();
 export {
     AudioDeviceType,
     AudioOutputManager,
+    clearPendingCallIntent,
     clearPendingIncomingCall,
     createCustomVideoBufferPool,
     createCustomVideoTrack,
@@ -128,6 +132,7 @@ export {
     forwardFrame,
     fulfillIncomingCallConnected,
     getPendingAnswerRequestId,
+    getPendingCallIntent,
     getPendingIncomingCall,
     getVoipToken,
     mediaDevices,
@@ -199,6 +204,7 @@ export {
     type UseAudioOutputResult,
     type UseTelecomResult,
     type VoIPEventHandlers,
+    type VoipCallIntent,
     type VoipIncomingPayload,
 };
 

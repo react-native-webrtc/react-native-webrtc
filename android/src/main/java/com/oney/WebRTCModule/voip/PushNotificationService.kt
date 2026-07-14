@@ -26,14 +26,15 @@ class PushNotificationService : FirebaseMessagingService() {
         val data = message.data
         val roomName = data["roomName"] ?: return
         val displayName = data["displayName"] ?: "Incoming call"
+        val handle = data["handle"]?.takeIf { it.isNotEmpty() } ?: displayName
         val isVideo = data["isVideo"]?.toBoolean() ?: false
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            CallManager.reportIncomingCall(applicationContext, displayName, isVideo)
+            CallManager.reportIncomingCall(applicationContext, displayName, handle, isVideo)
         }
 
         warmUpReact()
-        VoipPushRegistry.reportIncoming(VoipPushRegistry.Incoming(roomName, displayName, isVideo))
+        VoipPushRegistry.reportIncoming(VoipPushRegistry.Incoming(roomName, displayName, handle, isVideo))
     }
 
     private fun warmUpReact() {

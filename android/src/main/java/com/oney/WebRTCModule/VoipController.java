@@ -32,6 +32,7 @@ final class VoipController implements VoipPushRegistry.Listener {
         WritableMap map = Arguments.createMap();
         map.putString("roomName", incoming.getRoomName());
         map.putString("displayName", incoming.getDisplayName());
+        map.putString("handle", incoming.getHandle());
         map.putBoolean("isVideo", incoming.isVideo());
         return map;
     }
@@ -52,6 +53,7 @@ final class VoipController implements VoipPushRegistry.Listener {
         WritableMap payload = Arguments.createMap();
         payload.putString("roomName", incoming.getRoomName());
         payload.putString("displayName", incoming.getDisplayName());
+        payload.putString("handle", incoming.getHandle());
         payload.putBoolean("isVideo", incoming.isVideo());
         WritableMap body = Arguments.createMap();
         body.putMap("incoming", payload);

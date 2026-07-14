@@ -36,6 +36,40 @@ export function clearPendingIncomingCall(): void {
     WebRTCModule.clearPendingIncomingCall();
 }
 
+export type VoipCallIntent = {
+    /** Stable id of the party to call back - the handle originally reported to CallKit. */
+    handle: string;
+    /** Label iOS showed for the entry. Falls back to `handle` when there is no separate label. */
+    displayName: string;
+    isVideo: boolean;
+};
+
+export function getPendingCallIntent(): VoipCallIntent | null {
+    if (Platform.OS !== 'ios') {
+        return null;
+    }
+    const intent: unknown = WebRTCModule.getPendingCallIntent();
+    if (!intent || typeof intent !== 'object') {
+        return null;
+    }
+
+    const value = intent as Record<string, unknown>;
+    if (
+        typeof value.handle !== 'string' ||
+        typeof value.displayName !== 'string' ||
+        typeof value.isVideo !== 'boolean'
+    ) {
+        return null;
+    }
+    return value as VoipCallIntent;
+}
+
+export function clearPendingCallIntent(): void {
+    if (Platform.OS === 'ios') {
+        WebRTCModule.clearPendingCallIntent();
+    }
+}
+
 /**
  * Resolves the parked native answer action once incoming-call media is live.
  * Returns false when the request has already timed out or been resolved.
@@ -51,9 +85,7 @@ export function fulfillIncomingCallConnected(
 /**
  * Aborts the parked native answer action. Safe to call after it has timed out.
  */
-export function failIncomingCallConnected(
-    requestId: string,
-): Promise<void> {
+export function failIncomingCallConnected(requestId: string): Promise<void> {
     return Platform.OS === 'ios'
         ? failCallKitAnswer(requestId)
         : failTelecomCallAnswered(requestId);

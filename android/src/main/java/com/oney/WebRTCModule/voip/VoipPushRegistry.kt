@@ -9,7 +9,12 @@ import com.google.firebase.installations.FirebaseInstallations
  * JS layer.
  */
 object VoipPushRegistry {
-    data class Incoming(val roomName: String, val displayName: String, val isVideo: Boolean)
+    data class Incoming(
+        val roomName: String,
+        val displayName: String,
+        val handle: String,
+        val isVideo: Boolean,
+    )
 
     interface Listener {
         fun onVoipToken(token: String)

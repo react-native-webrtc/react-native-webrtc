@@ -4,6 +4,7 @@ import android.content.Context
 import android.content.Intent
 import android.annotation.SuppressLint
 import android.content.pm.PackageManager
+import android.net.Uri
 import android.telecom.DisconnectCause
 import androidx.annotation.RequiresApi
 import androidx.core.net.toUri
@@ -83,12 +84,12 @@ object CallManager {
     fun currentDisplayName(): String = displayName
     fun currentIsVideo(): Boolean = videoCall
 
-    fun startOutgoingCall(ctx: Context, displayName: String, isVideo: Boolean) {
-        register(ctx, displayName, isVideo, CallAttributesCompat.DIRECTION_OUTGOING)
+    fun startOutgoingCall(ctx: Context, displayName: String, handle: String, isVideo: Boolean) {
+        register(ctx, displayName, handle, isVideo, CallAttributesCompat.DIRECTION_OUTGOING)
     }
 
-    fun reportIncomingCall(ctx: Context, displayName: String, isVideo: Boolean) {
-        register(ctx, displayName, isVideo, CallAttributesCompat.DIRECTION_INCOMING)
+    fun reportIncomingCall(ctx: Context, displayName: String, handle: String, isVideo: Boolean) {
+        register(ctx, displayName, handle, isVideo, CallAttributesCompat.DIRECTION_INCOMING)
     }
 
     fun answer() { actions?.trySend(CallAction.Answer) }
@@ -209,7 +210,7 @@ object CallManager {
 
     @Synchronized
     @SuppressLint("MissingPermission")
-    private fun register(ctx: Context, displayName: String, isVideo: Boolean, direction: Int) {
+    private fun register(ctx: Context, displayName: String, handle: String, isVideo: Boolean, direction: Int) {
         ensureRegistered(ctx)
 
         if (hasActiveCall) return
@@ -228,7 +229,7 @@ object CallManager {
         val callType = if (isVideo) CallAttributesCompat.CALL_TYPE_VIDEO_CALL else CallAttributesCompat.CALL_TYPE_AUDIO_CALL
         val callAttributes = CallAttributesCompat(
             displayName = displayName,
-            address = "sip:$displayName".toUri(),
+            address = "sip:${Uri.encode(handle)}".toUri(),
             direction = direction,
             callType = callType,
             callCapabilities =
