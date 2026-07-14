@@ -144,7 +144,7 @@ class CallNotificationManager {
             .build()
     }
 
-    fun buildHeld(context: Context, displayName: String): Notification {
+    fun buildHeld(context: Context, displayName: String, connectedAtMs: Long): Notification {
         val ctx = context.applicationContext
         initChannels(ctx)
         return callNotificationBuilder(ctx, CHANNEL_ONGOING, displayName, "On hold")
@@ -158,6 +158,7 @@ class CallNotificationManager {
             .setOngoing(true)
             .setAutoCancel(false)
             .setUsesChronometer(true)
+            .setWhen(connectedAtMs)
             .build()
     }
 

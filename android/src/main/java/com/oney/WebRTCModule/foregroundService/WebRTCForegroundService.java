@@ -61,7 +61,8 @@ public class WebRTCForegroundService extends Service {
             if (voipRequest.isConnecting()) {
                 notification = callNotificationManager.buildConnecting(this, voipRequest.getDisplayName());
             } else if (voipRequest.isHeld()) {
-                notification = callNotificationManager.buildHeld(this, voipRequest.getDisplayName());
+                notification = callNotificationManager.buildHeld(
+                        this, voipRequest.getDisplayName(), voipRequest.getConnectedAtMs());
             } else {
                 notification = callNotificationManager.buildOngoing(
                         this, voipRequest.getDisplayName(), voipRequest.getConnectedAtMs());
