@@ -40,9 +40,13 @@ public class AudioOutputManager {
     // onTelecomAudioStateChanged reports the target as current.
     private PendingTelecomSelect telecomPending;
 
-    private WritableMap cachedTelecomCurrent;
-    private WritableArray cachedTelecomAvailable;
-    private boolean telecomOwnsRouting = false;
+    // Written from CallManager's coroutine (Dispatchers.Default), read from the RN bridge
+    // thread. volatile for cross-thread visibility; no synchronized block is needed on top
+    // since every write replaces the reference wholesale (copy() on write and on read) rather
+    // than mutating in place.
+    private volatile WritableMap cachedTelecomCurrent;
+    private volatile WritableArray cachedTelecomAvailable;
+    private volatile boolean telecomOwnsRouting = false;
 
     private static final class PendingSelect {
         final Promise promise;
