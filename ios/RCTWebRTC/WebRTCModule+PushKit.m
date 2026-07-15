@@ -15,6 +15,9 @@
     push.onIncomingPush = ^(NSDictionary *payload) {
         [weakSelf sendEventWithName:kEventVoipPush body:@{@"incoming" : payload ?: @{}}];
     };
+    push.onWaitingCallDeclined = ^(NSDictionary *payload) {
+        [weakSelf sendEventWithName:kEventVoipPush body:@{@"waitingDeclined" : payload ?: @{}}];
+    };
     push.onCallIntent = ^(NSDictionary *intent) {
         [weakSelf sendEventWithName:kEventVoipPush body:@{@"callIntent" : intent ?: @{}}];
     };
@@ -34,6 +37,7 @@
     VoipManager *push = [VoipManager shared];
     push.onTokenUpdated = nil;
     push.onIncomingPush = nil;
+    push.onWaitingCallDeclined = nil;
     push.onCallIntent = nil;
 }
 

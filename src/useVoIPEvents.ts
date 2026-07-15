@@ -35,6 +35,7 @@ export type VoIPEventHandlers = {
     onRegistered?: (token: string) => void;
     onHeldChanged?: (onHold: boolean) => void;
     onCallIntent?: (intent: VoipCallIntent) => void;
+    onWaitingCallDeclined?: (payload: VoipIncomingPayload) => void;
 };
 
 const assertRoomName = (raw: unknown): string => {
@@ -87,6 +88,13 @@ const useVoIPEventsIos = (handlers: VoIPEventHandlers): void => {
 
                 handlersRef.current.onIncoming?.(
                     payload.incoming as VoipIncomingPayload,
+                );
+            }
+            if ('waitingDeclined' in payload) {
+                assertRoomName(payload.waitingDeclined);
+
+                handlersRef.current.onWaitingCallDeclined?.(
+                    payload.waitingDeclined as VoipIncomingPayload,
                 );
             }
             if ('callIntent' in payload) {
@@ -175,6 +183,13 @@ const useVoIPEventsAndroid = (handlers: VoIPEventHandlers): void => {
 
                 handlersRef.current.onIncoming?.(
                     payload.incoming as VoipIncomingPayload,
+                );
+            }
+            if ('waitingDeclined' in payload) {
+                assertRoomName(payload.waitingDeclined);
+
+                handlersRef.current.onWaitingCallDeclined?.(
+                    payload.waitingDeclined as VoipIncomingPayload,
                 );
             }
         });

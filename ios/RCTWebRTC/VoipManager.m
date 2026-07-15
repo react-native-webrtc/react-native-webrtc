@@ -1,6 +1,6 @@
 #import "VoipManager.h"
-#import <PushKit/PushKit.h>
 #import <Intents/Intents.h>
+#import <PushKit/PushKit.h>
 #import "CallKitManager.h"
 
 @interface VoipManager ()<PKPushRegistryDelegate>
@@ -9,6 +9,7 @@
 @property(copy, readwrite, nullable) NSString *token;
 @property(copy, readwrite, nullable) NSDictionary *pendingIncomingCall;
 @property(copy, readwrite, nullable) NSDictionary *pendingCallIntent;
+@property(copy, nullable) NSDictionary *pendingSecondIncomingCall;
 @end
 
 @implementation VoipManager
@@ -88,13 +89,26 @@
     }
     dict[@"handle"] = handle;
 
-    [[CallKitManager shared] reportIncomingCallWithDisplayName:displayName handle:handle isVideo:isVideo];
+    IncomingCallSlot slot = [[CallKitManager shared] reportIncomingCallWithDisplayName:displayName
+                                                                                       handle:handle
+                                                                                      isVideo:isVideo];
 
-    // Buffer the payload if the app was cold-launched and JS side hasn't yet loaded
-    self.pendingIncomingCall = dict;
-
-    if (self.onIncomingPush) {
-        self.onIncomingPush(dict ?: @{});
+    switch (slot) {
+        case IncomingCallSlotRejected:
+            if (self.onWaitingCallDeclined) {
+                self.onWaitingCallDeclined(dict ?: @{});
+            }
+            break;
+        case IncomingCallSlotCurrent:
+            // Buffer the payload if the app was cold-launched and JS side hasn't yet loaded
+            self.pendingIncomingCall = dict;
+            if (self.onIncomingPush) {
+                self.onIncomingPush(dict ?: @{});
+            }
+            break;
+        case IncomingCallSlotWaiting:
+            [self bufferPendingSecondIncomingCall:dict ?: @{}];
+            break;
     }
 
     completion();
@@ -102,6 +116,30 @@
 
 - (void)clearPendingIncomingCall {
     self.pendingIncomingCall = nil;
+}
+
+- (void)bufferPendingSecondIncomingCall:(NSDictionary *)payload {
+    self.pendingSecondIncomingCall = payload;
+}
+
+- (void)revealPendingSecondIncomingCall {
+    NSDictionary *payload = self.pendingSecondIncomingCall;
+    if (payload == nil) {
+        return;
+    }
+    self.pendingSecondIncomingCall = nil;
+    self.pendingIncomingCall = payload;
+    if (self.onIncomingPush) {
+        self.onIncomingPush(payload);
+    }
+}
+
+- (void)discardPendingSecondIncomingCall {
+    NSDictionary *payload = self.pendingSecondIncomingCall;
+    self.pendingSecondIncomingCall = nil;
+    if (payload != nil && self.onWaitingCallDeclined) {
+        self.onWaitingCallDeclined(payload);
+    }
 }
 
 - (void)clearPendingCallIntent {

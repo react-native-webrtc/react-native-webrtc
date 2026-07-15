@@ -275,9 +275,9 @@ object CallManager {
     private fun loadTimeouts(context: Context) {
         if (timeoutsLoaded) return
         timeoutsLoaded = true
-        incomingCallTimeoutMs = readTimeoutMs(context, "FishjamVoipIncomingCallTimeout", DEFAULT_INCOMING_CALL_TIMEOUT_MS)
-        outgoingCallTimeoutMs = readTimeoutMs(context, "FishjamVoipOutgoingCallTimeout", DEFAULT_OUTGOING_CALL_TIMEOUT_MS)
-        fulfillAnswerTimeoutMs = readTimeoutMs(context, "FishjamVoipFulfillAnswerTimeout", DEFAULT_FULFILL_ANSWER_TIMEOUT_MS)
+        incomingCallTimeoutMs = readTimeoutMs(context, "VoipIncomingCallTimeout", DEFAULT_INCOMING_CALL_TIMEOUT_MS)
+        outgoingCallTimeoutMs = readTimeoutMs(context, "VoipOutgoingCallTimeout", DEFAULT_OUTGOING_CALL_TIMEOUT_MS)
+        fulfillAnswerTimeoutMs = readTimeoutMs(context, "VoipFulfillAnswerTimeout", DEFAULT_FULFILL_ANSWER_TIMEOUT_MS)
     }
 
     /** Reads a manifest meta-data value in seconds; returns milliseconds. */

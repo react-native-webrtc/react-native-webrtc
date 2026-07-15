@@ -29,6 +29,8 @@ static NSTimeInterval timeoutFromInfoPlist(NSString *key, NSTimeInterval fallbac
 @property(nonatomic, assign) BOOL isCallOnHold;
 @property(nonatomic, copy, nullable) NSString *pendingAnswerRequestId;
 @property(nonatomic, copy, nullable) dispatch_block_t ringTimeoutBlock;
+@property(nonatomic, strong) NSUUID *waitingCallUUID;
+@property(nonatomic, copy, nullable) dispatch_block_t waitingRingTimeoutBlock;
 @property(nonatomic, assign) NSTimeInterval incomingCallTimeout;
 @property(nonatomic, assign) NSTimeInterval outgoingCallTimeout;
 @property(nonatomic, assign) NSTimeInterval fulfillAnswerTimeout;
@@ -52,15 +54,15 @@ static NSTimeInterval timeoutFromInfoPlist(NSString *key, NSTimeInterval fallbac
         providerConfiguration.supportsVideo = YES;
         providerConfiguration.supportedHandleTypes = [NSSet setWithObject:@(CXHandleTypeGeneric)];
         providerConfiguration.maximumCallsPerCallGroup = 1;
-        providerConfiguration.maximumCallGroups = 1;
+        providerConfiguration.maximumCallGroups = 2;
         providerConfiguration.includesCallsInRecents = YES;
 
         _provider = [[CXProvider alloc] initWithConfiguration:providerConfiguration];
         [_provider setDelegate:self queue:nil];
         _callController = [[CXCallController alloc] init];
-        _incomingCallTimeout = timeoutFromInfoPlist(@"FishjamVoipIncomingCallTimeout", kDefaultIncomingCallTimeout);
-        _outgoingCallTimeout = timeoutFromInfoPlist(@"FishjamVoipOutgoingCallTimeout", kDefaultOutgoingCallTimeout);
-        _fulfillAnswerTimeout = timeoutFromInfoPlist(@"FishjamVoipFulfillAnswerTimeout", kDefaultFulfillAnswerTimeout);
+        _incomingCallTimeout = timeoutFromInfoPlist(@"VoipIncomingCallTimeout", kDefaultIncomingCallTimeout);
+        _outgoingCallTimeout = timeoutFromInfoPlist(@"VoipOutgoingCallTimeout", kDefaultOutgoingCallTimeout);
+        _fulfillAnswerTimeout = timeoutFromInfoPlist(@"VoipFulfillAnswerTimeout", kDefaultFulfillAnswerTimeout);
     }
     return self;
 }
@@ -69,8 +71,20 @@ static NSTimeInterval timeoutFromInfoPlist(NSString *key, NSTimeInterval fallbac
     return self.currentCallUUID != nil;
 }
 
+- (void)reportCallCapabilitiesForUUID:(NSUUID *)uuid supportsHolding:(BOOL)supportsHolding {
+    if (uuid == nil) {
+        return;
+    }
+    CXCallUpdate *update = [[CXCallUpdate alloc] init];
+    update.supportsHolding = supportsHolding;
+    update.supportsGrouping = NO;
+    update.supportsUngrouping = NO;
+    update.supportsDTMF = NO;
+    [self.provider reportCallWithUUID:uuid updated:update];
+}
+
 - (void)startCallWithDisplayName:(NSString *)displayName handle:(NSString *)handle isVideo:(BOOL)isVideo {
-    if (self.currentCallUUID != nil) {
+    if (self.currentCallUUID != nil || self.waitingCallUUID != nil) {
         NSLog(@"[CallKitManager] Call already in progress");
         return;
     }
@@ -98,7 +112,7 @@ static NSTimeInterval timeoutFromInfoPlist(NSString *key, NSTimeInterval fallbac
                         if (weakSelf.onCallFailed) {
                             weakSelf.onCallFailed(error.localizedDescription);
                         }
-                        [weakSelf cleanup];
+                        [weakSelf cleanupCurrentCall];
                         return;
                     }
 
@@ -115,38 +129,109 @@ static NSTimeInterval timeoutFromInfoPlist(NSString *key, NSTimeInterval fallbac
                 }];
 }
 
-- (void)reportIncomingCallWithDisplayName:(NSString *)displayName
-                                   handle:(NSString *)handle
-                                  isVideo:(BOOL)isVideo {
+- (IncomingCallSlot)reportIncomingCallWithDisplayName:(NSString *)displayName
+                                                      handle:(NSString *)handle
+                                                     isVideo:(BOOL)isVideo {
+    if (self.currentCallUUID != nil) {
+        if (!self.isCallAnswered || self.waitingCallUUID != nil) {
+            [self reportTransientIncomingCallAndEndWithDisplayName:displayName handle:handle isVideo:isVideo];
+            return IncomingCallSlotRejected;
+        }
+    }
+
+    BOOL becomesWaiting = self.currentCallUUID != nil;
     NSUUID *uuid = [NSUUID UUID];
-    self.currentCallUUID = uuid;
-    self.isCallAnswered = NO;
-    self.isOutgoingCall = NO;
+
+    if (becomesWaiting) {
+        self.waitingCallUUID = uuid;
+        if (self.isCallAnswered) {
+            [self reportCallCapabilitiesForUUID:self.currentCallUUID supportsHolding:NO];
+        }
+    } else {
+        self.currentCallUUID = uuid;
+        self.isCallAnswered = NO;
+        self.isOutgoingCall = NO;
+    }
 
     CXCallUpdate *update = [[CXCallUpdate alloc] init];
     update.remoteHandle = [[CXHandle alloc] initWithType:CXHandleTypeGeneric value:handle];
     update.localizedCallerName = displayName;
     update.hasVideo = isVideo;
-    update.supportsHolding = YES;
+    // Waiting calls must not offer Hold & Accept
+    update.supportsHolding = becomesWaiting ? NO : YES;
     update.supportsGrouping = NO;
     update.supportsUngrouping = NO;
     update.supportsDTMF = NO;
 
     __weak typeof(self) weakSelf = self;
-    [self.provider reportNewIncomingCallWithUUID:uuid
-                                          update:update
-                                      completion:^(NSError *_Nullable error) {
-                                          if (error) {
-                                              NSLog(@"[CallKitManager] Failed to report incoming call: %@",
-                                                    error.localizedDescription);
-                                              weakSelf.currentCallUUID = nil;
-                                              if (weakSelf.onCallFailed) {
-                                                  weakSelf.onCallFailed(error.localizedDescription);
-                                              }
-                                              return;
-                                          }
-                                          [weakSelf startRingTimeoutForCall:uuid timeout:weakSelf.incomingCallTimeout];
-                                      }];
+    [self.provider
+        reportNewIncomingCallWithUUID:uuid
+                               update:update
+                           completion:^(NSError *_Nullable error) {
+                               typeof(self) strongSelf = weakSelf;
+                               if (strongSelf == nil) {
+                                   return;
+                               }
+                               if (error) {
+                                   NSLog(@"[CallKitManager] Failed to report incoming call: %@",
+                                         error.localizedDescription);
+                                   if (becomesWaiting) {
+                                       [strongSelf cleanupWaitingCall];
+                                   } else {
+                                       strongSelf.currentCallUUID = nil;
+                                       if (strongSelf.onCallFailed) {
+                                           strongSelf.onCallFailed(error.localizedDescription);
+                                       }
+                                   }
+                                   return;
+                               }
+                               if (becomesWaiting) {
+                                   [strongSelf startWaitingRingTimeoutForCall:uuid
+                                                                      timeout:strongSelf.incomingCallTimeout];
+                               } else {
+                                   [strongSelf startRingTimeoutForCall:uuid timeout:strongSelf.incomingCallTimeout];
+                               }
+                           }];
+
+    return becomesWaiting ? IncomingCallSlotWaiting : IncomingCallSlotCurrent;
+}
+
+/**
+ * PushKit requires every VoIP push to post an incoming call to CallKit. When there is no
+ * slot left, report a throwaway call and end it immediately without disturbing whoever
+ * is already ringing.
+ */
+- (void)reportTransientIncomingCallAndEndWithDisplayName:(NSString *)displayName
+                                                    handle:(NSString *)handle
+                                                   isVideo:(BOOL)isVideo {
+    NSUUID *uuid = [NSUUID UUID];
+
+    CXCallUpdate *update = [[CXCallUpdate alloc] init];
+    update.remoteHandle = [[CXHandle alloc] initWithType:CXHandleTypeGeneric value:handle];
+    update.localizedCallerName = displayName;
+    update.hasVideo = isVideo;
+    update.supportsHolding = NO;
+    update.supportsGrouping = NO;
+    update.supportsUngrouping = NO;
+    update.supportsDTMF = NO;
+
+    __weak typeof(self) weakSelf = self;
+    [self.provider
+        reportNewIncomingCallWithUUID:uuid
+                               update:update
+                           completion:^(NSError *_Nullable error) {
+                               typeof(self) strongSelf = weakSelf;
+                               if (strongSelf == nil) {
+                                   return;
+                               }
+                               if (error) {
+                                   NSLog(@"[CallKitManager] Failed to report transient incoming call: %@",
+                                         error.localizedDescription);
+                               }
+                               [strongSelf.provider reportCallWithUUID:uuid
+                                                             endedAtDate:[NSDate date]
+                                                                reason:CXCallEndedReasonFailed];
+                           }];
 }
 
 /**
@@ -177,7 +262,6 @@ static NSTimeInterval timeoutFromInfoPlist(NSString *key, NSTimeInterval fallbac
         CXEndCallAction *endCallAction = [[CXEndCallAction alloc] initWithCallUUID:self.currentCallUUID];
         CXTransaction *transaction = [[CXTransaction alloc] initWithAction:endCallAction];
 
-        __weak typeof(self) weakSelf = self;
         [self.callController
             requestTransaction:transaction
                     completion:^(NSError *error) {
@@ -197,7 +281,7 @@ static NSTimeInterval timeoutFromInfoPlist(NSString *key, NSTimeInterval fallbac
     if (self.onCallEnded) {
         self.onCallEnded(reason);
     }
-    [self cleanup];
+    [self cleanupCurrentCall];
 }
 
 - (BOOL)fulfillIncomingCallConnected:(NSString *)requestId {
@@ -216,6 +300,7 @@ static NSTimeInterval timeoutFromInfoPlist(NSString *key, NSTimeInterval fallbac
     }
 
     [self cancelRingTimeout];
+    self.isCallAnswered = YES;
     [self.provider reportOutgoingCallWithUUID:uuid connectedAtDate:[NSDate date]];
 }
 
@@ -242,7 +327,7 @@ static NSTimeInterval timeoutFromInfoPlist(NSString *key, NSTimeInterval fallbac
     }
 
     [self.provider reportCallWithUUID:uuid endedAtDate:[NSDate date] reason:CXCallEndedReasonFailed];
-    [self cleanup];
+    [self cleanupCurrentCall];
 }
 
 - (void)startRingTimeoutForCall:(NSUUID *)uuid timeout:(NSTimeInterval)timeout {
@@ -261,8 +346,7 @@ static NSTimeInterval timeoutFromInfoPlist(NSString *key, NSTimeInterval fallbac
         [strongSelf endCallWithReason:@"missed"];
     });
     self.ringTimeoutBlock = block;
-    dispatch_after(dispatch_walltime(NULL, (int64_t)(timeout * NSEC_PER_SEC)),
-                   dispatch_get_main_queue(), block);
+    dispatch_after(dispatch_walltime(NULL, (int64_t)(timeout * NSEC_PER_SEC)), dispatch_get_main_queue(), block);
 }
 
 - (void)cancelRingTimeout {
@@ -272,7 +356,34 @@ static NSTimeInterval timeoutFromInfoPlist(NSString *key, NSTimeInterval fallbac
     }
 }
 
-- (void)cleanup {
+- (void)startWaitingRingTimeoutForCall:(NSUUID *)uuid timeout:(NSTimeInterval)timeout {
+    [self cancelWaitingRingTimeout];
+
+    __weak typeof(self) weakSelf = self;
+    dispatch_block_t block = dispatch_block_create(0, ^{
+        typeof(self) strongSelf = weakSelf;
+        if (strongSelf == nil) {
+            return;
+        }
+        strongSelf.waitingRingTimeoutBlock = nil;
+        if (![uuid isEqual:strongSelf.waitingCallUUID]) {
+            return;
+        }
+        [strongSelf.provider reportCallWithUUID:uuid endedAtDate:[NSDate date] reason:CXCallEndedReasonUnanswered];
+        [strongSelf cleanupWaitingCall];
+    });
+    self.waitingRingTimeoutBlock = block;
+    dispatch_after(dispatch_walltime(NULL, (int64_t)(timeout * NSEC_PER_SEC)), dispatch_get_main_queue(), block);
+}
+
+- (void)cancelWaitingRingTimeout {
+    if (self.waitingRingTimeoutBlock != nil) {
+        dispatch_block_cancel(self.waitingRingTimeoutBlock);
+        self.waitingRingTimeoutBlock = nil;
+    }
+}
+
+- (void)cleanupCurrentCall {
     [self cancelRingTimeout];
     self.currentCallUUID = nil;
     self.isCallAnswered = NO;
@@ -283,10 +394,46 @@ static NSTimeInterval timeoutFromInfoPlist(NSString *key, NSTimeInterval fallbac
     [[VoipManager shared] clearPendingIncomingCall];
 }
 
+- (void)cleanupWaitingCall {
+    [self cancelWaitingRingTimeout];
+    self.waitingCallUUID = nil;
+    if (self.currentCallUUID != nil) {
+        [self reportCallCapabilitiesForUUID:self.currentCallUUID supportsHolding:YES];
+    }
+    [[VoipManager shared] discardPendingSecondIncomingCall];
+}
+
+/**
+ * Answering the waiting call ends whichever call was current and takes its place.
+ * "End & Accept" delivers a `CXEndCallAction` for the old call before the
+ * `CXAnswerCallAction` that triggers this, so `performEndCallAction:` normally does
+ * that ending; this is only a safety net in case the old call is still around.
+ */
+- (void)promoteWaitingCallToCurrent {
+    NSUUID *promoted = self.waitingCallUUID;
+    [self cancelWaitingRingTimeout];
+    self.waitingCallUUID = nil;
+
+    if (self.currentCallUUID != nil) {
+        if (self.onCallEnded) {
+            self.onCallEnded(@"local");
+        }
+        [self cleanupCurrentCall];
+    }
+
+    self.currentCallUUID = promoted;
+    self.isCallAnswered = NO;
+    self.isOutgoingCall = NO;
+    self.isCallOnHold = NO;
+    [self reportCallCapabilitiesForUUID:promoted supportsHolding:YES];
+    [[VoipManager shared] revealPendingSecondIncomingCall];
+}
+
 #pragma mark - CXProviderDelegate
 
 - (void)providerDidReset:(CXProvider *)provider {
-    [self cleanup];
+    [self cleanupCurrentCall];
+    [self cleanupWaitingCall];
 }
 
 - (void)provider:(CXProvider *)provider performStartCallAction:(CXStartCallAction *)action {
@@ -296,14 +443,40 @@ static NSTimeInterval timeoutFromInfoPlist(NSString *key, NSTimeInterval fallbac
 }
 
 - (void)provider:(CXProvider *)provider performEndCallAction:(CXEndCallAction *)action {
+    NSUUID *uuid = action.callUUID;
+
+    if ([uuid isEqual:self.waitingCallUUID]) {
+        // Declined (or ended) before ever being answered
+        [self cleanupWaitingCall];
+        [action fulfill];
+        return;
+    }
+
+    if (![uuid isEqual:self.currentCallUUID]) {
+        // Already handled, safety net
+        [action fulfill];
+        return;
+    }
+
     if (self.onCallEnded) {
         self.onCallEnded(@"local");
     }
     [action fulfill];
-    [self cleanup];
+    [self cleanupCurrentCall];
 }
 
 - (void)provider:(CXProvider *)provider performAnswerCallAction:(CXAnswerCallAction *)action {
+    NSUUID *uuid = action.callUUID;
+
+    if ([uuid isEqual:self.waitingCallUUID]) {
+        [self promoteWaitingCallToCurrent];
+    }
+
+    if (![uuid isEqual:self.currentCallUUID]) {
+        [action fail];
+        return;
+    }
+
     [self cancelRingTimeout];
     self.isCallAnswered = YES;
 
@@ -349,6 +522,13 @@ static NSTimeInterval timeoutFromInfoPlist(NSString *key, NSTimeInterval fallbac
 }
 
 - (void)provider:(CXProvider *)provider performSetHeldCallAction:(CXSetHeldCallAction *)action {
+    if (self.waitingCallUUID != nil &&
+        [action.callUUID isEqual:self.currentCallUUID] &&
+        action.isOnHold) {
+        [action fail];
+        return;
+    }
+
     self.isCallOnHold = action.isOnHold;
     if (self.onCallHeld) {
         self.onCallHeld(action.isOnHold);
