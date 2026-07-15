@@ -39,6 +39,16 @@ interface CallEventsListener {
     fun onHoldChanged(onHold: Boolean)
 }
 
+/**
+ * Where an incoming call landed relative to whatever call already exists:
+ * - Current: there was no call yet, so it is registered with Telecom as usual.
+ * - Waiting: another call is already answered/connected, so this one only shows a heads-up
+ *   notification - the JS layer is not told about it unless it is answered, at which
+ *   point the current call ends and this one takes its place.
+ * - Rejected: both slots are taken, or the current call is still ringing/connecting.
+ */
+enum class IncomingCallSlot { CURRENT, WAITING, REJECTED }
+
 @RequiresApi(value = 26)
 object CallManager {
     private const val DEFAULT_INCOMING_CALL_TIMEOUT_MS = 45_000L
@@ -79,7 +89,19 @@ object CallManager {
     private var outgoingCallTimeoutMs = DEFAULT_OUTGOING_CALL_TIMEOUT_MS
     private var fulfillAnswerTimeoutMs = DEFAULT_FULFILL_ANSWER_TIMEOUT_MS
 
+    // Tracks the current call's addCall coroutine so we can wait for telecom to tear down current call before registering the waiting call in its place.
+    private var callJob: Job? = null
+
+    @Volatile private var hasWaitingCall = false
+    private var waitingDisplayName: String = ""
+    private var waitingHandle: String = ""
+    private var waitingIsVideo: Boolean = false
+    private var waitingRingTimeoutJob: Job? = null
+
     fun hasActiveCall(): Boolean = hasActiveCall
+    fun hasWaitingCall(): Boolean = hasWaitingCall
+    fun waitingDisplayName(): String = waitingDisplayName
+    fun waitingIsVideo(): Boolean = waitingIsVideo
     fun isAnswered(): Boolean = answered
     fun isOnHold(): Boolean = onHold
     fun pendingAnswerRequestId(): String? = pendingAnswerRequestId
@@ -90,8 +112,67 @@ object CallManager {
         register(ctx, displayName, handle, isVideo, CallAttributesCompat.DIRECTION_OUTGOING)
     }
 
-    fun reportIncomingCall(ctx: Context, displayName: String, handle: String, isVideo: Boolean) {
-        register(ctx, displayName, handle, isVideo, CallAttributesCompat.DIRECTION_INCOMING)
+    @Synchronized
+    fun reportIncomingCall(ctx: Context, displayName: String, handle: String, isVideo: Boolean): IncomingCallSlot {
+        if (!hasActiveCall) {
+            register(ctx, displayName, handle, isVideo, CallAttributesCompat.DIRECTION_INCOMING)
+            return IncomingCallSlot.CURRENT
+        }
+        if (hasWaitingCall || !answered) {
+            return IncomingCallSlot.REJECTED
+        }
+        registerWaiting(ctx, displayName, handle, isVideo)
+        return IncomingCallSlot.WAITING
+    }
+
+    @Synchronized
+    private fun registerWaiting(ctx: Context, displayName: String, handle: String, isVideo: Boolean) {
+        hasWaitingCall = true
+        waitingDisplayName = displayName
+        waitingHandle = handle
+        waitingIsVideo = isVideo
+
+        callNotificationManager.showWaiting(ctx.applicationContext, displayName, isVideo)
+        waitingRingTimeoutJob = scope.launch {
+            delay(incomingCallTimeoutMs)
+            declineWaitingCall(ctx)
+        }
+    }
+
+    @Synchronized
+    fun declineWaitingCall(ctx: Context) {
+        if (!hasWaitingCall) return
+        hasWaitingCall = false
+        waitingRingTimeoutJob?.cancel()
+        waitingRingTimeoutJob = null
+        callNotificationManager.cancelWaiting(ctx.applicationContext)
+        VoipPushRegistry.discardWaitingIncoming()
+    }
+
+    @Synchronized
+    fun acceptWaitingCall(ctx: Context) {
+        if (!hasWaitingCall) return
+        hasWaitingCall = false
+        waitingRingTimeoutJob?.cancel()
+        waitingRingTimeoutJob = null
+        callNotificationManager.cancelWaiting(ctx.applicationContext)
+
+        val displayName = waitingDisplayName
+        val handle = waitingHandle
+        val isVideo = waitingIsVideo
+        val previousJob = callJob
+
+        if (hasActiveCall) {
+            endCall(DisconnectCause(DisconnectCause.LOCAL))
+        }
+
+        scope.launch {
+            previousJob?.join()
+            VoipPushRegistry.revealWaitingIncoming()
+            register(ctx, displayName, handle, isVideo, CallAttributesCompat.DIRECTION_INCOMING)
+            answer()
+            launchHostApp(ctx.applicationContext)
+        }
     }
 
     fun answer() { actions?.trySend(CallAction.Answer) }
@@ -244,7 +325,7 @@ object CallManager {
 
         )
 
-        scope.launch {
+        callJob = scope.launch {
             try {
                 callsManager!!.addCall(
                     callAttributes,

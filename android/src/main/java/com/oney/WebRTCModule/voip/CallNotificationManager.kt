@@ -44,7 +44,10 @@ class CallNotificationManager {
     companion object {
         private const val CHANNEL_INCOMING = "fishjam_telecom_incoming"
         private const val CHANNEL_ONGOING = "fishjam_telecom_ongoing"
+        private const val CHANNEL_WAITING = "fishjam_telecom_waiting_incoming"
         const val NOTIFICATION_ID = 8400
+
+        const val WAITING_NOTIFICATION_ID = 8401
 
         // Distinct request codes so the PendingIntents don't collapse into one.
         private const val RC_ANSWER = 1
@@ -52,6 +55,9 @@ class CallNotificationManager {
         private const val RC_HANGUP = 3
         private const val RC_FULL_SCREEN = 4
         private const val RC_CONTENT = 5
+        private const val RC_ANSWER_WAITING = 6
+        private const val RC_DECLINE_WAITING = 7
+        private const val RC_FULL_SCREEN_WAITING = 8
 
         private val RING_VIBRATION_PATTERN = longArrayOf(0, 350, 200, 350, 1200)
     }
@@ -87,8 +93,17 @@ class CallNotificationManager {
             .setVibrationEnabled(false)
             .build()
 
+        val waitingChannel = NotificationChannelCompat.Builder(
+            CHANNEL_WAITING,
+            NotificationManagerCompat.IMPORTANCE_HIGH,
+        ).setName("Call waiting")
+            .setDescription("Second incoming call while on a call")
+            .setVibrationEnabled(false)
+            .setSound(null, null).build()
+
         nm.createNotificationChannel(incomingChannel)
         nm.createNotificationChannel(ongoingChannel)
+        nm.createNotificationChannel(waitingChannel)
         channelsReady = true
     }
 
@@ -115,6 +130,38 @@ class CallNotificationManager {
 
         notify(ctx, notification)
         startVibration(ctx)
+    }
+
+    fun showWaiting(context: Context, displayName: String, isVideo: Boolean) {
+        val ctx = context.applicationContext
+        initChannels(ctx)
+
+        val notification =
+            callNotificationBuilder(
+                ctx,
+                CHANNEL_WAITING,
+                displayName,
+                if (isVideo) "Incoming video call" else "Incoming call",
+            )
+                .setStyle(
+                    NotificationCompat.CallStyle.forIncomingCall(
+                        person(ctx, displayName),
+                        declineWaitingPendingIntent(ctx),
+                        answerWaitingPendingIntent(ctx),
+                    )
+                )
+                .setFullScreenIntent(waitingFullScreenPendingIntent(ctx), true)
+                .setContentIntent(appContentPendingIntent(ctx))
+                .setOngoing(true)
+                .setAutoCancel(false)
+                .setPriority(NotificationCompat.PRIORITY_HIGH)
+                .build()
+
+        notify(ctx, notification, WAITING_NOTIFICATION_ID)
+    }
+
+    fun cancelWaiting(context: Context) {
+        NotificationManagerCompat.from(context.applicationContext).cancel(WAITING_NOTIFICATION_ID)
     }
 
     fun buildOngoing(
@@ -267,6 +314,25 @@ class CallNotificationManager {
             immutable(),
         )
 
+    // Unlike the primary call's answer, accepting the waiting call needs no Activity - it
+    // just ends the current call and registers this one in its place (CallManager handles
+    // launching the host app itself), so both actions go through the same broadcast receiver.
+    private fun answerWaitingPendingIntent(ctx: Context): PendingIntent =
+        PendingIntent.getBroadcast(
+            ctx,
+            RC_ANSWER_WAITING,
+            Intent(ctx, EndCallNotificationReceiver::class.java).setAction(EndCallNotificationReceiver.ACTION_ANSWER_WAITING),
+            immutable(),
+        )
+
+    private fun declineWaitingPendingIntent(ctx: Context): PendingIntent =
+        PendingIntent.getBroadcast(
+            ctx,
+            RC_DECLINE_WAITING,
+            Intent(ctx, EndCallNotificationReceiver::class.java).setAction(EndCallNotificationReceiver.ACTION_DECLINE_WAITING),
+            immutable(),
+        )
+
     private fun hangupPendingIntent(ctx: Context): PendingIntent =
         PendingIntent.getBroadcast(
             ctx,
@@ -283,6 +349,15 @@ class CallNotificationManager {
         return PendingIntent.getActivity(ctx, RC_FULL_SCREEN, intent, immutable())
     }
 
+    private fun waitingFullScreenPendingIntent(ctx: Context): PendingIntent {
+        val intent =
+            Intent(ctx, IncomingCallActivity::class.java).apply {
+                action = IncomingCallActivity.ACTION_SHOW_WAITING
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP
+            }
+        return PendingIntent.getActivity(ctx, RC_FULL_SCREEN_WAITING, intent, immutable())
+    }
+
     private fun appContentPendingIntent(ctx: Context): PendingIntent {
         val launch =
             ctx.packageManager.getLaunchIntentForPackage(ctx.packageName)?.apply {
@@ -294,9 +369,9 @@ class CallNotificationManager {
     private fun immutable(): Int = PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
 
     @SuppressLint("MissingPermission")
-    private fun notify(ctx: Context, notification: Notification) {
+    private fun notify(ctx: Context, notification: Notification, id: Int = NOTIFICATION_ID) {
         try {
-            NotificationManagerCompat.from(ctx).notify(NOTIFICATION_ID, notification)
+            NotificationManagerCompat.from(ctx).notify(id, notification)
         } catch (_: SecurityException) {
             // POST_NOTIFICATIONS not granted (Android 13+). The host app is
             // responsible for requesting it; swallow so the call still proceeds.

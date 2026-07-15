@@ -28,13 +28,26 @@ class PushNotificationService : FirebaseMessagingService() {
         val displayName = data["displayName"] ?: "Incoming call"
         val handle = data["handle"]?.takeIf { it.isNotEmpty() } ?: displayName
         val isVideo = data["isVideo"]?.toBoolean() ?: false
+        val incoming = VoipPushRegistry.Incoming(roomName, displayName, handle, isVideo)
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            CallManager.reportIncomingCall(applicationContext, displayName, handle, isVideo)
+            when (CallManager.reportIncomingCall(applicationContext, displayName, handle, isVideo)) {
+                IncomingCallSlot.CURRENT -> {
+                    warmUpReact()
+                    VoipPushRegistry.reportIncoming(incoming)
+                }
+                IncomingCallSlot.WAITING -> {
+                    warmUpReact()
+                    VoipPushRegistry.bufferWaitingIncoming(incoming)
+                }
+                IncomingCallSlot.REJECTED -> {
+                    // Already tracking two calls - drop it, nothing to notify JS about.
+                }
+            }
+        } else {
+            warmUpReact()
+            VoipPushRegistry.reportIncoming(incoming)
         }
-
-        warmUpReact()
-        VoipPushRegistry.reportIncoming(VoipPushRegistry.Incoming(roomName, displayName, handle, isVideo))
     }
 
     private fun warmUpReact() {

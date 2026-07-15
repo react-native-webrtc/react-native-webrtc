@@ -44,6 +44,7 @@ import kotlin.math.abs
 class IncomingCallActivity : Activity() {
     companion object {
         const val ACTION_ANSWER = "fishjam.voip.ACTION_ANSWER"
+        const val ACTION_SHOW_WAITING = "fishjam.voip.ACTION_SHOW_WAITING"
         const val ACTION_CALL_ENDED = "fishjam.voip.ACTION_CALL_ENDED"
 
         /** Fraction of max travel the knob must cross to trigger the action. */
@@ -65,6 +66,7 @@ class IncomingCallActivity : Activity() {
         }
     private var callEndedReceiverRegistered = false
     private var isAnswering = false
+    private var isWaitingCall = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -72,6 +74,21 @@ class IncomingCallActivity : Activity() {
 
         if (intent?.action == ACTION_ANSWER) {
             answerAndOpenApp()
+            return
+        }
+
+        if (intent?.action == ACTION_SHOW_WAITING) {
+            if (!CallManager.hasWaitingCall()) {
+                finish()
+                return
+            }
+            isWaitingCall = true
+            setContentView(
+                buildWaitingUi(
+                    CallManager.waitingDisplayName(),
+                    CallManager.waitingIsVideo(),
+                ),
+            )
             return
         }
 
@@ -208,6 +225,14 @@ class IncomingCallActivity : Activity() {
 
         root.addView(buildSwipeBar())
 
+        return root
+    }
+
+    private fun buildWaitingUi(displayName: String, isVideo: Boolean): ViewGroup {
+        val root = buildUi(displayName, isVideo)
+        root.post {
+            if (!CallManager.hasWaitingCall()) finish()
+        }
         return root
     }
 
@@ -394,9 +419,20 @@ class IncomingCallActivity : Activity() {
                     val fraction =
                         if (maxTravel > 0f) knob.translationX / maxTravel else 0f
                     when {
-                        fraction >= SWIPE_TRIGGER -> answerAndOpenApp()
+                        fraction >= SWIPE_TRIGGER -> {
+                            if (isWaitingCall) {
+                                CallManager.acceptWaitingCall(this@IncomingCallActivity)
+                            } else {
+                                answerAndOpenApp()
+                            }
+                            finish()
+                        }
                         fraction <= -SWIPE_TRIGGER -> {
-                            CallManager.endCall(DisconnectCause(DisconnectCause.REJECTED))
+                            if (isWaitingCall) {
+                                CallManager.declineWaitingCall(this@IncomingCallActivity)
+                            } else {
+                                CallManager.endCall(DisconnectCause(DisconnectCause.REJECTED))
+                            }
                             finish()
                         }
                         else -> resetVisuals()

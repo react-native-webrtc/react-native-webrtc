@@ -59,4 +59,16 @@ final class VoipController implements VoipPushRegistry.Listener {
         body.putMap("incoming", payload);
         webRTCModule.sendEvent("voipPushEvent", body);
     }
+
+    @Override
+    public void onWaitingCallDeclined(VoipPushRegistry.Incoming incoming) {
+        WritableMap payload = Arguments.createMap();
+        payload.putString("roomName", incoming.getRoomName());
+        payload.putString("displayName", incoming.getDisplayName());
+        payload.putString("handle", incoming.getHandle());
+        payload.putBoolean("isVideo", incoming.isVideo());
+        WritableMap body = Arguments.createMap();
+        body.putMap("waitingDeclined", payload);
+        webRTCModule.sendEvent("voipPushEvent", body);
+    }
 }
