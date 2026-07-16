@@ -7,8 +7,8 @@ import { type CallEndedReason, hasActiveTelecomCall } from './Telecom';
 import {
     clearPendingCallIntent,
     clearPendingIncomingCall,
-    getPendingCallIntent,
     getPendingAnswerRequestId,
+    getPendingCallIntent,
     getPendingIncomingCall,
     getVoipToken,
     type VoipCallIntent,
@@ -41,6 +41,7 @@ export type VoIPEventHandlers = {
     onEnded?: (reason?: CallEndedReason) => void;
     onRegistered?: (token: string) => void;
     onHeldChanged?: (onHold: boolean) => void;
+    onMuteChanged?: (muted: boolean) => void;
     onCallIntent?: (intent: VoipCallIntent) => void;
     onWaitingCallDeclined?: (payload: VoipIncomingPayload) => void;
 };
@@ -76,6 +77,9 @@ const useVoIPEventsIos = (handlers: VoIPEventHandlers): void => {
     });
     useCallKitEvent('held', (onHold) => {
         handlersRef.current.onHeldChanged?.(Boolean(onHold));
+    });
+    useCallKitEvent('muted', (muted) => {
+        handlersRef.current.onMuteChanged?.(Boolean(muted));
     });
 
     useEffect(() => {
@@ -161,6 +165,7 @@ const useVoIPEventsAndroid = (handlers: VoIPEventHandlers): void => {
                 requestId?: string;
                 reason?: CallEndedReason;
                 held?: boolean;
+                muted?: boolean;
             };
             if (payload.event === 'answer' && payload.requestId) {
                 handlersRef.current.onAnswered?.(payload.requestId);
@@ -172,6 +177,11 @@ const useVoIPEventsAndroid = (handlers: VoIPEventHandlers): void => {
                 typeof payload.held === 'boolean'
             ) {
                 handlersRef.current.onHeldChanged?.(payload.held);
+            } else if (
+                payload.event === 'muteChanged' &&
+                typeof payload.muted === 'boolean'
+            ) {
+                handlersRef.current.onMuteChanged?.(payload.muted);
             }
         });
 
