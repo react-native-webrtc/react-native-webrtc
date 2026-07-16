@@ -5,6 +5,7 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import android.graphics.Bitmap
 import android.graphics.Color
 import android.graphics.drawable.GradientDrawable
 import android.os.Build
@@ -47,6 +48,9 @@ class IncomingCallActivity : Activity() {
         const val ACTION_SHOW_WAITING = "fishjam.voip.ACTION_SHOW_WAITING"
         const val ACTION_CALL_ENDED = "fishjam.voip.ACTION_CALL_ENDED"
 
+        /** Broadcast by [CallManager] once the caller avatar has downloaded. */
+        const val ACTION_AVATAR_READY = "fishjam.voip.ACTION_AVATAR_READY"
+
         /** Fraction of max travel the knob must cross to trigger the action. */
         private const val SWIPE_TRIGGER = 0.7f
 
@@ -62,11 +66,19 @@ class IncomingCallActivity : Activity() {
 
     private val callEndedReceiver =
         object : BroadcastReceiver() {
-            override fun onReceive(context: Context, intent: Intent) = finish()
+            override fun onReceive(context: Context, intent: Intent) {
+                when (intent.action) {
+                    ACTION_CALL_ENDED -> finish()
+                    ACTION_AVATAR_READY -> refreshAvatar()
+                }
+            }
         }
     private var callEndedReceiverRegistered = false
     private var isAnswering = false
     private var isWaitingCall = false
+
+    /** The hero avatar container, so a late-arriving photo can replace the initials. */
+    private var avatarHolder: FrameLayout? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -144,7 +156,7 @@ class IncomingCallActivity : Activity() {
         ContextCompat.registerReceiver(
             this,
             callEndedReceiver,
-            IntentFilter(ACTION_CALL_ENDED),
+            IntentFilter(ACTION_CALL_ENDED).apply { addAction(ACTION_AVATAR_READY) },
             ContextCompat.RECEIVER_NOT_EXPORTED,
         )
     }
@@ -448,7 +460,22 @@ class IncomingCallActivity : Activity() {
         }
     }
 
-    private fun avatarView(name: String, sizeDp: Int, textSizeSp: Float): TextView =
+    /**
+     * The hero avatar: shows the downloaded caller photo if available, otherwise
+     * an initials circle. Returned as a holder so [refreshAvatar] can swap in a
+     * photo that lands after the screen is already showing.
+     */
+    private fun avatarView(name: String, sizeDp: Int, textSizeSp: Float): FrameLayout {
+        val holder = FrameLayout(this).apply {
+            layoutParams = LinearLayout.LayoutParams(dp(sizeDp), dp(sizeDp))
+        }
+        val bitmap = CallManager.currentAvatarBitmap()
+        holder.addView(if (bitmap != null) avatarImage(bitmap) else initialsAvatar(name, textSizeSp))
+        avatarHolder = holder
+        return holder
+    }
+
+    private fun initialsAvatar(name: String, textSizeSp: Float): TextView =
         TextView(this).apply {
             text = name.firstOrNull()?.uppercase() ?: "?"
             setTextColor(Color.WHITE)
@@ -459,8 +486,30 @@ class IncomingCallActivity : Activity() {
                     shape = GradientDrawable.OVAL
                     setColor(avatarGreen)
                 }
-            layoutParams = LinearLayout.LayoutParams(dp(sizeDp), dp(sizeDp))
+            layoutParams = FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.MATCH_PARENT,
+                FrameLayout.LayoutParams.MATCH_PARENT,
+            )
         }
+
+    /** The already circular-cropped caller photo, sized to fill the holder. */
+    private fun avatarImage(bitmap: Bitmap): ImageView =
+        ImageView(this).apply {
+            setImageBitmap(bitmap)
+            scaleType = ImageView.ScaleType.FIT_CENTER
+            layoutParams = FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.MATCH_PARENT,
+                FrameLayout.LayoutParams.MATCH_PARENT,
+            )
+        }
+
+    /** Replaces the initials circle with the caller photo once it has downloaded. */
+    private fun refreshAvatar() {
+        val holder = avatarHolder ?: return
+        val bitmap = CallManager.currentAvatarBitmap() ?: return
+        holder.removeAllViews()
+        holder.addView(avatarImage(bitmap))
+    }
 
     private fun pill(color: Int, radiusDp: Int): GradientDrawable =
         GradientDrawable().apply {

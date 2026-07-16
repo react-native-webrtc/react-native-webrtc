@@ -4,6 +4,7 @@ import android.content.Context
 import android.content.Intent
 import android.annotation.SuppressLint
 import android.content.pm.PackageManager
+import android.graphics.Bitmap
 import android.net.Uri
 import android.telecom.DisconnectCause
 import androidx.annotation.RequiresApi
@@ -84,6 +85,8 @@ object CallManager {
     private var listener: CallEventsListener? = null
     private var displayName: String = ""
     private var videoCall: Boolean = false
+    private var avatarUrl: String? = null
+    @Volatile private var avatarBitmap: Bitmap? = null
     private var timeoutsLoaded = false
     private var incomingCallTimeoutMs = DEFAULT_INCOMING_CALL_TIMEOUT_MS
     private var outgoingCallTimeoutMs = DEFAULT_OUTGOING_CALL_TIMEOUT_MS
@@ -108,14 +111,23 @@ object CallManager {
     fun currentDisplayName(): String = displayName
     fun currentIsVideo(): Boolean = videoCall
 
+    /** The downloaded caller avatar for the active call, or null (falls back to initials). */
+    fun currentAvatarBitmap(): Bitmap? = avatarBitmap
+
     fun startOutgoingCall(ctx: Context, displayName: String, handle: String, isVideo: Boolean) {
         register(ctx, displayName, handle, isVideo, CallAttributesCompat.DIRECTION_OUTGOING)
     }
 
     @Synchronized
-    fun reportIncomingCall(ctx: Context, displayName: String, handle: String, isVideo: Boolean): IncomingCallSlot {
+    fun reportIncomingCall(
+        ctx: Context,
+        displayName: String,
+        handle: String,
+        isVideo: Boolean,
+        avatarUrl: String? = null,
+    ): IncomingCallSlot {
         if (!hasActiveCall) {
-            register(ctx, displayName, handle, isVideo, CallAttributesCompat.DIRECTION_INCOMING)
+            register(ctx, displayName, handle, isVideo, CallAttributesCompat.DIRECTION_INCOMING, avatarUrl)
             return IncomingCallSlot.CURRENT
         }
         if (hasWaitingCall || !answered) {
@@ -195,6 +207,7 @@ object CallManager {
     }
 
     private fun markConnected() {
+        DialtonePlayer.stop()
         setCallActive()
         showOngoingNotification()
     }
@@ -295,7 +308,14 @@ object CallManager {
 
     @Synchronized
     @SuppressLint("MissingPermission")
-    private fun register(ctx: Context, displayName: String, handle: String, isVideo: Boolean, direction: Int) {
+    private fun register(
+        ctx: Context,
+        displayName: String,
+        handle: String,
+        isVideo: Boolean,
+        direction: Int,
+        avatarUrl: String? = null,
+    ) {
         ensureRegistered(ctx)
 
         if (hasActiveCall) return
@@ -308,6 +328,8 @@ object CallManager {
 
         this.displayName = displayName
         this.videoCall = isVideo
+        this.avatarUrl = avatarUrl
+        this.avatarBitmap = null
         val isIncoming = direction == CallAttributesCompat.DIRECTION_INCOMING
         isOutgoing = direction == CallAttributesCompat.DIRECTION_OUTGOING
         val appContext = ctx.applicationContext
@@ -357,6 +379,18 @@ object CallManager {
                     listener?.onStarted()
                     if (isIncoming) {
                         callNotificationManager.showIncoming(ctx.applicationContext, displayName, isVideo)
+                        AvatarLoader.load(avatarUrl) { bitmap ->
+                            if (bitmap != null && hasActiveCall && !answered) {
+                                avatarBitmap = bitmap
+                                callNotificationManager.updateIncomingAvatar(
+                                    appContext, displayName, isVideo,
+                                )
+                                appContext.sendBroadcast(
+                                    Intent(IncomingCallActivity.ACTION_AVATAR_READY)
+                                        .setPackage(appContext.packageName),
+                                )
+                            }
+                        }
                         startRingTimeout(incomingCallTimeoutMs)
                     } else {
                         showConnectingNotification()
@@ -400,6 +434,8 @@ object CallManager {
                 answered = false
                 onHold = false
                 isOutgoing = false
+                this@CallManager.avatarUrl = null
+                avatarBitmap = null
                 actions = null
                 channel.close()
                 audioOutputManager?.setTelecomOwnsRouting(false)

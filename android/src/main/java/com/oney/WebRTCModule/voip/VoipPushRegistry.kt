@@ -14,6 +14,7 @@ object VoipPushRegistry {
         val displayName: String,
         val handle: String,
         val isVideo: Boolean,
+        val avatarUrl: String? = null,
     )
 
     interface Listener {

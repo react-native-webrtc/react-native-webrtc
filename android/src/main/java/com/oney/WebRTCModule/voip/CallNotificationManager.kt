@@ -6,6 +6,7 @@ import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.graphics.Bitmap
 import android.media.AudioAttributes
 import android.media.AudioManager
 import android.media.RingtoneManager
@@ -48,6 +49,13 @@ class CallNotificationManager {
         const val NOTIFICATION_ID = 8400
 
         const val WAITING_NOTIFICATION_ID = 8401
+
+        /**
+         * Optional app `<meta-data>` key for the CallStyle small (status-bar) icon.
+         * Accepts `android:resource="@drawable/…"` or `android:value="drawable_name"`.
+         * Resolved from the manifest so it works even when the app is killed.
+         */
+        private const val KEY_NOTIFICATION_ICON = "VoipNotificationIcon"
 
         // Distinct request codes so the PendingIntents don't collapse into one.
         private const val RC_ANSWER = 1
@@ -111,26 +119,35 @@ class CallNotificationManager {
     fun showIncoming(context: Context, displayName: String, isVideo: Boolean) {
         val ctx = context.applicationContext
         initChannels(ctx)
-
-        val notification =
-            callNotificationBuilder(ctx, CHANNEL_INCOMING, displayName, if (isVideo) "Incoming video call" else "Incoming call")
-                .setStyle(
-                    NotificationCompat.CallStyle.forIncomingCall(
-                        person(ctx, displayName),
-                        declinePendingIntent(ctx),
-                        answerPendingIntent(ctx),
-                    )
-                )
-                .setFullScreenIntent(fullScreenPendingIntent(ctx), true)
-                .setContentIntent(fullScreenPendingIntent(ctx))
-                .setOngoing(true)
-                .setAutoCancel(false)
-                .setPriority(NotificationCompat.PRIORITY_MAX)
-                .build()
-
-        notify(ctx, notification)
+        notify(ctx, buildIncoming(ctx, displayName, isVideo))
         startVibration(ctx)
     }
+
+    /**
+     * Re-posts the incoming notification once the caller avatar has downloaded (the
+     * bitmap is read from [CallManager]). Does not re-ring — the call is already ringing.
+     */
+    fun updateIncomingAvatar(context: Context, displayName: String, isVideo: Boolean) {
+        val ctx = context.applicationContext
+        initChannels(ctx)
+        notify(ctx, buildIncoming(ctx, displayName, isVideo))
+    }
+
+    private fun buildIncoming(ctx: Context, displayName: String, isVideo: Boolean): Notification =
+        callNotificationBuilder(ctx, CHANNEL_INCOMING, displayName, if (isVideo) "Incoming video call" else "Incoming call")
+            .setStyle(
+                NotificationCompat.CallStyle.forIncomingCall(
+                    person(ctx, displayName),
+                    declinePendingIntent(ctx),
+                    answerPendingIntent(ctx),
+                )
+            )
+            .setFullScreenIntent(fullScreenPendingIntent(ctx), true)
+            .setContentIntent(fullScreenPendingIntent(ctx))
+            .setOngoing(true)
+            .setAutoCancel(false)
+            .setPriority(NotificationCompat.PRIORITY_MAX)
+            .build()
 
     fun showWaiting(context: Context, displayName: String, isVideo: Boolean) {
         val ctx = context.applicationContext
@@ -290,12 +307,19 @@ class CallNotificationManager {
             .setCategory(NotificationCompat.CATEGORY_CALL)
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
 
-    private fun person(ctx: Context, displayName: String): Person =
-        Person.Builder()
+    private fun person(ctx: Context, displayName: String): Person {
+        val avatar = CallManager.currentAvatarBitmap()
+        val icon = if (avatar != null) {
+            IconCompat.createWithBitmap(avatar)
+        } else {
+            IconCompat.createWithResource(ctx, android.R.drawable.ic_menu_call)
+        }
+        return Person.Builder()
             .setName(displayName)
-            .setIcon(IconCompat.createWithResource(ctx, android.R.drawable.ic_menu_call))
+            .setIcon(icon)
             .setImportant(true)
             .build()
+    }
 
     private fun answerPendingIntent(ctx: Context): PendingIntent {
         val intent =
@@ -378,11 +402,30 @@ class CallNotificationManager {
         }
     }
 
-    private fun appIcon(ctx: Context): Int =
-        try {
+    private fun appIcon(ctx: Context): Int {
+        notificationIconOverride(ctx)?.let { return it }
+        return try {
             ctx.packageManager.getApplicationInfo(ctx.packageName, 0).icon
                 .takeIf { it != 0 } ?: android.R.drawable.sym_def_app_icon
         } catch (_: PackageManager.NameNotFoundException) {
             android.R.drawable.sym_def_app_icon
+        }
+    }
+
+    /** Resolves [KEY_NOTIFICATION_ICON] as either a resource ref or a drawable/mipmap name. */
+    private fun notificationIconOverride(ctx: Context): Int? =
+        try {
+            val meta = ctx.packageManager
+                .getApplicationInfo(ctx.packageName, PackageManager.GET_META_DATA)
+                .metaData
+            when (val value = meta?.get(KEY_NOTIFICATION_ICON)) {
+                is Int -> value.takeIf { it != 0 }
+                is String -> ctx.resources.getIdentifier(value, "drawable", ctx.packageName)
+                    .takeIf { it != 0 }
+                    ?: ctx.resources.getIdentifier(value, "mipmap", ctx.packageName).takeIf { it != 0 }
+                else -> null
+            }
+        } catch (_: Throwable) {
+            null
         }
 }

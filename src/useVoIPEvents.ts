@@ -26,6 +26,13 @@ export type VoipIncomingPayload = {
      */
     handle: string;
     isVideo: boolean;
+    /**
+     * Optional URL of the caller's avatar, forwarded verbatim from the push payload.
+     * On Android it is downloaded and shown in the incoming-call notification and
+     * full-screen UI; on iOS CallKit cannot render it, so it is provided only for
+     * your own in-app UI.
+     */
+    avatarUrl?: string;
 };
 
 export type VoIPEventHandlers = {
