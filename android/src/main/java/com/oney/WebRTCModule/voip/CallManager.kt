@@ -361,6 +361,9 @@ object CallManager {
                     } else {
                         showConnectingNotification()
                         startRingTimeout(outgoingCallTimeoutMs)
+                        // Ringback while the outgoing call is connecting; stopped on
+                        // connect (markConnected) or teardown (finally below).
+                        DialtonePlayer.play()
                     }
                     audioOutputManager?.setTelecomOwnsRouting(true)
                     launch { processActions(channel.consumeAsFlow(), callType) }
@@ -389,6 +392,7 @@ object CallManager {
             } catch (e: UnsupportedOperationException) {
                 listener?.onFailed(e.message ?: "Telecom not supported on this device")
             } finally {
+                DialtonePlayer.stop()
                 cancelRingTimeout()
                 FulfillRequestManager.cancelAll()
                 pendingAnswerRequestId = null

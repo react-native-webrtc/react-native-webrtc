@@ -2,6 +2,7 @@
 
 #import <AVFoundation/AVFoundation.h>
 #import <WebRTC/RTCAudioSession.h>
+#import "DialtonePlayer.h"
 #import "FulfillRequestManager.h"
 #import "VoipManager.h"
 
@@ -300,6 +301,7 @@ static NSTimeInterval timeoutFromInfoPlist(NSString *key, NSTimeInterval fallbac
     }
 
     [self cancelRingTimeout];
+    [[DialtonePlayer shared] stop];
     self.isCallAnswered = YES;
     [self.provider reportOutgoingCallWithUUID:uuid connectedAtDate:[NSDate date]];
 }
@@ -385,6 +387,7 @@ static NSTimeInterval timeoutFromInfoPlist(NSString *key, NSTimeInterval fallbac
 
 - (void)cleanupCurrentCall {
     [self cancelRingTimeout];
+    [[DialtonePlayer shared] stop];
     self.currentCallUUID = nil;
     self.isCallAnswered = NO;
     self.isOutgoingCall = NO;
@@ -549,9 +552,17 @@ static NSTimeInterval timeoutFromInfoPlist(NSString *key, NSTimeInterval fallbac
 
 - (void)provider:(CXProvider *)provider didActivateAudioSession:(AVAudioSession *)audioSession {
     [[RTCAudioSession sharedInstance] audioSessionDidActivate:audioSession];
+    // Ringback only for one of our own outgoing VoIP calls that is still
+    // connecting (this delegate only fires for calls on our CXProvider, and the
+    // guard scopes it to an active, unanswered outgoing call). The session is now
+    // active so the tone follows the call route. Stopped on connect / end / deactivate.
+    if (self.currentCallUUID != nil && self.isOutgoingCall && !self.isCallAnswered) {
+        [[DialtonePlayer shared] play];
+    }
 }
 
 - (void)provider:(CXProvider *)provider didDeactivateAudioSession:(AVAudioSession *)audioSession {
+    [[DialtonePlayer shared] stop];
     [[RTCAudioSession sharedInstance] audioSessionDidDeactivate:audioSession];
 }
 
