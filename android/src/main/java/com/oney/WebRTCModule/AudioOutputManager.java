@@ -40,9 +40,8 @@ public class AudioOutputManager {
     // onTelecomAudioStateChanged reports the target as current.
     private PendingTelecomSelect telecomPending;
 
-    private WritableMap cachedTelecomCurrent;
-    private WritableArray cachedTelecomAvailable;
-    private boolean telecomOwnsRouting = false;
+    private volatile WritableMap cachedTelecomCurrent;
+    private volatile boolean telecomOwnsRouting = false;
 
     private static final class PendingSelect {
         final Promise promise;
@@ -187,7 +186,8 @@ public class AudioOutputManager {
     public void getCurrentAudioOutput(Promise promise) {
         // https://developer.android.com/develop/connectivity/telecom/voip-app/telecom#manage-call-audio-endpoints
         if (telecomOwnsRouting) {
-            promise.resolve(cachedTelecomCurrent != null ? cachedTelecomCurrent.copy() : null);
+            WritableMap current = cachedTelecomCurrent;
+            promise.resolve(current != null ? current.copy() : null);
         } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             AudioDeviceInfo device = audioManager.getCommunicationDevice();
             if (device != null) {
@@ -293,7 +293,8 @@ public class AudioOutputManager {
         }
 
         synchronized (this) {
-            if (cachedTelecomCurrent != null && deviceId.equals(cachedTelecomCurrent.getString("id"))) {
+            WritableMap current = cachedTelecomCurrent;
+            if (current != null && deviceId.equals(current.getString("id"))) {
                 promise.resolve(null);
                 return;
             }
@@ -584,7 +585,6 @@ public class AudioOutputManager {
 
     public void onTelecomAudioStateChanged(WritableMap current, WritableArray available) {
         cachedTelecomCurrent = current != null ? current.copy() : null;
-        cachedTelecomAvailable = available;
 
         synchronized (this) {
             if (telecomPending != null && current != null && telecomPending.targetId.equals(current.getString("id"))) {
