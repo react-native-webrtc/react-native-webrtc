@@ -24,10 +24,6 @@ public class ForegroundServiceController {
     private static ForegroundServiceController instance;
 
     private ReactApplicationContext reactContext;
-    // Application context, available independently of React. A Core-Telecom call reported
-    // from a push can start (and needs its foreground service posted) before React has
-    // attached — see onCallStarted/onCallEnded — so applyState() must not depend solely on
-    // reactContext.
     private Context appContext;
 
     private boolean cameraRequested = false;
@@ -125,10 +121,6 @@ public class ForegroundServiceController {
      * started or incoming answered). Switches the service's notification to the
      * ongoing CallStyle one and keeps camera/microphone types alive for the call
      * even if the app never enabled the room foreground service from JS.
-     *
-     * `context` is the application context CallManager already holds — a call reported from
-     * a push can start before React (and thus reactContext) has attached, so applyState()
-     * must not depend solely on that.
      */
     public synchronized void onCallStarted(Context context, String displayName, boolean isVideo) {
         if (context != null) appContext = context.getApplicationContext();
