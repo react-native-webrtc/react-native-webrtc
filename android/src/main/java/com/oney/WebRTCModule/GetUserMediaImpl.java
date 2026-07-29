@@ -75,6 +75,15 @@ class GetUserMediaImpl {
             public void onActivityResult(Activity activity, int requestCode, int resultCode, Intent data) {
                 super.onActivityResult(activity, requestCode, resultCode, data);
                 if (requestCode == PERMISSION_REQUEST_CODE) {
+                    // Guard against a duplicate onActivityResult dispatch. Some hosts (e.g.
+                    // react-native-navigation) forward the activity result to every registered
+                    // ActivityEventListener more than once, so this callback can fire twice for a
+                    // single getDisplayMedia() request. The first pass consumes displayMediaPromise;
+                    // a second pass would call reject()/resolve() on a null promise and crash.
+                    if (displayMediaPromise == null) {
+                        return;
+                    }
+
                     if (resultCode != Activity.RESULT_OK) {
                         displayMediaPromise.reject("DOMException", "NotAllowedError");
                         displayMediaPromise = null;
@@ -357,6 +366,14 @@ class GetUserMediaImpl {
     }
 
     private void createScreenStream() {
+        // A duplicate onActivityResult dispatch (see onActivityResult above) can schedule this more
+        // than once. The single-threaded executor runs them in order, so by the time a duplicate
+        // runs the first has already consumed displayMediaPromise. Bail out instead of dereferencing
+        // a null promise or creating a second screen stream.
+        if (displayMediaPromise == null) {
+            return;
+        }
+
         VideoTrack track = createScreenTrack();
 
         if (track == null) {
