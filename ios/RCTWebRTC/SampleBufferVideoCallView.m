@@ -20,6 +20,7 @@
 @property(nonatomic, retain) I420Converter *i420Converter;
 @property(nonatomic, strong) id<SampleBufferRendering> renderer;
 @property(nonatomic, assign) NSInteger currentRotation;
+@property(nonatomic, strong) UIVisualEffectView *blurEffectView;
 
 @end
 
@@ -169,6 +170,32 @@
     CVPixelBufferRef convertedPixelBuffer = [_i420Converter convertI420ToPixelBuffer:i420Buffer];
 
     return convertedPixelBuffer;
+}
+
+- (void)setBlurIntensity:(CGFloat)blurIntensity {
+    blurIntensity = MAX(0.0, MIN(1.0, blurIntensity));
+    if (_blurIntensity == blurIntensity) {
+        return;
+    }
+    _blurIntensity = blurIntensity;
+
+    dispatch_async(dispatch_get_main_queue(), ^{
+        if (blurIntensity > 0) {
+            if (!self.blurEffectView) {
+                UIBlurEffect *effect = [UIBlurEffect effectWithStyle:UIBlurEffectStyleLight];
+                self.blurEffectView = [[UIVisualEffectView alloc] initWithEffect:effect];
+                self.blurEffectView.autoresizingMask =
+                    UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
+            }
+            self.blurEffectView.frame = self.bounds;
+            self.blurEffectView.alpha = blurIntensity;
+            if (!self.blurEffectView.superview) {
+                [self addSubview:self.blurEffectView];
+            }
+        } else {
+            [self.blurEffectView removeFromSuperview];
+        }
+    });
 }
 
 - (void)dealloc {
