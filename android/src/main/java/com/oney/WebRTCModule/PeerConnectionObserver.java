@@ -359,7 +359,6 @@ class PeerConnectionObserver implements PeerConnection.Observer {
             final String reactTag = UUID.randomUUID().toString();
             DataChannelWrapper dcw = new DataChannelWrapper(webRTCModule, id, reactTag, dataChannel);
             dataChannels.put(reactTag, dcw);
-            dataChannel.registerObserver(dcw);
 
             WritableMap info = Arguments.createMap();
             info.putInt("peerConnectionId", id);
@@ -381,6 +380,9 @@ class PeerConnectionObserver implements PeerConnection.Observer {
             params.putMap("dataChannel", info);
 
             webRTCModule.sendEvent("peerConnectionDidOpenDataChannel", params);
+
+            // Ensure buffered messages reach JavaScript after the DataChannel is created.
+            dataChannel.registerObserver(dcw);
         });
     }
 
