@@ -17,6 +17,14 @@ export interface RTCVideoViewProps extends ViewProps {
   mirror?: boolean;
 
   /**
+   * Use TextureView instead of SurfaceView for rendering.
+   * TextureView supports hardware acceleration and allows rounded corners.
+   *
+   * useTextureView: boolean
+   */
+  useTextureView?: boolean;
+
+  /**
    * In the fashion of
    * https://www.w3.org/TR/html5/embedded-content-0.html#dom-video-videowidth
    * and https://www.w3.org/TR/html5/rendering.html#video-object-fit,
@@ -24,7 +32,7 @@ export interface RTCVideoViewProps extends ViewProps {
    *
    * objectFit: 'contain' | 'cover'
    *
-   * Defaults to 'cover'.
+   * Defaults to 'cover' (but historically this default may vary).
    */
   objectFit?: 'contain' | 'cover';
 
