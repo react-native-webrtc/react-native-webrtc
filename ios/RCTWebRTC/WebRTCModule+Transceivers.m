@@ -242,8 +242,11 @@ RCT_EXPORT_BLOCKING_SYNCHRONOUS_METHOD(transceiverSetCodecPreferences : (nonnull
         encoding.scaleResolutionDownBy = encodingUpdate[@"scaleResolutionDownBy"];
     }
 
-    if ([options objectForKey:@"degradationPreference"]) {
-        params.degradationPreference = [options objectForKey:@"degradationPreference"];
+    id degradationPreference = [options objectForKey:@"degradationPreference"];
+    if ([degradationPreference isKindOfClass:[NSString class]]) {
+        params.degradationPreference = [SerializeUtils parseDegradationPreference:degradationPreference];
+    } else if ([degradationPreference isKindOfClass:[NSNumber class]]) {
+        params.degradationPreference = degradationPreference;
     }
 
     return params;
