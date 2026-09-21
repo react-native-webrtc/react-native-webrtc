@@ -15,6 +15,7 @@
 		4EE3A8B225B8414000FAA24A /* WebRTCModule.m in Sources */ = {isa = PBXBuildFile; fileRef = 4EE3A8B025B8414000FAA24A /* WebRTCModule.m */; };
 		4EE3A8B625B8414A00FAA24A /* WebRTCModule+Permissions.m in Sources */ = {isa = PBXBuildFile; fileRef = 4EE3A8B525B8414A00FAA24A /* WebRTCModule+Permissions.m */; };
 		4EE3A8BA25B8415900FAA24A /* WebRTCModule+RTCDataChannel.m in Sources */ = {isa = PBXBuildFile; fileRef = 4EE3A8B925B8415900FAA24A /* WebRTCModule+RTCDataChannel.m */; };
+		E2EE0003C0DEC0DE00C0DE03 /* WebRTCModule+E2EEFrameCryptor.mm in Sources */ = {isa = PBXBuildFile; fileRef = E2EE0002C0DEC0DE00C0DE02 /* WebRTCModule+E2EEFrameCryptor.mm */; };
 		4EE3A8BD25B8416500FAA24A /* WebRTCModule+RTCMediaStream.m in Sources */ = {isa = PBXBuildFile; fileRef = 4EE3A8BC25B8416500FAA24A /* WebRTCModule+RTCMediaStream.m */; };
 		4EE3A8C125B8416F00FAA24A /* WebRTCModule+RTCPeerConnection.m in Sources */ = {isa = PBXBuildFile; fileRef = 4EE3A8BF25B8416F00FAA24A /* WebRTCModule+RTCPeerConnection.m */; };
 		4EE3A8C525B8417800FAA24A /* WebRTCModule+VideoTrackAdapter.m in Sources */ = {isa = PBXBuildFile; fileRef = 4EE3A8C325B8417800FAA24A /* WebRTCModule+VideoTrackAdapter.m */; };
@@ -59,6 +60,9 @@
 		4EE3A8B525B8414A00FAA24A /* WebRTCModule+Permissions.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = "WebRTCModule+Permissions.m"; path = "RCTWebRTC/WebRTCModule+Permissions.m"; sourceTree = SOURCE_ROOT; };
 		4EE3A8B825B8415900FAA24A /* WebRTCModule+RTCDataChannel.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = "WebRTCModule+RTCDataChannel.h"; path = "RCTWebRTC/WebRTCModule+RTCDataChannel.h"; sourceTree = SOURCE_ROOT; };
 		4EE3A8B925B8415900FAA24A /* WebRTCModule+RTCDataChannel.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = "WebRTCModule+RTCDataChannel.m"; path = "RCTWebRTC/WebRTCModule+RTCDataChannel.m"; sourceTree = SOURCE_ROOT; };
+		E2EE0001C0DEC0DE00C0DE01 /* WebRTCModule+E2EEFrameCryptor.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = "WebRTCModule+E2EEFrameCryptor.h"; path = "RCTWebRTC/WebRTCModule+E2EEFrameCryptor.h"; sourceTree = SOURCE_ROOT; };
+		E2EE0002C0DEC0DE00C0DE02 /* WebRTCModule+E2EEFrameCryptor.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; name = "WebRTCModule+E2EEFrameCryptor.mm"; path = "RCTWebRTC/WebRTCModule+E2EEFrameCryptor.mm"; sourceTree = SOURCE_ROOT; };
+		E2EE0004C0DEC0DE00C0DE04 /* E2EEFrameCryptorABI.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = E2EEFrameCryptorABI.h; path = RCTWebRTC/E2EEFrameCryptorABI.h; sourceTree = SOURCE_ROOT; };
 		4EE3A8BC25B8416500FAA24A /* WebRTCModule+RTCMediaStream.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = "WebRTCModule+RTCMediaStream.m"; path = "RCTWebRTC/WebRTCModule+RTCMediaStream.m"; sourceTree = SOURCE_ROOT; };
 		4EE3A8BF25B8416F00FAA24A /* WebRTCModule+RTCPeerConnection.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = "WebRTCModule+RTCPeerConnection.m"; path = "RCTWebRTC/WebRTCModule+RTCPeerConnection.m"; sourceTree = SOURCE_ROOT; };
 		4EE3A8C025B8416F00FAA24A /* WebRTCModule+RTCPeerConnection.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = "WebRTCModule+RTCPeerConnection.h"; path = "RCTWebRTC/WebRTCModule+RTCPeerConnection.h"; sourceTree = SOURCE_ROOT; };
@@ -136,6 +140,9 @@
 				D7F0711D2C6DC91F0031F594 /* WebRTCModule+RTCAudioSession.m */,
 				4EE3A8B825B8415900FAA24A /* WebRTCModule+RTCDataChannel.h */,
 				4EE3A8B925B8415900FAA24A /* WebRTCModule+RTCDataChannel.m */,
+				E2EE0001C0DEC0DE00C0DE01 /* WebRTCModule+E2EEFrameCryptor.h */,
+				E2EE0002C0DEC0DE00C0DE02 /* WebRTCModule+E2EEFrameCryptor.mm */,
+				E2EE0004C0DEC0DE00C0DE04 /* E2EEFrameCryptorABI.h */,
 				D7F99C122938F4E0000A2450 /* WebRTCModule+RTCMediaStream.h */,
 				4EE3A8BC25B8416500FAA24A /* WebRTCModule+RTCMediaStream.m */,
 				4EE3A8C025B8416F00FAA24A /* WebRTCModule+RTCPeerConnection.h */,
@@ -257,6 +264,7 @@
 			files = (
 				4EE3A8C525B8417800FAA24A /* WebRTCModule+VideoTrackAdapter.m in Sources */,
 				4EE3A8BA25B8415900FAA24A /* WebRTCModule+RTCDataChannel.m in Sources */,
+				E2EE0003C0DEC0DE00C0DE03 /* WebRTCModule+E2EEFrameCryptor.mm in Sources */,
 				4EE3A8B625B8414A00FAA24A /* WebRTCModule+Permissions.m in Sources */,
 				DEC96577264176C10052DB35 /* DataChannelWrapper.m in Sources */,
 				4EE3A8D425B841DD00FAA24A /* ScreenCapturer.m in Sources */,

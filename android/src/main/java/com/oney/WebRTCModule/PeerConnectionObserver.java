@@ -129,6 +129,20 @@ class PeerConnectionObserver implements PeerConnection.Observer {
         return null;
     }
 
+    RtpReceiver getReceiver(String id) {
+        if (this.peerConnection == null) {
+            return null;
+        }
+
+        for (RtpReceiver receiver : this.peerConnection.getReceivers()) {
+            if (receiver.id().equals(id)) {
+                return receiver;
+            }
+        }
+
+        return null;
+    }
+
     RtpTransceiver getTransceiver(String id) {
         if (this.peerConnection == null) {
             return null;

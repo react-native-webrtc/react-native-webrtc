@@ -59,6 +59,8 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
 
     private final GetUserMediaImpl getUserMediaImpl;
 
+    private final E2EEFrameCryptorManager e2eeFrameCryptorManager;
+
     public WebRTCModule(ReactApplicationContext reactContext) {
         super(reactContext);
 
@@ -119,12 +121,17 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
         mAudioDeviceModule = adm;
 
         getUserMediaImpl = new GetUserMediaImpl(this, reactContext);
+        e2eeFrameCryptorManager = new E2EEFrameCryptorManager(this);
     }
 
     @NonNull
     @Override
     public String getName() {
         return "WebRTCModule";
+    }
+
+    PeerConnectionObserver getPeerConnectionObserver(int id) {
+        return mPeerConnectionObservers.get(id);
     }
 
     private PeerConnection getPeerConnection(int id) {
@@ -1502,6 +1509,26 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
             sb.setLength(sb.length() - 1);
         }
         return sb.toString();
+    }
+
+    @ReactMethod
+    public void e2eeCreateFrameCryptor(ReadableMap options, Promise promise) {
+        ThreadUtils.runOnExecutor(() -> e2eeFrameCryptorManager.createFrameCryptor(options, promise));
+    }
+
+    @ReactMethod
+    public void e2eeFrameCryptorSetKey(ReadableMap options, Promise promise) {
+        ThreadUtils.runOnExecutor(() -> e2eeFrameCryptorManager.setKey(options, promise));
+    }
+
+    @ReactMethod
+    public void e2eeFrameCryptorSetEnabled(ReadableMap options, Promise promise) {
+        ThreadUtils.runOnExecutor(() -> e2eeFrameCryptorManager.setEnabled(options, promise));
+    }
+
+    @ReactMethod
+    public void e2eeFrameCryptorDispose(ReadableMap options, Promise promise) {
+        ThreadUtils.runOnExecutor(() -> e2eeFrameCryptorManager.dispose(options, promise));
     }
 
     @ReactMethod
