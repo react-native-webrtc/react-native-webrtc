@@ -25,4 +25,7 @@
 + (NSDictionary *_Nonnull)streamToJSONWithPeerConnectionId:(NSNumber *_Nonnull)id
                                                     stream:(RTCMediaStream *_Nonnull)stream
                                             streamReactTag:(NSString *_Nonnull)streamReactTag;
++ (NSNumber *_Nullable)parseDegradationPreference:(NSString *_Nonnull)name;
++ (NSString *_Nullable)serializeDegradationPreference:(NSNumber *_Nonnull)value;
+
 @end

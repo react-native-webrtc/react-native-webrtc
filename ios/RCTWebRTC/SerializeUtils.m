@@ -75,6 +75,29 @@
     return receiverDictionary;
 }
 
+/**
+ * The names RTCRtpSendParameters exchanges with JS, indexed by RTCDegradationPreference.
+ *
+ * JS sends and expects a name such as MAINTAIN_FRAMERATE, while the native property is an
+ * NSNumber wrapping the enum, so both directions need a conversion.
+ */
++ (NSArray<NSString *> *_Nonnull)degradationPreferenceNames {
+    return @[ @"DISABLED", @"MAINTAIN_FRAMERATE", @"MAINTAIN_RESOLUTION", @"BALANCED" ];
+}
+
++ (NSNumber *_Nullable)parseDegradationPreference:(NSString *_Nonnull)name {
+    NSUInteger index = [[self degradationPreferenceNames] indexOfObject:[name uppercaseString]];
+
+    return index == NSNotFound ? nil : @(index);
+}
+
++ (NSString *_Nullable)serializeDegradationPreference:(NSNumber *_Nonnull)value {
+    NSArray<NSString *> *names = [self degradationPreferenceNames];
+    NSInteger index = value.integerValue;
+
+    return (index >= 0 && index < (NSInteger)names.count) ? names[index] : nil;
+}
+
 + (NSDictionary *)parametersToJSON:(RTCRtpParameters *)params {
     NSMutableDictionary *paramsDictionary = [NSMutableDictionary new];
 
@@ -145,8 +168,12 @@
     paramsDictionary[@"encodings"] = encodings;
     paramsDictionary[@"codecs"] = codecs;
 
-    if (params.degradationPreference) {
-        paramsDictionary[@"degradationPreference"] = params.degradationPreference;
+    if (params.degradationPreference != nil) {
+        NSString *name = [SerializeUtils serializeDegradationPreference:params.degradationPreference];
+
+        if (name != nil) {
+            paramsDictionary[@"degradationPreference"] = name;
+        }
     }
 
     return paramsDictionary;
