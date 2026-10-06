@@ -12,9 +12,9 @@
 
 #import "ProcessorProvider.h"
 #import "ScreenCaptureController.h"
-#import "ScreenCapturer.h"
 #import "TrackCapturerEventsEmitter.h"
 #import "VideoCaptureController.h"
+#import "react_native_webrtc-Swift.h"
 
 @implementation WebRTCModule (RTCMediaStream)
 
