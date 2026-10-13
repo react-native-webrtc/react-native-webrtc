@@ -93,7 +93,9 @@
 
     // Enable GCM ciphers.
     RTCCryptoOptions *cryptoOptions = [[RTCCryptoOptions alloc] initWithSrtpEnableGcmCryptoSuites:YES
+                                                                        srtpPreferGcmCryptoSuites:NO
                                                               srtpEnableAes128Sha1_32CryptoCipher:NO
+                                                              srtpEnableAes128Sha1_80CryptoCipher:YES
                                                            srtpEnableEncryptedRtpHeaderExtensions:NO
                                                                      sframeRequireFrameEncryption:NO];
     config.cryptoOptions = cryptoOptions;
