@@ -77,6 +77,23 @@ public class RTCVideoViewManager extends SimpleViewManager<WebRTCView> {
     }
 
     /**
+     * Sets whether this RTCVideoView should use a TextureView instead of
+     * the default SurfaceView for rendering on Android.
+     *
+     * TextureView is a regular view in the view hierarchy and respects
+     * overflow:hidden + borderRadius from parent views. SurfaceView renders
+     * on a separate hardware layer and cannot be clipped.
+     *
+     * @param view The WebRTCView on which the setting is applied.
+     * @param useTextureView {@code true} to use TextureView, {@code false}
+     *                       to use SurfaceView (default).
+     */
+    @ReactProp(name = "useTextureView")
+    public void setUseTextureView(WebRTCView view, boolean useTextureView) {
+        view.setUseTextureView(useTextureView);
+    }
+
+    /**
      * Sets the callback for when video dimensions change.
      *
      * @param view The {@code WebRTCView} on which the callback is to be set.
