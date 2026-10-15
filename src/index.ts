@@ -8,6 +8,12 @@ if (WebRTCModule === null) {
     }`);
 }
 
+import {
+    e2eeCreateFrameCryptor,
+    e2eeFrameCryptorDispose,
+    e2eeFrameCryptorSetEnabled,
+    e2eeFrameCryptorSetKey
+} from './E2EEFrameCryptor';
 import { setupNativeEvents } from './EventEmitter';
 import Logger from './Logger';
 import mediaDevices from './MediaDevices';
@@ -59,6 +65,10 @@ export {
     type RTCIOSPIPOptions,
     mediaDevices,
     permissions,
+    e2eeCreateFrameCryptor,
+    e2eeFrameCryptorSetKey,
+    e2eeFrameCryptorSetEnabled,
+    e2eeFrameCryptorDispose,
     registerGlobals,
     startIOSPIP,
     stopIOSPIP,
