@@ -78,6 +78,39 @@ type RTCPeerConnectionEventMap = {
 
 let nextPeerConnectionId = 0;
 
+/**
+ * The configuration as getConfiguration() reports it: every field the caller
+ * passed, the standard fields defaulted as in the WebRTC spec (which are also
+ * the native defaults on iOS and Android), and fresh arrays, so no caller
+ * shares the stored copy.
+ */
+function snapshotConfiguration(
+    configuration: RTCConfiguration | undefined,
+    certificates = configuration?.certificates
+): RTCConfiguration {
+    const snapshot: RTCConfiguration = {
+        ...configuration,
+        bundlePolicy: configuration?.bundlePolicy ?? 'balanced',
+        iceCandidatePoolSize: configuration?.iceCandidatePoolSize ?? 0,
+        iceServers: (configuration?.iceServers ?? []).map(server => {
+            return {
+                ...server,
+                urls: Array.isArray(server.urls) ? [ ...server.urls ] : server.urls
+            };
+        }),
+        iceTransportPolicy: configuration?.iceTransportPolicy ?? 'all',
+        rtcpMuxPolicy: configuration?.rtcpMuxPolicy ?? 'require'
+    };
+
+    if (certificates) {
+        snapshot.certificates = [ ...certificates ];
+    } else {
+        delete snapshot.certificates;
+    }
+
+    return snapshot;
+}
+
 export default class RTCPeerConnection extends EventTarget<RTCPeerConnectionEventMap> {
     localDescription: RTCSessionDescription | null = null;
     remoteDescription: RTCSessionDescription | null = null;
@@ -90,6 +123,7 @@ export default class RTCPeerConnection extends EventTarget<RTCPeerConnectionEven
     _transceivers: { order: number, transceiver: RTCRtpTransceiver }[];
     _remoteStreams: Map<string, MediaStream>;
     _pendingTrackEvents: any[];
+    _configuration: RTCConfiguration;
 
     static generateCertificate(
         keygenAlgorithm: string | {
@@ -130,6 +164,10 @@ export default class RTCPeerConnection extends EventTarget<RTCPeerConnectionEven
 
         this._pcId = nextPeerConnectionId++;
 
+        // Sanitizing replaces these with their ids, in place. getConfiguration()
+        // returns the caller's RTCCertificate objects.
+        const certificates = configuration?.certificates;
+
         // Sanitize ICE servers.
         if (configuration) {
             const servers = configuration?.iceServers ?? [];
@@ -169,6 +207,8 @@ export default class RTCPeerConnection extends EventTarget<RTCPeerConnectionEven
         if (!WebRTCModule.peerConnectionInit(configuration, this._pcId)) {
             throw new Error('Failed to initialize PeerConnection, check the native logs!');
         }
+
+        this._configuration = snapshotConfiguration(configuration, certificates);
 
         this._transceivers = [];
         this._remoteStreams = new Map();
@@ -303,8 +343,15 @@ export default class RTCPeerConnection extends EventTarget<RTCPeerConnectionEven
         return sdpInfo;
     }
 
+    getConfiguration(): RTCConfiguration {
+        return snapshotConfiguration(this._configuration);
+    }
+
     setConfiguration(configuration): void {
         WebRTCModule.peerConnectionSetConfiguration(configuration, this._pcId);
+
+        // As in the spec, the new configuration replaces the whole previous one.
+        this._configuration = snapshotConfiguration(configuration);
     }
 
     async setLocalDescription(sessionDescription?: RTCSessionDescription | RTCSessionDescriptionInit): Promise<void> {
