@@ -8,6 +8,8 @@ import android.media.projection.MediaProjectionConfig;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import android.os.Build;
+import android.os.Handler;
+import android.os.Looper;
 
 import androidx.core.util.Consumer;
 
@@ -34,7 +36,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.stream.Collectors;
 
 /**
@@ -92,8 +96,14 @@ class GetUserMediaImpl {
 
                     mediaProjectionPermissionResultData = data;
 
-                    MediaProjectionService.launch(activity)
-                        .orTimeout(10, TimeUnit.SECONDS)
+                    CompletableFuture<Void> launchFuture = MediaProjectionService.launch(activity);
+
+                    // CompletableFuture.orTimeout() requires API 31; this is a no-op if already completed.
+                    new Handler(Looper.getMainLooper()).postDelayed(
+                        () -> launchFuture.completeExceptionally(new TimeoutException()),
+                        TimeUnit.SECONDS.toMillis(10));
+
+                    launchFuture
                         .whenCompleteAsync((value, error) -> {
                             if (error != null) {
                                 Log.e(TAG, "Failed to start MediaProjection service", error);
