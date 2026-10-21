@@ -144,10 +144,15 @@ public class WebRTCView extends ViewGroup {
      */
     private final SurfaceViewRenderer surfaceViewRenderer;
 
+    private TextureViewRenderer textureViewRenderer;
+
     /**
      * The {@code VideoTrack}, if any, rendered by this {@code WebRTCView}.
      */
     private VideoTrack videoTrack;
+
+    private boolean useTextureView;
+    private boolean rendererReady; // flag for textureView init
 
     /**
      * The callback to be called when video dimensions change.
@@ -173,53 +178,28 @@ public class WebRTCView extends ViewGroup {
         surfaceViewRenderer.clearImage();
     }
 
-    /**
-     * Asynchronously retrieves the VideoTrack for the given streamURL.
-     * This method avoids blocking the UI thread by performing the lookup
-     * on the WebRTC executor thread and posting the result back to the UI thread.
-     *
-     * @param streamURL The stream URL to lookup
-     * @param callback Callback invoked on UI thread with the VideoTrack (or null if not found)
-     */
-    private void getVideoTrackForStreamURL(String streamURL, java.util.function.Consumer<VideoTrack> callback) {
-        if (streamURL == null) {
-            callback.accept(null);
-            return;
-        }
+    private VideoTrack getVideoTrackForStreamURL(String streamURL) {
+        VideoTrack videoTrack = null;
 
-        ReactContext reactContext = (ReactContext) getContext();
-        WebRTCModule module = reactContext.getNativeModule(WebRTCModule.class);
+        if (streamURL != null) {
+            ReactContext reactContext = (ReactContext) getContext();
+            WebRTCModule module = reactContext.getNativeModule(WebRTCModule.class);
+            MediaStream stream = module.getStreamForReactTag(streamURL);
 
-        // Submit lookup to executor thread to avoid blocking UI thread
-        ThreadUtils.runOnExecutor(() -> {
-            try {
-                MediaStream stream = module.getStreamForReactTag(streamURL);
-                if (stream == null) {
-                    Log.w(TAG, "Stream not found for URL: " + streamURL);
-                    post(() -> callback.accept(null));
-                    return;
-                }
-
-                VideoTrack videoTrack = null;
+            if (stream != null) {
                 List<VideoTrack> videoTracks = stream.videoTracks;
+
                 if (!videoTracks.isEmpty()) {
                     videoTrack = videoTracks.get(0);
                 }
-
-                if (videoTrack == null) {
-                    Log.w(TAG, "No video stream for react tag: " + streamURL);
-                    post(() -> callback.accept(null));
-                    return;
-                }
-
-                // Post result back to UI thread
-                final VideoTrack result = videoTrack;
-                post(() -> callback.accept(result));
-            } catch (Throwable tr) {
-                Log.e(TAG, "Error getting video track for stream URL: " + streamURL, tr);
-                post(() -> callback.accept(null));
             }
-        });
+
+            if (videoTrack == null) {
+                Log.w(TAG, "No video stream for react tag: " + streamURL);
+            }
+        }
+
+        return videoTrack;
     }
 
     @Override
@@ -230,7 +210,11 @@ public class WebRTCView extends ViewGroup {
             // infrastructure hooked up while this View is not attached to a
             // window. Additionally, a memory leak was solved in a similar way
             // on iOS.
-            tryAddRendererToVideoTrack();
+            if (useTextureView) {
+                tryAddTextureViewRendererToVideoTrack();
+            } else {
+                tryAddRendererToVideoTrack();
+            }
         } finally {
             super.onAttachedToWindow();
         }
@@ -335,9 +319,6 @@ public class WebRTCView extends ViewGroup {
 
             switch (scalingType) {
                 case SCALE_ASPECT_FILL:
-                    // Fill this ViewGroup with surfaceViewRenderer and the latter
-                    // will take care of filling itself with the video similarly to
-                    // the cover value the CSS property object-fit.
                     r = width;
                     l = 0;
                     b = height;
@@ -345,11 +326,6 @@ public class WebRTCView extends ViewGroup {
                     break;
                 case SCALE_ASPECT_FIT:
                 default:
-                    // Lay surfaceViewRenderer out inside this ViewGroup in accord
-                    // with the contain value of the CSS property object-fit.
-                    // SurfaceViewRenderer will fill itself with the video similarly
-                    // to the cover or contain value of the CSS property object-fit
-                    // (which will not matter, eventually).
                     if (frameHeight == 0 || frameWidth == 0) {
                         l = t = r = b = 0;
                     } else {
@@ -357,7 +333,6 @@ public class WebRTCView extends ViewGroup {
                                                                             : frameHeight / (float) frameWidth;
                         Point frameDisplaySize =
                                 RendererCommon.getDisplaySize(scalingType, frameAspectRatio, width, height);
-
                         l = (width - frameDisplaySize.x) / 2;
                         t = (height - frameDisplaySize.y) / 2;
                         r = l + frameDisplaySize.x;
@@ -366,7 +341,11 @@ public class WebRTCView extends ViewGroup {
                     break;
             }
         }
-        surfaceViewRenderer.layout(l, t, r, b);
+        if (useTextureView && textureViewRenderer != null) {
+            textureViewRenderer.layout(0, 0, width, height);
+        } else {
+            surfaceViewRenderer.layout(l, t, r, b);
+        }
     }
 
     /**
@@ -374,6 +353,22 @@ public class WebRTCView extends ViewGroup {
      * resources (if rendering is in progress).
      */
     private void removeRendererFromVideoTrack() {
+        if (useTextureView) {
+            if (textureViewRenderer != null) {
+                if (videoTrack != null) {
+                    ThreadUtils.runOnExecutor(() -> {
+                        try {
+                            videoTrack.removeSink(textureViewRenderer);
+                        } catch (Throwable tr) {
+                            Log.e(TAG, "Failed to remove texture renderer", tr);
+                        }
+                    });
+                }
+                textureViewRenderer.release();
+                rendererReady = false;
+            }
+            return;
+        }
         if (rendererAttached) {
             if (videoTrack != null) {
                 ThreadUtils.runOnExecutor(() -> {
@@ -411,7 +406,11 @@ public class WebRTCView extends ViewGroup {
     private void requestSurfaceViewRendererLayout() {
         // Google/WebRTC just call requestLayout() on surfaceViewRenderer when
         // they change the value of its mirror or surfaceType property.
-        surfaceViewRenderer.requestLayout();
+        if (useTextureView && textureViewRenderer != null) {
+            WebRTCView.this.requestLayout();
+        } else {
+            surfaceViewRenderer.requestLayout();
+        }
         // The above is not enough though when the video frame's dimensions or
         // rotation change. The following will suffice.
         if (!ViewCompat.isInLayout(this)) {
@@ -432,6 +431,9 @@ public class WebRTCView extends ViewGroup {
         if (this.mirror != mirror) {
             this.mirror = mirror;
             surfaceViewRenderer.setMirror(mirror);
+            if (textureViewRenderer != null) {
+                textureViewRenderer.setMirror(mirror);
+            }
             // SurfaceViewRenderer takes the value of its mirror property into
             // account upon its layout.
             requestSurfaceViewRendererLayout();
@@ -462,6 +464,9 @@ public class WebRTCView extends ViewGroup {
             }
             this.scalingType = scalingType;
             surfaceViewRenderer.setScalingType(scalingType);
+            if (textureViewRenderer != null) {
+                textureViewRenderer.setScalingType(scalingType);
+            }
         }
         // Both this instance ant its SurfaceViewRenderer take the value of
         // their scalingType properties into account upon their layouts.
@@ -477,23 +482,20 @@ public class WebRTCView extends ViewGroup {
      * this {@code WebRTCView} or {@code null}.
      */
     void setStreamURL(String streamURL) {
-        Log.d(TAG, "Set stream URL " + streamURL + " current: " + this.streamURL);
-        if (Objects.equals(streamURL, this.streamURL)) {
-            return;
-        }
+        // Is the value of this.streamURL really changing?
+        if (!Objects.equals(streamURL, this.streamURL)) {
+            // XXX The value of this.streamURL is really changing. Before
+            // realizing/applying the change, let go of the old videoTrack. Of
+            // course, that is only necessary if the value of videoTrack will
+            // really change. Please note though that letting go of the old
+            // videoTrack before assigning to this.streamURL is vital;
+            // otherwise, removeRendererFromVideoTrack will fail to remove the
+            // old videoTrack from the associated videoRenderer, two
+            // VideoTracks (the old and the new) may start rendering and, most
+            // importantly the videoRender may eventually crash when the old
+            // videoTrack is disposed.
+            VideoTrack videoTrack = getVideoTrackForStreamURL(streamURL);
 
-        // The value of this.streamURL is really changing. Before
-        // realizing/applying the change, let go of the old videoTrack. Of
-        // course, that is only necessary if the value of videoTrack will
-        // really change. Please note though that letting go of the old
-        // videoTrack before assigning to this.streamURL is vital;
-        // otherwise, removeRendererFromVideoTrack will fail to remove the
-        // old videoTrack from the associated videoRenderer, two
-        // VideoTracks (the old and the new) may start rendering and, most
-        // importantly the videoRender may eventually crash when the old
-        // videoTrack is disposed.
-        getVideoTrackForStreamURL(streamURL, videoTrack -> {
-            Log.d(TAG, "Got video track for stream URL " + streamURL + " -> " + videoTrack);
             if (this.videoTrack != videoTrack) {
                 setVideoTrack(null);
             }
@@ -503,7 +505,11 @@ public class WebRTCView extends ViewGroup {
             // After realizing/applying the change in the value of
             // this.streamURL, reflect it on the value of videoTrack.
             setVideoTrack(videoTrack);
-        });
+
+            if (useTextureView && videoTrack != null) {
+                tryAddTextureViewRendererToVideoTrack();
+            }
+        }
     }
 
     /**
@@ -528,7 +534,9 @@ public class WebRTCView extends ViewGroup {
             this.videoTrack = videoTrack;
 
             if (videoTrack != null) {
-                tryAddRendererToVideoTrack();
+                if (!useTextureView) {
+                    tryAddRendererToVideoTrack();
+                }
                 if (oldVideoTrack == null) {
                     // If there was no old track, clean the surface so we start
                     // with black.
@@ -547,6 +555,7 @@ public class WebRTCView extends ViewGroup {
      * @param zOrder The z-order to set on this {@code WebRTCView}.
      */
     public void setZOrder(int zOrder) {
+        if (useTextureView) return;
         switch (zOrder) {
             case 0:
                 surfaceViewRenderer.setZOrderMediaOverlay(false);
@@ -607,5 +616,45 @@ public class WebRTCView extends ViewGroup {
      */
     public void setOnDimensionsChange(boolean enabled) {
         this.onDimensionsChangeEnabled = enabled;
+    }
+
+    public void setUseTextureView(boolean useTextureView) {
+        if (this.useTextureView == useTextureView) return;
+        this.useTextureView = useTextureView;
+        if (videoTrack != null && ViewCompat.isAttachedToWindow(this)) {
+            removeRendererFromVideoTrack();
+            if (useTextureView) {
+                tryAddTextureViewRendererToVideoTrack();
+            } else {
+                tryAddRendererToVideoTrack();
+            }
+        }
+    }
+
+    private void tryAddTextureViewRendererToVideoTrack() {
+        if (!useTextureView || rendererReady || videoTrack == null) return;
+        if (!ViewCompat.isAttachedToWindow(this)) return;
+
+        if (textureViewRenderer == null) {
+            textureViewRenderer = new TextureViewRenderer(getContext());
+            addView(textureViewRenderer, new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT));
+        }
+
+        EglBase.Context sharedContext = EglUtils.getRootEglBaseContext();
+        if (sharedContext == null) return;
+
+        try {
+            textureViewRenderer.init(sharedContext, rendererEvents);
+            ThreadUtils.runOnExecutor(() -> {
+                try {
+                    videoTrack.addSink(textureViewRenderer);
+                    rendererReady = true;
+                } catch (Throwable tr) {
+                    Log.e(TAG, "Failed to add texture renderer to video track", tr);
+                }
+            });
+        } catch (Exception e) {
+            Log.e(TAG, "Failed to init TextureViewRenderer", e);
+        }
     }
 }
