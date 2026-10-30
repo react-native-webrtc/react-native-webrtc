@@ -1,0 +1,140 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: filipi87 <filipi87@gmail.com>
+Date: Thu, 29 Oct 2026 12:37:28 -0700
+Subject: [PATCH] event-target-shim-imports: import from 'event-target-shim'
+ package root
+
+'event-target-shim/index' breaks resolution with newer bundlers/TypeScript.
+Also adds the missing final newline in RTCErrorEvent.ts.
+---
+ src/MediaDevices.ts          | 2 +-
+ src/MediaStream.ts           | 2 +-
+ src/MediaStreamTrack.ts      | 2 +-
+ src/MediaStreamTrackEvent.ts | 2 +-
+ src/MessageEvent.ts          | 2 +-
+ src/RTCDataChannel.ts        | 2 +-
+ src/RTCDataChannelEvent.ts   | 2 +-
+ src/RTCErrorEvent.ts         | 4 ++--
+ src/RTCIceCandidateEvent.ts  | 2 +-
+ src/RTCPeerConnection.ts     | 2 +-
+ src/RTCTrackEvent.ts         | 2 +-
+ 11 files changed, 12 insertions(+), 12 deletions(-)
+
+diff --git a/src/MediaDevices.ts b/src/MediaDevices.ts
+index c647667..42920f6 100644
+--- a/src/MediaDevices.ts
++++ b/src/MediaDevices.ts
+@@ -1,4 +1,4 @@
+-import { EventTarget, Event, defineEventAttribute } from 'event-target-shim/index';
++import { EventTarget, Event, defineEventAttribute } from 'event-target-shim';
+ import { NativeModules } from 'react-native';
+ 
+ import getDisplayMedia from './getDisplayMedia';
+diff --git a/src/MediaStream.ts b/src/MediaStream.ts
+index 1c2437e..74c9c11 100644
+--- a/src/MediaStream.ts
++++ b/src/MediaStream.ts
+@@ -1,4 +1,4 @@
+-import { EventTarget, defineEventAttribute } from 'event-target-shim/index';
++import { EventTarget, defineEventAttribute } from 'event-target-shim';
+ import { NativeModules } from 'react-native';
+ 
+ import MediaStreamTrack, { MediaStreamTrackInfo } from './MediaStreamTrack';
+diff --git a/src/MediaStreamTrack.ts b/src/MediaStreamTrack.ts
+index f0d52e1..a33e8b7 100644
+--- a/src/MediaStreamTrack.ts
++++ b/src/MediaStreamTrack.ts
+@@ -1,4 +1,4 @@
+-import { EventTarget, Event, defineEventAttribute } from 'event-target-shim/index';
++import { EventTarget, Event, defineEventAttribute } from 'event-target-shim';
+ import { NativeModules } from 'react-native';
+ 
+ import { MediaTrackConstraints } from './Constraints';
+diff --git a/src/MediaStreamTrackEvent.ts b/src/MediaStreamTrackEvent.ts
+index 501de5a..935e110 100644
+--- a/src/MediaStreamTrackEvent.ts
++++ b/src/MediaStreamTrackEvent.ts
+@@ -1,4 +1,4 @@
+-import { Event } from 'event-target-shim/index';
++import { Event } from 'event-target-shim';
+ 
+ import type MediaStreamTrack from './MediaStreamTrack';
+ 
+diff --git a/src/MessageEvent.ts b/src/MessageEvent.ts
+index 5f6dcf9..5c50a8a 100644
+--- a/src/MessageEvent.ts
++++ b/src/MessageEvent.ts
+@@ -1,4 +1,4 @@
+-import { Event } from 'event-target-shim/index';
++import { Event } from 'event-target-shim';
+ 
+ export type MessageEventData = string | ArrayBuffer | Blob;
+ 
+diff --git a/src/RTCDataChannel.ts b/src/RTCDataChannel.ts
+index a99ed1e..4c0a0a2 100644
+--- a/src/RTCDataChannel.ts
++++ b/src/RTCDataChannel.ts
+@@ -1,5 +1,5 @@
+ import * as base64 from 'base64-js';
+-import { EventTarget, defineEventAttribute } from 'event-target-shim/index';
++import { EventTarget, defineEventAttribute } from 'event-target-shim';
+ import { NativeModules } from 'react-native';
+ 
+ import { addListener, removeListener } from './EventEmitter';
+diff --git a/src/RTCDataChannelEvent.ts b/src/RTCDataChannelEvent.ts
+index 956d059..fca48f1 100644
+--- a/src/RTCDataChannelEvent.ts
++++ b/src/RTCDataChannelEvent.ts
+@@ -1,4 +1,4 @@
+-import { Event } from 'event-target-shim/index';
++import { Event } from 'event-target-shim';
+ 
+ import type RTCDataChannel from './RTCDataChannel';
+ 
+diff --git a/src/RTCErrorEvent.ts b/src/RTCErrorEvent.ts
+index 6a0a286..4430101 100644
+--- a/src/RTCErrorEvent.ts
++++ b/src/RTCErrorEvent.ts
+@@ -1,4 +1,4 @@
+-import { Event } from 'event-target-shim/index';
++import { Event } from 'event-target-shim';
+ 
+ type RTCPeerConnectionErrorFunc =
+     | 'addTransceiver'
+@@ -18,4 +18,4 @@ export default class RTCErrorEvent<TEventType extends RTCPeerConnectionErrorFunc
+         this.func = func;
+         this.message = message;
+     }
+-}
+\ No newline at end of file
++}
+diff --git a/src/RTCIceCandidateEvent.ts b/src/RTCIceCandidateEvent.ts
+index af4d11a..663bc2a 100644
+--- a/src/RTCIceCandidateEvent.ts
++++ b/src/RTCIceCandidateEvent.ts
+@@ -1,4 +1,4 @@
+-import { Event } from 'event-target-shim/index';
++import { Event } from 'event-target-shim';
+ 
+ import type RTCIceCandidate from './RTCIceCandidate';
+ 
+diff --git a/src/RTCPeerConnection.ts b/src/RTCPeerConnection.ts
+index 9cfe1a5..3dbff5b 100644
+--- a/src/RTCPeerConnection.ts
++++ b/src/RTCPeerConnection.ts
+@@ -1,4 +1,4 @@
+-import { EventTarget, Event, defineEventAttribute } from 'event-target-shim/index';
++import { EventTarget, Event, defineEventAttribute } from 'event-target-shim';
+ import { NativeModules } from 'react-native';
+ 
+ import { addListener, removeListener } from './EventEmitter';
+diff --git a/src/RTCTrackEvent.ts b/src/RTCTrackEvent.ts
+index ea9bea4..7995006 100644
+--- a/src/RTCTrackEvent.ts
++++ b/src/RTCTrackEvent.ts
+@@ -1,4 +1,4 @@
+-import { Event } from 'event-target-shim/index';
++import { Event } from 'event-target-shim';
+ 
+ import MediaStream from './MediaStream';
+ import type MediaStreamTrack from './MediaStreamTrack';

@@ -1,0 +1,212 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: filipi87 <filipi87@gmail.com>
+Date: Thu, 29 Oct 2026 12:37:27 -0700
+Subject: [PATCH] fork-packaging: publish as @daily-co/react-native-webrtc
+
+Rename package, point repo/homepage/bugs to daily-co, add nativePackage flag and
+the tag/prepublishOnly scripts, keep the CocoaPods name as react-native-webrtc,
+replace README with the Daily fork notice and extend .gitignore/.npmignore.
+---
+ .gitignore                  |  6 ++-
+ .npmignore                  | 13 ++++++
+ README.md                   | 81 +------------------------------------
+ package.json                | 15 ++++---
+ react-native-webrtc.podspec |  2 +-
+ scripts/tag                 |  5 +++
+ 6 files changed, 35 insertions(+), 87 deletions(-)
+ create mode 100755 scripts/tag
+
+diff --git a/.gitignore b/.gitignore
+index 4d009c7..b2c8c54 100644
+--- a/.gitignore
++++ b/.gitignore
+@@ -1,10 +1,14 @@
++# Dependency directory
++# https://www.npmjs.org/doc/misc/npm-faq.html#should-i-check-my-node_modules-folder-into-git
+ node_modules
+ xcuserdata
+ project.xcworkspace
+ .DS_Store
+ .idea
+ android/build
+-Podfile.lock
++android/*.iml
++daily-co-*.tgz
++
+ WebRTC.xcframework
+ WebRTC.dSYMs
+ examples/GumTestApp/package-lock.json
+diff --git a/.npmignore b/.npmignore
+index 6ec570c..8b322f8 100644
+--- a/.npmignore
++++ b/.npmignore
+@@ -1,3 +1,16 @@
++# Dependency directory
++# https://www.npmjs.org/doc/misc/npm-faq.html#should-i-check-my-node_modules-folder-into-git
++node_modules
++ios/RCTWebRTC.xcodeproj/xcuserdata
++ios/RCTWebRTC.xcodeproj/project.xcworkspace
++.DS_Store
++.idea
++android/build
++android/*.iml
++daily-co-*.tgz
++scripts
++.claude
++
+ Documentation/
+ examples/
+ apple/WebRTC.xcframework
+diff --git a/README.md b/README.md
+index 9ef9084..a5110c2 100644
+--- a/README.md
++++ b/README.md
+@@ -1,81 +1,4 @@
+-[<img src="https://avatars.githubusercontent.com/u/42463376" alt="React Native WebRTC" style="height: 6em;" />](https://github.com/react-native-webrtc/react-native-webrtc)
++# @daily-co/react-native-webrtc
+ 
+-# React-Native-WebRTC
++**:warning: This is the Daily fork of `react-native-webrtc`, meant only for use with [`react-native-daily-js`, whose documentation you should refer to for usage information](https://github.com/daily-co/react-native-daily-js). If you're looking for [the standard `react-native-webrtc` useful for a variety of projects, here it is](https://www.npmjs.com/package/react-native-webrtc).**
+ 
+-[![npm version](https://img.shields.io/npm/v/react-native-webrtc)](https://www.npmjs.com/package/react-native-webrtc)
+-[![npm downloads](https://img.shields.io/npm/dm/react-native-webrtc)](https://www.npmjs.com/package/react-native-webrtc)
+-[![Discourse topics](https://img.shields.io/discourse/topics?server=https%3A%2F%2Freact-native-webrtc.discourse.group%2F)](https://react-native-webrtc.discourse.group/)
+-
+-A WebRTC module for React Native.
+-
+-## Feature Overview
+-
+-|  | Android | iOS | tvOS | macOS* | Windows* | Web* | Expo* |
+-| :- | :-: | :-: | :-: | :-: | :-: | :-: | :-: |
+-| Audio/Video | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | - | - | :heavy_check_mark: | :heavy_check_mark: |
+-| Data Channels | :heavy_check_mark: | :heavy_check_mark: | - | - | - | :heavy_check_mark: | :heavy_check_mark: |
+-| Screen Capture | :heavy_check_mark: | :heavy_check_mark: | - | - | - | :heavy_check_mark: | :heavy_check_mark: |
+-| Plan B | - | - | - | - | - | - | - |
+-| Unified Plan* | :heavy_check_mark: | :heavy_check_mark: | - | - | - | :heavy_check_mark: | :heavy_check_mark: |
+-| Simulcast* | :heavy_check_mark: | :heavy_check_mark: | - | - | - | :heavy_check_mark: | :heavy_check_mark: |
+-
+-> **macOS** - We don't currently actively support macOS at this time.  
+-Support might return in the future.
+-
+-> **Windows** - We don't currently support the [react-native-windows](https://github.com/microsoft/react-native-windows) platform at this time.  
+-Anyone interested in getting the ball rolling? We're open to contributions.
+-
+-> **Web** - The [react-native-webrtc-web-shim](https://github.com/react-native-webrtc/react-native-webrtc-web-shim) project provides a shim for [react-native-web](https://github.com/necolas/react-native-web) support.  
+-Which will allow you to use [(almost)](https://github.com/react-native-webrtc/react-native-webrtc-web-shim/tree/main#setup) the exact same code in your [react-native-web](https://github.com/necolas/react-native-web) project as you would with [react-native](https://reactnative.dev/) directly.  
+-
+-> **Expo** - As this module includes native code it is not available in the [Expo Go](https://expo.dev/client) app by default.  
+-However you can get things working via the [expo-dev-client](https://docs.expo.dev/development/getting-started/) library and out-of-tree [config-plugins/react-native-webrtc](https://github.com/expo/config-plugins/tree/master/packages/react-native-webrtc) package.  
+-
+-> **Unified Plan** - As of version 106.0.0 Unified Plan is the only supported mode.  
+-Those still in need of Plan B will need to use an older release.
+-
+-> **Simulcast** - As of version 111.0.0 Simulcast is now possible with ease.  
+-Software encode/decode factories have been enabled by default.
+-
+-## WebRTC Revision
+-
+-* Currently used revision: [M124](https://github.com/jitsi/webrtc/tree/M124)
+-* Supported architectures
+-  * Android: armeabi-v7a, arm64-v8a, x86, x86_64
+-  * iOS: arm64, x86_64
+-  * tvOS: arm64
+-  * macOS: arm64, x86_64
+-
+-## Getting Started
+-
+-Use one of the following preferred package install methods to immediately get going.  
+-Don't forget to follow platform guides below to cover any extra required steps.  
+-
+-**npm:** `npm install react-native-webrtc --save`  
+-**yarn:** `yarn add react-native-webrtc`  
+-**pnpm:** `pnpm install react-native-webrtc`  
+-
+-## Guides
+-
+-- [Android Install](./Documentation/AndroidInstallation.md)
+-- [iOS Install](./Documentation/iOSInstallation.md)
+-- [tvOS Install](./Documentation/tvOSInstallation.md)
+-- [Basic Usage](./Documentation/BasicUsage.md)
+-- [Step by Step Call Guide](./Documentation/CallGuide.md)
+-- [Improving Call Reliability](./Documentation/ImprovingCallReliability.md)
+-- [Migrating to Unified Plan](https://docs.google.com/document/d/1-ZfikoUtoJa9k-GZG1daN0BU3IjIanQ_JSscHxQesvU/edit#heading=h.wuu7dx8tnifl)
+-
+-## Example Projects
+-
+-We have some very basic example projects included in the [examples](./examples) directory.  
+-Don't worry, there are plans to include a much more broader example with backend included.  
+-
+-## Community
+-
+-Come join our [Discourse Community](https://react-native-webrtc.discourse.group/) if you want to discuss any React Native and WebRTC related topics.  
+-Everyone is welcome and every little helps.  
+-
+-## Related Projects
+-
+-Looking for extra functionality coverage?  
+-The [react-native-webrtc](https://github.com/react-native-webrtc) organization provides a number of packages which are more than useful when developing Real Time Communication applications.  
+diff --git a/package.json b/package.json
+index 0605a6d..67c4cfb 100644
+--- a/package.json
++++ b/package.json
+@@ -1,13 +1,14 @@
+ {
+-  "name": "react-native-webrtc",
+-  "version": "124.0.6",
++  "name": "@daily-co/react-native-webrtc",
++  "version": "124.0.6-daily.2",
+   "repository": {
+     "type": "git",
+-    "url": "git+https://github.com/react-native-webrtc/react-native-webrtc.git"
++    "url": "git+https://github.com/daily-co/react-native-webrtc.git"
+   },
+-  "description": "WebRTC for React Native",
++  "nativePackage": true,
++  "description": "Daily fork of WebRTC for React Native",
+   "license": "MIT",
+-  "homepage": "https://github.com/react-native-webrtc/react-native-webrtc",
++  "homepage": "https://github.com/daily-co/react-native-webrtc",
+   "keywords": [
+     "react-component",
+     "react-native",
+@@ -28,13 +29,15 @@
+     "react-native": ">=0.60.0"
+   },
+   "scripts": {
++    "tag": "scripts/tag",
++    "prepublishOnly": "npm run tag",
+     "lint": "eslint --max-warnings 0 . && tsc --noEmit",
+     "lintfix": "eslint --max-warnings 0 --fix . && tsc --noEmit",
+     "prepare": "husky install && bob build",
+     "format": "tools/format.sh"
+   },
+   "bugs": {
+-    "url": "https://github.com/react-native-webrtc/react-native-webrtc/issues"
++    "url": "https://github.com/daily-co/react-native-webrtc/issues"
+   },
+   "devDependencies": {
+     "@types/debug": "4.1.7",
+diff --git a/react-native-webrtc.podspec b/react-native-webrtc.podspec
+index 51af1f0..0f72293 100644
+--- a/react-native-webrtc.podspec
++++ b/react-native-webrtc.podspec
+@@ -3,7 +3,7 @@ require 'json'
+ package = JSON.parse(File.read(File.join(__dir__, 'package.json')))
+ 
+ Pod::Spec.new do |s|
+-  s.name                = package['name']
++  s.name                = 'react-native-webrtc'
+   s.version             = package['version']
+   s.summary             = package['description']
+   s.homepage            = 'https://github.com/react-native-webrtc/react-native-webrtc'
+diff --git a/scripts/tag b/scripts/tag
+new file mode 100755
+index 0000000..29970fc
+--- /dev/null
++++ b/scripts/tag
+@@ -0,0 +1,5 @@
++#!/usr/bin/env bash
++
++TAG_NAME=$(echo ${npm_package_name} | sed -E 's|^.+/||')-$(date -u +'%Y-%m-%d')-${npm_package_version} && \
++  git tag -a -m "${npm_package_name} ${npm_package_version} published to npmjs" ${TAG_NAME} HEAD && \
++  git push origin ${TAG_NAME}

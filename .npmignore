@@ -9,6 +9,7 @@ android/build
 android/*.iml
 daily-co-*.tgz
 scripts
+.claude
 
 Documentation/
 examples/

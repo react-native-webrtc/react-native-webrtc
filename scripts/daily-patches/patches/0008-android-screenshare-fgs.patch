@@ -1,0 +1,118 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: filipi87 <filipi87@gmail.com>
+Date: Thu, 29 Oct 2026 12:37:29 -0700
+Subject: [PATCH] android-screenshare-fgs: wait for MediaProjectionService
+ before capture
+
+Enable the media projection foreground service by default and wait (up to 5s)
+for it to actually start before creating the screen stream; reject
+getDisplayMedia with AbortError otherwise. Fixes a race on Android 14+.
+---
+ .../oney/WebRTCModule/GetUserMediaImpl.java   | 11 ++++++++++-
+ .../WebRTCModule/MediaProjectionService.java  | 19 ++++++++++++++++---
+ .../com/oney/WebRTCModule/WebRTCModule.java   |  2 ++
+ 3 files changed, 28 insertions(+), 4 deletions(-)
+
+diff --git a/android/src/main/java/com/oney/WebRTCModule/GetUserMediaImpl.java b/android/src/main/java/com/oney/WebRTCModule/GetUserMediaImpl.java
+index e44f311..c28c8e2 100644
+--- a/android/src/main/java/com/oney/WebRTCModule/GetUserMediaImpl.java
++++ b/android/src/main/java/com/oney/WebRTCModule/GetUserMediaImpl.java
+@@ -27,6 +27,8 @@ import org.webrtc.*;
+ 
+ import java.util.ArrayList;
+ import java.util.HashMap;
++import java.util.concurrent.CompletableFuture;
++import java.util.concurrent.TimeUnit;
+ import java.util.List;
+ import java.util.Map;
+ import java.util.Objects;
+@@ -78,7 +80,14 @@ class GetUserMediaImpl {
+                     mediaProjectionPermissionResultData = data;
+ 
+                     ThreadUtils.runOnExecutor(() -> {
+-                        MediaProjectionService.launch(activity);
++                        CompletableFuture<Void> fut = MediaProjectionService.launch(activity);
++                        try {
++                            fut.get(5, TimeUnit.SECONDS);
++                        } catch (Exception e) {
++                            displayMediaPromise.reject("DOMException", "AbortError");
++                            displayMediaPromise = null;
++                            return;
++                        }
+                         createScreenStream();
+                     });
+                 }
+diff --git a/android/src/main/java/com/oney/WebRTCModule/MediaProjectionService.java b/android/src/main/java/com/oney/WebRTCModule/MediaProjectionService.java
+index 26e188c..f6a931b 100644
+--- a/android/src/main/java/com/oney/WebRTCModule/MediaProjectionService.java
++++ b/android/src/main/java/com/oney/WebRTCModule/MediaProjectionService.java
+@@ -11,6 +11,7 @@ import android.os.IBinder;
+ import android.util.Log;
+ 
+ import java.util.Random;
++import java.util.concurrent.CompletableFuture;
+ 
+ /**
+  * This class implements an Android {@link Service}, a foreground one specifically, and it's
+@@ -24,11 +25,15 @@ public class MediaProjectionService extends Service {
+ 
+     static final int NOTIFICATION_ID = new Random().nextInt(99999) + 10000;
+ 
+-    public static void launch(Context context) {
++    static volatile CompletableFuture<Void> startFuture;
++
++    public static CompletableFuture<Void> launch(Context context) {
+         if (!WebRTCModuleOptions.getInstance().enableMediaProjectionService) {
+-            return;
++            return CompletableFuture.completedFuture(null);
+         }
+ 
++        startFuture = new CompletableFuture<>();
++
+         MediaProjectionNotification.createNotificationChannel(context);
+         Intent intent = new Intent(context, MediaProjectionService.class);
+         ComponentName componentName;
+@@ -43,14 +48,18 @@ public class MediaProjectionService extends Service {
+             // Avoid crashing due to ForegroundServiceStartNotAllowedException (API level 31).
+             // See: https://developer.android.com/guide/components/foreground-services#background-start-restrictions
+             Log.w(TAG, "Media projection service not started", e);
+-            return;
++            startFuture.completeExceptionally(e);
++            return startFuture;
+         }
+ 
+         if (componentName == null) {
+             Log.w(TAG, "Media projection service not started");
++            startFuture.completeExceptionally(new RuntimeException("Media projection service not started"));
+         } else {
+             Log.i(TAG, "Media projection service started");
+         }
++
++        return startFuture;
+     }
+ 
+     public static void abort(Context context) {
+@@ -77,6 +86,10 @@ public class MediaProjectionService extends Service {
+             startForeground(NOTIFICATION_ID, notification);
+         }
+ 
++        if (startFuture != null) {
++            startFuture.complete(null);
++        }
++
+         return START_NOT_STICKY;
+     }
+ }
+diff --git a/android/src/main/java/com/oney/WebRTCModule/WebRTCModule.java b/android/src/main/java/com/oney/WebRTCModule/WebRTCModule.java
+index 40fe8e0..ec9e6b3 100644
+--- a/android/src/main/java/com/oney/WebRTCModule/WebRTCModule.java
++++ b/android/src/main/java/com/oney/WebRTCModule/WebRTCModule.java
+@@ -113,6 +113,8 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
+ 
+         getUserMediaImpl = new GetUserMediaImpl(this, reactContext);
+         dailyWebRTCDevicesManager = new DailyWebRTCDevicesManager(this, reactContext);
++        // Enabling to react-native-webrtc automatically start and stop media projection service
++        WebRTCModuleOptions.getInstance().enableMediaProjectionService = true;
+     }
+ 
+     @NonNull

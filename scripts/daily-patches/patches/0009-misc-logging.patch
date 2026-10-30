@@ -1,0 +1,57 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: filipi87 <filipi87@gmail.com>
+Date: Thu, 29 Oct 2026 12:37:29 -0700
+Subject: [PATCH] misc-logging: log capture start failures, silence
+ missing-track warning
+
+Android logs startCapture RuntimeExceptions instead of swallowing them; iOS no
+longer warns when a stream has no video track yet.
+---
+ .../oney/WebRTCModule/AbstractVideoCaptureController.java  | 7 ++++---
+ ios/RCTWebRTC/RTCVideoViewManager.m                        | 2 +-
+ 2 files changed, 5 insertions(+), 4 deletions(-)
+
+diff --git a/android/src/main/java/com/oney/WebRTCModule/AbstractVideoCaptureController.java b/android/src/main/java/com/oney/WebRTCModule/AbstractVideoCaptureController.java
+index fe1f2b5..fc5f482 100644
+--- a/android/src/main/java/com/oney/WebRTCModule/AbstractVideoCaptureController.java
++++ b/android/src/main/java/com/oney/WebRTCModule/AbstractVideoCaptureController.java
+@@ -1,5 +1,7 @@
+ package com.oney.WebRTCModule;
+ 
++import android.util.Log;
++
+ import androidx.annotation.Nullable;
+ import androidx.core.util.Consumer;
+ 
+@@ -10,6 +12,7 @@ import com.facebook.react.bridge.WritableMap;
+ import org.webrtc.VideoCapturer;
+ 
+ public abstract class AbstractVideoCaptureController {
++    private static final String TAG = AbstractVideoCaptureController.class.getSimpleName();
+     protected int targetWidth;
+     protected int targetHeight;
+     protected int targetFps;
+@@ -78,9 +81,7 @@ public abstract class AbstractVideoCaptureController {
+         try {
+             videoCapturer.startCapture(targetWidth, targetHeight, targetFps);
+         } catch (RuntimeException e) {
+-            // XXX This can only fail if we initialize the capturer incorrectly,
+-            // which we don't. Thus, ignore any failures here since we trust
+-            // ourselves.
++            Log.e(TAG, "Failed to start capture", e);
+         }
+     }
+ 
+diff --git a/ios/RCTWebRTC/RTCVideoViewManager.m b/ios/RCTWebRTC/RTCVideoViewManager.m
+index e64005d..5062099 100644
+--- a/ios/RCTWebRTC/RTCVideoViewManager.m
++++ b/ios/RCTWebRTC/RTCVideoViewManager.m
+@@ -362,7 +362,7 @@ - (dispatch_queue_t)methodQueue {
+         NSArray *videoTracks = stream ? stream.videoTracks : @[];
+         RTCVideoTrack *videoTrack = [videoTracks firstObject];
+         if (!videoTrack) {
+-            RCTLogWarn(@"No video stream for react tag: %@", streamReactTag);
++            // RCTLogWarn(@"No video stream for react tag: %@", streamReactTag);
+         } else {
+             dispatch_async(dispatch_get_main_queue(), ^{
+                 view.videoTrack = videoTrack;

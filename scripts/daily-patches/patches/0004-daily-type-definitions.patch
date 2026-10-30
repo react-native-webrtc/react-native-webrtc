@@ -1,0 +1,93 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: filipi87 <filipi87@gmail.com>
+Date: Thu, 29 Oct 2026 12:37:28 -0700
+Subject: [PATCH] daily-type-definitions: ship index.d.ts with Daily types
+
+Root index.d.ts re-exports the generated typings and adds RTCViewProps,
+MediaTrackConstraints, MediaDeviceInfo, etc. package.json 'types' points to it.
+---
+ index.d.ts   | 61 ++++++++++++++++++++++++++++++++++++++++++++++++++++
+ package.json |  2 +-
+ 2 files changed, 62 insertions(+), 1 deletion(-)
+ create mode 100644 index.d.ts
+
+diff --git a/index.d.ts b/index.d.ts
+new file mode 100644
+index 0000000..1f6a2b1
+--- /dev/null
++++ b/index.d.ts
+@@ -0,0 +1,61 @@
++// Type definitions for react-native-webrtc 106 with additional Daily type
++
++import mediaDevices from './lib/typescript/MediaDevices';
++import MediaStream from './lib/typescript/MediaStream';
++import MediaStreamTrack, { type MediaTrackSettings } from './lib/typescript/MediaStreamTrack';
++import permissions from './lib/typescript/Permissions';
++import RTCAudioSession from './lib/typescript/RTCAudioSession';
++import RTCErrorEvent from './lib/typescript/RTCErrorEvent';
++import RTCIceCandidate from './lib/typescript/RTCIceCandidate';
++import RTCPIPView, { startIOSPIP, stopIOSPIP } from './lib/typescript/RTCPIPView';
++import RTCPeerConnection from './lib/typescript/RTCPeerConnection';
++import RTCRtpReceiver from './lib/typescript/RTCRtpReceiver';
++import RTCRtpSender from './lib/typescript/RTCRtpSender';
++import RTCRtpTransceiver from './lib/typescript/RTCRtpTransceiver';
++import RTCSessionDescription from './lib/typescript/RTCSessionDescription';
++import RTCView, { type RTCVideoViewProps, type RTCIOSPIPOptions } from './lib/typescript/RTCView';
++import ScreenCapturePickerView from './lib/typescript/ScreenCapturePickerView';
++import { ViewStyle } from 'react-native';
++export { RTCIceCandidate, RTCPeerConnection, RTCSessionDescription, RTCView, RTCPIPView, ScreenCapturePickerView, RTCRtpTransceiver, RTCRtpReceiver, RTCRtpSender, RTCErrorEvent, RTCAudioSession, MediaStream, MediaStreamTrack, type MediaTrackSettings, type RTCVideoViewProps, type RTCIOSPIPOptions, mediaDevices, permissions, registerGlobals, startIOSPIP, stopIOSPIP };
++declare function registerGlobals(): void;
++
++// Daily types
++export interface RTCViewProps {
++  streamURL: string;
++  mirror?: boolean | undefined;
++  zOrder?: number | undefined;
++  objectFit?: 'contain' | 'cover' | undefined;
++  style?: ViewStyle | undefined;
++}
++
++export interface MandatoryMedia {
++  minWidth: number;
++  minHeight: number;
++  minFrameRate: number;
++}
++
++export interface MediaSources {
++  sourceId: string;
++}
++
++export interface MediaTrackConstraints {
++  mandatory?: MandatoryMedia;
++  width?: number;
++  height?: number;
++  frameRate?: number;
++  facingMode?: 'user' | 'environment';
++  deviceId?: string;
++  optional?: MediaSources[];
++}
++
++export type MediaDeviceKind = 'audio' | 'videoinput';
++
++export class MediaDeviceInfo {
++  readonly deviceId: string;
++  readonly groupId: string;
++  readonly kind: MediaDeviceKind;
++  readonly label: string;
++  toJSON(): any;
++}
++
++
+diff --git a/package.json b/package.json
+index 973acdd..67d419f 100644
+--- a/package.json
++++ b/package.json
+@@ -17,7 +17,7 @@
+     "webrtc"
+   ],
+   "react-native": "src/index.ts",
+-  "types": "lib/typescript/index.d.ts",
++  "types": "./index.d.ts",
+   "main": "lib/commonjs/index.js",
+   "module": "lib/module/index.js",
+   "dependencies": {

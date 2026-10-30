@@ -1,0 +1,510 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: filipi87 <filipi87@gmail.com>
+Date: Thu, 29 Oct 2026 12:37:29 -0700
+Subject: [PATCH] daily-audio-mode: setDailyAudioMode and iOS background
+ keep-alive
+
+setDailyAudioMode(video|voice|idle) configures audio focus/route (Android
+DailyAudioManager) or the AVAudioSession category/mode (iOS). Choosing a device
+with setAudioDevice switches to the user-specified route. iOS also gets
+enableNoOpRecordingEnsuringBackgroundContinuity.
+---
+ .../oney/WebRTCModule/DailyAudioManager.java  | 257 ++++++++++++++++++
+ .../com/oney/WebRTCModule/WebRTCModule.java   |  32 +++
+ ios/RCTWebRTC/WebRTCModule+Daily.m            | 171 ++++++++++++
+ 3 files changed, 460 insertions(+)
+ create mode 100644 android/src/main/java/com/oney/WebRTCModule/DailyAudioManager.java
+ create mode 100644 ios/RCTWebRTC/WebRTCModule+Daily.m
+
+diff --git a/android/src/main/java/com/oney/WebRTCModule/DailyAudioManager.java b/android/src/main/java/com/oney/WebRTCModule/DailyAudioManager.java
+new file mode 100644
+index 0000000..0464b5b
+--- /dev/null
++++ b/android/src/main/java/com/oney/WebRTCModule/DailyAudioManager.java
+@@ -0,0 +1,257 @@
++package com.oney.WebRTCModule;
++
++import android.content.Context;
++import android.media.AudioAttributes;
++import android.media.AudioDeviceCallback;
++import android.media.AudioDeviceInfo;
++import android.media.AudioFocusRequest;
++import android.media.AudioManager;
++import android.os.Build;
++import android.util.Log;
++
++import com.facebook.react.bridge.Arguments;
++import com.facebook.react.bridge.LifecycleEventListener;
++import com.facebook.react.bridge.ReactApplicationContext;
++import com.facebook.react.bridge.WritableMap;
++import com.facebook.react.modules.core.DeviceEventManagerModule;
++
++import java.util.Arrays;
++import java.util.concurrent.ExecutorService;
++import java.util.concurrent.Executors;
++
++import com.oney.WebRTCModule.DailyWebRTCDevicesManager.AudioDeviceType;
++
++public class DailyAudioManager implements AudioManager.OnAudioFocusChangeListener {
++    static final String TAG = DailyAudioManager.class.getCanonicalName();
++
++    public enum Mode {
++        IDLE,
++        VIDEO_CALL,
++        VOICE_CALL,
++        USER_SPECIFIED_ROUTE
++    }
++
++    private DailyWebRTCDevicesManager dailyWebRTCDevicesManager;
++    private AudioManager audioManager;
++    private DeviceEventManagerModule.RCTDeviceEventEmitter eventEmitter;
++    private Mode mode;
++    private ExecutorService executor = Executors.newSingleThreadExecutor();
++    private AudioFocusRequest audioFocusRequest;
++
++    private AudioDeviceCallback audioDeviceCallback = new AudioDeviceCallback() {
++        @Override
++        public void onAudioDevicesAdded(AudioDeviceInfo[] addedDevices) {
++            executor.execute(() -> {
++                Log.d(TAG, "onAudioDevicesAdded");
++                configureDevicesForCurrentMode();
++            });
++        }
++
++        @Override
++        public void onAudioDevicesRemoved(AudioDeviceInfo[] removedDevices) {
++            executor.execute(() -> {
++                Log.d(TAG, "onAudioDevicesRemoved");
++                configureDevicesForCurrentMode();
++            });
++        }
++    };
++
++    public DailyAudioManager(ReactApplicationContext reactContext, Mode initialMode, DailyWebRTCDevicesManager dailyWebRTCDevicesManager) {
++        reactContext.addLifecycleEventListener(new LifecycleEventListener() {
++            @Override
++            public void onHostResume() {
++                executor.execute(() -> {
++                    if (mode == Mode.VIDEO_CALL || mode == Mode.VOICE_CALL) {
++                        requestAudioFocus();
++                        configureDevicesForCurrentMode();
++                        sendAudioFocusChangeEvent(true);
++                    }
++                });
++            }
++
++            @Override
++            public void onHostPause() {
++                Log.d(TAG, "onHostPause");
++            }
++
++            @Override
++            public void onHostDestroy() {
++                Log.d(TAG, "onHostDestroy");
++                executor.execute(() -> {
++                    DailyAudioManager.this.setMode(Mode.IDLE);
++                });
++            }
++        });
++        this.dailyWebRTCDevicesManager = dailyWebRTCDevicesManager;
++        this.audioManager = (AudioManager) reactContext.getSystemService(Context.AUDIO_SERVICE);
++        this.eventEmitter = reactContext.getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter.class);
++        this.mode = initialMode;
++        executor.execute(() -> transitionToCurrentMode(null));
++    }
++
++    public void setMode(Mode mode) {
++        executor.execute(() -> {
++            if (mode == this.mode) {
++                return;
++            }
++            Mode previousMode = this.mode;
++            this.mode = mode;
++            transitionToCurrentMode(previousMode);
++        });
++    }
++
++    private boolean isInCall(){
++        int currentAudioMode = this.audioManager.getMode();
++        boolean inCall = (AudioManager.MODE_IN_CALL == currentAudioMode || AudioManager.MODE_RINGTONE == currentAudioMode);
++        return inCall;
++    }
++
++    @Override
++    public void onAudioFocusChange(int focusChange) {
++        executor.execute(() -> {
++            switch (focusChange) {
++                case AudioManager.AUDIOFOCUS_GAIN:
++                    Log.d(TAG, "onAudioFocusChange: GAIN");
++                    // Ensure devices are configured appropriately, in case they were messed up
++                    // while we didn't have focus
++                    configureDevicesForCurrentMode();
++                    sendAudioFocusChangeEvent(true);
++                    break;
++                case AudioManager.AUDIOFOCUS_LOSS:
++                case AudioManager.AUDIOFOCUS_LOSS_TRANSIENT:
++                case AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK:
++                    Log.d(TAG, "onAudioFocusChange: LOSS " + focusChange);
++                    // Before Android 12, we are receiving audio focus loss event even if we are not in a call
++                    // So we are going to check if we are or not in a call before we emit this event to daily-js,
++                    // so It can mute the remote participants and not influentiate in the call
++                    if(this.isInCall()){
++                        sendAudioFocusChangeEvent(false);
++                    }
++                    break;
++                default:
++                    break;
++            }
++        });
++    }
++
++    ///
++    /// Private methods should only be called in executor thread
++    ///
++
++    // Assumes that previousMode != this.mode, hence "transition"
++    private void transitionToCurrentMode(Mode previousMode) {
++        Log.d(TAG, "transitionToCurrentMode: " + mode);
++        switch (mode) {
++            case IDLE:
++                transitionOutOfCallMode();
++                break;
++            case USER_SPECIFIED_ROUTE:
++            case VIDEO_CALL:
++            case VOICE_CALL:
++                transitionToCurrentCallMode(previousMode);
++                break;
++        }
++    }
++
++    // Assumes that previousMode != this.mode, hence "transition"
++    // Does things in the reverse order of transitionToCurrentInCallMode()
++    private void transitionOutOfCallMode() {
++        // Stop listening for device changes
++        audioManager.unregisterAudioDeviceCallback(audioDeviceCallback);
++
++        // Give up audio focus
++        abandonAudioFocus();
++
++        // Configure devices
++        configureDevicesForCurrentMode();
++    }
++
++    // Assumes that previousMode != this.mode, hence "transition"
++    // Does things in the reverse order of transitionOutOfCallMode()
++    private void transitionToCurrentCallMode(Mode previousMode) {
++        // Already in a call, so all we have to do is configure devices
++        if (previousMode == Mode.VIDEO_CALL || previousMode == Mode.VOICE_CALL || previousMode == Mode.USER_SPECIFIED_ROUTE) {
++            configureDevicesForCurrentMode();
++        } else {
++            // Configure devices
++            configureDevicesForCurrentMode();
++            // Request audio focus
++            requestAudioFocus();
++            // Start listening for device changes
++            audioManager.registerAudioDeviceCallback(audioDeviceCallback, null);
++        }
++    }
++
++    private void requestAudioFocus() {
++        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
++            AudioAttributes attributes = new AudioAttributes.Builder()
++                    .setUsage(AudioAttributes.USAGE_VOICE_COMMUNICATION)
++                    .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH)
++                    .build();
++            audioFocusRequest = new AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN)
++                    .setAudioAttributes(attributes)
++                    .setAcceptsDelayedFocusGain(true)
++                    .setOnAudioFocusChangeListener(this)
++                    .build();
++            audioManager.requestAudioFocus(audioFocusRequest);
++        } else {
++            audioManager.requestAudioFocus(this,
++                    AudioManager.STREAM_VOICE_CALL,
++                    AudioManager.AUDIOFOCUS_GAIN);
++        }
++    }
++
++    private void abandonAudioFocus() {
++        Log.d(TAG, "abandonAudioFocus");
++        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
++            if (audioFocusRequest == null) {
++                Log.d(TAG, "abandonAudioFocus: expected audioFocusRequest to exist");
++                return;
++            }
++            audioManager.abandonAudioFocusRequest(audioFocusRequest);
++        } else {
++            audioManager.abandonAudioFocus(this);
++        }
++    }
++
++    private void configureDevicesForCurrentMode() {
++        Log.d(TAG, "configureDevicesForCurrentMode => " + mode);
++        if (mode == Mode.USER_SPECIFIED_ROUTE) {
++            return; // If the user is manually controlling device selection, don't do anything
++        }
++        if (mode == Mode.IDLE) {
++            this.audioManager.setMode(AudioManager.MODE_NORMAL);
++            this.dailyWebRTCDevicesManager.setAudioDevice(AudioDeviceType.WIRED_OR_EARPIECE.toString());
++        } else {
++            this.audioManager.setMode(AudioManager.MODE_IN_COMMUNICATION);
++            AudioDeviceType preferredAudioDevice = this.getPreferredAudioDevice();
++            Log.d(TAG, "configureDevicesForCurrentMode: preferring audio route " + preferredAudioDevice);
++            this.dailyWebRTCDevicesManager.setAudioDevice(preferredAudioDevice.toString());
++        }
++    }
++
++    private AudioDeviceType getPreferredAudioDevice() {
++        AudioDeviceInfo[] audioOutputDevices = this.audioManager.getDevices(AudioManager.GET_DEVICES_OUTPUTS);
++
++        boolean isBluetoothHeadsetPlugged = Arrays.stream(audioOutputDevices).anyMatch(device -> device.getType() == AudioDeviceInfo.TYPE_BLUETOOTH_SCO);
++        if (isBluetoothHeadsetPlugged) {
++            return AudioDeviceType.BLUETOOTH;
++        }
++
++        boolean isWiredHeadsetPlugged = Arrays.stream(audioOutputDevices).anyMatch(
++                device -> device.getType() == AudioDeviceInfo.TYPE_WIRED_HEADSET ||
++                        device.getType() == AudioDeviceInfo.TYPE_WIRED_HEADPHONES
++        );
++        if (isWiredHeadsetPlugged) {
++            return AudioDeviceType.WIRED_OR_EARPIECE;
++        }
++
++        return (mode == Mode.VIDEO_CALL) ? AudioDeviceType.SPEAKERPHONE : AudioDeviceType.WIRED_OR_EARPIECE;
++    }
++
++    private void sendAudioFocusChangeEvent(boolean hasFocus) {
++        WritableMap params = Arguments.createMap();
++        params.putBoolean("hasFocus", hasFocus);
++        eventEmitter.emit("EventAudioFocusChange", params);
++    }
++}
+diff --git a/android/src/main/java/com/oney/WebRTCModule/WebRTCModule.java b/android/src/main/java/com/oney/WebRTCModule/WebRTCModule.java
+index e8031af..40fe8e0 100644
+--- a/android/src/main/java/com/oney/WebRTCModule/WebRTCModule.java
++++ b/android/src/main/java/com/oney/WebRTCModule/WebRTCModule.java
+@@ -1480,10 +1480,16 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
+ 
+     /// Daily-specific functionality
+ 
++    private  DailyAudioManager dailyAudioManager;
++
+     @ReactMethod
+     public void setAudioDevice(String deviceId) {
+         ThreadUtils.runOnExecutor(() -> {
+             this.dailyWebRTCDevicesManager.setAudioDevice(deviceId);
++            // changing the audio mode so Daily won't automatically affect anymore to change the desired audio route
++            if(this.dailyAudioManager != null){
++                this.dailyAudioManager.setMode(DailyAudioManager.Mode.USER_SPECIFIED_ROUTE);
++            }
+         });
+     }
+ 
+@@ -1499,4 +1505,30 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
+             promise.resolve(deviceId);
+         });
+     }
++
++    @ReactMethod
++    public void setDailyAudioMode(String audioModeString) {
++        Log.d(TAG, "setDailyAudioMode: " + audioModeString);
++        DailyAudioManager.Mode audioMode;
++        switch (audioModeString) {
++            case "video":
++                audioMode = DailyAudioManager.Mode.VIDEO_CALL;
++                break;
++            case "voice":
++                audioMode = DailyAudioManager.Mode.VOICE_CALL;
++                break;
++            case "idle":
++                audioMode = DailyAudioManager.Mode.IDLE;
++                break;
++            default:
++                throw new IllegalArgumentException(audioModeString);
++        }
++        if (dailyAudioManager == null) {
++            ReactApplicationContext reactContext = getReactApplicationContext();
++            dailyAudioManager = new DailyAudioManager(reactContext, audioMode, this.dailyWebRTCDevicesManager);
++        }
++        else {
++            dailyAudioManager.setMode(audioMode);
++        }
++    }
+ }
+diff --git a/ios/RCTWebRTC/WebRTCModule+Daily.m b/ios/RCTWebRTC/WebRTCModule+Daily.m
+new file mode 100644
+index 0000000..5cd10e9
+--- /dev/null
++++ b/ios/RCTWebRTC/WebRTCModule+Daily.m
+@@ -0,0 +1,171 @@
++//
++//  WebRTCModule+Daily.m
++//  react-native-webrtc
++//
++//  Created by daily-co on 7/10/20.
++//
++
++#import "WebRTCModule.h"
++#import "WebRTCModule+DailyAudioMode.h"
++#import "WebRTCModule+DailyDevicesManager.h"
++
++#import <objc/runtime.h>
++#import <WebRTC/RTCAudioSession.h>
++#import <WebRTC/RTCAudioSessionConfiguration.h>
++
++@interface WebRTCModule (Daily) <RTCAudioSessionDelegate>
++
++// Expects to only be accessed on captureSessionQueue
++@property (nonatomic, strong) AVCaptureSession *captureSession;
++@property (nonatomic, strong, readonly) dispatch_queue_t captureSessionQueue;
++
++@end
++
++@implementation WebRTCModule (Daily)
++
++#pragma mark - enableNoOpRecordingEnsuringBackgroundContinuity
++
++- (AVCaptureSession *)captureSession {
++  return objc_getAssociatedObject(self, @selector(captureSession));
++}
++
++- (void)setCaptureSession:(AVCaptureSession *)captureSession {
++  objc_setAssociatedObject(self, @selector(captureSession), captureSession, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
++}
++
++- (dispatch_queue_t)captureSessionQueue {
++  dispatch_queue_t queue = objc_getAssociatedObject(self, @selector(captureSessionQueue));
++  if (!queue) {
++    queue = dispatch_queue_create("com.daily.noopcapturesession", DISPATCH_QUEUE_SERIAL);
++    objc_setAssociatedObject(self, @selector(captureSessionQueue), queue, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
++  }
++  return queue;
++}
++
++- (void)audioSession:(RTCAudioSession *)audioSession willSetActive:(BOOL)active {
++  // Stop audio recording before RTCAudioSession becomes active, to defend
++  // against the capture session interfering with WebRTC-managed audio session.
++  dispatch_sync(self.captureSessionQueue, ^{
++    [self.captureSession stopRunning];
++    self.captureSession = nil;
++  });
++}
++
++RCT_EXPORT_METHOD(enableNoOpRecordingEnsuringBackgroundContinuity:(BOOL)enable) {
++  // Listen for RTCAudioSession becoming active, so we can stop recording.
++  // We only need to record until WebRTC audio unit spins up, to keep the app
++  // alive in the background. Recording for longer is wasteful and seems to
++  // interfere with the WebRTC-managed audio session's activation.
++  [RTCAudioSession.sharedInstance removeDelegate:self];
++  if (enable) {
++    [RTCAudioSession.sharedInstance addDelegate:self];
++  }
++
++  dispatch_async(self.captureSessionQueue, ^{
++    if (enable) {
++      if (self.captureSession) {
++        return;
++      }
++      AVCaptureSession *captureSession = [self configuredCaptureSession];
++      [captureSession startRunning];
++      self.captureSession = captureSession;
++    }
++    else {
++      [self.captureSession stopRunning];
++      self.captureSession = nil;
++    }
++  });
++}
++
++// Expects to be invoked from captureSessionQueue
++- (AVCaptureSession *)configuredCaptureSession {
++  AVCaptureSession *captureSession = [[AVCaptureSession alloc] init];
++  // Note: we *used* to have the following line:
++  // captureSession.automaticallyConfiguresApplicationAudioSession = NO;
++  // The original reason for it was to "prevent configuration 'thrashing' once
++  // WebRTC audio unit takes the reins." As of 2023-08-23, I (kompfner) haven't
++  // observed any audio misbehavior as a result of removing this line. Keeping
++  // this line, on the other hand, was causing the no-op recording to error on
++  // start, which in turn meant that your app would not stay alive in the 
++  // background if you joined a call with your cam and mic initially off.
++  AVCaptureDevice *audioDevice = [AVCaptureDevice defaultDeviceWithMediaType:AVMediaTypeAudio];
++  if (!audioDevice) {
++    return nil;
++  }
++  NSError *inputError;
++  AVCaptureDeviceInput *audioInput = [AVCaptureDeviceInput deviceInputWithDevice:audioDevice error:&inputError];
++  if (inputError) {
++    return nil;
++  }
++  if ([captureSession canAddInput:audioInput]) {
++    [captureSession addInput:audioInput];
++  }
++  else {
++    return nil;
++  }
++  AVCaptureAudioDataOutput *audioOutput = [[AVCaptureAudioDataOutput alloc] init];
++  if ([captureSession canAddOutput:audioOutput]) {
++    [captureSession addOutput:audioOutput];
++  }
++  else {
++    return nil;
++  }
++  return captureSession;
++}
++
++#pragma mark - setDailyAudioMode
++
++- (void)audioSession:(RTCAudioSession *)audioSession didSetActive:(BOOL)active {
++  // The audio session has become active either for the first time or again
++  // after being reset by WebRTC's audio module (for example, after a Wifi -> LTE
++  // switch), so (re-)apply the currently chosen audio mode to the session.
++  [self applyAudioMode:self.audioMode toSession:audioSession];
++}
++
++RCT_EXPORT_METHOD(setDailyAudioMode:(NSString *)audioMode) {
++  // Validate input
++  if (![@[AUDIO_MODE_VIDEO_CALL, AUDIO_MODE_VOICE_CALL, AUDIO_MODE_IDLE] containsObject:audioMode]) {
++    NSLog(@"[Daily] invalid argument to setDailyAudioMode: %@", audioMode);
++    return;
++  }
++  
++  [self setAudioMode: audioMode];
++  
++  // Apply the chosen audio mode right away if the audio session is already
++  // active. Otherwise, it will be applied when the session becomes active.
++  RTCAudioSession *audioSession = RTCAudioSession.sharedInstance;
++  NSLog(@"[Daily] setDailyAudioMode: %@", audioMode);
++  if (audioSession.isActive) {
++    [self applyAudioMode:audioMode toSession:audioSession];
++  }
++}
++
++- (void)applyAudioMode:(NSString *)audioMode toSession:(RTCAudioSession *)audioSession {
++  NSLog(@"[Daily] applyAudioMode: %@", audioMode);
++  // Do nothing if we're attempting to "unset" the in-call audio mode (for now
++  // it doesn't seem like there's anything to do).
++  if ([audioMode isEqualToString:AUDIO_MODE_IDLE]) {
++    return;
++  }
++    
++  if ([audioMode isEqualToString:AUDIO_MODE_USER_SPECIFIED_ROUTE]) {
++    // Invoking to restore to the user chosen device
++    [self setAudioDevice:self.userSelectedDevice];
++    return;
++  }
++  
++  // Ducking other apps' audio implicitly enables allowing mixing audio with
++  // other apps, which allows this app to stay alive in the backgrounnd during
++  // a call (assuming it has the voip background mode set).
++  AVAudioSessionCategoryOptions categoryOptions = (AVAudioSessionCategoryOptionAllowBluetooth |
++                                                   AVAudioSessionCategoryOptionMixWithOthers);
++  if ([audioMode isEqualToString:AUDIO_MODE_VIDEO_CALL]) {
++    categoryOptions |= AVAudioSessionCategoryOptionDefaultToSpeaker;
++  }
++  NSString *mode = ([audioMode isEqualToString:AUDIO_MODE_VIDEO_CALL] ?
++                    AVAudioSessionModeVideoChat :
++                    AVAudioSessionModeVoiceChat);
++  [self configureAudioSession:AVAudioSession.sharedInstance audioMode:mode categoryOptions:categoryOptions];
++}
++
++@end

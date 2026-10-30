@@ -1,0 +1,780 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: filipi87 <filipi87@gmail.com>
+Date: Thu, 29 Oct 2026 12:37:29 -0700
+Subject: [PATCH] devices-manager-devicechange: audio output routing and
+ devicechange events
+
+Replaces upstream enumerateDevices (Android: bypassed, iOS: commented out) with
+the Daily devices manager, which also lists audio outputs. Adds setAudioDevice,
+getAudioDevice, startMediaDevicesEventMonitor and the mediaDevicesOnDeviceChange
+event wired to mediaDevices 'devicechange'/ondevicechange. Includes the iOS
+DailyAudioMode state category, which the devices manager depends on.
+---
+ .../DailyWebRTCDevicesManager.java            | 204 +++++++++++++
+ .../com/oney/WebRTCModule/WebRTCModule.java   |  29 +-
+ ios/RCTWebRTC/WebRTCModule+DailyAudioMode.h   |  22 ++
+ ios/RCTWebRTC/WebRTCModule+DailyAudioMode.m   |  18 ++
+ .../WebRTCModule+DailyDevicesManager.h        |  26 ++
+ .../WebRTCModule+DailyDevicesManager.m        | 271 ++++++++++++++++++
+ ios/RCTWebRTC/WebRTCModule+RTCMediaStream.m   |   4 +
+ ios/RCTWebRTC/WebRTCModule.h                  |   1 +
+ ios/RCTWebRTC/WebRTCModule.m                  |   3 +-
+ src/EventEmitter.ts                           |   1 +
+ src/MediaDevices.ts                           |  16 ++
+ src/index.ts                                  |   7 +
+ 12 files changed, 600 insertions(+), 2 deletions(-)
+ create mode 100644 android/src/main/java/com/oney/WebRTCModule/DailyWebRTCDevicesManager.java
+ create mode 100644 ios/RCTWebRTC/WebRTCModule+DailyAudioMode.h
+ create mode 100644 ios/RCTWebRTC/WebRTCModule+DailyAudioMode.m
+ create mode 100644 ios/RCTWebRTC/WebRTCModule+DailyDevicesManager.h
+ create mode 100644 ios/RCTWebRTC/WebRTCModule+DailyDevicesManager.m
+
+diff --git a/android/src/main/java/com/oney/WebRTCModule/DailyWebRTCDevicesManager.java b/android/src/main/java/com/oney/WebRTCModule/DailyWebRTCDevicesManager.java
+new file mode 100644
+index 0000000..c6c5d2b
+--- /dev/null
++++ b/android/src/main/java/com/oney/WebRTCModule/DailyWebRTCDevicesManager.java
+@@ -0,0 +1,204 @@
++package com.oney.WebRTCModule;
++
++import android.content.Context;
++import android.media.AudioDeviceCallback;
++import android.media.AudioDeviceInfo;
++import android.media.AudioManager;
++import android.util.Log;
++
++import com.facebook.react.bridge.Arguments;
++import com.facebook.react.bridge.ReactApplicationContext;
++import com.facebook.react.bridge.ReadableArray;
++import com.facebook.react.bridge.WritableArray;
++import com.facebook.react.bridge.WritableMap;
++
++import org.webrtc.Camera1Enumerator;
++import org.webrtc.Camera2Enumerator;
++import org.webrtc.CameraEnumerator;
++
++import java.util.Arrays;
++
++public class DailyWebRTCDevicesManager {
++
++    static final String TAG = DailyWebRTCDevicesManager.class.getCanonicalName();
++    static final String ON_DEVICE_CHANGE_EVENT = "mediaDevicesOnDeviceChange";
++
++    public enum DeviceKind {
++        VIDEO_INPUT("videoinput"),
++        AUDIO("audio");
++
++        private String kind;
++
++        DeviceKind(String kind) {
++            this.kind = kind;
++        }
++
++        public String getKind() {
++            return this.kind;
++        }
++    }
++
++    public enum AudioDeviceType {
++        BLUETOOTH,
++        SPEAKERPHONE,
++        WIRED_OR_EARPIECE
++    }
++
++    private AudioDeviceCallback audioDeviceCallback = new AudioDeviceCallback() {
++        @Override
++        public void onAudioDevicesAdded(AudioDeviceInfo[] addedDevices) {
++            DailyWebRTCDevicesManager.this.webRTCModule.sendEvent(ON_DEVICE_CHANGE_EVENT, null);
++        }
++
++        @Override
++        public void onAudioDevicesRemoved(AudioDeviceInfo[] removedDevices) {
++            DailyWebRTCDevicesManager.this.webRTCModule.sendEvent(ON_DEVICE_CHANGE_EVENT, null);
++        }
++    };
++
++    private final CameraEnumerator cameraEnumerator;
++    private AudioManager audioManager;
++    private ReactApplicationContext reactContext;
++    private final WebRTCModule webRTCModule;
++
++    public DailyWebRTCDevicesManager(WebRTCModule webRTCModule, ReactApplicationContext reactContext) {
++        this.webRTCModule = webRTCModule;
++        this.reactContext = reactContext;
++        this.audioManager = (AudioManager) reactContext.getSystemService(Context.AUDIO_SERVICE);
++        this.cameraEnumerator = this.createCameraEnumerator();
++    }
++
++    public void startMediaDevicesEventMonitor() {
++        this.audioManager.registerAudioDeviceCallback(audioDeviceCallback, null);
++    }
++
++    private CameraEnumerator createCameraEnumerator() {
++        boolean camera2supported = false;
++        try {
++            camera2supported = Camera2Enumerator.isSupported(this.reactContext);
++        } catch (Throwable tr) {
++            // Some devices will crash here with: Fatal Exception: java.lang.AssertionError: Supported FPS ranges cannot be null.
++            // Make sure we don't.
++            Log.w(TAG, "Error checking for Camera2 API support.", tr);
++        }
++        CameraEnumerator cameraEnumerator = null;
++        if (camera2supported) {
++            Log.d(TAG, "Creating video capturer using Camera2 API.");
++            cameraEnumerator = new Camera2Enumerator(this.reactContext);
++        } else {
++            Log.d(TAG, "Creating video capturer using Camera1 API.");
++            cameraEnumerator = new Camera1Enumerator(false);
++        }
++        return cameraEnumerator;
++    }
++
++    ReadableArray enumerateDevices() {
++        WritableArray devicesArray = Arguments.createArray();
++        this.fillVideoInputDevices(devicesArray);
++        this.fillAudioDevices(devicesArray);
++        return devicesArray;
++    }
++
++    private void fillVideoInputDevices(WritableArray enumerateDevicesArray) {
++        String[] devices = cameraEnumerator.getDeviceNames();
++        Log.d(TAG, "fillVideoInputDevices video devices: " + Arrays.toString(devices));
++        // FIXME Filipi
++        // We are just considering to always return up to two camera devices
++        // If we return more than two, we are going to need to change our API
++        // And create a method to switch the camera that also allow to receive the camera device name
++        // That we wish to switch to, and test It to see If It is working fine
++        // We may plan to implement that in the future.
++        boolean hasFrontCamera = Arrays.stream(devices).anyMatch(cameraEnumerator::isFrontFacing);
++        if(hasFrontCamera) {
++            WritableMap params = this.createWritableMap("CAMERA_USER", "Front camera", DeviceKind.VIDEO_INPUT.getKind());
++            params.putString("facing",  "user");
++            enumerateDevicesArray.pushMap(params);
++        }
++        boolean hasRearCamera = Arrays.stream(devices).anyMatch(cameraEnumerator::isBackFacing);
++        if(hasRearCamera) {
++            WritableMap params = this.createWritableMap("CAMERA_ENVIRONMENT", "Rear camera", DeviceKind.VIDEO_INPUT.getKind());
++            params.putString("facing",  "environment");
++            enumerateDevicesArray.pushMap(params);
++        }
++    }
++
++    private void fillAudioDevices(WritableArray enumerateDevicesArray) {
++        AudioDeviceInfo[] audioOutputDevices = this.audioManager.getDevices(AudioManager.GET_DEVICES_OUTPUTS);
++
++        boolean isWiredHeadsetPlugged = Arrays.stream(audioOutputDevices).anyMatch(
++                device -> device.getType() == AudioDeviceInfo.TYPE_WIRED_HEADSET ||
++                        device.getType() == AudioDeviceInfo.TYPE_WIRED_HEADPHONES
++        );
++
++        WritableMap params = isWiredHeadsetPlugged ?
++                this.createWritableMap(AudioDeviceType.WIRED_OR_EARPIECE.toString(), "Wired headset", DeviceKind.AUDIO.getKind()) :
++                this.createWritableMap(AudioDeviceType.WIRED_OR_EARPIECE.toString(), "Phone earpiece", DeviceKind.AUDIO.getKind());
++        enumerateDevicesArray.pushMap(params);
++
++        //speaker
++        params = this.createWritableMap(AudioDeviceType.SPEAKERPHONE.toString(), "Speakerphone", DeviceKind.AUDIO.getKind());
++        enumerateDevicesArray.pushMap(params);
++
++        boolean isBluetoothHeadsetPlugged = Arrays.stream(audioOutputDevices).anyMatch(device -> device.getType() == AudioDeviceInfo.TYPE_BLUETOOTH_SCO);
++        if (isBluetoothHeadsetPlugged) {
++            params = this.createWritableMap(AudioDeviceType.BLUETOOTH.toString(), "Bluetooth", DeviceKind.AUDIO.getKind());
++            enumerateDevicesArray.pushMap(params);
++        }
++    }
++
++    private WritableMap createWritableMap(String deviceId, String label, String kind) {
++        WritableMap audioMap = Arguments.createMap();
++        audioMap.putString("deviceId", deviceId);
++        audioMap.putString("groupId", "");
++        audioMap.putString("label", label);
++        audioMap.putString("kind", kind);
++        return audioMap;
++    }
++
++    /**
++     * Changes selection of the currently active audio device.
++     */
++    public void setAudioDevice(String deviceId) {
++        Log.d(TAG, "setAudioDevice(audioDeviceType=" + deviceId + ")");
++        AudioDeviceType audioRoute = AudioDeviceType.valueOf(deviceId);
++        switch (audioRoute) {
++            case SPEAKERPHONE:
++                toggleBluetooth(false);
++                audioManager.setSpeakerphoneOn(true);
++                break;
++            //If we have a wired headset plugged, It is not possible we send the audio to the earpiece
++            case WIRED_OR_EARPIECE:
++                toggleBluetooth(false);
++                audioManager.setSpeakerphoneOn(false);
++                break;
++            case BLUETOOTH:
++                audioManager.setSpeakerphoneOn(false);
++                toggleBluetooth(true);
++                break;
++            default:
++                Log.e(TAG, "Invalid audio device selection");
++                break;
++        }
++    }
++
++    public String getAudioDevice() {
++        if (this.audioManager.isBluetoothScoOn() || this.audioManager.isBluetoothA2dpOn()) {
++            return AudioDeviceType.BLUETOOTH.toString();
++        } else if (this.audioManager.isSpeakerphoneOn()) {
++            return AudioDeviceType.SPEAKERPHONE.toString();
++        } else {
++            return AudioDeviceType.WIRED_OR_EARPIECE.toString();
++        }
++    }
++
++    private void toggleBluetooth(boolean on) {
++        if (on) {
++            audioManager.startBluetoothSco();
++            audioManager.setBluetoothScoOn(true);
++        } else {
++            audioManager.setBluetoothScoOn(false);
++            audioManager.stopBluetoothSco();
++        }
++    }
++
++}
+diff --git a/android/src/main/java/com/oney/WebRTCModule/WebRTCModule.java b/android/src/main/java/com/oney/WebRTCModule/WebRTCModule.java
+index 0b9194e..e8031af 100644
+--- a/android/src/main/java/com/oney/WebRTCModule/WebRTCModule.java
++++ b/android/src/main/java/com/oney/WebRTCModule/WebRTCModule.java
+@@ -50,6 +50,7 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
+     final Map<String, MediaStream> localStreams;
+ 
+     private final GetUserMediaImpl getUserMediaImpl;
++    private final DailyWebRTCDevicesManager dailyWebRTCDevicesManager;
+ 
+     public WebRTCModule(ReactApplicationContext reactContext) {
+         super(reactContext);
+@@ -111,6 +112,7 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
+         mAudioDeviceModule = adm;
+ 
+         getUserMediaImpl = new GetUserMediaImpl(this, reactContext);
++        dailyWebRTCDevicesManager = new DailyWebRTCDevicesManager(this, reactContext);
+     }
+ 
+     @NonNull
+@@ -780,7 +782,10 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
+ 
+     @ReactMethod
+     public void enumerateDevices(Callback callback) {
+-        ThreadUtils.runOnExecutor(() -> callback.invoke(getUserMediaImpl.enumerateDevices()));
++        /*ThreadUtils.runOnExecutor(() ->
++            callback.invoke(getUserMediaImpl.enumerateDevices()));*/
++        ThreadUtils.runOnExecutor(() ->
++                callback.invoke(dailyWebRTCDevicesManager.enumerateDevices()));
+     }
+ 
+     @ReactMethod
+@@ -1472,4 +1477,26 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
+     public void removeListeners(Integer count) {
+         // Keep: Required for RN built in Event Emitter Calls.
+     }
++
++    /// Daily-specific functionality
++
++    @ReactMethod
++    public void setAudioDevice(String deviceId) {
++        ThreadUtils.runOnExecutor(() -> {
++            this.dailyWebRTCDevicesManager.setAudioDevice(deviceId);
++        });
++    }
++
++    @ReactMethod
++    public void startMediaDevicesEventMonitor() {
++        this.dailyWebRTCDevicesManager.startMediaDevicesEventMonitor();
++    }
++
++    @ReactMethod
++    public void getAudioDevice(Promise promise) {
++        ThreadUtils.runOnExecutor(() -> {
++            String deviceId = this.dailyWebRTCDevicesManager.getAudioDevice();
++            promise.resolve(deviceId);
++        });
++    }
+ }
+diff --git a/ios/RCTWebRTC/WebRTCModule+DailyAudioMode.h b/ios/RCTWebRTC/WebRTCModule+DailyAudioMode.h
+new file mode 100644
+index 0000000..33c69e6
+--- /dev/null
++++ b/ios/RCTWebRTC/WebRTCModule+DailyAudioMode.h
+@@ -0,0 +1,22 @@
++//
++//  WebRTCModule+DevicesManager.m
++//  react-native-webrtc
++//
++//  Created by Filipi Fuchter on 01/04/22.
++//
++
++#import "WebRTCModule.h"
++
++// audio modes
++static NSString * _Nonnull const AUDIO_MODE_VIDEO_CALL = @"video";
++static NSString * _Nonnull const AUDIO_MODE_VOICE_CALL = @"voice";
++static NSString * _Nonnull const AUDIO_MODE_IDLE = @"idle";
++static NSString * _Nonnull const AUDIO_MODE_USER_SPECIFIED_ROUTE = @"user_specified";
++
++@interface WebRTCModule (DailyAudioMode)
++
++@property (nonatomic, strong) NSString *audioMode;
++
++- (void)setAudioMode:(nonnull NSString*)audioMode;
++
++@end
+diff --git a/ios/RCTWebRTC/WebRTCModule+DailyAudioMode.m b/ios/RCTWebRTC/WebRTCModule+DailyAudioMode.m
+new file mode 100644
+index 0000000..486c41f
+--- /dev/null
++++ b/ios/RCTWebRTC/WebRTCModule+DailyAudioMode.m
+@@ -0,0 +1,18 @@
++#import <objc/runtime.h>
++#import "WebRTCModule.h"
++#import "WebRTCModule+DailyAudioMode.h"
++
++@implementation WebRTCModule (DailyAudioMode)
++
++- (void)setAudioMode:(NSString *)audioMode {
++  objc_setAssociatedObject(self,
++                           @selector(audioMode),
++                           audioMode,
++                           OBJC_ASSOCIATION_RETAIN_NONATOMIC);
++}
++
++- (NSString *)audioMode {
++  return  objc_getAssociatedObject(self, @selector(audioMode));
++}
++
++@end
+diff --git a/ios/RCTWebRTC/WebRTCModule+DailyDevicesManager.h b/ios/RCTWebRTC/WebRTCModule+DailyDevicesManager.h
+new file mode 100644
+index 0000000..70a7944
+--- /dev/null
++++ b/ios/RCTWebRTC/WebRTCModule+DailyDevicesManager.h
+@@ -0,0 +1,26 @@
++//
++//  WebRTCModule+DevicesManager.m
++//  react-native-webrtc
++//
++//  Created by Filipi Fuchter on 01/04/22.
++//
++
++#import "WebRTCModule.h"
++
++// audio devices routes
++static NSString * _Nonnull const WIRED_OR_EARPIECE_DEVICE_ID = @"WIRED_OR_EARPIECE";
++static NSString * _Nonnull const SPEAKERPHONE_DEVICE_ID = @"SPEAKERPHONE";
++static NSString * _Nonnull const BLUETOOTH_DEVICE_ID = @"BLUETOOTH";
++
++@interface WebRTCModule (DailyDevicesManager)
++
++@property (nonatomic, strong) NSString *userSelectedDevice;
++
++- (BOOL)hasBluetoothDevice;
++- (BOOL)hasWiredHeadset;
++- (void)setAudioDevice:(nonnull NSString*)deviceId;
++- (void)configureAudioSession:(nonnull AVAudioSession *)audioSession
++              audioMode:(nonnull NSString *)mode
++              categoryOptions: (AVAudioSessionCategoryOptions) categoryOptions;
++
++@end
+diff --git a/ios/RCTWebRTC/WebRTCModule+DailyDevicesManager.m b/ios/RCTWebRTC/WebRTCModule+DailyDevicesManager.m
+new file mode 100644
+index 0000000..07abec1
+--- /dev/null
++++ b/ios/RCTWebRTC/WebRTCModule+DailyDevicesManager.m
+@@ -0,0 +1,271 @@
++//
++//  WebRTCModule+DailyDevicesManager.m
++//  react-native-webrtc
++//
++//  Created by Filipi Fuchter on 08/03/22.
++//
++
++#import <objc/runtime.h>
++#import "WebRTCModule.h"
++#import "WebRTCModule+DailyDevicesManager.h"
++#import "WebRTCModule+DailyAudioMode.h"
++
++@implementation WebRTCModule (DailyDevicesManager)
++
++static NSString const *DEVICE_KIND_VIDEO_INPUT = @"videoinput";
++static NSString const *DEVICE_KIND_AUDIO = @"audio";
++
++- (void)setUserSelectedDevice:(NSString *)userSelectedDevice {
++  objc_setAssociatedObject(self,
++                           @selector(userSelectedDevice),
++                           userSelectedDevice,
++                           OBJC_ASSOCIATION_RETAIN_NONATOMIC);
++}
++
++- (NSString *)userSelectedDevice {
++  return  objc_getAssociatedObject(self, @selector(userSelectedDevice));
++}
++
++RCT_EXPORT_METHOD(enumerateDevices:(RCTResponseSenderBlock)callback)
++{
++    NSLog(@"[Daily] enumerateDevice from DailyDevicesManager");
++    NSMutableArray *devices = [NSMutableArray array];
++    
++    [self fillVideoInputDevices:devices];
++    [self fillAudioDevices:devices];
++    
++    callback(@[devices]);
++}
++
++// Whenever any headphones plugged in, it becomes the default audio route even if there is also bluetooth device.
++// And it overwrites the handset(iPhone) option, which means you cannot change to the handset(iPhone).
++- (void)fillVideoInputDevices:(NSMutableArray *)devices {
++    AVCaptureDeviceDiscoverySession *videoevicesSession
++        = [AVCaptureDeviceDiscoverySession discoverySessionWithDeviceTypes:@[ AVCaptureDeviceTypeBuiltInWideAngleCamera ]
++                                                                 mediaType:AVMediaTypeVideo
++                                                                  position:AVCaptureDevicePositionUnspecified];
++    for (AVCaptureDevice *device in videoevicesSession.devices) {
++        NSString *position = @"unknown";
++        if (device.position == AVCaptureDevicePositionBack) {
++            position = @"environment";
++        } else if (device.position == AVCaptureDevicePositionFront) {
++            position = @"user";
++        }
++        NSString *label = @"Unknown video device";
++        if (device.localizedName != nil) {
++            label = device.localizedName;
++        }
++        [devices addObject:@{
++                             @"facing": position,
++                             @"deviceId": device.uniqueID,
++                             @"groupId": @"",
++                             @"label": label,
++                             @"kind": DEVICE_KIND_VIDEO_INPUT,
++                             }];
++    }
++}
++
++- (void)fillAudioDevices:(NSMutableArray *)devices {
++    NSString * wiredOrEarpieceLabel = self.hasWiredHeadset ? @"Wired headset" : @"Phone earpiece";
++    [devices addObject:@{
++                         @"deviceId": WIRED_OR_EARPIECE_DEVICE_ID,
++                         @"groupId": @"",
++                         @"label": wiredOrEarpieceLabel,
++                         @"kind": DEVICE_KIND_AUDIO,
++                         }];
++    
++    [devices addObject:@{
++                         @"deviceId": SPEAKERPHONE_DEVICE_ID,
++                         @"groupId": @"",
++                         @"label": @"Speakerphone",
++                         @"kind": DEVICE_KIND_AUDIO,
++                         }];
++    
++    if(self.hasBluetoothDevice && !self.hasWiredHeadset){
++        [devices addObject:@{
++                         @"deviceId": BLUETOOTH_DEVICE_ID,
++                         @"groupId": @"",
++                         @"label": @"Bluetooth",
++                         @"kind": DEVICE_KIND_AUDIO,
++                         }];
++    }
++}
++
++- (BOOL)hasWiredHeadset {
++    AVAudioSession *audioSession = AVAudioSession.sharedInstance;
++    NSArray<AVAudioSessionPortDescription *> *availableInputs = [audioSession availableInputs];
++    for (AVAudioSessionPortDescription *device in availableInputs) {
++        NSString* portType = device.portType;
++        if([portType isEqualToString:AVAudioSessionPortHeadphones] ||
++           [portType isEqualToString:AVAudioSessionPortHeadsetMic] ){
++            return true;
++        }
++    }
++    return false;
++}
++    
++- (BOOL)hasBluetoothDevice {
++    AVAudioSession *audioSession = AVAudioSession.sharedInstance;
++
++    NSArray<AVAudioSessionPortDescription *> *availableInputs = [audioSession availableInputs];
++    for (AVAudioSessionPortDescription *device in availableInputs) {
++        if([self isBluetoothDevice:[device portType]]){
++            return true;
++        }
++    }
++
++    NSArray<AVAudioSessionPortDescription *> *outputs = [[audioSession currentRoute] outputs];
++    for (AVAudioSessionPortDescription *device in outputs) {
++        if([self isBluetoothDevice:[device portType]]){
++            return true;
++        }
++    }
++    return false;
++}
++
++- (BOOL)isBluetoothDevice:(NSString*)portType {
++    BOOL isBluetooth;
++    isBluetooth = ([portType isEqualToString:AVAudioSessionPortBluetoothA2DP] ||
++                   [portType isEqualToString:AVAudioSessionPortBluetoothHFP]);
++    if (@available(iOS 7.0, *)) {
++        isBluetooth |= [portType isEqualToString:AVAudioSessionPortBluetoothLE];
++    }
++    return isBluetooth;
++}
++
++- (BOOL)isBuiltInSpeaker:(NSString*)portType {
++    return [portType isEqualToString:AVAudioSessionPortBuiltInSpeaker];
++}
++
++- (BOOL)isBuiltInEarpieceHeadset:(NSString*)portType {
++    return ([portType isEqualToString:AVAudioSessionPortBuiltInReceiver] ||
++            [portType isEqualToString:AVAudioSessionPortHeadphones] ||
++            [portType isEqualToString:AVAudioSessionPortHeadsetMic] );
++}
++
++- (BOOL)isBuiltInMic:(NSString*)portType {
++    return ([portType isEqualToString:AVAudioSessionPortBuiltInMic]);
++}
++
++
++RCT_EXPORT_METHOD(getAudioDevice: (RCTPromiseResolveBlock)resolve
++                  rejecter:(RCTPromiseRejectBlock)reject) {
++    NSLog(@"[Daily] getAudioDevice");
++    AVAudioSession *audioSession = AVAudioSession.sharedInstance;
++    NSArray<AVAudioSessionPortDescription *> *currentRoutes = [[audioSession currentRoute] outputs];
++    if([currentRoutes count] > 0){
++        NSString* currentPortType = [currentRoutes[0] portType];
++        NSLog(@"[Daily] currentPortType: %@", currentPortType);
++        if([self isBluetoothDevice:currentPortType]){
++            return resolve(BLUETOOTH_DEVICE_ID);
++        } else if([self isBuiltInSpeaker:currentPortType]){
++            return resolve(SPEAKERPHONE_DEVICE_ID);
++        } else if([self isBuiltInEarpieceHeadset:currentPortType]){
++            return resolve(WIRED_OR_EARPIECE_DEVICE_ID);
++        }
++    }
++    return resolve(SPEAKERPHONE_DEVICE_ID);
++}
++
++// Some reference links explaining how the audio from IOs works and sample code
++// https://stephen-chen.medium.com/how-to-add-audio-device-action-sheet-to-your-ios-app-e6bc401ccdbc
++// https://github.com/xialin/AudioSessionManager/blob/master/AudioSessionManager.m
++RCT_EXPORT_METHOD(setAudioDevice:(NSString*)deviceId) {
++    NSLog(@"[Daily] setAudioDevice: %@", deviceId);
++    
++    [self setAudioMode: AUDIO_MODE_USER_SPECIFIED_ROUTE];
++    self.userSelectedDevice = deviceId;
++    
++    // Ducking other apps' audio implicitly enables allowing mixing audio with
++    // other apps, which allows this app to stay alive in the backgrounnd during
++    // a call (assuming it has the voip background mode set).
++    // After iOS 16, we must also always keep the bluetooth option here, otherwise
++    // we are not able to see the bluetooth devices on the list
++    AVAudioSessionCategoryOptions categoryOptions = (AVAudioSessionCategoryOptionAllowBluetooth |
++                                                     AVAudioSessionCategoryOptionMixWithOthers);
++    NSString *mode = AVAudioSessionModeVoiceChat;
++
++    // Earpiece: is default route for a call.
++    // Speaker: the speaker is the default output audio for like music, video, ring tone.
++    // Bluetooth: whenever a bluetooth device connected, the bluetooth device will become the default audio route.
++    // Headphones: whenever any headphones plugged in, it becomes the default audio route even there is also bluetooth device.
++    //  And it overwrites the handset(iPhone) option, which means you cannot change to the earpiece, bluetooth.
++    if([SPEAKERPHONE_DEVICE_ID isEqualToString: deviceId]){
++        NSLog(@"[Daily] configuring output to SPEAKER");
++        categoryOptions |= AVAudioSessionCategoryOptionDefaultToSpeaker;
++        mode = AVAudioSessionModeVideoChat;
++    }
++
++    AVAudioSession *audioSession = AVAudioSession.sharedInstance;
++    [self configureAudioSession:audioSession audioMode:mode categoryOptions:categoryOptions];
++
++    // Force to speaker. We only need to do that the cases a wired headset is connected, but we still want to force to speaker
++    if([SPEAKERPHONE_DEVICE_ID isEqualToString: deviceId]){
++        [audioSession overrideOutputAudioPort: AVAudioSessionPortOverrideSpeaker error: nil];
++    } else if([WIRED_OR_EARPIECE_DEVICE_ID isEqualToString: deviceId]){
++        [audioSession overrideOutputAudioPort: AVAudioSessionPortOverrideNone error: nil];
++        NSArray<AVAudioSessionPortDescription *> *availableInputs = [audioSession availableInputs];
++        for (AVAudioSessionPortDescription *device in availableInputs) {
++            if([self isBuiltInMic:[device portType]]){
++                NSLog(@"[Daily] forcing preferred input to built in device");
++                [audioSession setPreferredInput:device error:nil];
++                return;
++            }
++        }
++    }
++}
++
++- (void)configureAudioSession:(nonnull AVAudioSession *)audioSession
++              audioMode:(nonnull NSString *)mode
++              categoryOptions: (AVAudioSessionCategoryOptions) categoryOptions
++{
++    // We need to set the mode before set the category, because when setting the node It can automatically change the categories.
++    // This way we can enforce the categories that we want later.
++    [self audioSessionSetMode:mode toSession:audioSession];
++    [self audioSessionSetCategory:AVAudioSessionCategoryPlayAndRecord toSession:audioSession options:categoryOptions];
++}
++
++- (void)audioSessionSetCategory:(NSString *)audioCategory
++                      toSession:(AVAudioSession *)audioSession
++                        options:(AVAudioSessionCategoryOptions)options
++{
++  @try {
++    [audioSession setCategory:audioCategory
++                  withOptions:options
++                        error:nil];
++    NSLog(@"[Daily] audioSession.setCategory: %@, withOptions: %lu success", audioCategory, (unsigned long)options);
++  } @catch (NSException *e) {
++    NSLog(@"[Daily] audioSession.setCategory: %@, withOptions: %lu fail: %@", audioCategory, (unsigned long)options, e.reason);
++  }
++}
++
++- (void)audioSessionSetMode:(NSString *)audioMode
++                  toSession:(AVAudioSession *)audioSession
++{
++  @try {
++    [audioSession setMode:audioMode error:nil];
++    NSLog(@"[Daily] audioSession.setMode(%@) success", audioMode);
++  } @catch (NSException *e) {
++    NSLog(@"[Daily] audioSession.setMode(%@) fail: %@", audioMode, e.reason);
++  }
++}
++
++- (void)devicesChanged:(NSNotification *)notification {
++    // Possible change reasons: AVAudioSessionRouteChangeReasonOldDeviceUnavailable AVAudioSessionRouteChangeReasonNewDeviceAvailable
++    NSInteger changeReason = [[notification.userInfo objectForKey:AVAudioSessionRouteChangeReasonKey] integerValue];
++    NSLog(@"[Daily] devicesChanged %zd", changeReason);
++    
++    // AVAudioSessionRouteDescription *oldRoute = [notification.userInfo objectForKey:AVAudioSessionRouteChangePreviousRouteKey];
++    // NSString *oldOutput = [[oldRoute.outputs objectAtIndex:0] portType];
++    // AVAudioSessionRouteDescription *newRoute = [audioSession currentRoute];
++    // NSString *newOutput = [[newRoute.outputs objectAtIndex:0] portType];
++    
++    [self sendEventWithName:kEventMediaDevicesOnDeviceChange body:@{}];
++}
++
++RCT_EXPORT_METHOD(startMediaDevicesEventMonitor) {
++    NSLog(@"[Daily] startMediaDevicesEventMonitor");
++    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(devicesChanged:) name:AVAudioSessionRouteChangeNotification object:nil];
++}
++
++@end
+diff --git a/ios/RCTWebRTC/WebRTCModule+RTCMediaStream.m b/ios/RCTWebRTC/WebRTCModule+RTCMediaStream.m
+index e0da4cf..9eb04a9 100644
+--- a/ios/RCTWebRTC/WebRTCModule+RTCMediaStream.m
++++ b/ios/RCTWebRTC/WebRTCModule+RTCMediaStream.m
+@@ -274,6 +274,9 @@ - (RTCVideoTrack *)createScreenCaptureVideoTrack {
+ 
+ #pragma mark - Other stream related APIs
+ 
++// Disabling this method, we are implementing that inside of WebRTCModule+DevicesManager to list also the output devices
++// and keep all the logic related with the devices in a single place
++/*
+ RCT_EXPORT_METHOD(enumerateDevices : (RCTResponseSenderBlock)callback) {
+ #if TARGET_OS_TV
+     callback(@[]);
+@@ -334,6 +337,7 @@ - (RTCVideoTrack *)createScreenCaptureVideoTrack {
+     callback(@[ devices ]);
+ #endif
+ }
++*/
+ 
+ RCT_EXPORT_METHOD(mediaStreamCreate : (nonnull NSString *)streamID) {
+     RTCMediaStream *mediaStream = [self.peerConnectionFactory mediaStreamWithStreamId:streamID];
+diff --git a/ios/RCTWebRTC/WebRTCModule.h b/ios/RCTWebRTC/WebRTCModule.h
+index e1f5554..19de75b 100644
+--- a/ios/RCTWebRTC/WebRTCModule.h
++++ b/ios/RCTWebRTC/WebRTCModule.h
+@@ -21,6 +21,7 @@ static NSString *const kEventMediaStreamTrackMuteChanged = @"mediaStreamTrackMut
+ static NSString *const kEventMediaStreamTrackEnded = @"mediaStreamTrackEnded";
+ static NSString *const kEventPeerConnectionOnRemoveTrack = @"peerConnectionOnRemoveTrack";
+ static NSString *const kEventPeerConnectionOnTrack = @"peerConnectionOnTrack";
++static NSString *const kEventMediaDevicesOnDeviceChange = @"mediaDevicesOnDeviceChange";
+ 
+ @interface WebRTCModule : RCTEventEmitter<RCTBridgeModule>
+ 
+diff --git a/ios/RCTWebRTC/WebRTCModule.m b/ios/RCTWebRTC/WebRTCModule.m
+index 93ff750..5cd60db 100644
+--- a/ios/RCTWebRTC/WebRTCModule.m
++++ b/ios/RCTWebRTC/WebRTCModule.m
+@@ -120,7 +120,8 @@ - (dispatch_queue_t)methodQueue {
+         kEventMediaStreamTrackMuteChanged,
+         kEventMediaStreamTrackEnded,
+         kEventPeerConnectionOnRemoveTrack,
+-        kEventPeerConnectionOnTrack
++        kEventPeerConnectionOnTrack,
++        kEventMediaDevicesOnDeviceChange,
+     ];
+ }
+ 
+diff --git a/src/EventEmitter.ts b/src/EventEmitter.ts
+index 48adb14..db02c39 100644
+--- a/src/EventEmitter.ts
++++ b/src/EventEmitter.ts
+@@ -23,6 +23,7 @@ const NATIVE_EVENTS = [
+     'dataChannelDidChangeBufferedAmount',
+     'mediaStreamTrackMuteChanged',
+     'mediaStreamTrackEnded',
++    'mediaDevicesOnDeviceChange',
+ ];
+ 
+ const eventEmitter = new EventEmitter();
+diff --git a/src/MediaDevices.ts b/src/MediaDevices.ts
+index 42920f6..5ce7da3 100644
+--- a/src/MediaDevices.ts
++++ b/src/MediaDevices.ts
+@@ -1,6 +1,7 @@
+ import { EventTarget, Event, defineEventAttribute } from 'event-target-shim';
+ import { NativeModules } from 'react-native';
+ 
++import { addListener } from './EventEmitter';
+ import getDisplayMedia from './getDisplayMedia';
+ import getUserMedia, { Constraints } from './getUserMedia';
+ 
+@@ -11,6 +12,11 @@ type MediaDevicesEventMap = {
+ }
+ 
+ class MediaDevices extends EventTarget<MediaDevicesEventMap> {
++    constructor() {
++        super();
++        this._registerEvents();
++    }
++
+     /**
+      * W3C "Media Capture and Streams" compatible {@code enumerateDevices}
+      * implementation.
+@@ -40,6 +46,16 @@ class MediaDevices extends EventTarget<MediaDevicesEventMap> {
+     getUserMedia(constraints: Constraints) {
+         return getUserMedia(constraints);
+     }
++
++    _registerEvents(): void {
++        console.log('MediaDevices _registerEvents invoked');
++        WebRTCModule.startMediaDevicesEventMonitor();
++        addListener(this,'mediaDevicesOnDeviceChange', () => {
++            console.log('MediaDevices => mediaDevicesOnDeviceChange');
++            // @ts-ignore
++            this.dispatchEvent(new Event('devicechange'));
++        });
++    }
+ }
+ 
+ /**
+diff --git a/src/index.ts b/src/index.ts
+index fad7c69..616852c 100644
+--- a/src/index.ts
++++ b/src/index.ts
+@@ -71,6 +71,13 @@ function registerGlobals(): void {
+     global.navigator.mediaDevices.getUserMedia = mediaDevices.getUserMedia.bind(mediaDevices);
+     global.navigator.mediaDevices.getDisplayMedia = mediaDevices.getDisplayMedia.bind(mediaDevices);
+     global.navigator.mediaDevices.enumerateDevices = mediaDevices.enumerateDevices.bind(mediaDevices);
++    global.navigator.mediaDevices.addEventListener = mediaDevices.addEventListener.bind(mediaDevices);
++    global.navigator.mediaDevices.removeEventListener = mediaDevices.removeEventListener.bind(mediaDevices);
++    mediaDevices.addEventListener('devicechange', () => {
++        if (global.navigator.mediaDevices.ondevicechange) {
++            global.navigator.mediaDevices.ondevicechange();
++        }
++    });
+ 
+     global.RTCIceCandidate = RTCIceCandidate;
+     global.RTCPeerConnection = RTCPeerConnection;

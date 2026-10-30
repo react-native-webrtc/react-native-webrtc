@@ -1,0 +1,287 @@
+{
+  "$comment": "Daily changes on top of upstream react-native-webrtc. Patches are generated with `git format-patch` from the daily/<baseTag> branch (one commit per patch) and applied in order with `git am -3`.",
+  "upstream": {
+    "repo": "react-native-webrtc/react-native-webrtc",
+    "baseTag": "124.0.6"
+  },
+  "forkVersion": "124.0.6-daily.2",
+  "patchBranch": "daily/124.0.6",
+  "regenerate": [
+    {
+      "file": "package-lock.json",
+      "command": "npm install",
+      "reason": "Lockfile diffs conflict on every upgrade; regenerate after applying patches."
+    }
+  ],
+  "repoOnly": {
+    "$comment": "Fork tooling that lives only in this repo, is never part of a patch, and is ignored when comparing patched upstream with main.",
+    "paths": [".claude/", "scripts/daily-patches/"]
+  },
+  "patches": [
+    {
+      "id": "fork-packaging",
+      "file": "patches/0001-fork-packaging.patch",
+      "title": "Publish as @daily-co/react-native-webrtc",
+      "platforms": ["js", "ios"],
+      "category": "fork",
+      "reason": "Package identity of the Daily fork: npm name/version/repo, nativePackage flag, tag/prepublishOnly scripts, CocoaPods name kept as react-native-webrtc, Daily-only README, ignore files.",
+      "origin": ["daily-co/react-native-webrtc#34"],
+      "upstreamable": false,
+      "upstreamPR": null,
+      "obsoleteWhen": null,
+      "files": [
+        ".gitignore",
+        ".npmignore",
+        "README.md",
+        "package.json",
+        "react-native-webrtc.podspec",
+        "scripts/tag"
+      ],
+      "verify": "npm pack produces daily-co-react-native-webrtc-<version>.tgz; pod install resolves the 'react-native-webrtc' pod.",
+      "notes": "Bump package.json version (<upstream>-daily.N) on every release.",
+      "lastVerified": {
+        "tag": "124.0.6",
+        "result": "clean"
+      }
+    },
+    {
+      "id": "toolchain-bump",
+      "file": "patches/0002-toolchain-bump.patch",
+      "title": "Update TypeScript, builder-bob and React typings",
+      "platforms": ["js"],
+      "category": "build",
+      "reason": "Build with typescript 5.8, react-native-builder-bob 0.39 and @types/react 19; tsconfig 'types' restricted to avoid @types/node conflicts; RTCPIPView fallbackView typed as React.ReactNode (required by @types/react 19).",
+      "origin": ["6c5b489", "c031c19"],
+      "upstreamable": true,
+      "upstreamPR": null,
+      "obsoleteWhen": "Upstream devDependencies are at or above these versions and RTCPIPView uses React.ReactNode. Drop or trim the version lines that upstream already matches.",
+      "files": ["package.json", "src/RTCPIPView.tsx", "tsconfig.json"],
+      "verify": "npm run lint (eslint + tsc --noEmit) and npm run prepare succeed.",
+      "lastVerified": {
+        "tag": "124.0.6",
+        "result": "clean"
+      }
+    },
+    {
+      "id": "event-target-shim-imports",
+      "file": "patches/0003-event-target-shim-imports.patch",
+      "title": "Import from 'event-target-shim' package root",
+      "platforms": ["js"],
+      "category": "build",
+      "reason": "'event-target-shim/index' fails to resolve with newer Metro/TypeScript module resolution.",
+      "origin": ["d35f606"],
+      "upstreamable": true,
+      "upstreamPR": null,
+      "obsoleteWhen": "Upstream src/*.ts no longer import from 'event-target-shim/index'.",
+      "files": [
+        "src/MediaDevices.ts",
+        "src/MediaStream.ts",
+        "src/MediaStreamTrack.ts",
+        "src/MediaStreamTrackEvent.ts",
+        "src/MessageEvent.ts",
+        "src/RTCDataChannel.ts",
+        "src/RTCDataChannelEvent.ts",
+        "src/RTCErrorEvent.ts",
+        "src/RTCIceCandidateEvent.ts",
+        "src/RTCPeerConnection.ts",
+        "src/RTCTrackEvent.ts"
+      ],
+      "verify": "grep -r \"event-target-shim/index\" src returns nothing; app bundles with Metro.",
+      "notes": "If upstream adds new files importing 'event-target-shim/index', extend this patch.",
+      "lastVerified": {
+        "tag": "124.0.6",
+        "result": "clean"
+      }
+    },
+    {
+      "id": "daily-type-definitions",
+      "file": "patches/0004-daily-type-definitions.patch",
+      "title": "Ship root index.d.ts with Daily types",
+      "platforms": ["js"],
+      "category": "types",
+      "reason": "react-native-daily-js relies on RTCViewProps, MediaTrackConstraints (mandatory/optional), MediaDeviceInfo and MediaDeviceKind; package.json 'types' points to ./index.d.ts.",
+      "origin": [
+        "daily-co/react-native-webrtc#19",
+        "daily-co/react-native-webrtc#42",
+        "6cbb93e"
+      ],
+      "upstreamable": false,
+      "upstreamPR": null,
+      "obsoleteWhen": null,
+      "files": ["index.d.ts", "package.json"],
+      "verify": "Re-exports in index.d.ts match the exports of upstream src/index.ts (add any new upstream export); react-native-daily-js type-checks against the package.",
+      "lastVerified": {
+        "tag": "124.0.6",
+        "result": "clean"
+      }
+    },
+    {
+      "id": "camera-switch-facing-mode",
+      "file": "patches/0005-camera-switch-facing-mode.patch",
+      "title": "Native switchCamera and camera facing mode getter",
+      "platforms": ["android", "ios", "js"],
+      "category": "feature",
+      "reason": "MediaStreamTrack._switchCamera() calls native mediaStreamTrackSwitchCamera and resolves the new facing mode; adds _getCameraFacingMode(). Android remembers the chosen facing mode while the camera is stopped (video muted) and handles devices with more than two cameras (Samsung).",
+      "origin": [
+        "daily-co/react-native-webrtc#10",
+        "daily-co/react-native-webrtc#31",
+        "daily-co/react-native-webrtc#32"
+      ],
+      "upstreamable": false,
+      "upstreamPR": null,
+      "obsoleteWhen": "Upstream switchCamera returns the resulting facing mode, works while the track is muted, and handles more than two cameras.",
+      "files": [
+        "android/src/main/java/com/oney/WebRTCModule/CameraCaptureController.java",
+        "android/src/main/java/com/oney/WebRTCModule/GetUserMediaImpl.java",
+        "android/src/main/java/com/oney/WebRTCModule/WebRTCModule.java",
+        "ios/RCTWebRTC/VideoCaptureController.h",
+        "ios/RCTWebRTC/VideoCaptureController.m",
+        "ios/RCTWebRTC/WebRTCModule+RTCMediaStream.m",
+        "src/MediaStreamTrack.ts"
+      ],
+      "verify": "Switch camera with video on and with video muted (then unmute); on a Samsung device with 3+ cameras; facing mode reported correctly on both platforms.",
+      "notes": "Replaces upstream's constraints-based _switchCamera. Upstream changes to CameraCaptureController / VideoCaptureController are the usual conflict source.",
+      "lastVerified": {
+        "tag": "124.0.6",
+        "result": "clean"
+      }
+    },
+    {
+      "id": "devices-manager-devicechange",
+      "file": "patches/0006-devices-manager-devicechange.patch",
+      "title": "Audio output routing and devicechange events",
+      "platforms": ["android", "ios", "js"],
+      "category": "feature",
+      "reason": "Daily devices manager replaces upstream enumerateDevices (also lists audio outputs: earpiece/wired, speaker, bluetooth) and adds setAudioDevice, getAudioDevice, startMediaDevicesEventMonitor and the mediaDevicesOnDeviceChange event wired to mediaDevices 'devicechange' / navigator.mediaDevices.ondevicechange. Includes the iOS DailyAudioMode state category that the devices manager depends on.",
+      "origin": [
+        "daily-co/react-native-webrtc#21",
+        "daily-co/react-native-webrtc#25",
+        "daily-co/react-native-webrtc#30"
+      ],
+      "upstreamable": false,
+      "upstreamPR": null,
+      "obsoleteWhen": null,
+      "files": [
+        "android/src/main/java/com/oney/WebRTCModule/DailyWebRTCDevicesManager.java",
+        "android/src/main/java/com/oney/WebRTCModule/WebRTCModule.java",
+        "ios/RCTWebRTC/WebRTCModule+DailyAudioMode.h",
+        "ios/RCTWebRTC/WebRTCModule+DailyAudioMode.m",
+        "ios/RCTWebRTC/WebRTCModule+DailyDevicesManager.h",
+        "ios/RCTWebRTC/WebRTCModule+DailyDevicesManager.m",
+        "ios/RCTWebRTC/WebRTCModule+RTCMediaStream.m",
+        "ios/RCTWebRTC/WebRTCModule.h",
+        "ios/RCTWebRTC/WebRTCModule.m",
+        "src/EventEmitter.ts",
+        "src/MediaDevices.ts",
+        "src/index.ts"
+      ],
+      "verify": "enumerateDevices lists cameras, mics and audio outputs; switching speaker/earpiece/bluetooth works; plugging/unplugging a headset fires devicechange.",
+      "notes": "Highest conflict risk: upstream enumerateDevices is bypassed (Android) / commented out (iOS). Review upstream changes to enumerateDevices and port them into the Daily devices manager. MediaDevices._registerEvents still has debug console.log calls.",
+      "lastVerified": {
+        "tag": "124.0.6",
+        "result": "clean"
+      }
+    },
+    {
+      "id": "daily-audio-mode",
+      "file": "patches/0007-daily-audio-mode.patch",
+      "title": "setDailyAudioMode and iOS background keep-alive",
+      "platforms": ["android", "ios"],
+      "category": "feature",
+      "reason": "setDailyAudioMode(video|voice|idle) manages audio focus and default route (Android DailyAudioManager) or the AVAudioSession category/mode, re-applied when the session reactivates (iOS). setAudioDevice switches to the user-specified route. iOS also exports enableNoOpRecordingEnsuringBackgroundContinuity to keep the app alive in the background.",
+      "origin": [
+        "daily-co/react-native-webrtc#13",
+        "daily-co/react-native-webrtc#16",
+        "daily-co/react-native-webrtc#28",
+        "daily-co/react-native-webrtc#38"
+      ],
+      "upstreamable": false,
+      "upstreamPR": null,
+      "obsoleteWhen": null,
+      "files": [
+        "android/src/main/java/com/oney/WebRTCModule/DailyAudioManager.java",
+        "android/src/main/java/com/oney/WebRTCModule/WebRTCModule.java",
+        "ios/RCTWebRTC/WebRTCModule+Daily.m"
+      ],
+      "verify": "Video call defaults to speaker, voice call to earpiece; mode survives Wi-Fi to LTE switch on iOS; app stays alive in background after joining with cam+mic off (iOS).",
+      "notes": "Depends on devices-manager-devicechange.",
+      "lastVerified": {
+        "tag": "124.0.6",
+        "result": "clean"
+      }
+    },
+    {
+      "id": "android-screenshare-fgs",
+      "file": "patches/0008-android-screenshare-fgs.patch",
+      "title": "Wait for MediaProjectionService before screen capture",
+      "platforms": ["android"],
+      "category": "bugfix",
+      "reason": "Enables the media projection foreground service by default and waits (up to 5s) for startForeground before creating the screen stream; getDisplayMedia rejects with AbortError otherwise. Fixes a SecurityException race on Android 14+.",
+      "origin": ["b221515", "daily-co/react-native-webrtc#48"],
+      "upstreamable": true,
+      "upstreamPR": null,
+      "obsoleteWhen": "Upstream MediaProjectionService.launch waits for the service to be in the foreground before createScreenStream (and the service is enabled by default or Daily enables it from the app side).",
+      "files": [
+        "android/src/main/java/com/oney/WebRTCModule/GetUserMediaImpl.java",
+        "android/src/main/java/com/oney/WebRTCModule/MediaProjectionService.java",
+        "android/src/main/java/com/oney/WebRTCModule/WebRTCModule.java"
+      ],
+      "verify": "Start screen share right after joining on Android 14+; repeat start/stop several times.",
+      "lastVerified": {
+        "tag": "124.0.6",
+        "result": "clean"
+      }
+    },
+    {
+      "id": "misc-logging",
+      "file": "patches/0009-misc-logging.patch",
+      "title": "Log capture start failures, silence missing-track warning",
+      "platforms": ["android", "ios"],
+      "category": "bugfix",
+      "reason": "Android logs startCapture RuntimeExceptions instead of swallowing them; iOS no longer emits a yellow-box warning when a stream has no video track yet.",
+      "origin": [],
+      "upstreamable": true,
+      "upstreamPR": null,
+      "obsoleteWhen": "Upstream logs startCapture failures and no longer warns on streams without video.",
+      "files": [
+        "android/src/main/java/com/oney/WebRTCModule/AbstractVideoCaptureController.java",
+        "ios/RCTWebRTC/RTCVideoViewManager.m"
+      ],
+      "verify": "None beyond a build.",
+      "lastVerified": {
+        "tag": "124.0.6",
+        "result": "clean"
+      }
+    },
+    {
+      "id": "daily-selftest-app",
+      "file": "patches/0010-daily-selftest-app.patch",
+      "title": "Add examples/DailySelfTest",
+      "platforms": ["android", "ios"],
+      "category": "test",
+      "reason": "Minimal Expo app that checks the Daily-specific features on a device or emulator (the other patches' APIs), and scripts/run-selftest.sh, which fails unless every check passes. Run it with the daily-selftest skill.",
+      "origin": [],
+      "upstreamable": false,
+      "upstreamPR": null,
+      "obsoleteWhen": null,
+      "files": [
+        "examples/DailySelfTest/.gitignore",
+        "examples/DailySelfTest/README.md",
+        "examples/DailySelfTest/app.json",
+        "examples/DailySelfTest/index.js",
+        "examples/DailySelfTest/package.json",
+        "examples/DailySelfTest/scripts/install-local.sh",
+        "examples/DailySelfTest/scripts/run-selftest.sh",
+        "examples/DailySelfTest/src/App.tsx",
+        "examples/DailySelfTest/src/selfTest.ts",
+        "examples/DailySelfTest/tsconfig.json"
+      ],
+      "verify": "cd examples/DailySelfTest && npm run install-local && npx expo prebuild --no-install && npm run android && npm test -- android: SELFTEST DONE failed=0.",
+      "notes": "Its expo/react/react-native versions may need a bump when upstream requires a newer React Native. Add a check to src/selfTest.ts whenever a patch adds a Daily-facing API.",
+      "lastVerified": {
+        "tag": "124.0.6",
+        "result": "clean"
+      }
+    }
+  ]
+}
