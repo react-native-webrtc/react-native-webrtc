@@ -1,0 +1,26 @@
+{
+  "expo": {
+    "name": "DailySelfTest",
+    "slug": "DailySelfTest",
+    "version": "1.0.0",
+    "newArchEnabled": true,
+    "ios": {
+      "bundleIdentifier": "co.daily.selftest",
+      "infoPlist": {
+        "NSCameraUsageDescription": "Camera access is needed to test camera switching.",
+        "NSMicrophoneUsageDescription": "Microphone access is needed to test audio routing."
+      }
+    },
+    "android": {
+      "package": "co.daily.selftest",
+      "permissions": [
+        "android.permission.CAMERA",
+        "android.permission.RECORD_AUDIO",
+        "android.permission.MODIFY_AUDIO_SETTINGS",
+        "android.permission.FOREGROUND_SERVICE",
+        "android.permission.FOREGROUND_SERVICE_MEDIA_PROJECTION",
+        "android.permission.POST_NOTIFICATIONS"
+      ]
+    }
+  }
+}

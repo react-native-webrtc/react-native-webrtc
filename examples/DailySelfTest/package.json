@@ -1,0 +1,23 @@
+{
+  "name": "daily-selftest",
+  "version": "1.0.0",
+  "private": true,
+  "main": "index.js",
+  "scripts": {
+    "install-local": "./scripts/install-local.sh",
+    "android": "expo run:android --variant release --no-bundler",
+    "ios": "expo run:ios --configuration Release --no-bundler",
+    "test": "./scripts/run-selftest.sh",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@daily-co/react-native-webrtc": "file:.local/react-native-webrtc.tgz",
+    "expo": "~57.0.30",
+    "react": "19.2.3",
+    "react-native": "0.86.3"
+  },
+  "devDependencies": {
+    "@types/react": "~19.2.14",
+    "typescript": "~6.0.3"
+  }
+}
