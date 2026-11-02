@@ -217,7 +217,7 @@ What it changes, against libwebrtc's call audio:
 | | iOS | Android |
 | --- | --- | --- |
 | Playback | RemoteIO under `.playback`, instead of VoiceProcessingIO, the phone-call unit: full-band sound at media volume, and no microphone indicator while watching | `USAGE_MEDIA`, in stereo, instead of `USAGE_VOICE_COMMUNICATION`, band-limited on the call volume |
-| Leveller | In software on the playout path, with metering | The platform's DynamicsProcessing effect on WebRTC's track, LoudnessEnhancer below Android 9 |
+| Leveller | In software on the playout path, with metering | The platform's DynamicsProcessing effect on WebRTC's track, LoudnessEnhancer below Android 9. On Android 9 to 11 only DynamicsProcessing's first engine layout is tried, and a build that refuses it gets LoudnessEnhancer: there a refused layout's effect lingers on the session, and a second try made the app abort |
 | Playout delay | Audio held back in step with the video from the first frame | Opt-in; see [Limitations](#limitations) |
 | Playout buffer | | Twice the platform minimum, so a late audio thread does not crackle |
 | Other apps | The session is not mixable: music in another app pauses, as for a video | Takes audio focus; mutes for a call |

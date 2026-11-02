@@ -354,11 +354,21 @@ final class LivestreamAudio {
      * Implementations differ on what DynamicsProcessing's engine accepts: some want unused stages
      * declared with zero bands, some reject a zero-band stage, and not every build takes both
      * resolution variants. So each layout is tried until one is accepted.
+     *
+     * <p>Before Android 12 only the first layout is tried. A rejected layout has already attached
+     * its effect to the session, and nothing can release it until the garbage collector finalizes
+     * it; every further try adds another handle on the same effect, whose control changes are
+     * called back on a binder thread. Android 10 and 11 can make that callback into a handle being
+     * released and abort (SIGABRT in libaudioeffect_jni: 5 crashes in a month, all on Android 10
+     * and 11, none on 12 or later). A build that rejects the first layout gets the
+     * LoudnessEnhancer, a different effect, so no two handles share one.
      */
     @Nullable
     private AudioEffect attachLeveller(int sessionId) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-            for (int[] layout : LAYOUTS) {
+            int tries = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S ? LAYOUTS.length : 1;
+            for (int i = 0; i < tries; i++) {
+                int[] layout = LAYOUTS[i];
                 try {
                     AudioEffect dynamics = dynamicsProcessing(sessionId, layout[0], layout[1]);
                     Log.i(TAG, "leveller on session " + sessionId + ": DynamicsProcessing " + describe(layout));
