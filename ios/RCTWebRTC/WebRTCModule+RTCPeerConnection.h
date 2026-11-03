@@ -21,4 +21,6 @@
 - (nullable LKRTCRtpTransceiver *)getTransceiverByPeerConnectionId:(nonnull NSNumber *)peerConnectionId
                                                      transceiverId:(nonnull NSString *)transceiverId;
 
++ (LKRTCCertificate *)getCertificate:(NSString *)certId;
+
 @end

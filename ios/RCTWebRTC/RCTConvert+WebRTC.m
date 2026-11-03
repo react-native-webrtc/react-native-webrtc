@@ -1,8 +1,11 @@
+#import <LiveKitWebRTC/RTCCertificate.h>
 #import <LiveKitWebRTC/RTCDataChannelConfiguration.h>
 #import <LiveKitWebRTC/RTCIceServer.h>
 #import <LiveKitWebRTC/RTCSessionDescription.h>
 #import <React/RCTLog.h>
 #import "RCTConvert+WebRTC.h"
+
+#import "WebRTCModule+RTCPeerConnection.h"
 
 @implementation RCTConvert (WebRTC)
 
@@ -177,6 +180,22 @@
             config.tcpCandidatePolicy = LKRTCTcpCandidatePolicyEnabled;
         } else if ([tcpCandidatePolicy isEqualToString:@"disabled"]) {
             config.tcpCandidatePolicy = LKRTCTcpCandidatePolicyDisabled;
+        }
+    }
+
+    if (json[@"certificates"] != nil && [json[@"certificates"] isKindOfClass:[NSArray class]]) {
+        NSArray *certs = json[@"certificates"];
+        if (certs.count > 0) {
+            id certInfo = certs[0];
+            if ([certInfo isKindOfClass:[NSDictionary class]]) {
+                NSString *certId = certInfo[@"certificateId"];
+                if (certId) {
+                    LKRTCCertificate *cert = [WebRTCModule getCertificate:certId];
+                    if (cert) {
+                        config.certificate = cert;
+                    }
+                }
+            }
         }
     }
 
