@@ -511,22 +511,30 @@ public class WebRTCModule extends ReactContextBaseJavaModule {
         return getUserMediaImpl.getTrack(trackId);
     }
 
+    // Public entry points for other native modules: localStreams and the track map are only safe on the executor.
     public VideoTrack createVideoTrack(AbstractVideoCaptureController videoCaptureController) {
-        return getUserMediaImpl.createVideoTrack(videoCaptureController);
+        try {
+            return ThreadUtils
+                    .submitToExecutor((Callable<VideoTrack>) () -> getUserMediaImpl.createVideoTrack(videoCaptureController))
+                    .get();
+        } catch (InterruptedException | ExecutionException e) {
+            Log.d(TAG, "createVideoTrack() " + e.getMessage());
+            return null;
+        }
     }
 
     public void registerTrack(AudioTrack track, AudioSource source) {
-        getUserMediaImpl.registerTrack(track, source);
+        ThreadUtils.runOnExecutor(() -> getUserMediaImpl.registerTrack(track, source));
     }
 
     public void registerTrack(VideoTrack track, VideoSource source, AbstractVideoCaptureController controller,
             SurfaceTextureHelper surfaceTextureHelper) {
-        getUserMediaImpl.registerTrack(track, source, controller, surfaceTextureHelper);
+        ThreadUtils.runOnExecutor(() -> getUserMediaImpl.registerTrack(track, source, controller, surfaceTextureHelper));
     }
 
     public void createStream(
             MediaStreamTrack[] tracks, GetUserMediaImpl.BiConsumer<String, ArrayList<WritableMap>> successCallback) {
-        getUserMediaImpl.createStream(tracks, successCallback);
+        ThreadUtils.runOnExecutor(() -> getUserMediaImpl.createStream(tracks, successCallback));
     }
 
     /**

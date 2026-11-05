@@ -7,3 +7,4 @@ android/build/
 *.tgz
 *.zip
 .github
+tmp/
