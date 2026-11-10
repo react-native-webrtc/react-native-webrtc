@@ -24,6 +24,8 @@ import org.webrtc.RendererCommon;
 import org.webrtc.RendererCommon.RendererEvents;
 import org.webrtc.RendererCommon.ScalingType;
 import org.webrtc.SurfaceViewRenderer;
+import org.webrtc.VideoFrame;
+import org.webrtc.VideoSink;
 import org.webrtc.VideoTrack;
 
 import java.lang.reflect.InvocationTargetException;
@@ -137,6 +139,40 @@ public class WebRTCView extends ViewGroup {
      * {@code WebRTCView}. The value of {@link #videoTrack} is derived from it.
      */
     private String streamURL;
+
+    /**
+     * The URL most recently passed to {@link #setStreamURL(String)}. The track
+     * lookup is asynchronous, so a callback for an older URL must be ignored.
+     */
+    private String requestedStreamURL;
+
+    /**
+     * The sink currently added to {@link #videoTrack}. It forwards frames to
+     * {@link #surfaceViewRenderer} only while it is open, and it is closed on
+     * the UI thread as soon as the track is let go, so frames of a previous
+     * track are never drawn even if the asynchronous removeSink runs late.
+     */
+    private TrackSink trackSink;
+
+    private final class TrackSink implements VideoSink {
+        final VideoTrack track;
+        private boolean open = true;
+
+        TrackSink(VideoTrack track) {
+            this.track = track;
+        }
+
+        @Override
+        public synchronized void onFrame(VideoFrame frame) {
+            if (open) {
+                surfaceViewRenderer.onFrame(frame);
+            }
+        }
+
+        synchronized void close() {
+            open = false;
+        }
+    }
 
     /**
      * The {@link View} and {@link VideoSink} implementation which
@@ -375,10 +411,15 @@ public class WebRTCView extends ViewGroup {
      */
     private void removeRendererFromVideoTrack() {
         if (rendererAttached) {
-            if (videoTrack != null) {
+            // Capture the sink now: by the time the executor runs, the
+            // videoTrack field may already be null or the next track.
+            final TrackSink sink = trackSink;
+            trackSink = null;
+            if (sink != null) {
+                sink.close();
                 ThreadUtils.runOnExecutor(() -> {
                     try {
-                        videoTrack.removeSink(surfaceViewRenderer);
+                        sink.track.removeSink(sink);
                     } catch (Throwable tr) {
                         // XXX If WebRTCModule#mediaStreamTrackRelease has already been
                         // invoked on videoTrack, then it is no longer safe to call removeSink
@@ -478,9 +519,12 @@ public class WebRTCView extends ViewGroup {
      */
     void setStreamURL(String streamURL) {
         Log.d(TAG, "Set stream URL " + streamURL + " current: " + this.streamURL);
-        if (Objects.equals(streamURL, this.streamURL)) {
+        // Compare with the last requested URL, not the applied one, which is
+        // only updated once the asynchronous lookup below completes.
+        if (Objects.equals(streamURL, this.requestedStreamURL)) {
             return;
         }
+        this.requestedStreamURL = streamURL;
 
         // The value of this.streamURL is really changing. Before
         // realizing/applying the change, let go of the old videoTrack. Of
@@ -494,6 +538,10 @@ public class WebRTCView extends ViewGroup {
         // videoTrack is disposed.
         getVideoTrackForStreamURL(streamURL, videoTrack -> {
             Log.d(TAG, "Got video track for stream URL " + streamURL + " -> " + videoTrack);
+            if (!Objects.equals(streamURL, this.requestedStreamURL)) {
+                // A newer setStreamURL call superseded this one.
+                return;
+            }
             if (this.videoTrack != videoTrack) {
                 setVideoTrack(null);
             }
@@ -584,9 +632,13 @@ public class WebRTCView extends ViewGroup {
                 return;
             }
 
+            // Add a sink for exactly this track; the videoTrack field may
+            // already hold another track when the executor runs.
+            final TrackSink sink = new TrackSink(videoTrack);
+            trackSink = sink;
             ThreadUtils.runOnExecutor(() -> {
                 try {
-                    videoTrack.addSink(surfaceViewRenderer);
+                    sink.track.addSink(sink);
                 } catch (Throwable tr) {
                     // XXX If WebRTCModule#mediaStreamTrackRelease has already been
                     // invoked on videoTrack, then it is no longer safe to call addSink
