@@ -24,6 +24,8 @@ import org.webrtc.RendererCommon;
 import org.webrtc.RendererCommon.RendererEvents;
 import org.webrtc.RendererCommon.ScalingType;
 import org.webrtc.SurfaceViewRenderer;
+import org.webrtc.VideoFrame;
+import org.webrtc.VideoSink;
 import org.webrtc.VideoTrack;
 
 import java.lang.reflect.InvocationTargetException;
@@ -139,8 +141,43 @@ public class WebRTCView extends ViewGroup {
     private String streamURL;
 
     /**
-     * The {@link View} and {@link VideoSink} implementation which
-     * actually renders {@link #videoTrack} on behalf of this instance.
+     * The URL most recently passed to {@link #setStreamURL(String)}. The track
+     * lookup is asynchronous, so a callback for an older URL must be ignored.
+     */
+    private String requestedStreamURL;
+
+    /**
+     * The sink currently added to {@link #videoTrack}. It forwards frames to
+     * {@link #surfaceViewRenderer} only while it is open, and it is closed on
+     * the UI thread as soon as the track is let go, so frames of a previous
+     * track are never drawn even if the asynchronous removeSink runs late.
+     */
+    private TrackSink trackSink;
+
+    private final class TrackSink implements VideoSink {
+        final VideoTrack track;
+        private boolean open = true;
+
+        TrackSink(VideoTrack track) {
+            this.track = track;
+        }
+
+        @Override
+        public synchronized void onFrame(VideoFrame frame) {
+            if (open) {
+                surfaceViewRenderer.onFrame(frame);
+            }
+        }
+
+        synchronized void close() {
+            open = false;
+        }
+    }
+
+    /**
+     * The {@link View} which actually renders {@link #videoTrack} on behalf of
+     * this instance. It is not added to the track directly: frames reach it
+     * through the {@link TrackSink} in {@link #trackSink}.
      */
     private final SurfaceViewRenderer surfaceViewRenderer;
 
@@ -375,14 +412,22 @@ public class WebRTCView extends ViewGroup {
      */
     private void removeRendererFromVideoTrack() {
         if (rendererAttached) {
-            if (videoTrack != null) {
+            // Capture the sink now: by the time the executor runs, the
+            // videoTrack field may already be null or the next track.
+            final TrackSink sink = trackSink;
+            trackSink = null;
+            if (sink != null) {
+                sink.close();
                 ThreadUtils.runOnExecutor(() -> {
                     try {
-                        videoTrack.removeSink(surfaceViewRenderer);
-                    } catch (Throwable tr) {
+                        sink.track.removeSink(sink);
+                    } catch (IllegalStateException e) {
                         // XXX If WebRTCModule#mediaStreamTrackRelease has already been
-                        // invoked on videoTrack, then it is no longer safe to call removeSink
-                        // on the instance, it will throw IllegalStateException.
+                        // invoked on the track this sink was added to, then the track is
+                        // disposed and removeSink throws IllegalStateException. That is
+                        // expected and there is nothing left to remove.
+                    } catch (Throwable tr) {
+                        Log.w(TAG, "Failed to remove renderer", tr);
                     }
                 });
             }
@@ -477,23 +522,30 @@ public class WebRTCView extends ViewGroup {
      * this {@code WebRTCView} or {@code null}.
      */
     void setStreamURL(String streamURL) {
-        Log.d(TAG, "Set stream URL " + streamURL + " current: " + this.streamURL);
-        if (Objects.equals(streamURL, this.streamURL)) {
+        Log.d(TAG,
+                "Set stream URL " + streamURL + " requested: " + this.requestedStreamURL
+                        + " applied: " + this.streamURL);
+        // Compare with the last requested URL, not the applied one, which is
+        // only updated once the asynchronous lookup below completes.
+        if (Objects.equals(streamURL, this.requestedStreamURL)) {
             return;
         }
+        this.requestedStreamURL = streamURL;
 
-        // The value of this.streamURL is really changing. Before
-        // realizing/applying the change, let go of the old videoTrack. Of
-        // course, that is only necessary if the value of videoTrack will
-        // really change. Please note though that letting go of the old
-        // videoTrack before assigning to this.streamURL is vital;
-        // otherwise, removeRendererFromVideoTrack will fail to remove the
-        // old videoTrack from the associated videoRenderer, two
-        // VideoTracks (the old and the new) may start rendering and, most
-        // importantly the videoRender may eventually crash when the old
-        // videoTrack is disposed.
+        // The value of this.streamURL is really changing. Look up the new
+        // videoTrack asynchronously and, once the lookup completes, let go of
+        // the old videoTrack (only if the track really changes) and render
+        // the new one. removeRendererFromVideoTrack removes exactly the
+        // TrackSink that was added to the old videoTrack and closes it right
+        // away, so the old track's frames are not drawn after the switch even
+        // if the asynchronous removeSink runs late.
         getVideoTrackForStreamURL(streamURL, videoTrack -> {
             Log.d(TAG, "Got video track for stream URL " + streamURL + " -> " + videoTrack);
+            if (!Objects.equals(streamURL, this.requestedStreamURL)) {
+                // A newer setStreamURL call superseded this one.
+                Log.d(TAG, "Ignoring stale track lookup for " + streamURL + ", requested: " + requestedStreamURL);
+                return;
+            }
             if (this.videoTrack != videoTrack) {
                 setVideoTrack(null);
             }
@@ -584,15 +636,20 @@ public class WebRTCView extends ViewGroup {
                 return;
             }
 
+            // Add a sink for exactly this track; the videoTrack field may
+            // already hold another track when the executor runs.
+            final TrackSink sink = new TrackSink(videoTrack);
+            trackSink = sink;
             ThreadUtils.runOnExecutor(() -> {
                 try {
-                    videoTrack.addSink(surfaceViewRenderer);
-                } catch (Throwable tr) {
+                    sink.track.addSink(sink);
+                } catch (IllegalStateException e) {
                     // XXX If WebRTCModule#mediaStreamTrackRelease has already been
-                    // invoked on videoTrack, then it is no longer safe to call addSink
-                    // on the instance, it will throw IllegalStateException.
-
-                    Log.e(TAG, "Failed to add renderer", tr);
+                    // invoked on the track this sink is for, then the track is
+                    // disposed and addSink throws IllegalStateException. That is
+                    // expected: the track is gone, so there is nothing to render.
+                } catch (Throwable tr) {
+                    Log.w(TAG, "Failed to add renderer", tr);
                 }
             });
 
