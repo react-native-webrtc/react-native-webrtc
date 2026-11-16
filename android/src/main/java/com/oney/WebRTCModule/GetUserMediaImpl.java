@@ -466,38 +466,88 @@ class GetUserMediaImpl {
     }
 
     VideoTrack createVideoTrack(AbstractVideoCaptureController videoCaptureController) {
-        videoCaptureController.initializeVideoCapturer();
+        SurfaceTextureHelper surfaceTextureHelper = null;
+        VideoSource videoSource = null;
+        VideoTrack track = null;
+        boolean captureStarted = false;
 
-        VideoCapturer videoCapturer = videoCaptureController.videoCapturer;
-        if (videoCapturer == null) {
-            return null;
+        try {
+            videoCaptureController.initializeVideoCapturer();
+
+            VideoCapturer videoCapturer = videoCaptureController.videoCapturer;
+            if (videoCapturer == null) {
+                videoCaptureController.dispose();
+                return null;
+            }
+
+            PeerConnectionFactory pcFactory = webRTCModule.mFactory;
+            EglBase.Context eglContext = EglUtils.getRootEglBaseContext();
+            surfaceTextureHelper = SurfaceTextureHelper.create("CaptureThread", eglContext);
+
+            if (surfaceTextureHelper == null) {
+                Log.d(TAG, "Error creating SurfaceTextureHelper");
+                videoCaptureController.dispose();
+                return null;
+            }
+
+            String id = UUID.randomUUID().toString();
+
+            TrackCapturerEventsEmitter eventsEmitter = new TrackCapturerEventsEmitter(webRTCModule, id);
+            videoCaptureController.setCapturerEventsListener(eventsEmitter);
+
+            videoSource = pcFactory.createVideoSource(videoCapturer.isScreencast());
+            videoCapturer.initialize(surfaceTextureHelper, reactContext, videoSource.getCapturerObserver());
+
+            track = pcFactory.createVideoTrack(id, videoSource);
+            track.setEnabled(true);
+
+            videoCaptureController.startCapture();
+            captureStarted = true;
+
+            tracks.put(id, new TrackPrivate(track, videoSource, videoCaptureController, surfaceTextureHelper));
+            return track;
+        } catch (RuntimeException | Error error) {
+            if (captureStarted) {
+                try {
+                    videoCaptureController.stopCapture();
+                } catch (RuntimeException cleanupError) {
+                    error.addSuppressed(cleanupError);
+                }
+            }
+
+            if (videoSource != null) {
+                try {
+                    videoSource.dispose();
+                } catch (RuntimeException cleanupError) {
+                    error.addSuppressed(cleanupError);
+                }
+            }
+
+            if (track != null) {
+                try {
+                    track.dispose();
+                } catch (RuntimeException cleanupError) {
+                    error.addSuppressed(cleanupError);
+                }
+            }
+
+            if (surfaceTextureHelper != null) {
+                try {
+                    surfaceTextureHelper.stopListening();
+                    surfaceTextureHelper.dispose();
+                } catch (RuntimeException cleanupError) {
+                    error.addSuppressed(cleanupError);
+                }
+            }
+
+            try {
+                videoCaptureController.dispose();
+            } catch (RuntimeException cleanupError) {
+                error.addSuppressed(cleanupError);
+            }
+
+            throw error;
         }
-
-        PeerConnectionFactory pcFactory = webRTCModule.mFactory;
-        EglBase.Context eglContext = EglUtils.getRootEglBaseContext();
-        SurfaceTextureHelper surfaceTextureHelper = SurfaceTextureHelper.create("CaptureThread", eglContext);
-
-        if (surfaceTextureHelper == null) {
-            Log.d(TAG, "Error creating SurfaceTextureHelper");
-            return null;
-        }
-
-        String id = UUID.randomUUID().toString();
-
-        TrackCapturerEventsEmitter eventsEmitter = new TrackCapturerEventsEmitter(webRTCModule, id);
-        videoCaptureController.setCapturerEventsListener(eventsEmitter);
-
-        VideoSource videoSource = pcFactory.createVideoSource(videoCapturer.isScreencast());
-        videoCapturer.initialize(surfaceTextureHelper, reactContext, videoSource.getCapturerObserver());
-
-        VideoTrack track = pcFactory.createVideoTrack(id, videoSource);
-
-        track.setEnabled(true);
-        tracks.put(id, new TrackPrivate(track, videoSource, videoCaptureController, surfaceTextureHelper));
-
-        videoCaptureController.startCapture();
-
-        return track;
     }
 
     /**
