@@ -3,4 +3,4 @@
 -keep class org.jni_zero.** { *; }
 -keep class J.N { *; }
 -dontwarn org.jni_zero.**
--dontwarn org.webrtc.Dav1dDecoder$Natives
+-dontwarn org.webrtc.**
