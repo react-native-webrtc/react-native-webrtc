@@ -25,6 +25,8 @@ public class ScreenCaptureController extends AbstractVideoCaptureController {
 
     private final Context context;
 
+    private volatile boolean disposed;
+
     public ScreenCaptureController(Context context, int width, int height, Intent mediaProjectionPermissionResultData, float resolutionScale) {
         super((int)(width * resolutionScale), (int)(height * resolutionScale), DEFAULT_FPS);
 
@@ -35,6 +37,10 @@ public class ScreenCaptureController extends AbstractVideoCaptureController {
         this.orientationListener = new OrientationEventListener(context) {
             @Override
             public void onOrientationChanged(int orientation) {
+                if (disposed) {
+                    return;
+                }
+
                 DisplayMetrics displayMetrics = DisplayUtils.getDisplayMetrics((Activity) context);
                 final int width = (int)(displayMetrics.widthPixels * resolutionScale);
                 final int height = (int)(displayMetrics.heightPixels * resolutionScale);
@@ -42,6 +48,10 @@ public class ScreenCaptureController extends AbstractVideoCaptureController {
                 // Pivot to the executor thread because videoCapturer.changeCaptureFormat runs in the main
                 // thread and may deadlock.
                 ThreadUtils.runOnExecutor(() -> {
+                    if (disposed || videoCapturer == null) {
+                        return;
+                    }
+
                     try {
                         videoCapturer.changeCaptureFormat(width, height, DEFAULT_FPS);
                     } catch (Exception ex) {
@@ -64,6 +74,12 @@ public class ScreenCaptureController extends AbstractVideoCaptureController {
 
     @Override
     public void dispose() {
+        if (disposed) {
+            return;
+        }
+
+        disposed = true;
+        orientationListener.disable();
         MediaProjectionService.abort(context);
         super.dispose();
     }
@@ -76,9 +92,11 @@ public class ScreenCaptureController extends AbstractVideoCaptureController {
                     public void onStop() {
                         Log.w(TAG, "Media projection stopped.");
                         orientationListener.disable();
-                        stopCapture();
+                        if (!disposed) {
+                            stopCapture();
+                        }
 
-                        if (capturerEventsListener != null) {
+                        if (!disposed && capturerEventsListener != null) {
                             capturerEventsListener.onCapturerEnded();
                         }
                     }
